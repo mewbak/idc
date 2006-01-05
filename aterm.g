@@ -12,6 +12,10 @@ header "atermParser.__main__" {
 	print t
 }
 
+header "atermParser.__init__" {
+    self.factory = kwargs["factory"]
+}
+
 options {
     language  = "Python";
 }
@@ -47,7 +51,7 @@ protected
 INT	: ('-')? ('0'..'9')+;
 
 protected
-REAL	: INT '.' ('0'..'9')+ ( ('e'|'E') INT );
+REAL	: INT '.' ('0'..'9')+ ( ('e'|'E') INT )?;
 
 REAL_OR_INT
 	: ( INT '.' )  => REAL { $setType(REAL); }
@@ -79,19 +83,19 @@ aterm returns [res]
 
 term returns [res]
 	: ival:INT
-		{ res = aterm.ATermInt(int(ival.getText())) }
+		{ res = self.factory.makeInt(int(ival.getText())) }
 	| rval:REAL
-		{ res = aterm.ATermReal(float(rval.getText())) }
+		{ res = self.factory.makeReal(float(rval.getText())) }
 	| sym:AFUN
 		( 
-			{ res = aterm.ATermAppl(sym.getText()) }
+			{ res = self.factory.makeAppl(sym.getText()) }
 		| LPAREN args=aterms RPAREN
-			{ res = aterm.ATermAppl(sym.getText(), args) }
+			{ res = self.factory.makeAppl(sym.getText(), args) }
 		)
 	| LSQUARE elms=aterms RSQUARE
-		{ res = aterm.ATermList(elms) }
+		{ res = self.factory.makeList(elms) }
 	| LANGLE pat=aterm RANGLE
-		{ res = aterm.ATermPlaceholder(pat) }
+		{ res = self.factory.makePlaceholder(pat) }
 	;
 
 annotation
