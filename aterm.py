@@ -19,31 +19,41 @@ AFUN = 7
 
 class ATermFactory(object):
 
+	def __init__(self):
+		self.intPattern = self.makePlaceholder(self.makeAppl("int"))
+		self.realPattern = self.makePlaceholder(self.makeAppl("real"))
+		self.applPattern = self.makePlaceholder(self.makeAppl("appl"))
+		self.listPattern = self.makePlaceholder(self.makeAppl("list"))				
+		self.placeholderPattern = self.makePlaceholder(self.makeAppl("placeholder"))				
+
 	def makeInt(self, value, annotations = None):
 		return ATermInt(self, value, annotations)
 	
 	def makeReal(self, value, annotations = None):
 		return ATermReal(self, value, annotations)
 
-	def makeList(self, head = None, tail = None):
-		# XXX:
-		pass
-
-	def makeAppl(self, afun, args = (), annotations = None):
+	def makeAppl(self, afun, args = None, annotations = None):
 		return ATermAppl(self, afun, args, annotations)
 		
-	def makePlaceholder(self, type, annotations = None):
-		return ATermPlaceholder(self, fun, args, annotations)
+	def makeEmpty(self, annotations = None):
+		return ATermListEmpty(self, annotations)
+
+	def makeList(self, head, tail = None, annotations = None):
+		return ATermListFilled(self, head, tail, annotations)
+
+	def makePlaceholder(self, placeholder, annotations = None):
+		return ATermPlaceholder(self, placeholder, annotations)
 
 	def parse(self, buf):
 		from atermLexer import Lexer
 		from atermParser import Parser
-    
+	
 		fp = StringIO(buf)
 		lexer = Lexer(fp)
 		parser = Parser(lexer, factory = self)
 		return parser.aterm()
 
+	
 
 class ATerm(object):
 	"""Base class for all ATerms."""
@@ -64,7 +74,7 @@ class ATerm(object):
 
 	def match(self, pattern):
 		result = list()
-		if self._match(self, pattern):
+		if self._match(pattern, result):
 			return result
 		else:
 			return None
@@ -77,13 +87,20 @@ class ATerm(object):
 	
 	def setAnnotation(self, label, annotation):
 		raise NotImplementedError
-		
-	def isEqual(self, term):
+
+	def isEquivalent(self, term):
+		raise NotImplementedError
+	
+	def isEqual(self, other):
 		"""Checks equality of this term agains another method.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well."""
 		
-		if self is term:
+		if self is other:
+			return True
+		
+		# FIXME: deal with annotations
+		if self.isEquivalent(other): 
 			return True
 		
 		return False
@@ -121,25 +138,25 @@ class ATermInt(ATerm):
 	def getType(self):
 		return INT
 
-	def _match(self, pattern, result):
-		if self == pattern:
-			return True
-
-		if pattern.type == PLACEHOLDER:
-			if pattern.placeholder.type == APPL:
-				afun = pattern.placeholder.afun
-				if afun.name == "int" and afun.arity == 0: # XXX: quoted not respected
-					result.append(self.value)
-					return True
-				
-		return False
-				
 	def getInt(self):
 		return self.__value
 
 	value = property(getInt)
 
-	def setAnnotations(annotations):
+	def isEquivalent(self, other):
+		return other.type == INT and other.value == self.value
+		
+	def _match(self, pattern, result):
+		if pattern.isEquivalent(self):
+			return True
+		
+		if pattern.isEquivalent(self.factory.intPattern):
+			result.append(self)
+			return True
+		
+		return False
+	
+	def setAnnotations(self, annotations):
 		self.factory.makeInt(self.value, annotations)
 
 	def accept(self, visitor):
@@ -158,25 +175,26 @@ class ATermReal(ATerm):
 	def getType(self):
 		return REAL
 
-	def _match(self, pattern, result):
-		if self == pattern:
-			return True
+	def isEquivalent(self, other):
+		return other.type == REAL and other.value == self.value
 
-		if pattern.type == PLACEHOLDER:
-			if pattern.placeholder.type == APPL:
-				afun = pattern.placeholder.afun
-				if afun.name == "real" and afun.arity == 0: # XXX: quoted not respected
-					result.append(self.value)
-					return True
-				
-		return False
-				
 	def getReal(self):
 		return self.__value
 
 	value = property(getReal)
-
-	def setAnnotations(annotations):
+		
+	def _match(self, pattern, result):
+		if pattern.isEquivalent(self):
+			return True
+		
+		if pattern.isEquivalent(self.factory.realPattern):
+			result.append(self)
+			return True
+		
+		return False
+	
+				
+	def setAnnotations(self, annotations):
 		self.factory.makeReal(self.value, annotations)
 
 	def accept(self, visitor):
@@ -188,17 +206,37 @@ class ATermReal(ATerm):
 	
 class ATermAppl(ATerm):
 
-	def __init__(self, factory, afun, args = (), annotations = None):
+	def __init__(self, factory, afun, args = None, annotations = None):
 		ATerm.__init__(self, factory, annotations)
 
 		self.afun = afun
-		self.args = args
+		if args is None:
+			self.args = self.factory.makeEmpty()
+		else:
+			self.args = args
+		
 	
 	def getType(self):
 		return APPL
-			
+
 	def getArity(self):
-		return len(self.args)
+		return self.args.getLength()
+
+	def isEquivalent(self, other):
+		if other.type != APPL:
+			return False
+		
+		if other.afun != self.afun:
+			return False
+		
+		if len(other.args) != len(self.args):
+			return False
+		
+		for self_arg, other_arg in zip(self.args, other.args):
+			if not other_arg.isEquivalent(self_arg):
+				return False
+		
+		return True
 
 	def _match(self, pattern, result):
 		if pattern.type == APPL:
@@ -228,24 +266,106 @@ class ATermAppl(ATerm):
 
 class ATermList(ATerm):
 
-	def __init__(self, elements):
-		self.elements = elements
+	def getType(self):
+		return LIST
+
+	def isEmpty(self):	
+		return NotImplementedError
 	
+	def getLength(self):
+		return NotImplementedError
+	
+	def __len__(self):
+		return self.getLength()
+	
+	def getHead(self):
+		return NotImplementedError
+		
+	def getTail(self):
+		return NotImplementedError
+
+	def _match(self, pattern, result):
+		return pattern.isEquivalent(self) or pattern.isEquivalent(self.factory.listPattern)
+
+	def insert(self, element):
+		return self.factory.makeList(element, self)
+		
 	def writeToTextFile(self, fp):
 		fp.write('[')
-		if len(self.elements):
-			self.elements[0].writeToTextFile(fp)
-			for element in self.elements[1:]:
+		if not self.isEmpty():
+			self.head.writeToTextFile(fp)
+			tail = self.tail
+			while not tail.isEmpty():
 				fp.write(',')
-				element.writeToTextFile(fp)
+				tail.head.writeToTextFile(fp)
+				tail = tail.tail
 		fp.write(']')
+
+
+class ATermListEmpty(ATermList):
+	
+	def __init__(self, factory, annotations = None):
+		ATerm.__init__(self, factory, annotations)
+
+	def isEmpty(self):
+		return True
+	
+	def getLength(self):
+		return 0
+
+	def getHead(self):
+		return None
+	
+	def getTail(self):
+		return None
+
+	def isEquivalent(self, other):
+		return other.type == LIST and other.getLength == 0
+
+	def setAnnotations(self, annotations):
+		return self.factory.makeEmpty(annotations)
+
+
+class ATermListFilled(ATermList):
+
+	def __init__(self, factory, head, tail = None, annotations = None):
+		ATerm.__init__(self, factory, annotations)
+
+		self.head = head
+		if tail is None:
+			self.tail = self.factory.makeEmpty()
+		else:
+			self.tail = tail
+	
+	def isEmpty(self):
+		return False
+	
+	def getLength(self):
+		return 1 + self.tail.getLength()
+	
+	def isEquivalent(self, other):
+		return other.type == LIST and not other.isEmpty() and other.head.isEquivalent(self.head) and other.tail.isEquivalent(self.tail)
+		
+	def setAnnotations(self, annotations):
+		return self.factory.makeList(self.head, self.tail, annotations)
 
 
 class ATermPlaceholder(ATerm):
 
-	def __init__(self, type):
-		self.type = type
-
+	def __init__(self, factory, placeholder, annotations = None):
+		ATerm.__init__(self, factory, annotations)
+		
+		self.placeholder = placeholder
+		
+	def getType(self):
+		return PLACEHOLDER
+	
+	def isEquivalent(self, other):
+		return other.type == PLACEHOLDER and other.placeholder == self.placeholder
+	
+	def _match(self, pattern):
+		return pattern.isEquivalent(self) or pattern.isEquivalent(self.factory.placeholderPattern)
+	
 	def writeToTextFile(self, fp):
 		fp.write('<')
 		self.type.writeToTextFile(fp)
@@ -254,8 +374,6 @@ class ATermPlaceholder(ATerm):
 
 class ATermBlob(ATerm):
 
-	# XXX:
+	# TODO: implement this
 
 	pass
-
-

@@ -78,7 +78,12 @@ start returns [res]
 	;
 
 aterm returns [res]
-	: t=term ( annotation )? { res = t }
+	: t=term 
+		( 
+			{ res = t }
+		| a=annotation 
+			{ res = t.setAnnotation(a) }
+ 		)
 	;
 
 term returns [res]
@@ -93,17 +98,23 @@ term returns [res]
 			{ res = self.factory.makeAppl(sym.getText(), args) }
 		)
 	| LSQUARE elms=aterms RSQUARE
-		{ res = self.factory.makeList(elms) }
+		{ res = elms }
 	| LANGLE pat=aterm RANGLE
 		{ res = self.factory.makePlaceholder(pat) }
 	;
 
-annotation
-	: RBRACKET a=aterms LBRACKET;
+annotation returns [res]
+	: RBRACKET a=aterms LBRACKET { res = a }
+	;
 
-
-aterms returns [res = []]
+aterms returns [res]
 	:
-	| head=aterm { res.append(head) } (COMMA tail=aterm { res.append(tail) } )*
+		{ res = self.factory.makeEmpty() }
+	| head=aterm
+		( 
+			{ res = self.factory.makeList(head) }
+		| COMMA tail=aterms
+			{ res = self.factory.makeList(head, tail) }
+		)
 	;
 

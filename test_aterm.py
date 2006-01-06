@@ -11,21 +11,32 @@ class TestCase(unittest.TestCase):
 	def setUp(self):
 		self.f = aterm.ATermFactory()
 
+	ivals = [-2, 0, 1]
+	
 	def testMakeInt(self):
-		for v in [-2, 0, 1]:
+		for v in self.ivals:
 			t = self.f.makeInt(v)
 			self.failUnless(t.factory is self.f)
 			self.failUnlessEqual(t.type, aterm.INT)
 			self.failUnlessEqual(t.value, v)
 			self.failUnlessEqual(str(t), str(v))
-	
+			
+			self.failUnless(t == t)
+			self.failUnless(t.match(t) is not None)
+			self.failUnless(t.match(self.f.intPattern))
+
+	rvals = [-2.1, 0.0, 1.2]
 	def testMakeReal(self):
-		for v in [-2.1, 0.0, 1.2]:
+		for v in self.rvals:
 			t = self.f.makeReal(v)
 			self.failUnless(t.factory is self.f)
 			self.failUnlessEqual(t.type, aterm.REAL)
 			self.failUnlessEqual(t.value, v)
 			self.failUnlessEqual(float(str(t)), v)
+			
+			self.failUnless(t == t)
+			self.failUnless(t.match(t) is not None)
+			self.failUnless(t.match(self.f.realPattern))
 
 	def testParseInt(self):
 		for s in ["-2", "0", "1", "123456789"]:
