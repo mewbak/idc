@@ -20,8 +20,8 @@ BLOB = 6
 name = 7
 
 
-class ATermFactory(object):
-	"""An ATermFactory is responsible for make new ATerms, either by parsing 
+class Factory(object):
+	"""An Factory is responsible for make new ATerms, either by parsing 
 	from string or stream, or via one the of the "make" methods."""
 
 	def __init__(self):
@@ -33,28 +33,28 @@ class ATermFactory(object):
 		self.placeholderPattern = self.makePlaceholder(self.makeAppl("placeholder"))				
 
 	def makeInt(self, value, annotations = None):
-		"""Creates a new ATermInt object"""
-		return ATermInt(self, value, annotations)
+		"""Creates a new IntATerm object"""
+		return IntATerm(self, value, annotations)
 	
 	def makeReal(self, value, annotations = None):
-		"""Creates a new ATermReal object"""
-		return ATermReal(self, value, annotations)
+		"""Creates a new RealATerm object"""
+		return RealATerm(self, value, annotations)
 
 	def makeAppl(self, name, args = None, annotations = None):
-		"""Creates a new ATermAppl object"""
-		return ATermAppl(self, name, args, annotations)
+		"""Creates a new ApplATerm object"""
+		return ApplATerm(self, name, args, annotations)
 		
 	def makeEmpty(self, annotations = None):
-		"""Creates an empty ATermList object"""
-		return ATermListEmpty(self, annotations)
+		"""Creates an empty ListATerm object"""
+		return EmptyListATerm(self, annotations)
 
 	def makeList(self, head, tail = None, annotations = None):
-		"""Creates a new ATermList object"""
-		return ATermListFilled(self, head, tail, annotations)
+		"""Creates a new ListATerm object"""
+		return FilledListATerm(self, head, tail, annotations)
 
 	def makePlaceholder(self, placeholder, annotations = None):
-		"""Creates a new ATermPlaceholder object"""
-		return ATermPlaceholder(self, placeholder, annotations)
+		"""Creates a new PlaceholderATerm object"""
+		return PlaceholderATerm(self, placeholder, annotations)
 
 	def readFromTextFile(self, fp):
 		"""Creates a new ATerm by parsing from a text stream."""
@@ -170,7 +170,7 @@ class ATerm(object):
 		return str(self)
 
 
-class ATermLiteral(ATerm):
+class LiteralATerm(ATerm):
 
 	def __init__(self, factory, value, annotations = None):
 		ATerm.__init__(self, factory, annotations)
@@ -189,7 +189,7 @@ class ATermLiteral(ATerm):
 
 		
 
-class ATermInt(ATermLiteral):
+class IntATerm(LiteralATerm):
 
 	def getType(self):
 		return INT
@@ -202,7 +202,7 @@ class ATermInt(ATermLiteral):
 			matches.append(self)
 			return True
 		
-		return super(ATermInt, self)._match(pattern, matches)
+		return super(IntATerm, self)._match(pattern, matches)
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeInt(self.value, annotations)
@@ -211,7 +211,7 @@ class ATermInt(ATermLiteral):
 		visitor.visitInt(self)
 
 
-class ATermReal(ATermLiteral):
+class RealATerm(LiteralATerm):
 
 	def getType(self):
 		return REAL
@@ -224,7 +224,7 @@ class ATermReal(ATermLiteral):
 			matches.append(self)
 			return True
 		
-		return super(ATermReal, self)._match(pattern, matches)
+		return super(RealATerm, self)._match(pattern, matches)
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeReal(self.value, annotations)
@@ -233,7 +233,7 @@ class ATermReal(ATermLiteral):
 		visitor.visitReal(self)
 
 	
-class ATermAppl(ATerm):
+class ApplATerm(ATerm):
 
 	def __init__(self, factory, name, args = None, annotations = None):
 		ATerm.__init__(self, factory, annotations)
@@ -273,7 +273,7 @@ class ATermAppl(ATerm):
 			matches.append(self)
 			return True
 		
-		return super(ATermAppl, self)._match(pattern, matches)
+		return super(ApplATerm, self)._match(pattern, matches)
 	
 	def setAnnotations(self, annotations):
 		return self.factory.makeAppl(self.name, self.args, annotations)
@@ -283,7 +283,7 @@ class ATermAppl(ATerm):
 
 
 
-class ATermList(ATerm):
+class ListATerm(ATerm):
 
 	def getType(self):
 		return LIST
@@ -310,7 +310,7 @@ class ATermList(ATerm):
 		visitor.visitList(self)
 
 
-class ATermListEmpty(ATermList):
+class EmptyListATerm(ListATerm):
 	
 	def __init__(self, factory, annotations = None):
 		ATerm.__init__(self, factory, annotations)
@@ -344,13 +344,13 @@ class ATermListEmpty(ATermList):
 				matches.append(self)
 				return True
 		
-		return super(ATermListEmpty, self)._match(pattern, matches)
+		return super(EmptyListATerm, self)._match(pattern, matches)
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeEmpty(annotations)
 
 
-class ATermListFilled(ATermList):
+class FilledListATerm(ListATerm):
 
 	def __init__(self, factory, head, tail = None, annotations = None):
 		ATerm.__init__(self, factory, annotations)
@@ -391,13 +391,13 @@ class ATermListFilled(ATermList):
 					matches.append(self)
 					return True
 		
-		return super(ATermListFilled, self)._match(pattern, matches)
+		return super(FilledListATerm, self)._match(pattern, matches)
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeList(self.head, self.tail, annotations)
 
 
-class ATermPlaceholder(ATerm):
+class PlaceholderATerm(ATerm):
 
 	def __init__(self, factory, placeholder, annotations = None):
 		ATerm.__init__(self, factory, annotations)
@@ -421,7 +421,7 @@ class ATermPlaceholder(ATerm):
 			matches.append(self)
 			return True
 		
-		return super(ATermPlaceholder, self)._match(pattern, matches)
+		return super(PlaceholderATerm, self)._match(pattern, matches)
 
 	def setAnnotations(self, annotations):
 		return self.factory.makePlaceholder(self.placeholder, annotations)
@@ -430,7 +430,7 @@ class ATermPlaceholder(ATerm):
 		visitor.visitPlaceholder(self)
 
 
-class ATermBlob(ATerm):
+class BlobATerm(ATerm):
 
 	# TODO: implement this
 
@@ -472,7 +472,7 @@ class TextWriter(Visitor):
 		#for term in terms[1:]:
 		#	self.fp.write(',')
 		#	self.visit(term)
-		assert isinstance(terms, ATermList)
+		assert isinstance(terms, ListATerm)
 		if not terms.isEmpty():
 			self.visit(terms.head)
 			terms = terms.tail

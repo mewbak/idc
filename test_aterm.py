@@ -9,7 +9,7 @@ import aterm
 class TestCase(unittest.TestCase):
 	
 	def setUp(self):
-		self.f = aterm.ATermFactory()
+		self.factory = aterm.Factory()
 
 	intTestCases = [
 		"0",
@@ -21,8 +21,8 @@ class TestCase(unittest.TestCase):
 	def testInt(self):
 		for termStr in self.intTestCases:
 			value = int(termStr)
-			term = self.f.parse(termStr)
-			self.failUnless(term.factory is self.f)
+			term = self.factory.parse(termStr)
+			self.failUnless(term.factory is self.factory)
 			self.failUnlessEqual(term.getType(), aterm.INT)
 			self.failUnlessEqual(term.getValue(), value)
 
@@ -38,8 +38,8 @@ class TestCase(unittest.TestCase):
 	def testReal(self):
 		for termStr in self.realTestCases:
 			value = float(termStr)
-			term = self.f.parse(termStr)
-			self.failUnless(term.factory is self.f)
+			term = self.factory.parse(termStr)
+			self.failUnless(term.factory is self.factory)
 			self.failUnlessEqual(term.getType(), aterm.REAL)
 			self.failUnlessAlmostEqual(term.getValue(), value)
 
@@ -55,7 +55,8 @@ class TestCase(unittest.TestCase):
 	
 	def testAppl(self):
 		for termStr, name, arity in self.applTestCases:
-			term = self.f.parse(termStr)
+			term = self.factory.parse(termStr)
+			self.failUnless(term.factory is self.factory)
 			self.failUnlessEqual(term.getType(), aterm.APPL)
 			self.failUnlessEqual(term.getName(), name)
 			self.failUnlessEqual(term.getArity(), arity)
@@ -71,7 +72,8 @@ class TestCase(unittest.TestCase):
 	
 	def testList(self):
 		for termStr, length in self.listTestCases:
-			term = self.f.parse(termStr)
+			term = self.factory.parse(termStr)
+			self.failUnless(term.factory is self.factory)
 			self.failUnlessEqual(term.getType(), aterm.LIST)
 			self.failUnlessEqual(term.isEmpty(), length == 0)
 			self.failUnlessEqual(term.getLength(), length)
@@ -94,14 +96,14 @@ class TestCase(unittest.TestCase):
 	]
 
 	def testIdentity(self):
-		annos = self.f.parse("[1,2]")
+		annos = self.factory.parse("[1,2]")
 		
 		for terms1Str in self.identityTestCases:
 			for terms2Str in self.identityTestCases:
 				for term1Str in terms1Str:
 					for term2Str in terms2Str:
-						term1 = self.f.parse(term1Str)
-						term2 = self.f.parse(term2Str)
+						term1 = self.factory.parse(term1Str)
+						term2 = self.factory.parse(term2Str)
 			
 						expectedResult = term1Str == term2Str
 											
@@ -184,9 +186,9 @@ class TestCase(unittest.TestCase):
 	def testMatch(self):
 		for termStr, patternStr, expectedResult, expectedMatchesStr in self.matchTestCases:
 			
-			term = self.f.parse(termStr)
-			pattern = self.f.parse(patternStr)
-			expectedMatches = [self.f.parse(expectedMatchStr) for expectedMatchStr in expectedMatchesStr]
+			term = self.factory.parse(termStr)
+			pattern = self.factory.parse(patternStr)
+			expectedMatches = [self.factory.parse(expectedMatchStr) for expectedMatchStr in expectedMatchesStr]
 			
 			matches = []
 			result = term.match(pattern, matches)
