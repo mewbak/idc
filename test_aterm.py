@@ -228,6 +228,19 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(result, expectedResult, msg = "%s ~ %s = %r (!= %r)" % (patternStr, termStr, result, expectedResult))
 			self.failUnlessEqual(matches, expectedMatches, msg = "%s ~ %s = %r (!= %r)" % (patternStr, termStr, matches, expectedMatches))
 
+	makeTestCases = [
+		("<int>", [1], "1"),
+		("<real>", [0.1], "0.1"),
+		("<str>", ["a"], '"a"'),
+		("a(1,<int>)", [2], "a(1,2)"),
+	]
+
+	def testMake(self):
+		for patternStr, args, expectedResultStr in self.makeTestCases:
+			expectedResult = self.factory.parse(expectedResultStr)
+			result = self.factory.make(patternStr, args)
+			self.failUnlessEqual(result, expectedResult)
+
 
 if __name__ == '__main__':
 	unittest.main()

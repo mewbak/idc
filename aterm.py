@@ -81,7 +81,6 @@ class Factory(object):
 		return self.parse(pattern).make(args)
 
 
-
 class ATerm(object):
 	"""Base class for all ATerms."""
 
@@ -293,6 +292,9 @@ class ApplATerm(ATerm):
 		
 		return super(ApplATerm, self)._match(pattern, matches)
 	
+	def make(self, args):
+		return self.factory.makeAppl(self.name, self.args.make(args), self.annotations)
+	
 	def setAnnotations(self, annotations):
 		return self.factory.makeAppl(self.name, self.args, annotations)
 
@@ -410,6 +412,9 @@ class FilledListATerm(ListATerm):
 		
 		return super(FilledListATerm, self)._match(pattern, matches)
 
+	def make(self, args):
+		return self.factory.makeList(self.head.make(args), self.tail.make(args), self.annotations)
+	
 	def setAnnotations(self, annotations):
 		return self.factory.makeList(self.head, self.tail, annotations)
 
@@ -440,6 +445,19 @@ class PlaceholderATerm(ATerm):
 		
 		return super(PlaceholderATerm, self)._match(pattern, matches)
 
+	def make(self, args):
+		if self.placeholder.type == APPL:
+			name = self.placeholder.name
+			if name == 'int':
+				return self.factory.makeInt(int(args.pop(0)), self.annotations)
+			elif name == 'real':
+				return self.factory.makeReal(float(args.pop(0)), self.annotations)
+			elif name == 'str':
+				return self.factory.makeStr(str(args.pop(0)), self.annotations)
+			elif name in ('term', 'appl', 'list', 'placeholder'):
+				return args.pop(0)
+		return self
+		
 	def setAnnotations(self, annotations):
 		return self.factory.makePlaceholder(self.placeholder, annotations)
 
