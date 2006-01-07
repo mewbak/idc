@@ -2,11 +2,12 @@ header {
 }
 
 header "atermParser.__main__" {
-    import aterm
+    from aterm import Factory
     from atermLexer import Lexer
-	
+
+    factory = Factory()
     lexer = Lexer()
-    parser = Parser(lexer)
+    parser = Parser(lexer, factory = factory)
     t = parser.aterm()
     print t
 }
