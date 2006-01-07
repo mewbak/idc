@@ -43,6 +43,22 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(term.getType(), aterm.REAL)
 			self.failUnlessAlmostEqual(term.getValue(), value)
 
+	strTestCases = [
+		(r'""', ""),
+		(r'" "', " "),
+		(r'"\""', "\""),
+		(r'"\t"', "\t"),
+		(r'"\r"', "\r"),
+		(r'"\n"', "\n"),
+	]
+	
+	def testStr(self):
+		for termStr, value in self.strTestCases:
+			term = self.factory.parse(termStr)
+			self.failUnless(term.factory is self.factory)
+			self.failUnlessEqual(term.getType(), aterm.STR)
+			self.failUnlessEqual(term.getValue(), value)
+
 	applTestCases = [
 		("a", "a", 0),
 		("a{1,2}", "a", 0),
@@ -85,7 +101,10 @@ class TestCase(unittest.TestCase):
 		# reals
 		["0.1", "0.2"],
 		
-		# appls
+		# strings
+		[r'""', r'"a"', r'"a b"'],
+		
+		# applications
 		["a", "b", "a(1)", "a(1,2)"],
 		
 		# lists
@@ -136,6 +155,7 @@ class TestCase(unittest.TestCase):
 		("1", "<int>", True, ["1"]),
 		("1", "<term>", True, ["1"]),
 		("1", "<real>", False, []),
+		("1", "<str>", False, []),
 		("1", "<appl>", False, []),
 		("1", "<list>", False, []),
 		("1", "<placeholder>", False, []),
@@ -148,6 +168,15 @@ class TestCase(unittest.TestCase):
 		("0.1", "<list>", False, []),
 		("0.1", "<placeholder>", False, []),
 		
+		# strings
+		('""', "<str>", True, ['""']),
+		('""', "<term>", True, ['""']),
+		('""', "<int>", False, []),
+		('""', "<real>", False, []),
+		('""', "<appl>", False, []),
+		('""', "<list>", False, []),
+		('""', "<placeholder>", False, []),
+		
 		# lists
 		("[]", "[<list>]", True, ["[]"]),
 		("[1]", "[<list>]", True, ["[1]"]),
@@ -157,6 +186,7 @@ class TestCase(unittest.TestCase):
 		("[]", "<term>", True, ["[]"]),
 		("[]", "<int>", False, []),
 		("[]", "<real>", False, []),
+		("[]", "<str>", False, []),
 		("[]", "<appl>", False, []),
 		("[]", "<placeholder>", False, []),
 		("[1]", "[<int>]", True, ["1"]),
@@ -168,6 +198,7 @@ class TestCase(unittest.TestCase):
 		("a(1,2)", "<term>", True, ["a(1,2)"]),
 		("a(1,2)", "<int>", False, []),
 		("a(1,2)", "<real>", False, []),
+		("a(1,2)", "<str>", False, []),
 		("a(1,2)", "<list>", False, []),
 		("a(1,2)", "<placeholder>", False, []),
 		("a(1)", "a(<int>)", True, ["1"]),
@@ -179,6 +210,7 @@ class TestCase(unittest.TestCase):
 		("<a>", "<term>", True, ["<a>"]),
 		("<a>", "<int>", False, []),
 		("<a>", "<real>", False, []),
+		("<a>", "<str>", False, []),
 		("<a>", "<appl>", False, []),
 		("<a>", "<list>", False, []),
 	]

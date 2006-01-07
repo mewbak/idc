@@ -28,11 +28,21 @@ WS	: (' '|'\t'|'\f')+ { $setType(SKIP); }
 	| ( '\r' ('\n')? | '\n') { $newline; $setType(SKIP); }
 	;
 
-AFUN	: ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'*'|'+'|'-')*
-	| '"'! (AFUNCHAR)* '"'!;
+protected
+INT	: ('-')? ('0'..'9')+;
 
 protected
-AFUNCHAR: ESCCHAR
+REAL	: INT '.' ('0'..'9')+ ( ('e'|'E') INT )?;
+
+REAL_OR_INT
+	: ( INT '.' ) => REAL { $setType(REAL); }
+	| INT                 { $setType(INT); }
+	;
+
+STR	: '"'! (STRCHAR)* '"'!;
+
+protected
+STRCHAR: ESCCHAR
 	| ~('"'|'\\')
 	;
 
@@ -46,16 +56,7 @@ ESCCHAR	: '\\'!
 		)
 	;
 
-protected
-INT	: ('-')? ('0'..'9')+;
-
-protected
-REAL	: INT '.' ('0'..'9')+ ( ('e'|'E') INT )?;
-
-REAL_OR_INT
-	: ( INT '.' ) => REAL { $setType(REAL); }
-	| INT                 { $setType(INT); }
-	;
+NAME	: ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'*'|'+'|'-')* ;
 
 COMMA	: ',';
 
@@ -90,11 +91,13 @@ term returns [res]
 		{ res = self.factory.makeInt(int(ival.getText())) }
 	| rval:REAL
 		{ res = self.factory.makeReal(float(rval.getText())) }
-	| sym:AFUN
+	| sval:STR
+		{ res = self.factory.makeStr(sval.getText()) }
+	| name:NAME
 		( 
-			{ res = self.factory.makeAppl(sym.getText()) }
+			{ res = self.factory.makeAppl(name.getText()) }
 		| LPAREN args=aterms RPAREN
-			{ res = self.factory.makeAppl(sym.getText(), args) }
+			{ res = self.factory.makeAppl(name.getText(), args) }
 		)
 	| LSQUARE elms=aterms RSQUARE
 		{ res = elms }

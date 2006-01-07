@@ -13,11 +13,11 @@ from atermParser import Parser
 # Term types
 INT = 1
 REAL = 2
-APPL = 3
+STR = 3
 LIST = 4
-PLACEHOLDER = 5
-BLOB = 6
-name = 7
+APPL = 5
+PLACEHOLDER = 6
+BLOB = 7
 
 
 class Factory(object):
@@ -27,6 +27,7 @@ class Factory(object):
 	def __init__(self):
 		self.intPattern = self.makePlaceholder(self.makeAppl("int"))
 		self.realPattern = self.makePlaceholder(self.makeAppl("real"))
+		self.strPattern = self.makePlaceholder(self.makeAppl("str"))
 		self.applPattern = self.makePlaceholder(self.makeAppl("appl"))
 		self.listPattern = self.makePlaceholder(self.makeAppl("list"))				
 		self.termPattern = self.makePlaceholder(self.makeAppl("term"))				
@@ -39,6 +40,10 @@ class Factory(object):
 	def makeReal(self, value, annotations = None):
 		"""Creates a new RealATerm object"""
 		return RealATerm(self, value, annotations)
+
+	def makeStr(self, value, annotations = None):
+		"""Creates a new StrATerm object"""
+		return StrATerm(self, value, annotations)
 
 	def makeAppl(self, name, args = None, annotations = None):
 		"""Creates a new ApplATerm object"""
@@ -187,23 +192,28 @@ class LiteralATerm(ATerm):
 	def isEqual(self, other):
 		return other is self or (other.type == self.type and other.value == self.value) and self.annotations.isEquivalent(other.annotations)
 
+	def _match(self, pattern, matches):
+		if pattern.isEquivalent(self):
+			return True
 		
+		if pattern.isEquivalent(self.getPattern()):
+			matches.append(self)
+			return True
+		
+		return super(LiteralATerm, self)._match(pattern, matches)
+
+	def getPattern(self):
+		raise NotImplementedError
+
 
 class IntATerm(LiteralATerm):
 
 	def getType(self):
 		return INT
 
-	def _match(self, pattern, matches):
-		if pattern.isEquivalent(self):
-			return True
-		
-		if pattern.isEquivalent(self.factory.intPattern):
-			matches.append(self)
-			return True
-		
-		return super(IntATerm, self)._match(pattern, matches)
-
+	def getPattern(self):
+		return self.factory.intPattern
+	
 	def setAnnotations(self, annotations):
 		return self.factory.makeInt(self.value, annotations)
 
@@ -216,21 +226,29 @@ class RealATerm(LiteralATerm):
 	def getType(self):
 		return REAL
 
-	def _match(self, pattern, matches):
-		if pattern.isEquivalent(self):
-			return True
-		
-		if pattern.isEquivalent(self.factory.realPattern):
-			matches.append(self)
-			return True
-		
-		return super(RealATerm, self)._match(pattern, matches)
-
+	def getPattern(self):
+		return self.factory.realPattern
+	
 	def setAnnotations(self, annotations):
 		return self.factory.makeReal(self.value, annotations)
 
 	def accept(self, visitor):
 		visitor.visitReal(self)
+
+
+class StrATerm(LiteralATerm):
+
+	def getType(self):
+		return STR
+
+	def getPattern(self):
+		return self.factory.strPattern
+	
+	def setAnnotations(self, annotations):
+		return self.factory.makeStr(self.value, annotations)
+
+	def accept(self, visitor):
+		visitor.visitStr(self)
 
 	
 class ApplATerm(ATerm):
@@ -280,7 +298,6 @@ class ApplATerm(ATerm):
 
 	def accept(self, visitor):
 		visitor.visitAppl(self)
-
 
 
 class ListATerm(ATerm):
@@ -452,6 +469,9 @@ class Visitor(object):
 	def visitReal(self, term):
 		self.visitATerm(self, term)
 
+	def visitStr(self, term):
+		self.visitATerm(self, term)
+
 	def visitAppl(self, term):
 		self.visitATerm(self, term)
 
@@ -495,6 +515,10 @@ class TextWriter(Visitor):
 	def visitReal(self, rterm):
 		self.fp.write("%.15e" % rterm.getValue())
 		self.writeAnnotations(rterm)
+	
+	def visitStr(self, sterm):
+		self.fp.write('"%r"' % sterm.getValue())
+		self.writeAnnotations(sterm)
 	
 	def visitAppl(self, aterm):
 		self.fp.write(aterm.getName())
