@@ -488,11 +488,6 @@ class TextWriter(Visitor):
 		self.fp = fp
 	
 	def writeTerms(self, terms):
-		#self.visit(terms[0])
-		#for term in terms[1:]:
-		#	self.fp.write(',')
-		#	self.visit(term)
-		assert isinstance(terms, ListATerm)
 		if not terms.isEmpty():
 			self.visit(terms.head)
 			terms = terms.tail
