@@ -1,15 +1,14 @@
 header {
-import aterm
 }
 
 header "atermParser.__main__" {
-// parser test program
-	from atermLexer import Lexer
+    import aterm
+    from atermLexer import Lexer
 	
-	lexer = Lexer()
-	parser = Parser(lexer)
-	t = parser.aterm()
-	print t
+    lexer = Lexer()
+    parser = Parser(lexer)
+    t = parser.aterm()
+    print t
 }
 
 header "atermParser.__init__" {
@@ -17,7 +16,7 @@ header "atermParser.__init__" {
 }
 
 options {
-    language  = "Python";
+	language  = "Python";
 }
 
 class atermLexer extends Lexer;
@@ -54,8 +53,8 @@ protected
 REAL	: INT '.' ('0'..'9')+ ( ('e'|'E') INT )?;
 
 REAL_OR_INT
-	: ( INT '.' )  => REAL { $setType(REAL); }
-	| INT                  { $setType(INT); }
+	: ( INT '.' ) => REAL { $setType(REAL); }
+	| INT                 { $setType(INT); }
 	;
 
 COMMA	: ',';

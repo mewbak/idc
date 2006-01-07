@@ -6,6 +6,9 @@ try:
 except ImportError:
 	from StringIO import StringIO
 
+from atermLexer import Lexer
+from atermParser import Parser	
+
 
 # Term types
 INT = 1
@@ -55,9 +58,6 @@ class ATermFactory(object):
 
 	def readFromTextFile(self, fp):
 		"""Creates a new ATerm by parsing from a text stream."""
-		from atermLexer import Lexer
-		from atermParser import Parser
-	
 		lexer = Lexer(fp)
 		parser = Parser(lexer, factory = self)
 		# TODO: catch exceptions
