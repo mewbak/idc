@@ -27,72 +27,114 @@ class ATermFactory(object):
 		self.placeholderPattern = self.makePlaceholder(self.makeAppl("placeholder"))				
 
 	def makeInt(self, value, annotations = None):
+		"""Creates a new ATermInt object"""
 		return ATermInt(self, value, annotations)
 	
 	def makeReal(self, value, annotations = None):
+		"""Creates a new ATermReal object"""
 		return ATermReal(self, value, annotations)
 
 	def makeAppl(self, afun, args = None, annotations = None):
+		"""Creates a new ATermAppl object"""
 		return ATermAppl(self, afun, args, annotations)
 		
 	def makeEmpty(self, annotations = None):
+		"""Creates an empty ATermList object"""
 		return ATermListEmpty(self, annotations)
 
 	def makeList(self, head, tail = None, annotations = None):
+		"""Creates a new ATermList object"""
 		return ATermListFilled(self, head, tail, annotations)
 
 	def makePlaceholder(self, placeholder, annotations = None):
+		"""Creates a new ATermPlaceholder object"""
 		return ATermPlaceholder(self, placeholder, annotations)
 
-	def parse(self, buf):
+	def readFromTextFile(self, fp):
+		"""Creates a new ATerm by parsing from a text stream."""
 		from atermLexer import Lexer
 		from atermParser import Parser
 	
-		fp = StringIO(buf)
 		lexer = Lexer(fp)
 		parser = Parser(lexer, factory = self)
+		# TODO: catch exceptions
 		return parser.aterm()
-
 	
+	def parse(self, buf):
+		"""Creates a new ATerm by parsing a string."""
+		fp = StringIO(buf)
+		return self.readFromTextFile(fp)
+
+	def make(self, pattern, args):
+		"""Creates a new ATerm from a string pattern and a list of arguments. 
+		First the string pattern is parsed into an ATerm. Then the holes in 
+		the pattern are filled with arguments taken from the supplied list of 
+		arguments."""
+		return self.parse(pattern).make(args)
+
+
 
 class ATerm(object):
 	"""Base class for all ATerms."""
 
 	def __init__(self, factory, annotations = None):
-		self.__factory = factory
+		self.__factory = factory		
 		self.__annotations = annotations
+
+	def getFactory(self):
+		"""Retrieves the factory responsible for creating this ATerm."""
+		return self.__factory
 		
+	factory = property(getFactory, doc = "The factory responsible for creating this ATerm.""")
+
 	def getType(self):
 		"""Gets the type of this term."""
 		raise NotImplementedError
 
-	type = property(lambda self: self.getType(), doc = """The type of this term.""")
-	
-	def hashCode(self):
-		"""Gets a hashcode value of this term."""
-		raise NotImplementedError
+	type = property(lambda self: self.getType(), doc = """Shorthand for type of this term.""")
 
-	def match(self, pattern):
-		result = list()
-		if self._match(pattern, result):
-			return result
-		else:
-			return None
+	def isEquivalent(self, term):
+		"""Checks for structural equivalence of this term agains another term."""
+		raise NotImplementedError
+		
+	def match(self, pattern, matches = None):
+		"""Matches this term agains a string or term pattern."""
+		
+		if isinstance(pattern, basestring):
+			pattern = self.factory.parse(pattern)
+		
+		if matches is None:
+			matches = []
+		
+		return self._match(pattern, matches)
 	
-	def _match(self, pattern, result):
+	def _match(self, pattern, matches):
 		raise NotImplementedError
 	
 	def getAnnotation(self, label):
+		"""Gets an annotation associated with label"""
 		raise NotImplementedError
 	
 	def setAnnotation(self, label, annotation):
+		"""Returns a new version of this term with the 
+		annotation associated with this label added or updated."""
 		raise NotImplementedError
 
-	def isEquivalent(self, term):
+	def removeAnnotation(self, label):
+		"""Returns a new version of this term with the 
+		annotation associated with this label removed."""
 		raise NotImplementedError
+
+	def getAnnotations(self):
+		if self.__annotations is None:
+			return self.factory.makeEmpty()
+		else:
+			return self.__annotations
+	
+	annotations = property(getAnnotations, doc = """Shorthand for getAnnotations.""")
 	
 	def isEqual(self, other):
-		"""Checks equality of this term agains another method.  Note that for two
+		"""Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well."""
 		
@@ -100,27 +142,28 @@ class ATerm(object):
 			return True
 		
 		# FIXME: deal with annotations
-		if self.isEquivalent(other): 
-			return True
+		if self.isEquivalent(other):
+			if self.__annotations is None:
+				return other.__annotations is None
+			else:
+				return self.__annotations.isEquivalent(other.__annotations) 
 		
 		return False
 
 	def __eq__(self, other):
+		"""Shorthand for the isEqual method."""
 		return self.isEqual(other)
-
-	def writeToTextFile(self, fp):
-		"""Write this term to a file object."""
-		raise NotImplementedError
 
 	def make(self, args):
 		"""Create a new term based on this term and a list of arguments."""
 		return self
-	
-	def getFactory(self):
-		"""Retrieves the factory responsible for creating this ATerm."""
-		return self.__factory
-		
-	factory = property(getFactory, doc = "The factory responsible for creating this ATerm.""")
+
+	def accept(self, visitor):
+		raise NotImplementedError
+
+	def writeToTextFile(self, fp):
+		"""Write this term to a file object."""
+		raise NotImplementedError
 
 	def __str__(self):
 		"""Get the string representation of this term."""
@@ -141,23 +184,23 @@ class ATermInt(ATerm):
 	def getInt(self):
 		return self.__value
 
-	value = property(getInt)
+	value = property(getInt, doc = """Shorthand for the integer value.""")
 
 	def isEquivalent(self, other):
-		return other.type == INT and other.value == self.value
+		return other is self or (other.type == INT and other.__value == self.__value)
 		
-	def _match(self, pattern, result):
+	def _match(self, pattern, matches):
 		if pattern.isEquivalent(self):
 			return True
 		
-		if pattern.isEquivalent(self.factory.intPattern):
-			result.append(self)
+		if pattern.isEqual(self.factory.intPattern):
+			matches.append(self)
 			return True
 		
 		return False
 	
 	def setAnnotations(self, annotations):
-		self.factory.makeInt(self.value, annotations)
+		self.factory.makeInt(self.__value, annotations)
 
 	def accept(self, visitor):
 		visitor.visitInt(self)
@@ -176,29 +219,28 @@ class ATermReal(ATerm):
 		return REAL
 
 	def isEquivalent(self, other):
-		return other.type == REAL and other.value == self.value
+		return other is self or (other.type == REAL and other.value == self.value)
 
 	def getReal(self):
 		return self.__value
 
 	value = property(getReal)
 		
-	def _match(self, pattern, result):
+	def _match(self, pattern, matches):
 		if pattern.isEquivalent(self):
 			return True
 		
-		if pattern.isEquivalent(self.factory.realPattern):
-			result.append(self)
+		if pattern.isEqual(self.factory.realPattern):
+			matches.append(self)
 			return True
 		
 		return False
-	
-				
+
 	def setAnnotations(self, annotations):
 		self.factory.makeReal(self.value, annotations)
 
 	def accept(self, visitor):
-		visitor.visitInt(self)
+		visitor.visitReal(self)
 	
 	def writeToTextFile(self, fp):
 		fp.write("%.15e" % self.value)
@@ -214,7 +256,6 @@ class ATermAppl(ATerm):
 			self.args = self.factory.makeEmpty()
 		else:
 			self.args = args
-		
 	
 	def getType(self):
 		return APPL
@@ -223,35 +264,24 @@ class ATermAppl(ATerm):
 		return self.args.getLength()
 
 	def isEquivalent(self, other):
-		if other.type != APPL:
-			return False
-		
-		if other.afun != self.afun:
-			return False
-		
-		if len(other.args) != len(self.args):
-			return False
-		
-		for self_arg, other_arg in zip(self.args, other.args):
-			if not other_arg.isEquivalent(self_arg):
-				return False
-		
-		return True
+		return other is self or (other.type == APPL and other.afun == self.afun and other.args.isEquivalent(self.args))
 
-	def _match(self, pattern, result):
-		if pattern.type == APPL:
-			if pattern.fun == self.fun:
-				return self._matchArguments(pattern.arguments, result)
-			else:
-				return False
-
-		# XXX:
-		if pattern.type == PLACEHOLDER:
-			if pattern.placeholder.type == APPL:
-				pass
+	def isEqual(self, other):
+		return other is self or (other.type == APPL and other.afun == self.afun and other.args.isEqual(self.args) and other.annotations.isEqual(self.annotations))
+		
+	def _match(self, pattern, matches):
+		if pattern.isEquivalent(self):
+			return True
+		
+		if pattern.isEqual(self.factory.applPattern):
+			matches.append(self)
+			return True
 		
 		return False
-			
+	
+	def visit(self, visitor):
+		visitor.visitAppl(self)
+	
 	def writeToTextFile(self, fp):
 		if self.sym:
 			fp.write(self.sym)
@@ -284,11 +314,21 @@ class ATermList(ATerm):
 	def getTail(self):
 		return NotImplementedError
 
-	def _match(self, pattern, result):
-		return pattern.isEquivalent(self) or pattern.isEquivalent(self.factory.listPattern)
+	def _match(self, pattern, matches):
+		if pattern.isEquivalent(self):
+			return True
+		
+		if pattern.isEqual(self.factory.listPattern):
+			matches.append(self)
+			return True
+		
+		return False
 
 	def insert(self, element):
 		return self.factory.makeList(element, self)
+	
+	def visit(self, visitor):
+		visitor.visitList(self)
 		
 	def writeToTextFile(self, fp):
 		fp.write('[')
@@ -300,7 +340,6 @@ class ATermList(ATerm):
 				tail.head.writeToTextFile(fp)
 				tail = tail.tail
 		fp.write(']')
-
 
 class ATermListEmpty(ATermList):
 	
@@ -320,7 +359,7 @@ class ATermListEmpty(ATermList):
 		return None
 
 	def isEquivalent(self, other):
-		return other.type == LIST and other.getLength == 0
+		return other.type == LIST and other.getLength() == 0
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeEmpty(annotations)
@@ -344,7 +383,10 @@ class ATermListFilled(ATermList):
 		return 1 + self.tail.getLength()
 	
 	def isEquivalent(self, other):
-		return other.type == LIST and not other.isEmpty() and other.head.isEquivalent(self.head) and other.tail.isEquivalent(self.tail)
+		return other is self or (other.type == LIST and not other.isEmpty() and other.head.isEquivalent(self.head) and other.tail.isEquivalent(self.tail))
+		
+	def isEqual(self, other):
+		return other is self or (other.type == LIST and not other.isEmpty() and other.head.isEqual(self.head) and other.tail.isEqual(self.tail))
 		
 	def setAnnotations(self, annotations):
 		return self.factory.makeList(self.head, self.tail, annotations)
@@ -361,11 +403,24 @@ class ATermPlaceholder(ATerm):
 		return PLACEHOLDER
 	
 	def isEquivalent(self, other):
-		return other.type == PLACEHOLDER and other.placeholder == self.placeholder
+		return other is self or (other.type == PLACEHOLDER and other.placeholder.isEquivalent(self.placeholder))
 	
-	def _match(self, pattern):
-		return pattern.isEquivalent(self) or pattern.isEquivalent(self.factory.placeholderPattern)
+	def isEqual(self, other):
+		return other is self or (other.type == PLACEHOLDER and other.placeholder.isEqual(self.placeholder) and other.annotations.isEqual(self.annotations)) 
 	
+	def _match(self, pattern, matches):
+		if pattern.isEquivalent(self):
+			return True
+		
+		if pattern.isEqual(self.factory.placeholderPattern):
+			matches.append(self)
+			return True
+		
+		return False
+
+	def visit(self, visitor):
+		visitor.visitPlaceholder(self)
+		
 	def writeToTextFile(self, fp):
 		fp.write('<')
 		self.type.writeToTextFile(fp)
