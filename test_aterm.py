@@ -11,56 +11,189 @@ class TestCase(unittest.TestCase):
 	def setUp(self):
 		self.f = aterm.ATermFactory()
 
-	ivals = [-2, 0, 1]
+	intTestCases = [
+		"0",
+		"1", 
+		"-2", 
+		"1234567890",
+	]
 	
-	def testMakeInt(self):
-		for v in self.ivals:
-			t = self.f.makeInt(v)
-			self.failUnless(t.factory is self.f)
-			self.failUnlessEqual(t.type, aterm.INT)
-			self.failUnlessEqual(t.value, v)
-			self.failUnlessEqual(str(t), str(v))
-			
-			self.failUnless(t == t)
-			self.failUnless(t.match(t) is not None)
-			self.failUnless(t.match(self.f.intPattern))
+	def testInt(self):
+		for termStr in self.intTestCases:
+			value = int(termStr)
+			term = self.f.parse(termStr)
+			self.failUnless(term.factory is self.f)
+			self.failUnlessEqual(term.getType(), aterm.INT)
+			self.failUnlessEqual(term.getValue(), value)
 
-	rvals = [-2.1, 0.0, 1.2]
-	def testMakeReal(self):
-		for v in self.rvals:
-			t = self.f.makeReal(v)
-			self.failUnless(t.factory is self.f)
-			self.failUnlessEqual(t.type, aterm.REAL)
-			self.failUnlessEqual(t.value, v)
-			self.failUnlessEqual(float(str(t)), v)
-			
-			self.failUnless(t == t)
-			self.failUnless(t.match(t) is not None)
-			self.failUnless(t.match(self.f.realPattern))
+	realTestCases = [
+		"12.345",
+		"0.0", 
+		"-2.1", 
+		"0.1E10",
+		"0.1E-10",
+		"1.2",
+	]
+	
+	def testReal(self):
+		for termStr in self.realTestCases:
+			value = float(termStr)
+			term = self.f.parse(termStr)
+			self.failUnless(term.factory is self.f)
+			self.failUnlessEqual(term.getType(), aterm.REAL)
+			self.failUnlessAlmostEqual(term.getValue(), value)
 
-	def testParseInt(self):
-		for s in ["-2", "0", "1", "123456789"]:
-			t = self.f.parse(s)
-			self.failUnlessEqual(t.type, aterm.INT)
-			self.failUnlessEqual(t.value, int(s))
+	applTestCases = [
+		("a", "a", 0),
+		("a{1,2}", "a", 0),
+		("a()", "a", 0),
+		("a(){1,2}", "a", 0),
+		("a(1)", "a", 1),
+		("a(1,2)", "a", 2),
+		("a(1,2){1,2}", "a", 2),
+	]
+	
+	def testAppl(self):
+		for termStr, name, arity in self.applTestCases:
+			term = self.f.parse(termStr)
+			self.failUnlessEqual(term.getType(), aterm.APPL)
+			self.failUnlessEqual(term.getName(), name)
+			self.failUnlessEqual(term.getArity(), arity)
+	
+	listTestCases = [
+		("[]", 0),
+		("[]{1,2}", 0),
+		("[1]", 1),
+		("[1]{1,2}", 1),
+		("[1,2]", 2),
+		("[1,2]{1,2}", 2),
+	]
+	
+	def testList(self):
+		for termStr, length in self.listTestCases:
+			term = self.f.parse(termStr)
+			self.failUnlessEqual(term.getType(), aterm.LIST)
+			self.failUnlessEqual(term.isEmpty(), length == 0)
+			self.failUnlessEqual(term.getLength(), length)
+	
+	identityTestCases = [
+		# ints
+		["1", "2"],
 		
-	def testParseReal(self):
-		for s in ["0.0", "1.0", "23.3", "-4.5", "6.7E8", "9.0E-12"]:
-			t = self.f.parse(s)
-			self.failUnlessEqual(t.type, aterm.REAL)
-			self.failUnlessEqual(t.value, float(s))
-
-	def testParseAppl(self):
-		t = self.f.parse("asdf")
-		self.failUnlessEqual(t.type, aterm.APPL)
-		self.failUnlessEqual(t.afun, "asdf")
-		self.failUnlessEqual(t.getArity(), 0)
-
-		t = self.f.parse("asdf(1,2)")
-		self.failUnlessEqual(t.type, aterm.APPL)
-		self.failUnlessEqual(t.afun, "asdf")
-		self.failUnlessEqual(t.getArity(), 2)
+		# reals
+		["0.1", "0.2"],
 		
+		# appls
+		["a", "b", "a(1)", "a(1,2)"],
+		
+		# lists
+		["[]", "[1]", "[1,2]"],
+
+		# placeholders
+		["<a>", "<b>"],
+	]
+
+	def testIdentity(self):
+		annos = self.f.parse("[1,2]")
+		
+		for terms1Str in self.identityTestCases:
+			for terms2Str in self.identityTestCases:
+				for term1Str in terms1Str:
+					for term2Str in terms2Str:
+						term1 = self.f.parse(term1Str)
+						term2 = self.f.parse(term2Str)
+			
+						expectedResult = term1Str == term2Str
+											
+						result = term1.isEquivalent(term2)
+						self.failUnlessEqual(result, expectedResult, msg = "%s <=> %s = %r (!= %r)" % (term1Str, term2Str, result, expectedResult))						
+
+						result = term1.isEqual(term2)
+						self.failUnlessEqual(result, expectedResult, msg = "%s == %s = %r (!= %r)" % (term1Str, term2Str, result, expectedResult))						
+
+						if term1.getType() != aterm.PLACEHOLDER and term2.getType() != aterm.PLACEHOLDER: 
+							result = term1.match(term2)
+							self.failUnlessEqual(result, expectedResult, msg = "%s ~ %s = %r (!= %r)" % (term1Str, term2Str, result, expectedResult))
+						
+						if expectedResult is True:
+							aterm2 = term2.setAnnotations(annos)
+
+							assert isinstance(term2, aterm.ATerm)
+							
+							result = term1.isEquivalent(aterm2)
+							self.failUnlessEqual(result, True, msg = "%s <=> %s{...} = %r (!= %r)" % (term1Str, term2Str, result, True))						
+	
+							result = term1.isEqual(aterm2)
+							#self.failUnlessEqual(result, False, msg = "%s == %s{...} = %r (!= %r)" % (term1Str, term2Str, result, False))						
+	
+							result = term1.match(aterm2)
+							#self.failUnlessEqual(result, True, msg = "%s ~ %s{...} = %r (!= %r)" % (term1Str, term2Str, result, True))
+
+	matchTestCases = [
+		# ints
+		("1", "<int>", True, ["1"]),
+		("1", "<term>", True, ["1"]),
+		("1", "<real>", False, []),
+		("1", "<appl>", False, []),
+		("1", "<list>", False, []),
+		("1", "<placeholder>", False, []),
+
+		# reals
+		("0.1", "<real>", True, ["0.1"]),
+		("0.1", "<term>", True, ["0.1"]),
+		("0.1", "<int>", False, []),
+		("0.1", "<appl>", False, []),
+		("0.1", "<list>", False, []),
+		("0.1", "<placeholder>", False, []),
+		
+		# lists
+		("[]", "[<list>]", True, ["[]"]),
+		("[1]", "[<list>]", True, ["[1]"]),
+		("[1,2]", "[<list>]", True, ["[1,2]"]),
+		("[1,2]", "[1,<list>]", True, ["[2]"]),
+		("[1,2]", "[1,2,<list>]", True, ["[]"]),
+		("[]", "<term>", True, ["[]"]),
+		("[]", "<int>", False, []),
+		("[]", "<real>", False, []),
+		("[]", "<appl>", False, []),
+		("[]", "<placeholder>", False, []),
+		("[1]", "[<int>]", True, ["1"]),
+		("[1,2]", "[<int>,<int>]", True, ["1", "2"]),
+		("[1,2,3]", "[<int>,<list>]", True, ["1", "[2,3]"]),		
+
+		# appls
+		("a(1,2)", "<appl>", True, ["a(1,2)"]),
+		("a(1,2)", "<term>", True, ["a(1,2)"]),
+		("a(1,2)", "<int>", False, []),
+		("a(1,2)", "<real>", False, []),
+		("a(1,2)", "<list>", False, []),
+		("a(1,2)", "<placeholder>", False, []),
+		("a(1)", "a(<int>)", True, ["1"]),
+		("a(1,2)", "a(<int>,<int>)", True, ["1","2"]),
+		("a(1,2,3)", "a(<int>,<list>)", True, ["1", "[2,3]"]),
+		
+		# placeholders
+		("<a>", "<placeholder>", True, ["<a>"]),
+		("<a>", "<term>", True, ["<a>"]),
+		("<a>", "<int>", False, []),
+		("<a>", "<real>", False, []),
+		("<a>", "<appl>", False, []),
+		("<a>", "<list>", False, []),
+	]
+	
+	def testMatch(self):
+		for termStr, patternStr, expectedResult, expectedMatchesStr in self.matchTestCases:
+			
+			term = self.f.parse(termStr)
+			pattern = self.f.parse(patternStr)
+			expectedMatches = [self.f.parse(expectedMatchStr) for expectedMatchStr in expectedMatchesStr]
+			
+			matches = []
+			result = term.match(pattern, matches)
+			
+			self.failUnlessEqual(result, expectedResult, msg = "%s ~ %s = %r (!= %r)" % (patternStr, termStr, result, expectedResult))
+			self.failUnlessEqual(matches, expectedMatches, msg = "%s ~ %s = %r (!= %r)" % (patternStr, termStr, matches, expectedMatches))
+
 
 if __name__ == '__main__':
 	unittest.main()
