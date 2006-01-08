@@ -21,10 +21,10 @@ class TestCase(unittest.TestCase):
 		return result
 	
 	intTestCases = [
-		"0",
-		"1", 
-		"-2", 
-		"1234567890",
+		'0',
+		'1', 
+		'-2', 
+		'1234567890',
 	]
 	
 	def testInt(self):
@@ -36,12 +36,12 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(term.getValue(), value)
 
 	realTestCases = [
-		"12.345",
-		"0.0", 
-		"-2.1", 
-		"0.1E10",
-		"0.1E-10",
-		"1.2",
+		'12.345',
+		'0.0', 
+		'-2.1', 
+		'0.1E10',
+		'0.1E-10',
+		'1.2',
 	]
 	
 	def testReal(self):
@@ -53,12 +53,12 @@ class TestCase(unittest.TestCase):
 			self.failUnlessAlmostEqual(term.getValue(), value)
 
 	strTestCases = [
-		(r'""', ""),
-		(r'" "', " "),
+		(r'""', ''),
+		(r'" "', ' '),
 		(r'"\""', "\""),
-		(r'"\t"', "\t"),
-		(r'"\r"', "\r"),
-		(r'"\n"', "\n"),
+		(r'"\t"', '\t'),
+		(r'"\r"', '\r'),
+		(r'"\n"', '\n'),
 	]
 	
 	def testStr(self):
@@ -69,13 +69,13 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(term.getValue(), value)
 
 	applTestCases = [
-		("a", "a", 0),
-		("a{1,2}", "a", 0),
-		("a()", "a", 0),
-		("a(){1,2}", "a", 0),
-		("a(1)", "a", 1),
-		("a(1,2)", "a", 2),
-		("a(1,2){1,2}", "a", 2),
+		('a', 'a', 0),
+		('a{1,2}', 'a', 0),
+		('a()', 'a', 0),
+		('a(){1,2}', 'a', 0),
+		('a(1)', 'a', 1),
+		('a(1,2)', 'a', 2),
+		('a(1,2){1,2}', 'a', 2),
 	]
 	
 	def testAppl(self):
@@ -87,12 +87,12 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(term.getArity(), arity)
 	
 	listTestCases = [
-		("[]", 0),
-		("[]{1,2}", 0),
-		("[1]", 1),
-		("[1]{1,2}", 1),
-		("[1,2]", 2),
-		("[1,2]{1,2}", 2),
+		('[]', 0),
+		('[]{1,2}', 0),
+		('[1]', 1),
+		('[1]{1,2}', 1),
+		('[1,2]', 2),
+		('[1,2]{1,2}', 2),
 	]
 	
 	def testList(self):
@@ -105,26 +105,26 @@ class TestCase(unittest.TestCase):
 	
 	identityTestCases = [
 		# ints
-		["1", "2"],
+		['1', '2'],
 		
 		# reals
-		["0.1", "0.2"],
+		['0.1', '0.2'],
 		
 		# strings
 		[r'""', r'"a"', r'"a b"'],
 		
 		# applications
-		["a", "b", "a(1)", "a(1,2)"],
+		['a', 'b', 'a(1)', 'a(1,2)'],
 		
 		# lists
-		["[]", "[1]", "[1,2]"],
+		['[]', '[1]', '[1,2]'],
 
 		# placeholders
-		["<a>", "<b>"],
+		['<a>', '<b>'],
 	]
 
 	def testIdentity(self):
-		annos = self.factory.parse("[1,2]")
+		annos = self.factory.parse('[1,2]')
 		
 		for terms1Str in self.identityTestCases:
 			for terms2Str in self.identityTestCases:
@@ -136,14 +136,14 @@ class TestCase(unittest.TestCase):
 						expectedResult = term1Str == term2Str
 											
 						result = term1.isEquivalent(term2)
-						self.failUnlessEqual(result, expectedResult, msg = "%s <=> %s = %r (!= %r)" % (term1Str, term2Str, result, expectedResult))						
+						self.failUnlessEqual(result, expectedResult, msg = '%s <=> %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))						
 
 						result = term1.isEqual(term2)
-						self.failUnlessEqual(result, expectedResult, msg = "%s == %s = %r (!= %r)" % (term1Str, term2Str, result, expectedResult))						
+						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))						
 
 						if term1.getType() != aterm.PLACEHOLDER and term2.getType() != aterm.PLACEHOLDER: 
 							result = term1.match(term2)
-							self.failUnlessEqual(result, expectedResult, msg = "%s ~ %s = %r (!= %r)" % (term1Str, term2Str, result, expectedResult))
+							self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 						
 						if expectedResult is True:
 							aterm2 = term2.setAnnotations(annos)
@@ -151,84 +151,84 @@ class TestCase(unittest.TestCase):
 							assert isinstance(term2, aterm.ATerm)
 							
 							result = term1.isEquivalent(aterm2)
-							self.failUnlessEqual(result, True, msg = "%s <=> %s{...} = %r (!= %r)" % (term1Str, term2Str, result, True))						
+							self.failUnlessEqual(result, True, msg = '%s <=> %s{...} = %r (!= %r)' % (term1Str, term2Str, result, True))						
 	
 							result = term1.isEqual(aterm2)
-							#self.failUnlessEqual(result, False, msg = "%s == %s{...} = %r (!= %r)" % (term1Str, term2Str, result, False))						
+							#self.failUnlessEqual(result, False, msg = '%s == %s{...} = %r (!= %r)' % (term1Str, term2Str, result, False))						
 	
 							result = term1.match(aterm2)
-							#self.failUnlessEqual(result, True, msg = "%s ~ %s{...} = %r (!= %r)" % (term1Str, term2Str, result, True))
+							#self.failUnlessEqual(result, True, msg = '%s ~ %s{...} = %r (!= %r)' % (term1Str, term2Str, result, True))
 
 	matchTestCases = [
 		# ints
-		("1", "<int>", True, ["1"]),
-		("1", "<term>", True, ["1"]),
-		("1", "<real>", False, []),
-		("1", "<str>", False, []),
-		("1", "<appl>", False, []),
-		("1", "<fun>", False, []),
-		("1", "<list>", False, []),
-		("1", "<placeholder>", False, []),
+		('1', '<int>', True, ['1']),
+		('1', '<term>', True, ['1']),
+		('1', '<real>', False, []),
+		('1', '<str>', False, []),
+		('1', '<appl>', False, []),
+		('1', '<fun>', False, []),
+		('1', '<list>', False, []),
+		('1', '<placeholder>', False, []),
 
 		# reals
-		("0.1", "<real>", True, ["0.1"]),
-		("0.1", "<term>", True, ["0.1"]),
-		("0.1", "<int>", False, []),
-		("0.1", "<appl>", False, []),
-		("0.1", "<fun>", False, []),
-		("0.1", "<list>", False, []),
-		("0.1", "<placeholder>", False, []),
+		('0.1', '<real>', True, ['0.1']),
+		('0.1', '<term>', True, ['0.1']),
+		('0.1', '<int>', False, []),
+		('0.1', '<appl>', False, []),
+		('0.1', '<fun>', False, []),
+		('0.1', '<list>', False, []),
+		('0.1', '<placeholder>', False, []),
 		
 		# strings
-		('""', "<str>", True, ['""']),
-		('""', "<term>", True, ['""']),
-		('""', "<int>", False, []),
-		('""', "<real>", False, []),
-		('""', "<appl>", False, []),
-		('""', "<list>", False, []),
-		('""', "<placeholder>", False, []),
+		('"ab"', '<str>', True, ['"ab"']),
+		('"ab"', '<term>', True, ['"ab"']),
+		('"ab"', '<int>', False, []),
+		('"ab"', '<real>', False, []),
+		('"ab"', '<appl>', False, []),
+		('"ab"', '<list>', False, []),
+		('"ab"', '<placeholder>', False, []),
 		
 		# lists
-		("[]", "[<list>]", True, ["[]"]),
-		("[1]", "[<list>]", True, ["[1]"]),
-		("[1,2]", "[<list>]", True, ["[1,2]"]),
-		("[1,2]", "[1,<list>]", True, ["[2]"]),
-		("[1,2]", "[1,2,<list>]", True, ["[]"]),
-		("[1,2]", "<term>", True, ["[1,2]"]),
-		("[1,2]", "<int>", False, []),
-		("[1,2]", "<real>", False, []),
-		("[1,2]", "<str>", False, []),
-		("[1,2]", "<appl>", False, []),
-		("[1,2]", "<fun>", False, []),
-		("[1,2]", "<placeholder>", False, []),
-		("[1]", "[<term>]", True, ["1"]),
-		("[1,0.2,\"c\"]", "[<int>,<real>,<str>]", True, ["1", "0.2", '"c"']),
-		("[1,2,3]", "[<term>,<list>]", True, ["1", "[2,3]"]),		
+		('[]', '[<list>]', True, ['[]']),
+		('[1]', '[<list>]', True, ['[1]']),
+		('[1,2]', '[<list>]', True, ['[1,2]']),
+		('[1,2]', '[1,<list>]', True, ['[2]']),
+		('[1,2]', '[1,2,<list>]', True, ['[]']),
+		('[1,2]', '<term>', True, ['[1,2]']),
+		('[1,2]', '<int>', False, []),
+		('[1,2]', '<real>', False, []),
+		('[1,2]', '<str>', False, []),
+		('[1,2]', '<appl>', False, []),
+		('[1,2]', '<fun>', False, []),
+		('[1,2]', '<placeholder>', False, []),
+		('[1]', '[<term>]', True, ['1']),
+		('[1,0.2,"c"]', '[<int>,<real>,<str>]', True, ['1', '0.2', '"c"']),
+		('[1,2,3]', '[<term>,<list>]', True, ['1', '[2,3]']),		
 
 		# appls
-		("a", "<appl>", True, ["a"]),
-		("a", "<fun>", True, ["a"]),
-		("a(1)", "<appl>", True, ["a(1)"]),
-		("a(1,2)", "<appl>", True, ["a(1,2)"]),
-		("a(1,2)", "<term>", True, ["a(1,2)"]),
-		("a(1,2)", "<int>", False, []),
-		("a(1,2)", "<real>", False, []),
-		("a(1,2)", "<str>", False, []),
-		("a(1,2)", "<list>", False, []),
-		("a(1,2)", "<placeholder>", False, []),
-		("a(1)", "a(<term>)", True, ["1"]),
-		("a(1,2)", "a(<term>,<term>)", True, ["1","2"]),
-		("a(1,2,3)", "a(<term>,<list>)", True, ["1", "[2,3]"]),
-		("a(1,2,3)", "<fun(<term>,<list>)>", True, ["a", "1", "[2,3]"]),
+		('a', '<appl>', True, ['a']),
+		('a', '<fun>', True, ['a']),
+		('a(1)', '<appl>', True, ['a(1)']),
+		('a(1,2)', '<appl>', True, ['a(1,2)']),
+		('a(1,2)', '<term>', True, ['a(1,2)']),
+		('a(1,2)', '<int>', False, []),
+		('a(1,2)', '<real>', False, []),
+		('a(1,2)', '<str>', False, []),
+		('a(1,2)', '<list>', False, []),
+		('a(1,2)', '<placeholder>', False, []),
+		('a(1)', 'a(<term>)', True, ['1']),
+		('a(1,2)', 'a(<term>,<term>)', True, ['1','2']),
+		('a(1,2,3)', 'a(<term>,<list>)', True, ['1', '[2,3]']),
+		('a(1,2,3)', '<fun(<term>,<list>)>', True, ['a', '1', '[2,3]']),
 
 		# placeholders
-		("<a>", "<placeholder>", True, ["<a>"]),
-		("<a>", "<term>", True, ["<a>"]),
-		("<a>", "<int>", False, []),
-		("<a>", "<real>", False, []),
-		("<a>", "<str>", False, []),
-		("<a>", "<appl>", False, []),
-		("<a>", "<list>", False, []),
+		('<a>', '<placeholder>', True, ['<a>']),
+		('<a>', '<term>', True, ['<a>']),
+		('<a>', '<int>', False, []),
+		('<a>', '<real>', False, []),
+		('<a>', '<str>', False, []),
+		('<a>', '<appl>', False, []),
+		('<a>', '<list>', False, []),
 
 	]
 	
@@ -242,27 +242,27 @@ class TestCase(unittest.TestCase):
 			matches = []
 			result = term.match(pattern, matches)
 			
-			self.failUnlessEqual(result, expectedResult, msg = "%s ~ %s = %r (!= %r)" % (patternStr, termStr, result, expectedResult))
-			self.failUnlessEqual(matches, expectedMatches, msg = "%s ~ %s = %r (!= %r)" % (patternStr, termStr, matches, expectedMatches))
+			self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, result, expectedResult))
+			self.failUnlessEqual(matches, expectedMatches, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, matches, expectedMatches))
 
 	makeTestCases = [
-		("1", [], "1"),
-		("0.1", [], "0.1"),
+		('1', [], '1'),
+		('0.1', [], '0.1'),
 		('"a"', [], '"a"'),
-		("[1,2]", [], "[1,2]"),
-		("a(1,2)", [], "a(1,2)"),
+		('[1,2]', [], '[1,2]'),
+		('a(1,2)', [], 'a(1,2)'),
 		
-		("<int>", [1], "1"),
-		("<real>", [0.1], "0.1"),
-		("<str>", ["a"], '"a"'),
-		("<appl>", ["a"], "a"),
-		("<appl(1,2)>", ["a"], "a(1,2)"),
-		("<appl(<int>,<real>)>", ["a", 1, 0.2], "a(1,0.2)"),
-		("<placeholder>", [":a"], "<a>"),
-		("<term>", [":a"], "a"),
+		('<int>', [1], '1'),
+		('<real>', [0.1], '0.1'),
+		('<str>', ['a'], '"a"'),
+		('<appl>', ['a'], 'a'),
+		('<appl(1,2)>', ['a'], 'a(1,2)'),
+		('<appl(<int>,<real>)>', ['a', 1, 0.2], 'a(1,0.2)'),
+		('<placeholder>', [':a'], '<a>'),
+		('<term>', [':a'], 'a'),
 		
-		("a(1,<int>)", [2], "a(1,2)"),
-		("[1,2,<list>]", [":[3,4]"], '[1,2,3,4]'),
+		('a(1,<int>)', [2], 'a(1,2)'),
+		('[1,2,<list>]', [':[3,4]'], '[1,2,3,4]'),
 	]
 
 	def testMake(self):

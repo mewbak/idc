@@ -1,4 +1,4 @@
-"""Python version of the ATerm library. Loosely based on the Java version."""
+'''Python version of the ATerm library. Loosely based on the Java version.'''
 
 
 try:
@@ -21,90 +21,90 @@ BLOB = 7
 
 
 class Factory(object):
-	"""An Factory is responsible for make new ATerms, either by parsing 
-	from string or stream, or via one the of the "make" methods."""
+	'''An Factory is responsible for make new ATerms, either by parsing 
+	from string or stream, or via one the of the "make" methods.'''
 
 	def __init__(self):
-		self.intPattern = self.makePlaceholder(self.makeAppl("int"))
-		self.realPattern = self.makePlaceholder(self.makeAppl("real"))
-		self.strPattern = self.makePlaceholder(self.makeAppl("str"))
-		self.applPattern = self.makePlaceholder(self.makeAppl("appl"))
-		self.funPattern = self.makePlaceholder(self.makeAppl("fun"))
-		self.listPattern = self.makePlaceholder(self.makeAppl("list"))				
-		self.termPattern = self.makePlaceholder(self.makeAppl("term"))				
-		self.placeholderPattern = self.makePlaceholder(self.makeAppl("placeholder"))				
+		self.intPattern = self.makePlaceholder(self.makeAppl('int'))
+		self.realPattern = self.makePlaceholder(self.makeAppl('real'))
+		self.strPattern = self.makePlaceholder(self.makeAppl('str'))
+		self.applPattern = self.makePlaceholder(self.makeAppl('appl'))
+		self.funPattern = self.makePlaceholder(self.makeAppl('fun'))
+		self.listPattern = self.makePlaceholder(self.makeAppl('list'))				
+		self.termPattern = self.makePlaceholder(self.makeAppl('term'))				
+		self.placeholderPattern = self.makePlaceholder(self.makeAppl('placeholder'))				
 
 	def makeInt(self, value, annotations = None):
-		"""Creates a new IntATerm object"""
+		'''Creates a new IntATerm object'''
 		return IntATerm(self, value, annotations)
 	
 	def makeReal(self, value, annotations = None):
-		"""Creates a new RealATerm object"""
+		'''Creates a new RealATerm object'''
 		return RealATerm(self, value, annotations)
 
 	def makeStr(self, value, annotations = None):
-		"""Creates a new StrATerm object"""
+		'''Creates a new StrATerm object'''
 		return StrATerm(self, value, annotations)
 
 	def makeAppl(self, name, args = None, annotations = None):
-		"""Creates a new ApplATerm object"""
+		'''Creates a new ApplATerm object'''
 		return ApplATerm(self, name, args, annotations)
 		
 	def makeEmpty(self, annotations = None):
-		"""Creates an empty ListATerm object"""
+		'''Creates an empty ListATerm object'''
 		return EmptyListATerm(self, annotations)
 
 	def makeList(self, head, tail = None, annotations = None):
-		"""Creates a new ListATerm object"""
+		'''Creates a new ListATerm object'''
 		return FilledListATerm(self, head, tail, annotations)
 
 	def makePlaceholder(self, placeholder, annotations = None):
-		"""Creates a new PlaceholderATerm object"""
+		'''Creates a new PlaceholderATerm object'''
 		return PlaceholderATerm(self, placeholder, annotations)
 
 	def readFromTextFile(self, fp):
-		"""Creates a new ATerm by parsing from a text stream."""
+		'''Creates a new ATerm by parsing from a text stream.'''
 		lexer = Lexer(fp)
 		parser = Parser(lexer, factory = self)
 		# TODO: catch exceptions
 		return parser.aterm()
 	
 	def parse(self, buf):
-		"""Creates a new ATerm by parsing a string."""
+		'''Creates a new ATerm by parsing a string.'''
 		fp = StringIO(buf)
 		return self.readFromTextFile(fp)
 
 	def make(self, pattern, *args):
-		"""Creates a new ATerm from a string pattern and a list of arguments. 
+		'''Creates a new ATerm from a string pattern and a list of arguments. 
 		First the string pattern is parsed into an ATerm. Then the holes in 
 		the pattern are filled with arguments taken from the supplied list of 
-		arguments."""
+		arguments.'''
 		return self.parse(pattern).make(*args)
 
 
 class ATerm(object):
-	"""Base class for all ATerms."""
+	'''Base class for all ATerms.'''
 
 	def __init__(self, factory, annotations = None):
 		self.factory = factory		
 		self.__annotations = annotations
 
 	def getFactory(self):
-		"""Retrieves the factory responsible for creating this ATerm."""
+		'''Retrieves the factory responsible for creating this ATerm.'''
 		return self.factory
 		
 	def getType(self):
-		"""Gets the type of this term."""
+		'''Gets the type of this term.'''
 		raise NotImplementedError
 
-	type = property(lambda self: self.getType(), doc = """Shorthand for type of this term.""")
+	type = property(lambda self: self.getType(), doc = '''Shorthand for type of this term.''')
 
 	def isEquivalent(self, term):
-		"""Checks for structural equivalence of this term agains another term."""
+		'''Checks for structural equivalence of this term agains another term.'''
 		raise NotImplementedError
 		
 	def match(self, pattern, matches = None):
-		"""Matches this term agains a string or term pattern."""
+		'''Matches this term agains a string or term pattern.'''
 		
 		if isinstance(pattern, basestring):
 			pattern = self.factory.parse(pattern)
@@ -122,17 +122,17 @@ class ATerm(object):
 		return False
 
 	def getAnnotation(self, label):
-		"""Gets an annotation associated with label"""
+		'''Gets an annotation associated with label'''
 		raise NotImplementedError
 	
 	def setAnnotation(self, label, annotation):
-		"""Returns a new version of this term with the 
-		annotation associated with this label added or updated."""
+		'''Returns a new version of this term with the 
+		annotation associated with this label added or updated.'''
 		raise NotImplementedError
 
 	def removeAnnotation(self, label):
-		"""Returns a new version of this term with the 
-		annotation associated with this label removed."""
+		'''Returns a new version of this term with the 
+		annotation associated with this label removed.'''
 		raise NotImplementedError
 
 	def getAnnotations(self):
@@ -141,20 +141,20 @@ class ATerm(object):
 		else:
 			return self.__annotations
 	
-	annotations = property(getAnnotations, doc = """Shorthand for the getAnnotations method.""")
+	annotations = property(getAnnotations, doc = '''Shorthand for the getAnnotations method.''')
 	
 	def isEqual(self, other):
-		"""Checks equality of this term against another term.  Note that for two
+		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
-		well."""
+		well.'''
 		raise NotImplementedError
 
 	def __eq__(self, other):
-		"""Shorthand for the isEqual method."""
+		'''Shorthand for the isEqual method.'''
 		return self.isEqual(other)
 
 	def make(self, *args):
-		"""Create a new term based on this term and a list of arguments."""
+		'''Create a new term based on this term and a list of arguments.'''
 		return self._make(list(args))
 
 	def _make(self, args):
@@ -164,12 +164,12 @@ class ATerm(object):
 		raise NotImplementedError
 
 	def writeToTextFile(self, fp):
-		"""Write this term to a file object."""
+		'''Write this term to a file object.'''
 		writer = TextWriter(fp)
 		writer.visit(self)
 
 	def __str__(self):
-		"""Get the string representation of this term."""
+		'''Get the string representation of this term.'''
 		fp = StringIO()
 		self.writeToTextFile(fp)
 		return fp.getvalue()
@@ -187,7 +187,7 @@ class LiteralATerm(ATerm):
 	def getValue(self):
 		return self.__value
 
-	value = property(getValue, doc = """Shorthand for the integer value.""")
+	value = property(getValue, doc = '''Shorthand for the integer value.''')
 
 	def isEquivalent(self, other):
 		return other is self or (other.type == self.type and other.value == self.value)
@@ -564,7 +564,7 @@ class TextWriter(Visitor):
 		self.writeAnnotations(iterm)
 	
 	def visitReal(self, rterm):
-		self.fp.write("%.15e" % rterm.getValue())
+		self.fp.write('%.2g' % rterm.getValue())
 		self.writeAnnotations(rterm)
 	
 	def visitStr(self, sterm):
