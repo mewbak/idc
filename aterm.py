@@ -200,7 +200,7 @@ class LiteralATerm(ATerm):
 			return True
 		
 		if pattern.isEquivalent(self.getPattern()):
-			matches.append(self)
+			matches.append(self.getValue())
 			return True
 		
 		return super(LiteralATerm, self)._match(pattern, matches)
@@ -295,7 +295,7 @@ class ApplATerm(ATerm):
 			return True
 		
 		if pattern.type == PLACEHOLDER and pattern.placeholder.type == APPL and pattern.placeholder.name == 'fun':
-			matches.append(self.factory.makeAppl(self.name))
+			matches.append(self.name)
 			return self.args._match(pattern.placeholder.args, matches)
 		
 		return super(ApplATerm, self)._match(pattern, matches)
