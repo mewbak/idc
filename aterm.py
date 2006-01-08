@@ -24,6 +24,8 @@ class Factory(object):
 	'''An Factory is responsible for make new ATerms, either by parsing 
 	from string or stream, or via one the of the "make" methods.'''
 
+	MAX_PARSE_CACHE_LEN = 128
+	
 	def __init__(self):
 		self.intPattern = self.makePlaceholder(self.makeAppl('int'))
 		self.realPattern = self.makePlaceholder(self.makeAppl('real'))
@@ -79,7 +81,11 @@ class Factory(object):
 		except KeyError:
 			fp = StringIO(buf)
 			result = self.readFromTextFile(fp)
+			
+			if len(self.parseCache) > self.MAX_PARSE_CACHE_LEN:
+				self.parseCache.clear()
 			self.parseCache[buf] = result
+			
 			return result
 
 	def make(self, pattern, *args):
