@@ -157,6 +157,7 @@ class TestCase(unittest.TestCase):
 		("1", "<real>", False, []),
 		("1", "<str>", False, []),
 		("1", "<appl>", False, []),
+		("1", "<fun>", False, []),
 		("1", "<list>", False, []),
 		("1", "<placeholder>", False, []),
 
@@ -165,6 +166,7 @@ class TestCase(unittest.TestCase):
 		("0.1", "<term>", True, ["0.1"]),
 		("0.1", "<int>", False, []),
 		("0.1", "<appl>", False, []),
+		("0.1", "<fun>", False, []),
 		("0.1", "<list>", False, []),
 		("0.1", "<placeholder>", False, []),
 		
@@ -183,17 +185,21 @@ class TestCase(unittest.TestCase):
 		("[1,2]", "[<list>]", True, ["[1,2]"]),
 		("[1,2]", "[1,<list>]", True, ["[2]"]),
 		("[1,2]", "[1,2,<list>]", True, ["[]"]),
-		("[]", "<term>", True, ["[]"]),
-		("[]", "<int>", False, []),
-		("[]", "<real>", False, []),
-		("[]", "<str>", False, []),
-		("[]", "<appl>", False, []),
-		("[]", "<placeholder>", False, []),
-		("[1]", "[<int>]", True, ["1"]),
-		("[1,2]", "[<int>,<int>]", True, ["1", "2"]),
-		("[1,2,3]", "[<int>,<list>]", True, ["1", "[2,3]"]),		
+		("[1,2]", "<term>", True, ["[1,2]"]),
+		("[1,2]", "<int>", False, []),
+		("[1,2]", "<real>", False, []),
+		("[1,2]", "<str>", False, []),
+		("[1,2]", "<appl>", False, []),
+		("[1,2]", "<fun>", False, []),
+		("[1,2]", "<placeholder>", False, []),
+		("[1]", "[<term>]", True, ["1"]),
+		("[1,0.2,\"c\"]", "[<int>,<real>,<str>]", True, ["1", "0.2", '"c"']),
+		("[1,2,3]", "[<term>,<list>]", True, ["1", "[2,3]"]),		
 
 		# appls
+		("a", "<appl>", True, ["a"]),
+		("a", "<fun>", True, ["a"]),
+		("a(1)", "<appl>", True, ["a(1)"]),
 		("a(1,2)", "<appl>", True, ["a(1,2)"]),
 		("a(1,2)", "<term>", True, ["a(1,2)"]),
 		("a(1,2)", "<int>", False, []),
@@ -201,10 +207,11 @@ class TestCase(unittest.TestCase):
 		("a(1,2)", "<str>", False, []),
 		("a(1,2)", "<list>", False, []),
 		("a(1,2)", "<placeholder>", False, []),
-		("a(1)", "a(<int>)", True, ["1"]),
-		("a(1,2)", "a(<int>,<int>)", True, ["1","2"]),
-		("a(1,2,3)", "a(<int>,<list>)", True, ["1", "[2,3]"]),
-		
+		("a(1)", "a(<term>)", True, ["1"]),
+		("a(1,2)", "a(<term>,<term>)", True, ["1","2"]),
+		("a(1,2,3)", "a(<term>,<list>)", True, ["1", "[2,3]"]),
+		("a(1,2,3)", "<fun(<term>,<list>)>", True, ["a", "1", "[2,3]"]),
+
 		# placeholders
 		("<a>", "<placeholder>", True, ["<a>"]),
 		("<a>", "<term>", True, ["<a>"]),
@@ -213,6 +220,7 @@ class TestCase(unittest.TestCase):
 		("<a>", "<str>", False, []),
 		("<a>", "<appl>", False, []),
 		("<a>", "<list>", False, []),
+
 	]
 	
 	def testMatch(self):
@@ -229,16 +237,35 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(matches, expectedMatches, msg = "%s ~ %s = %r (!= %r)" % (patternStr, termStr, matches, expectedMatches))
 
 	makeTestCases = [
+		("1", [], "1"),
+		("0.1", [], "0.1"),
+		('"a"', [], '"a"'),
+		("[1,2]", [], "[1,2]"),
+		("a(1,2)", [], "a(1,2)"),
+		
 		("<int>", [1], "1"),
 		("<real>", [0.1], "0.1"),
 		("<str>", ["a"], '"a"'),
+		("<appl>", ["a"], "a"),
+		("<appl(1,2)>", ["a"], "a(1,2)"),
+		("<appl(<int>,<real>)>", ["a", 1, 0.2], "a(1,0.2)"),
+		("<placeholder>", [":a"], "<a>"),
+		("<term>", [":a"], "a"),
+		
 		("a(1,<int>)", [2], "a(1,2)"),
+		("[1,2,<list>]", [":[3,4]"], '[1,2,3,4]'),
 	]
 
 	def testMake(self):
-		for patternStr, args, expectedResultStr in self.makeTestCases:
+		for patternStr, argsStr, expectedResultStr in self.makeTestCases:
+			args = []
+			for argStr in argsStr:
+				if isinstance(argStr, basestring) and argStr.startswith(':'):
+					args.append(self.factory.parse(argStr[1:]))
+				else:
+					args.append(argStr)
 			expectedResult = self.factory.parse(expectedResultStr)
-			result = self.factory.make(patternStr, args)
+			result = self.factory.make(patternStr, *args)
 			self.failUnlessEqual(result, expectedResult)
 
 

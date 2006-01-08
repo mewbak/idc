@@ -29,6 +29,7 @@ class Factory(object):
 		self.realPattern = self.makePlaceholder(self.makeAppl("real"))
 		self.strPattern = self.makePlaceholder(self.makeAppl("str"))
 		self.applPattern = self.makePlaceholder(self.makeAppl("appl"))
+		self.funPattern = self.makePlaceholder(self.makeAppl("fun"))
 		self.listPattern = self.makePlaceholder(self.makeAppl("list"))				
 		self.termPattern = self.makePlaceholder(self.makeAppl("term"))				
 		self.placeholderPattern = self.makePlaceholder(self.makeAppl("placeholder"))				
@@ -73,12 +74,12 @@ class Factory(object):
 		fp = StringIO(buf)
 		return self.readFromTextFile(fp)
 
-	def make(self, pattern, args):
+	def make(self, pattern, *args):
 		"""Creates a new ATerm from a string pattern and a list of arguments. 
 		First the string pattern is parsed into an ATerm. Then the holes in 
 		the pattern are filled with arguments taken from the supplied list of 
 		arguments."""
-		return self.parse(pattern).make(args)
+		return self.parse(pattern).make(*args)
 
 
 class ATerm(object):
@@ -152,8 +153,11 @@ class ATerm(object):
 		"""Shorthand for the isEqual method."""
 		return self.isEqual(other)
 
-	def make(self, args):
+	def make(self, *args):
 		"""Create a new term based on this term and a list of arguments."""
+		return self._make(list(args))
+
+	def _make(self, args):
 		return self
 
 	def accept(self, visitor):
@@ -290,10 +294,14 @@ class ApplATerm(ATerm):
 			matches.append(self)
 			return True
 		
+		if pattern.type == PLACEHOLDER and pattern.placeholder.type == APPL and pattern.placeholder.name == 'fun':
+			matches.append(self.factory.makeAppl(self.name))
+			return self.args._match(pattern.placeholder.args, matches)
+		
 		return super(ApplATerm, self)._match(pattern, matches)
 	
-	def make(self, args):
-		return self.factory.makeAppl(self.name, self.args.make(args), self.annotations)
+	def _make(self, args):
+		return self.factory.makeAppl(self.name, self.args._make(args), self.annotations)
 	
 	def setAnnotations(self, annotations):
 		return self.factory.makeAppl(self.name, self.args, annotations)
@@ -412,8 +420,14 @@ class FilledListATerm(ListATerm):
 		
 		return super(FilledListATerm, self)._match(pattern, matches)
 
-	def make(self, args):
-		return self.factory.makeList(self.head.make(args), self.tail.make(args), self.annotations)
+	def _make(self, args):
+		if self.head.isEquivalent(self.factory.listPattern) and self.tail.isEmpty:
+			arg = args.pop(0)
+			if not isinstance(arg, ListATerm):
+				raise TypeError, 'not an aterm list: ' + repr(arg)
+			return arg
+		else:
+			return self.factory.makeList(self.head._make(args), self.tail._make(args), self.annotations)
 	
 	def setAnnotations(self, annotations):
 		return self.factory.makeList(self.head, self.tail, annotations)
@@ -445,18 +459,42 @@ class PlaceholderATerm(ATerm):
 		
 		return super(PlaceholderATerm, self)._match(pattern, matches)
 
-	def make(self, args):
+	def _make(self, args):
 		if self.placeholder.type == APPL:
 			name = self.placeholder.name
-			if name == 'int':
-				return self.factory.makeInt(int(args.pop(0)), self.annotations)
-			elif name == 'real':
-				return self.factory.makeReal(float(args.pop(0)), self.annotations)
-			elif name == 'str':
-				return self.factory.makeStr(str(args.pop(0)), self.annotations)
-			elif name in ('term', 'appl', 'list', 'placeholder'):
-				return args.pop(0)
-		return self
+			if name == 'appl':
+				arg = args.pop(0)
+				if not isinstance(arg, basestring):
+					raise TypeError, 'not a string: ' + repr(arg)
+				return self.factory.makeAppl(arg, self.placeholder.getArgs()._make(args), self.annotations)
+			elif self.placeholder.getArity() == 0:
+				if name == 'int':
+					arg = args.pop(0)
+					if not isinstance(arg, int):
+						raise TypeError, 'not an integer: ' + repr(arg)
+					return self.factory.makeInt(arg, self.annotations)
+				elif name == 'real':
+					arg = args.pop(0)
+					if not isinstance(arg, float):
+						raise TypeError, 'not an floating point number: ' + repr(arg)
+					return self.factory.makeReal(arg, self.annotations)
+				elif name == 'str':
+					arg = args.pop(0)
+					if not isinstance(arg, basestring):
+						raise TypeError, 'not a string: ' + repr(arg)
+					return self.factory.makeStr(arg, self.annotations)
+				elif name == 'placeholder':
+					arg = args.pop(0)
+					if not isinstance(arg, ATerm):
+						raise TypeError, 'not an aterm: ' + repr(arg)
+					return self.factory.makePlaceholder(arg, self.annotations)
+				elif name == 'term':
+					arg = args.pop(0)
+					if not isinstance(arg, ATerm):
+						raise TypeError, 'not an aterm: ' + repr(arg)
+					return arg
+		
+		raise ValueError, 'illegal pattern: ' + str(self)		
 		
 	def setAnnotations(self, annotations):
 		return self.factory.makePlaceholder(self.placeholder, annotations)
