@@ -11,6 +11,15 @@ class TestCase(unittest.TestCase):
 	def setUp(self):
 		self.factory = aterm.Factory()
 
+	def parseList(self, args, escape = '!'):
+		result = []
+		for arg in args:
+			if isinstance(arg, basestring) and arg.startswith(escape):
+				result.append(self.factory.parse(arg[len(escape):]))
+			else:
+				result.append(arg)	
+		return result
+	
 	intTestCases = [
 		"0",
 		"1", 
@@ -258,12 +267,7 @@ class TestCase(unittest.TestCase):
 
 	def testMake(self):
 		for patternStr, argsStr, expectedResultStr in self.makeTestCases:
-			args = []
-			for argStr in argsStr:
-				if isinstance(argStr, basestring) and argStr.startswith(':'):
-					args.append(self.factory.parse(argStr[1:]))
-				else:
-					args.append(argStr)
+			args = self.parseList(argsStr, ':')
 			expectedResult = self.factory.parse(expectedResultStr)
 			result = self.factory.make(patternStr, *args)
 			self.failUnlessEqual(result, expectedResult)
