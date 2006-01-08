@@ -24,7 +24,7 @@ class Factory(object):
 	'''An Factory is responsible for make new ATerms, either by parsing 
 	from string or stream, or via one the of the "make" methods.'''
 
-	MAX_PARSE_CACHE_LEN = 128
+	MAX_PARSE_CACHE_LEN = 512
 	
 	def __init__(self):
 		self.intPattern = self.makePlaceholder(self.makeAppl('int'))
@@ -83,6 +83,7 @@ class Factory(object):
 			result = self.readFromTextFile(fp)
 			
 			if len(self.parseCache) > self.MAX_PARSE_CACHE_LEN:
+				# TODO: use a LRU cache policy
 				self.parseCache.clear()
 			self.parseCache[buf] = result
 			
