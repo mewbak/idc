@@ -31,8 +31,10 @@ class Factory(object):
 		self.applPattern = self.makePlaceholder(self.makeAppl('appl'))
 		self.funPattern = self.makePlaceholder(self.makeAppl('fun'))
 		self.listPattern = self.makePlaceholder(self.makeAppl('list'))				
-		self.termPattern = self.makePlaceholder(self.makeAppl('term'))				
-		self.placeholderPattern = self.makePlaceholder(self.makeAppl('placeholder'))				
+		self.termPattern = self.makePlaceholder(self.makeAppl('term'))			
+		self.placeholderPattern = self.makePlaceholder(self.makeAppl('placeholder'))
+		
+		self.parseCache = {}
 
 	def makeInt(self, value, annotations = None):
 		'''Creates a new IntATerm object'''
@@ -71,8 +73,14 @@ class Factory(object):
 	
 	def parse(self, buf):
 		'''Creates a new ATerm by parsing a string.'''
-		fp = StringIO(buf)
-		return self.readFromTextFile(fp)
+
+		try:
+			return self.parseCache[buf]
+		except KeyError:
+			fp = StringIO(buf)
+			result = self.readFromTextFile(fp)
+			self.parseCache[buf] = result
+			return result
 
 	def make(self, pattern, *args):
 		'''Creates a new ATerm from a string pattern and a list of arguments. 
