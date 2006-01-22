@@ -185,6 +185,7 @@ class TestCase(unittest.TestCase):
 		('"ab"', '<int>', False, []),
 		('"ab"', '<real>', False, []),
 		('"ab"', '<appl>', False, []),
+		('"ab"', '<fun>', False, []),
 		('"ab"', '<list>', False, []),
 		('"ab"', '<placeholder>', False, []),
 		
@@ -220,6 +221,7 @@ class TestCase(unittest.TestCase):
 		('a(1,2)', 'a(<int>,<int>)', True, [1, 2]),
 		('a(1,2,3)', 'a(<int>,<list>)', True, [1, '![2,3]']),
 		('a(1,2,3)', '<fun(<int>,<list>)>', True, ['a', 1, '![2,3]']),
+		('a(1,2,3)', '<fun>', False, ['a']),
 
 		# placeholders
 		('<a>', '<placeholder>', True, ['!<a>']),
@@ -228,6 +230,7 @@ class TestCase(unittest.TestCase):
 		('<a>', '<real>', False, []),
 		('<a>', '<str>', False, []),
 		('<a>', '<appl>', False, []),
+		('<a>', '<fun>', False, []),
 		('<a>', '<list>', False, []),
 
 	]
