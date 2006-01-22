@@ -236,7 +236,7 @@ class IntATerm(LiteralATerm):
 		return self.factory.makeInt(self.value, annotations)
 
 	def accept(self, visitor):
-		visitor.visitInt(self)
+		return visitor.visitInt(self)
 
 
 class RealATerm(LiteralATerm):
@@ -251,7 +251,7 @@ class RealATerm(LiteralATerm):
 		return self.factory.makeReal(self.value, annotations)
 
 	def accept(self, visitor):
-		visitor.visitReal(self)
+		return visitor.visitReal(self)
 
 
 class StrATerm(LiteralATerm):
@@ -266,7 +266,7 @@ class StrATerm(LiteralATerm):
 		return self.factory.makeStr(self.value, annotations)
 
 	def accept(self, visitor):
-		visitor.visitStr(self)
+		return visitor.visitStr(self)
 
 	
 class ApplATerm(ATerm):
@@ -322,7 +322,7 @@ class ApplATerm(ATerm):
 		return self.factory.makeAppl(self.name, self.args, annotations)
 
 	def accept(self, visitor):
-		visitor.visitAppl(self)
+		return visitor.visitAppl(self)
 
 
 class ListATerm(ATerm):
@@ -349,7 +349,7 @@ class ListATerm(ATerm):
 		return self.factory.makeList(element, self)
 	
 	def accept(self, visitor):
-		visitor.visitList(self)
+		return visitor.visitList(self)
 
 
 class EmptyListATerm(ListATerm):
@@ -515,7 +515,7 @@ class PlaceholderATerm(ATerm):
 		return self.factory.makePlaceholder(self.placeholder, annotations)
 
 	def accept(self, visitor):
-		visitor.visitPlaceholder(self)
+		return visitor.visitPlaceholder(self)
 
 
 class BlobATerm(ATerm):
@@ -529,28 +529,28 @@ class Visitor(object):
 	
 	def visit(self, term):
 		assert isinstance(term, ATerm)
-		term.accept(self)
+		return term.accept(self)
 
 	def visitATerm(self, term):
 		pass
 
 	def visitInt(self, term):
-		self.visitATerm(self, term)
+		return self.visitATerm(self, term)
 
 	def visitReal(self, term):
-		self.visitATerm(self, term)
+		return self.visitATerm(self, term)
 
 	def visitStr(self, term):
-		self.visitATerm(self, term)
+		return self.visitATerm(self, term)
 
 	def visitAppl(self, term):
-		self.visitATerm(self, term)
+		return self.visitATerm(self, term)
 
 	def visitList(self, term):
-		self.visitATerm(self, term)
+		return self.visitATerm(self, term)
 
 	def visitBlob(self, term):
-		self.visitATerm(self, term)
+		return self.visitATerm(self, term)
 
 
 class TextWriter(Visitor):
