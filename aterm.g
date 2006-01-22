@@ -67,8 +67,8 @@ LSQUARE	: '[';
 RSQUARE	: ']';
 LANGLE	: '<';
 RANGLE	: '>';
-LBRACKET	: '{';
-RBRACKET	: '}';
+LCURLY	: '{';
+RCURLY	: '}';
 
 class atermParser extends Parser;
 options {
@@ -107,7 +107,7 @@ term returns [res]
 	;
 
 annotation returns [res]
-	: RBRACKET a=aterms LBRACKET { res = a }
+	: RCURLY a=aterms LCURLY { res = a }
 	;
 
 aterms returns [res]
