@@ -373,7 +373,7 @@ class EmptyListATerm(ListATerm):
 		return other is self or (other.type == LIST and other.isEmpty())
 
 	def isEqual(self, other):
-		return self.isEquivalent(other) and self.annotations.isEquivalent(other)
+		return self.isEquivalent(other) and self.annotations.isEquivalent(other.annotations)
 
 	def _match(self, pattern, matches):
 		if self is pattern:

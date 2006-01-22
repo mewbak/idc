@@ -151,13 +151,14 @@ class TestCase(unittest.TestCase):
 							assert isinstance(term2, aterm.ATerm)
 							
 							result = term1.isEquivalent(aterm2)
-							#self.failUnlessEqual(result, True, msg = '%s <=> %s{...} = %r (!= %r)' % (term1Str, term2Str, result, True))						
+							self.failUnlessEqual(result, True, msg = '%s <=> %s{...} = %r (!= %r)' % (term1Str, term2Str, result, True))						
 	
 							result = term1.isEqual(aterm2)
-							#self.failUnlessEqual(result, False, msg = '%s == %s{...} = %r (!= %r)' % (term1Str, term2Str, result, False))						
+							self.failUnlessEqual(result, False, msg = '%s == %s{...} = %r (!= %r)' % (term1Str, term2Str, result, False))						
 	
-							result = term1.match(aterm2)
-							#self.failUnlessEqual(result, True, msg = '%s ~ %s{...} = %r (!= %r)' % (term1Str, term2Str, result, True))
+							if term1.getType() != aterm.PLACEHOLDER and term2.getType() != aterm.PLACEHOLDER:
+								result = term1.match(aterm2)
+								self.failUnlessEqual(result, True, msg = '%s ~ %s{...} = %r (!= %r)' % (term1Str, term2Str, result, True))
 
 	matchTestCases = [
 		# ints
