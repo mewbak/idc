@@ -17,7 +17,7 @@ STR = 3
 LIST = 4
 CONS = 5
 VAR = 6
-SYM = 7
+APPL = 7
 WILDCARD = 8
 
 
@@ -42,17 +42,17 @@ class Factory(object):
 		'''Creates a new StrTerm object'''
 		return StrTerm(self, value, annotations)
 
-	def makeSym(self, name, annotations = None):
-		'''Creates a new VarTerm object'''
-		return SymTerm(self, name)
+	def makeCons(self, name, annotations = None):
+		'''Creates a new ConsTerm object'''
+		return ConsTerm(self, name, annotations)
 
 	def makeVar(self, name, annotations = None):
 		'''Creates a new VarTerm object'''
-		return VarTerm(self, name)
+		return VarTerm(self, name, annotations)
 
 	def makeWildcard(self, annotations = None):
-		'''Creates a new VarTerm object'''
-		return WildcardTerm(self)
+		'''Creates a new WildcardTerm object'''
+		return WildcardTerm(self, annotations)
 
 	def makeEmptyList(self, annotations = None):
 		'''Creates an empty ListTerm object'''
@@ -62,9 +62,9 @@ class Factory(object):
 		'''Creates a new ListTerm object'''
 		return ExtendedListTerm(self, head, tail, annotations)
 
-	def makeCons(self, name, args = None, annotations = None):
-		'''Creates a new ConsTerm object'''
-		return ConsTerm(self, name, args, annotations)
+	def makeAppl(self, name, args = None, annotations = None):
+		'''Creates a new ApplTerm object'''
+		return ApplTerm(self, name, args, annotations)
 
 	def readFromTextFile(self, fp):
 		'''Creates a new Term by parsing from a text stream.'''
@@ -135,6 +135,8 @@ class Term(object):
 	def _match(self, pattern, matches):
 		return False
 
+	# FIxME: annotations are not fully impletemented
+	
 	def getAnnotation(self, label):
 		'''Gets an annotation associated with label'''
 		raise NotImplementedError
@@ -265,54 +267,50 @@ class AtomTerm(Term):
 
 	def __str__(self):
 		return self.getName()
-	
 
-class SymTerm(AtomTerm):
+
+class SymbolTerm(AtomTerm):
 	
-	def __init__(self, factory, name):
-		AtomTerm.__init__(self, factory)
+	def __init__(self, factory, name, annotations = None):
+		AtomTerm.__init__(self, factory, annotations)
 		self.name = name
-	
-	def getType(self):
-		return SYM
 	
 	def getName(self):
 		return self.name
 	
+	def isEquivalent(self, other):
+		return self.getType() == other.getType() and self.name == other.name
+
+	def isEqual(self, other):
+		return self.getType() == other.getType() and self.name == other.name
+
+
+class ConsTerm(SymbolTerm):
+
+	def getType(self):
+		return CONS
+
 	def isConstant(self):
 		return True
 	
-	def isEquivalent(self, other):
-		return isinstance(other, SymTerm) and self.name == other.name
-
-	def isEqual(self, other):
-		return isinstance(other, SymTerm) and self.name == other.name
-
 	def _match(self, other, matches):
 		return self.isEquivalent(other)
 
+	def _make(self, args):
+		return self
 
-class VarTerm(AtomTerm):
-	
-	def __init__(self, factory, name):
-		AtomTerm.__init__(self, factory)
-		self.name = name
+	def accept(self, visitor):
+		return visitor.visitCons(self)
+
+
+class VarTerm(SymbolTerm):
 	
 	def getType(self):
 		return VAR
 	
-	def getName(self):
-		return self.name
-	
 	def isConstant(self):
 		return False
 	
-	def isEquivalent(self, other):
-		return isinstance(other, VarTerm) and self.name == other.name
-
-	def isEqual(self, other):
-		return isinstance(other, VarTerm) and self.name == other.name
-
 	def _match(self, other, matches):
 		matches.append(other)
 		return True
@@ -320,13 +318,20 @@ class VarTerm(AtomTerm):
 	def _make(self, args):
 		return args.pop(0)
 
+	def accept(self, visitor):
+		return visitor.visitVar(self)
+
+
 class WildcardTerm(AtomTerm):
 
-	def __init__(self, factory):
-		AtomTerm.__init__(self, factory)
+	def __init__(self, factory, annotations = None):
+		AtomTerm.__init__(self, factory, annotations)
 	
 	def getType(self):
 		return WILDCARD
+	
+	def getName(self):
+		return '_'
 	
 	def isConstant(self):
 		return False
@@ -339,7 +344,13 @@ class WildcardTerm(AtomTerm):
 	
 	def _match(self, other, matches):
 		return True
-	
+
+	def _make(self, args):
+		return args.pop(0)
+
+	def accept(self, visitor):
+		return visitor.visitWildcard(self)
+
 
 class ListTerm(Term):
 
@@ -361,6 +372,14 @@ class ListTerm(Term):
 	def getTail(self):
 		return NotImplementedError
 
+	def __getitem__(self, index):
+		if self.isEmpty():
+			raise IndexError
+		elif index == 0:
+			return self.getHead()
+		else:
+			return self.getTail()[index - 1]
+	
 	def insert(self, element):
 		return self.factory.makeExtendedList(element, self)
 	
@@ -432,7 +451,7 @@ class ExtendedListTerm(ListTerm):
 		return self.tail
 
 	def isConstant(self):
-		return self.head.isConstant and self.tail.isConstant
+		return self.head.isConstant() and self.tail.isConstant()
 	
 	def isEquivalent(self, other):
 		return other is self or (other.type == LIST and not other.isEmpty() and other.head.isEquivalent(self.head) and other.tail.isEquivalent(self.tail))
@@ -458,7 +477,7 @@ class ExtendedListTerm(ListTerm):
 		return self.factory.makeExtendedList(self.head, self.tail, annotations)
 
 
-class ConsTerm(Term):
+class ApplTerm(Term):
 
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
@@ -470,7 +489,7 @@ class ConsTerm(Term):
 			self.args = args
 	
 	def getType(self):
-		return CONS
+		return APPL
 
 	def getName(self):
 		return self.name
@@ -482,31 +501,31 @@ class ConsTerm(Term):
 		return self.args
 	
 	def isConstant(self):
-		return self.name.isConstant and self.args.isConstant()
+		return self.name.isConstant() and self.args.isConstant()
 	
 	def isEquivalent(self, other):
-		return other is self or (other.type == CONS and other.name == self.name and other.args.isEquivalent(self.args))
+		return other is self or (other.type == APPL and other.name == self.name and other.args.isEquivalent(self.args))
 
 	def isEqual(self, other):
-		return other is self or (other.type == CONS and other.name == self.name and other.args.isEqual(self.args) and other.annotations.isEquivalent(self.annotations))
+		return other is self or (other.type == APPL and other.name == self.name and other.args.isEqual(self.args) and other.annotations.isEquivalent(self.annotations))
 		
 	def _match(self, pattern, matches):
 		if pattern is self:
 			return True
 		
-		if pattern.type == CONS:
+		if pattern.type == APPL:
 			return self.name._match(pattern.name, matches) and self.args._match(pattern.args, matches)
 		
-		return super(ConsTerm, self)._match(pattern, matches)
+		return super(ApplTerm, self)._match(pattern, matches)
 	
 	def _make(self, args):
-		return self.factory.makeCons(self.name._make(args), self.args._make(args), self.annotations)
+		return self.factory.makeAppl(self.name._make(args), self.args._make(args), self.annotations)
 	
 	def setAnnotations(self, annotations):
-		return self.factory.makeCons(self.name, self.args, annotations)
+		return self.factory.makeAppl(self.name, self.args, annotations)
 
 	def accept(self, visitor):
-		return visitor.visitCons(self)
+		return visitor.visitAppl(self)
 
 
 class Visitor(object):
@@ -518,22 +537,37 @@ class Visitor(object):
 	def visitTerm(self, term):
 		pass
 
-	def visitInt(self, term):
+	def visitLiteral(self,term):
 		return self.visitTerm(self, term)
+		
+	def visitInt(self, term):
+		return self.visitLiteral(self, term)
 
 	def visitReal(self, term):
-		return self.visitTerm(self, term)
+		return self.visitLiteral(self, term)
 
 	def visitStr(self, term):
+		return self.visitLiteral(self, term)
+
+	def visitAtom(self,term):
 		return self.visitTerm(self, term)
+		
+	def visitSymbol(self, term):
+		return self.visitAtom(self, term)
 
 	def visitCons(self, term):
-		return self.visitTerm(self, term)
+		return self.visitSymbol(term)
+	
+	def visitVar(self, term):
+		return self.visitSymbol(term)
+	
+	def visitWildcard(self, term):
+		return self.visitAtom(self, term)
 
 	def visitList(self, term):
 		return self.visitTerm(self, term)
 
-	def visitBlob(self, term):
+	def visitAppl(self, term):
 		return self.visitTerm(self, term)
 
 
@@ -543,13 +577,17 @@ class TextWriter(Visitor):
 		self.fp = fp
 	
 	def writeTerms(self, terms):
-		if not terms.isEmpty():
+		if terms.getType() == LIST and not terms.isEmpty():
 			self.visit(terms.head)
 			terms = terms.tail
-			while not terms.isEmpty():
+			while terms.getType() == LIST and not terms.isEmpty():
 				self.fp.write(',')
 				self.visit(terms.head)
 				terms = terms.tail
+		if terms.getType() != LIST:
+			self.fp.write(',*')
+			if terms.getType() != WILDCARD:
+				self.visit(terms)
 
 	def writeAnnotations(self, term):
 		annotations = term.getAnnotations()
@@ -558,32 +596,40 @@ class TextWriter(Visitor):
 			self.writeTerms(annotations)
 			self.fp.write('}')
 
-	def visitInt(self, iterm):
-		self.fp.write(str(iterm.getValue()))
-		self.writeAnnotations(iterm)
-	
-	def visitReal(self, rterm):
-		self.fp.write('%.2g' % rterm.getValue())
-		self.writeAnnotations(rterm)
-	
-	def visitStr(self, sterm):
-		self.fp.write('"%r"' % sterm.getValue())
-		self.writeAnnotations(sterm)
-	
-	def visitCons(self, term):
-		self.fp.write(str(term.getName()))
-		if term.getArity():
-			self.fp.write('(')
-			self.writeTerms(term.getArgs())
-			self.fp.write(')')
+	def visitInt(self, term):
+		self.fp.write(str(term.getValue()))
 		self.writeAnnotations(term)
 	
-	def visitList(self, lterm):
+	def visitReal(self, term):
+		self.fp.write('%.2g' % term.getValue())
+		self.writeAnnotations(term)
+	
+	def visitStr(self, term):
+		s = str(term.getValue())
+		s = s.replace('\"', '\\"')
+		s = s.replace('\t', '\\t')
+		s = s.replace('\r', '\\r')
+		s = s.replace('\n', '\\n')
+		self.fp.write('"' + s + '"')
+		self.writeAnnotations(term)
+	
+	def visitSymbol(self, term):
+		self.fp.write(str(term.getName()))
+		self.writeAnnotations(term)
+		
+	def visitWildcard(self, term):
+		self.fp.write('_')
+	
+	def visitList(self, term):
 		self.fp.write('[')
-		self.writeTerms(lterm)			
+		self.writeTerms(term)			
 		self.fp.write(']')
+		self.writeAnnotations(term)
 
-	def visitVar(self, pterm):
-		self.fp.write('<')
-		self.visit(pterm.getVar())
-		self.fp.write('>')
+	def visitAppl(self, term):
+		self.visit(term.getName())
+		self.fp.write('(')
+		self.writeTerms(term.getArgs())
+		self.fp.write(')')
+		self.writeAnnotations(term)
+	

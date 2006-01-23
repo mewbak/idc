@@ -89,7 +89,7 @@ term returns [res]
 		{ res = elms }
 	| 
 		( cname:CONS
-			{ res = self.factory.makeSym(cname.getText()) }	
+			{ res = self.factory.makeCons(cname.getText()) }	
 		| vname:VAR 
 			{ res = self.factory.makeVar(vname.getText()) }
 		| WILDCARD 
@@ -97,7 +97,7 @@ term returns [res]
 		)	
 		(
 		| LPAREN args=terms RPAREN
-			{ res = self.factory.makeCons(res, args) }
+			{ res = self.factory.makeAppl(res, args) }
 		)
 	;
 
