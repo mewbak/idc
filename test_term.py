@@ -11,10 +11,11 @@ class TestCase(unittest.TestCase):
 	def setUp(self):
 		self.factory = term.Factory()
 
-	def parseList(self, args):
-		vars = args.keys()
-		vars.sort()
-		return [self.factory.parse(args[var]) for var in vars]
+	def parseVars(self, vars):
+		res = {}
+		for name, value in vars.iteritems():
+			res[name] = self.factory.parse(value)
+		return res
 	
 	intTestCases = [
 		'0',
@@ -189,6 +190,7 @@ class TestCase(unittest.TestCase):
 		('[1,2]', 'a', True, {'a':'[1,2]'}),
 		('[1,0.2,"c"]', '[a,b,c]', True, {'a':'1', 'b':'0.2', 'c':'"c"'}),
 		('[1,2,3]', '[a,*b]', True, {'a':'1', 'b':'[2,3]'}),
+		('[1,2,1,2]', '[a,b,a,b]', True, {'a':'1', 'b':'2'}),
 
 		# appls
 		('C()', 'a', True, {'a':'C()'}),
@@ -203,17 +205,17 @@ class TestCase(unittest.TestCase):
 	]
 	
 	def testMatch(self):
-		for termStr, patternStr, expectedResult, expectedMatchesStr in self.matchTestCases:
+		for termStr, patternStr, expectedResult, expectedVarsStr in self.matchTestCases:
 			
 			term = self.factory.parse(termStr)
 			pattern = self.factory.parse(patternStr)
-			expectedMatches = self.parseList(expectedMatchesStr)
+			expectedVars = self.parseVars(expectedVarsStr)
 			
-			matches = []
-			result = pattern.match(term, matches)
+			vars = {}
+			result = pattern.match(term, vars)
 			
 			self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, result, expectedResult))
-			self.failUnlessEqual(matches, expectedMatches, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, matches, expectedMatches))
+			self.failUnlessEqual(vars, expectedVars, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, vars, expectedVars))
 
 	makeTestCases = [
 		('1', {}, '1'),
@@ -235,10 +237,10 @@ class TestCase(unittest.TestCase):
 	]
 
 	def testMake(self):
-		for patternStr, argsStr, expectedResultStr in self.makeTestCases:
-			args = self.parseList(argsStr)
+		for patternStr, varsStr, expectedResultStr in self.makeTestCases:
+			vars = self.parseVars(varsStr)
 			expectedResult = self.factory.parse(expectedResultStr)
-			result = self.factory.make(patternStr, *args)
+			result = self.factory.make(patternStr, vars)
 			self.failUnlessEqual(result, expectedResult)
 
 

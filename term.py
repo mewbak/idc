@@ -90,12 +90,12 @@ class Factory(object):
 			
 			return result
 
-	def make(self, pattern, *args):
+	def make(self, pattern, vars):
 		'''Creates a new term from a string pattern and a list of arguments. 
 		First the string pattern is parsed into an Term. Then the holes in 
 		the pattern are filled with arguments taken from the supplied list of 
 		arguments.'''
-		return self.parse(pattern).make(*args)
+		return self.parse(pattern).make(vars)
 
 
 class Term(object):
@@ -122,18 +122,18 @@ class Term(object):
 		'''Checks for structural equivalence of this term agains another term.'''
 		raise NotImplementedError
 		
-	def match(self, other, matches = None):
+	def match(self, other, vars = None):
 		'''Matches this term agains a string or term pattern.'''
 		
 		if isinstance(other, basestring):
 			pattern = self.factory.parse(other)
 		
-		if matches is None:
-			matches = []
+		if vars is None:
+			vars = {}
 		
-		return self._match(other, matches)
+		return self._match(other, vars)
 	
-	def _match(self, other, matches):
+	def _match(self, other, vars):
 		return False
 
 	# FIxME: annotations are not fully impletemented
@@ -170,11 +170,11 @@ class Term(object):
 		'''Shorthand for the isEqual method.'''
 		return self.isEqual(other)
 
-	def make(self, *args):
+	def make(self, vars):
 		'''Create a new term based on this term and a list of arguments.'''
-		return self._make(list(args))
+		return self._make(vars)
 
-	def _make(self, args):
+	def _make(self, vars):
 		return self
 
 	def accept(self, visitor):
@@ -215,11 +215,11 @@ class Literal(Term):
 	def isEqual(self, other):
 		return other is self or (other.type == self.type and other.value == self.value) and self.annotations.isEquivalent(other.annotations)
 
-	def _match(self, other, matches):
+	def _match(self, other, vars):
 		if other.isEquivalent(self):
 			return True
 		
-		return Term._match(self, other, matches)
+		return Term._match(self, other, vars)
 
 	def getPattern(self):
 		raise NotImplementedError
@@ -294,10 +294,10 @@ class Constructor(Symbol):
 	def isConstant(self):
 		return True
 	
-	def _match(self, other, matches):
+	def _match(self, other, vars):
 		return self.isEquivalent(other)
 
-	def _make(self, args):
+	def _make(self, vars):
 		return self
 
 	def accept(self, visitor):
@@ -312,12 +312,20 @@ class Variable(Symbol):
 	def isConstant(self):
 		return False
 	
-	def _match(self, other, matches):
-		matches.append(other)
-		return True
+	def _match(self, other, vars):
+		name = self.getName()
+		if name in vars:
+			return vars[name].isEquivalent(other)
+		else:
+			vars[name] = other
+			return True
 
-	def _make(self, args):
-		return args.pop(0)
+	def _make(self, vars):
+		name = self.getName()
+		if name in vars:
+			return vars[name]
+		else:
+			raise ValueError, 'undefined term variable %s' % name
 
 	def accept(self, visitor):
 		return visitor.visitVar(self)
@@ -340,11 +348,11 @@ class Wildcard(Atom):
 	def isEqual(self, other):
 		return other.type == WILDCARD and self.annotations.isEquivalent(other.annotations)
 	
-	def _match(self, other, matches):
+	def _match(self, other, vars):
 		return True
 
-	def _make(self, args):
-		return args.pop(0)
+	def _make(self, vars):
+		raise ValueError, 'Cannot make a term from a wildcard.'
 
 	def accept(self, visitor):
 		return visitor.visitWildcard(self)
@@ -411,7 +419,7 @@ class _NilList(List):
 	def isEqual(self, other):
 		return self.isEquivalent(other) and self.annotations.isEquivalent(other)
 
-	def _match(self, other, matches):
+	def _match(self, other, vars):
 		if self is other:
 			return True
 		
@@ -419,7 +427,7 @@ class _NilList(List):
 			if other.isEmpty():
 				return True
 		
-		return List._match(self, other, matches)
+		return List._match(self, other, vars)
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeNil(annotations)
@@ -457,19 +465,19 @@ class _ConsList(List):
 	def isEqual(self, other):
 		return other is self or (other.type == LIST and not other.isEmpty() and other.head.isEqual(self.head) and other.tail.isEqual(self.tail)) and self.annotations.isEquivalent(other.annotations)
 	
-	def _match(self, other, matches):
+	def _match(self, other, vars):
 		if self is other:
 			return True
 		
 		if other.type == LIST:
 			if not other.isEmpty():
-				if self.head._match(other.head, matches):
-					return self.tail._match(other.tail, matches)
+				if self.head._match(other.head, vars):
+					return self.tail._match(other.tail, vars)
 		
-		return List._match(self, other, matches)
+		return List._match(self, other, vars)
 
-	def _make(self, args):
-		return self.factory.makeList(self.head._make(args), self.tail._make(args), self.annotations)
+	def _make(self, vars):
+		return self.factory.makeList(self.head._make(vars), self.tail._make(vars), self.annotations)
 	
 	def setAnnotations(self, annotations):
 		return self.factory.makeList(self.head, self.tail, annotations)
@@ -507,17 +515,17 @@ class Application(Term):
 	def isEqual(self, other):
 		return other is self or (other.type == APPL and other.name == self.name and other.args.isEqual(self.args) and other.annotations.isEquivalent(self.annotations))
 		
-	def _match(self, other, matches):
+	def _match(self, other, vars):
 		if other is self:
 			return True
 		
 		if other.type == APPL:
-			return self.name._match(other.name, matches) and self.args._match(other.args, matches)
+			return self.name._match(other.name, vars) and self.args._match(other.args, vars)
 		
-		return Term._match(self, other, matches)
+		return Term._match(self, other, vars)
 	
-	def _make(self, args):
-		return self.factory.makeAppl(self.name._make(args), self.args._make(args), self.annotations)
+	def _make(self, vars):
+		return self.factory.makeAppl(self.name._make(vars), self.args._make(vars), self.annotations)
 	
 	def setAnnotations(self, annotations):
 		return self.factory.makeAppl(self.name, self.args, annotations)
