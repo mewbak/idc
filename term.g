@@ -24,20 +24,24 @@ class termLexer extends Lexer;
 options {
 }
 
+tokens {
+	INT;
+	REAL;
+}
+
 // Whitespace -- ignored
 WS	: (' '|'\t'|'\f')+ { $setType(SKIP); }
 	| ( '\r' ('\n')? | '\n') { $newline; $setType(SKIP); }
 	;
 
-protected
-INT	: ('-')? ('0'..'9')+;
-
-protected
-REAL	: INT '.' ('0'..'9')+ ( ('e'|'E') INT )?;
-
-REAL_OR_INT
-	: ( INT '.' ) => REAL { $setType(REAL); }
-	| INT                 { $setType(INT); }
+REAL_OR_INT	
+	: { $setType(INT); }
+		('-')? // sign
+		(
+			('0'..'9')+ ( '.' ('0'..'9')* { $setType(REAL); } )?
+			| '.' ('0'..'9')+ { $setType(REAL); }
+		) // fraction
+		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )? // exponent
 	;
 
 STR	: '"'! (STRCHAR)* '"'!;

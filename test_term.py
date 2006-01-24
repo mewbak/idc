@@ -34,12 +34,16 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(str(_term), termStr)
 
 	realTestCases = [
-		'12.345',
-		'0.0', 
-		'-2.1', 
+		'0.0',
+		'1.2',
+		'1.', 
+		'.1', 
+		'-1.2', 
 		'0.1E10',
 		'0.1E-10',
-		'1.2',
+		'0.1E+10',
+		'1E10',
+		'12345.67890',
 	]
 	
 	def testReal(self):

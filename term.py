@@ -607,7 +607,7 @@ class TextWriter(Visitor):
 		self.writeAnnotations(term)
 	
 	def visitReal(self, term):
-		self.fp.write('%.2g' % term.getValue())
+		self.fp.write('%g' % term.getValue())
 		self.writeAnnotations(term)
 	
 	def visitStr(self, term):
