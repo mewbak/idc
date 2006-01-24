@@ -103,12 +103,12 @@ term returns [res]
 
 terms returns [res]
 	:
-		{ res = self.factory.makeEmptyList() }
+		{ res = self.factory.makeNil() }
 	| head=term
 		(
-			{ res = self.factory.makeExtendedList(head) }
+			{ res = self.factory.makeList(head) }
 		| COMMA tail=terms
-			{ res = self.factory.makeExtendedList(head, tail) }
+			{ res = self.factory.makeList(head, tail) }
 		)
 	| STAR
 		(

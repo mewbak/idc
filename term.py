@@ -1,4 +1,5 @@
-'''Python version of the Term library. Loosely based on the Java version.'''
+'''Module for term representation and manipulatino. Loosely inspired on the Java
+version of the ATerm library.'''
 
 
 try:
@@ -31,50 +32,50 @@ class Factory(object):
 		self.parseCache = {}
 
 	def makeInt(self, value, annotations = None):
-		'''Creates a new IntTerm object'''
-		return IntTerm(self, value, annotations)
+		'''Creates a new integer literal term'''
+		return Integer(self, value, annotations)
 	
 	def makeReal(self, value, annotations = None):
-		'''Creates a new RealTerm object'''
-		return RealTerm(self, value, annotations)
+		'''Creates a new real literal term'''
+		return Real(self, value, annotations)
 
 	def makeStr(self, value, annotations = None):
-		'''Creates a new StrTerm object'''
-		return StrTerm(self, value, annotations)
+		'''Creates a new string literal term'''
+		return String(self, value, annotations)
 
 	def makeCons(self, name, annotations = None):
-		'''Creates a new ConsTerm object'''
-		return ConsTerm(self, name, annotations)
+		'''Creates a new constructor term'''
+		return Constructor(self, name, annotations)
 
 	def makeVar(self, name, annotations = None):
-		'''Creates a new VarTerm object'''
-		return VarTerm(self, name, annotations)
+		'''Creates a new variable term'''
+		return Variable(self, name, annotations)
 
 	def makeWildcard(self, annotations = None):
-		'''Creates a new WildcardTerm object'''
-		return WildcardTerm(self, annotations)
+		'''Creates a new wildcard term'''
+		return Wildcard(self, annotations)
 
-	def makeEmptyList(self, annotations = None):
-		'''Creates an empty ListTerm object'''
-		return EmptyListTerm(self, annotations)
+	def makeNil(self, annotations = None):
+		'''Creates a new empty list term'''
+		return _NilList(self, annotations)
 
-	def makeExtendedList(self, head, tail = None, annotations = None):
-		'''Creates a new ListTerm object'''
-		return ExtendedListTerm(self, head, tail, annotations)
+	def makeList(self, head, tail = None, annotations = None):
+		'''Creates a new extended list term'''
+		return _ConsList(self, head, tail, annotations)
 
 	def makeAppl(self, name, args = None, annotations = None):
-		'''Creates a new ApplTerm object'''
-		return ApplTerm(self, name, args, annotations)
+		'''Creates a new appplication term'''
+		return Application(self, name, args, annotations)
 
 	def readFromTextFile(self, fp):
-		'''Creates a new Term by parsing from a text stream.'''
+		'''Creates a new term by parsing from a text stream.'''
 		lexer = Lexer(fp)
 		parser = Parser(lexer, factory = self)
 		# TODO: catch exceptions
 		return parser.term()
 	
 	def parse(self, buf):
-		'''Creates a new Term by parsing a string.'''
+		'''Creates a new term by parsing a string.'''
 
 		try:
 			return self.parseCache[buf]
@@ -90,7 +91,7 @@ class Factory(object):
 			return result
 
 	def make(self, pattern, *args):
-		'''Creates a new Term from a string pattern and a list of arguments. 
+		'''Creates a new term from a string pattern and a list of arguments. 
 		First the string pattern is parsed into an Term. Then the holes in 
 		the pattern are filled with arguments taken from the supplied list of 
 		arguments.'''
@@ -121,18 +122,18 @@ class Term(object):
 		'''Checks for structural equivalence of this term agains another term.'''
 		raise NotImplementedError
 		
-	def match(self, pattern, matches = None):
+	def match(self, other, matches = None):
 		'''Matches this term agains a string or term pattern.'''
 		
-		if isinstance(pattern, basestring):
-			pattern = self.factory.parse(pattern)
+		if isinstance(other, basestring):
+			pattern = self.factory.parse(other)
 		
 		if matches is None:
 			matches = []
 		
-		return self._match(pattern, matches)
+		return self._match(other, matches)
 	
-	def _match(self, pattern, matches):
+	def _match(self, other, matches):
 		return False
 
 	# FIxME: annotations are not fully impletemented
@@ -153,7 +154,7 @@ class Term(object):
 
 	def getAnnotations(self):
 		if self.__annotations is None:
-			return self.factory.makeEmptyList()
+			return self.factory.makeNil()
 		else:
 			return self.__annotations
 	
@@ -194,7 +195,7 @@ class Term(object):
 		return str(self)
 
 
-class LiteralTerm(Term):
+class Literal(Term):
 
 	def __init__(self, factory, value, annotations = None):
 		Term.__init__(self, factory, annotations)
@@ -214,17 +215,17 @@ class LiteralTerm(Term):
 	def isEqual(self, other):
 		return other is self or (other.type == self.type and other.value == self.value) and self.annotations.isEquivalent(other.annotations)
 
-	def _match(self, pattern, matches):
-		if pattern.isEquivalent(self):
+	def _match(self, other, matches):
+		if other.isEquivalent(self):
 			return True
 		
-		return super(LiteralTerm, self)._match(pattern, matches)
+		return Term._match(self, other, matches)
 
 	def getPattern(self):
 		raise NotImplementedError
 
 
-class IntTerm(LiteralTerm):
+class Integer(Literal):
 
 	def getType(self):
 		return INT
@@ -236,7 +237,7 @@ class IntTerm(LiteralTerm):
 		return visitor.visitInt(self)
 
 
-class RealTerm(LiteralTerm):
+class Real(Literal):
 
 	def getType(self):
 		return REAL
@@ -248,7 +249,7 @@ class RealTerm(LiteralTerm):
 		return visitor.visitReal(self)
 
 
-class StrTerm(LiteralTerm):
+class String(Literal):
 
 	def getType(self):
 		return STR
@@ -260,7 +261,7 @@ class StrTerm(LiteralTerm):
 		return visitor.visitStr(self)
 
 
-class AtomTerm(Term):
+class Atom(Term):
 	
 	def getName(self):
 		raise NotImplementedError
@@ -269,10 +270,10 @@ class AtomTerm(Term):
 		return self.getName()
 
 
-class SymbolTerm(AtomTerm):
+class Symbol(Atom):
 	
 	def __init__(self, factory, name, annotations = None):
-		AtomTerm.__init__(self, factory, annotations)
+		Atom.__init__(self, factory, annotations)
 		self.name = name
 	
 	def getName(self):
@@ -285,7 +286,7 @@ class SymbolTerm(AtomTerm):
 		return self.getType() == other.getType() and self.name == other.name
 
 
-class ConsTerm(SymbolTerm):
+class Constructor(Symbol):
 
 	def getType(self):
 		return CONS
@@ -303,7 +304,7 @@ class ConsTerm(SymbolTerm):
 		return visitor.visitCons(self)
 
 
-class VarTerm(SymbolTerm):
+class Variable(Symbol):
 	
 	def getType(self):
 		return VAR
@@ -322,11 +323,8 @@ class VarTerm(SymbolTerm):
 		return visitor.visitVar(self)
 
 
-class WildcardTerm(AtomTerm):
+class Wildcard(Atom):
 
-	def __init__(self, factory, annotations = None):
-		AtomTerm.__init__(self, factory, annotations)
-	
 	def getType(self):
 		return WILDCARD
 	
@@ -337,10 +335,10 @@ class WildcardTerm(AtomTerm):
 		return False
 	
 	def isEquivalent(self, other):
-		return isinstance(other, WildcardTerm)
+		return other.type == WILDCARD
 	
 	def isEqual(self, other):
-		return isinstance(other, WildcardTerm)
+		return other.type == WILDCARD and self.annotations.isEquivalent(other.annotations)
 	
 	def _match(self, other, matches):
 		return True
@@ -352,7 +350,7 @@ class WildcardTerm(AtomTerm):
 		return visitor.visitWildcard(self)
 
 
-class ListTerm(Term):
+class List(Term):
 
 	def getType(self):
 		return LIST
@@ -365,10 +363,10 @@ class ListTerm(Term):
 	
 	def __len__(self):
 		return self.getLength()
-	
+
 	def getHead(self):
 		return NotImplementedError
-		
+
 	def getTail(self):
 		return NotImplementedError
 
@@ -378,16 +376,16 @@ class ListTerm(Term):
 		elif index == 0:
 			return self.getHead()
 		else:
-			return self.getTail()[index - 1]
-	
+			return self.getTail().__getitem__(index - 1)
+
 	def insert(self, element):
-		return self.factory.makeExtendedList(element, self)
+		return self.factory.makeList(element, self)
 	
 	def accept(self, visitor):
 		return visitor.visitList(self)
 
 
-class EmptyListTerm(ListTerm):
+class _NilList(List):
 	
 	def __init__(self, factory, annotations = None):
 		Term.__init__(self, factory, annotations)
@@ -413,28 +411,28 @@ class EmptyListTerm(ListTerm):
 	def isEqual(self, other):
 		return self.isEquivalent(other) and self.annotations.isEquivalent(other)
 
-	def _match(self, pattern, matches):
-		if self is pattern:
+	def _match(self, other, matches):
+		if self is other:
 			return True
 		
-		if pattern.type == LIST:
-			if pattern.isEmpty():
+		if other.type == LIST:
+			if other.isEmpty():
 				return True
 		
-		return super(EmptyListTerm, self)._match(pattern, matches)
+		return List._match(self, other, matches)
 
 	def setAnnotations(self, annotations):
-		return self.factory.makeEmptyList(annotations)
+		return self.factory.makeNil(annotations)
 
 
-class ExtendedListTerm(ListTerm):
+class _ConsList(List):
 
 	def __init__(self, factory, head, tail = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 
 		self.head = head
 		if tail is None:
-			self.tail = self.factory.makeEmptyList()
+			self.tail = self.factory.makeNil()
 		else:
 			self.tail = tail
 	
@@ -459,32 +457,32 @@ class ExtendedListTerm(ListTerm):
 	def isEqual(self, other):
 		return other is self or (other.type == LIST and not other.isEmpty() and other.head.isEqual(self.head) and other.tail.isEqual(self.tail)) and self.annotations.isEquivalent(other.annotations)
 	
-	def _match(self, pattern, matches):
-		if self is pattern:
+	def _match(self, other, matches):
+		if self is other:
 			return True
 		
-		if pattern.type == LIST:
-			if not pattern.isEmpty():
-				if self.head._match(pattern.head, matches):
-					return self.tail._match(pattern.tail, matches)
+		if other.type == LIST:
+			if not other.isEmpty():
+				if self.head._match(other.head, matches):
+					return self.tail._match(other.tail, matches)
 		
-		return super(ExtendedListTerm, self)._match(pattern, matches)
+		return List._match(self, other, matches)
 
 	def _make(self, args):
-		return self.factory.makeExtendedList(self.head._make(args), self.tail._make(args), self.annotations)
+		return self.factory.makeList(self.head._make(args), self.tail._make(args), self.annotations)
 	
 	def setAnnotations(self, annotations):
-		return self.factory.makeExtendedList(self.head, self.tail, annotations)
+		return self.factory.makeList(self.head, self.tail, annotations)
 
 
-class ApplTerm(Term):
+class Application(Term):
 
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 
 		self.name = name
 		if args is None:
-			self.args = self.factory.makeEmptyList()
+			self.args = self.factory.makeNil()
 		else:
 			self.args = args
 	
@@ -509,14 +507,14 @@ class ApplTerm(Term):
 	def isEqual(self, other):
 		return other is self or (other.type == APPL and other.name == self.name and other.args.isEqual(self.args) and other.annotations.isEquivalent(self.annotations))
 		
-	def _match(self, pattern, matches):
-		if pattern is self:
+	def _match(self, other, matches):
+		if other is self:
 			return True
 		
-		if pattern.type == APPL:
-			return self.name._match(pattern.name, matches) and self.args._match(pattern.args, matches)
+		if other.type == APPL:
+			return self.name._match(other.name, matches) and self.args._match(other.args, matches)
 		
-		return super(ApplTerm, self)._match(pattern, matches)
+		return Term._match(self, other, matches)
 	
 	def _make(self, args):
 		return self.factory.makeAppl(self.name._make(args), self.args._make(args), self.annotations)
@@ -528,7 +526,7 @@ class ApplTerm(Term):
 		return visitor.visitAppl(self)
 
 
-class Visitor(object):
+class Visitor:
 	
 	def visit(self, term):
 		assert isinstance(term, Term)
@@ -537,29 +535,29 @@ class Visitor(object):
 	def visitTerm(self, term):
 		pass
 
-	def visitLiteral(self,term):
+	def visitLit(self,term):
 		return self.visitTerm(self, term)
 		
 	def visitInt(self, term):
-		return self.visitLiteral(self, term)
+		return self.visitLit(self, term)
 
 	def visitReal(self, term):
-		return self.visitLiteral(self, term)
+		return self.visitLit(self, term)
 
 	def visitStr(self, term):
-		return self.visitLiteral(self, term)
+		return self.visitLit(self, term)
 
 	def visitAtom(self,term):
 		return self.visitTerm(self, term)
 		
-	def visitSymbol(self, term):
+	def visitSym(self, term):
 		return self.visitAtom(self, term)
 
 	def visitCons(self, term):
-		return self.visitSymbol(term)
+		return self.visitSym(term)
 	
 	def visitVar(self, term):
-		return self.visitSymbol(term)
+		return self.visitSym(term)
 	
 	def visitWildcard(self, term):
 		return self.visitAtom(self, term)
@@ -613,7 +611,7 @@ class TextWriter(Visitor):
 		self.fp.write('"' + s + '"')
 		self.writeAnnotations(term)
 	
-	def visitSymbol(self, term):
+	def visitSym(self, term):
 		self.fp.write(str(term.getName()))
 		self.writeAnnotations(term)
 		
