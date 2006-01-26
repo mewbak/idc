@@ -1,9 +1,9 @@
 header {
 }
 
-header "termParser.__main__" {
-    from term import Factory
-    from termLexer import Lexer
+header "atermParser.__main__" {
+    from aterm import Factory
+    from atermLexer import Lexer
 
     factory = Factory()
     lexer = Lexer()
@@ -12,7 +12,7 @@ header "termParser.__main__" {
     print t
 }
 
-header "termParser.__init__" {
+header "atermParser.__init__" {
     self.factory = kwargs["factory"]
 }
 
@@ -20,7 +20,7 @@ options {
 	language  = "Python";
 }
 
-class termLexer extends Lexer;
+class atermLexer extends Lexer;
 options {
 }
 
@@ -71,15 +71,26 @@ LPAREN	: '(';
 RPAREN	: ')';
 LSQUARE	: '[';
 RSQUARE	: ']';
+LCURLY	: '{';
+RCURLY	: '}';
 
 STAR	: '*';
 
-class termParser extends Parser;
+class atermParser extends Parser;
 options {
 }
 
 start returns [res]
-	: t=term EOF { res = t }
+	: t=aterm EOF { res = t }
+	;
+
+aterm returns [res]
+	: term=term 
+		( 
+			{ res = term }
+		| LCURLY anno=aterms RCURLY
+			{ res = term.setAnnotation(anno) }
+ 		)
 	;
 
 term returns [res]
@@ -89,7 +100,7 @@ term returns [res]
 		{ res = self.factory.makeReal(float(rval.getText())) }
 	| sval:STR
 		{ res = self.factory.makeStr(sval.getText()) }
-	| LSQUARE elms=terms RSQUARE
+	| LSQUARE elms=aterms RSQUARE
 		{ res = elms }
 	| 
 		( cname:CONS
@@ -100,18 +111,18 @@ term returns [res]
 			{ res = self.factory.makeWildcard() }
 		)	
 		(
-		| LPAREN args=terms RPAREN
+		| LPAREN args=aterms RPAREN
 			{ res = self.factory.makeAppl(res, args) }
 		)
 	;
 
-terms returns [res]
+aterms returns [res]
 	:
 		{ res = self.factory.makeNil() }
 	| head=term
 		(
 			{ res = self.factory.makeList(head) }
-		| COMMA tail=terms
+		| COMMA tail=aterms
 			{ res = self.factory.makeList(head, tail) }
 		)
 	| STAR

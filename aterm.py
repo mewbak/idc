@@ -7,8 +7,8 @@ try:
 except ImportError:
 	from StringIO import StringIO
 
-from termLexer import Lexer
-from termParser import Parser	
+from atermLexer import Lexer
+from atermParser import Parser	
 
 
 # Term types
