@@ -67,7 +67,7 @@ class Factory(object):
 
 	def makeList(self, seq, annotations = None):
 		res = self.makeNilList()
-		for i in range(len(seq)-1,-1,-1):
+		for i in range(len(seq) - 1, -1, -1):
 			res = self.makeConsList(seq[i], res)
 		if annotations is not None:
 			res = res.setAnnotations(annotations)
@@ -100,11 +100,29 @@ class Factory(object):
 			
 			return result
 
-	def make(self, pattern, vars):
+	def make(self, pattern, **vars):
 		'''Creates a new term from a string pattern and a list of arguments. 
 		First the string pattern is parsed into an Term. Then the holes in 
 		the pattern are filled with arguments taken from the supplied list of 
 		arguments.'''
+		
+		for name, value in vars.iteritems():
+			if isinstance(value, Term):
+				continue
+			elif isinstance(value, Term):
+				value = self.makeInt(value)
+			elif isinstance(value, int):
+				value = self.makeInt(value)
+			elif isinstance(value, basestring):
+				value = self.makeStr(value)
+			elif isinstance(value, basestring):
+				value = self.makeStr(value)
+			elif isinstance(value, list):
+				value = self.makeList(value)
+			else:
+				raise TypeError, "variable '%s' is neither a term, a literal, or a list: %r" % (name, value)
+			vars[name] = value
+				
 		return self.parse(pattern).make(vars)
 
 
@@ -442,7 +460,6 @@ class _NilList(List):
 	def setAnnotations(self, annotations):
 		return self.factory.makeNilList(annotations)
 
-
 class _ConsList(List):
 
 	def __init__(self, factory, head, tail = None, annotations = None):
@@ -547,7 +564,8 @@ class Application(Term):
 class Visitor:
 	
 	def visit(self, term):
-		assert isinstance(term, Term)
+		if not isinstance(term, Term):
+			raise TypeError, 'not an Term instance: %r' % term
 		return term.accept(self)
 
 	def visitTerm(self, term):

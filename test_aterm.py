@@ -257,7 +257,7 @@ class TestCase(unittest.TestCase):
 		for patternStr, varsStr, expectedResultStr in self.makeTestCases:
 			vars = self.parseVars(varsStr)
 			expectedResult = self.factory.parse(expectedResultStr)
-			result = self.factory.make(patternStr, vars)
+			result = self.factory.make(patternStr, **vars)
 			self.failUnlessEqual(result, expectedResult)
 
 
