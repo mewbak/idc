@@ -2,14 +2,20 @@ header {
 }
 
 header "asmParser.__main__" {
-// parser test program
-	from asmLexer import Lexer
-	
-	lexer = Lexer()
-	parser = Parser(lexer)
-	parser.start()
-	t = parser.getAST()
-	print t
+    from asmLexer import Lexer
+    from aterm import Factory
+    
+    factory = Factory()
+    lexer = Lexer()
+    parser = Parser(lexer, factory = factory)
+    term = parser.start()
+    print str(term)
+    ast = parser.getAST()
+    print ast.toStringList()
+}
+
+header "asmParser.__init__" {
+    self.factory = kwargs["factory"]
 }
 
 options {
@@ -29,7 +35,7 @@ INSTRUCTION: ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'.'|'$'|'0'..'9')*;
 
 
 
-BINARY: '0' ('b'|'B') ('0'|'1')*;
+BINARY: '0' ('b'|'B')! ('0'|'1')*;
 HEXADECIMAL: '0' ('x'|'X') ('0'..'9'|'a'..'f'|'A'..'F')*;
 OCTAL: '0' ('0'..'9')*;
 DECIMAL: '1'..'9' ('0'..'9')*;
@@ -98,7 +104,7 @@ WS  :
         |   '\t'
         |   '\f'
         )
-        { _ttype = Token.SKIP; }
+        { $setType(SKIP); }
     ;
 
 EOL
@@ -107,14 +113,14 @@ EOL
         |   '\r'    // Macintosh
         |   '\n'    // Unix
         )
-        { self.newline(); }
+        { $newline; }
     ;
 
 // Single-line comments
 SL_COMMENT
 	:	"#"
 		(~('\n'|'\r'))* ('\n'|'\r'('\n')?)?
-		{$setType(Token.SKIP); newline();}
+		{ $newline; $setType(SKIP); }
 	;
 
 // multiple-line comments
@@ -137,45 +143,115 @@ options {
 	k = 3;
 }
 
-start: (statement)* EOF;
+start returns [res]
+		{ insns = [] }
+	:
+		( s=statement
+			{ insns.extend(s) } 
+		)* EOF
+		{ res = self.factory.make("Module(insns)", insns = insns) }
+	;
 
-statement: labels tail EOL;
+statement returns [res]
+	: lbls=labels isns=tail EOL
+		{
+            res = []
+            res.extend(lbls)
+            res.extend(isns)
+		}
+ 	;
 
-labels	: (symbol COLON) => (symbol COLON^ labels)
+labels returns [res]
+	: (symbol COLON) => (lbl=symbol COLON^ lbls=labels)
+		{
+            res = [self.factory.make("Label(lbl)", lbl=lbl)]
+            res.extend(lbls)
+        }
 	| /* no label */
+		{ res = [] }
 	;
 
-tail	: /* empty statement */
+tail returns [res]
+	: /* empty statement */
+		{ res = [] }
 	| DIRECTIVE^ (~EOL)*
-	| prefixed_instruction
+		{ res = [] }
+	| insn=prefixed_instruction
+		{ res = [insn] }
 	;
 
-prefixed_instruction
-	: (instruction) => instruction
-	| INSTRUCTION instruction
+prefixed_instruction returns [res]
+	: (instruction) => insn=instruction
+		{ res = insn }
+	| INSTRUCTION insn=instruction
+		{ res = insn }
 	;
-instruction: INSTRUCTION^ (operand (COMMA! operand)* )?;
+
+instruction returns [res]
+		{ operands = [] }
+	: opcode:INSTRUCTION^ (o=operand { operands.append(o) } (COMMA! o=operand  { operands.append(o) })* )?
+		{
+            res = self.factory.make("Assembly(opcode, operands)", opcode=opcode.getText().upper(), operands=operands)
+		}
+	;
  
-operand	: (memory) => memory
-	| constant
-	| immediate 
-	| register 
+operand returns [res]
+	: o=register
+		{ res = o }
+	| o=immediate
+		{ res = o }
+	| o=memory
+		{ res = o }
 	;
 
-immediate: DOLLAR^ constant;
-
-register: PERCENTAGE^ symbol;
-
-memory: (disp:constant)? LPAR! (base:register)? (COMMA! (index:register)? (COMMA! (scale:integer)? )? )? RPAR!;
-
-constant: symbol | integer;
-
-symbol: DIRECTIVE | INSTRUCTION;
-
-integer	: BINARY
-	| OCTAL 
-	| DECIMAL
-	| HEXADECIMAL
-	| MINUS^ integer
+immediate returns [ret]
+	: DOLLAR^ c=constant
+		{ ret = c }
 	;
 
+register returns [ret]
+	: PERCENTAGE^ reg=symbol
+		{ ret = self.factory.make("Register(reg)", reg=reg) }
+	;
+
+memory returns [ret]
+	: disp=constant 
+		(
+		{ ret = self.factory.make("Address()") }
+		| LPAR! (base=register)? (COMMA! (index=register)? (COMMA! (scale=integer)? )? )? RPAR!
+		{ ret = self.factory.make("Address()") }
+		)
+	| LPAR! (base=register)? (COMMA! (index=register)? (COMMA! (scale=integer)? )? )? RPAR!
+		{ ret = self.factory.make("Address()") }
+	;
+
+constant returns [ret] 
+	: sym=symbol
+		{ ret = self.factory.make("Symbol(sym)", sym=sym) }
+	| value=integer
+		{ ret = self.factory.make("Constant(value)", value=value) }
+	;
+
+symbol returns [name]
+	: 
+		( d:DIRECTIVE 
+			{ name = d.getText() }
+		| i:INSTRUCTION
+			{ name = i.getText() }
+		)
+	;
+
+integer returns [value]
+	:
+		( b:BINARY
+			{ value = int(b.getText()[2:], 2) }
+		| o:OCTAL 
+			{ value = int(o.getText(), 8) }
+		| d:DECIMAL
+			{ value = int(d.getText()) }
+		| h:HEXADECIMAL
+			{ value = int(h.getText()[2:], 16) }
+		| MINUS^ i=integer
+			{ value = -i }
+		) 
+	;
