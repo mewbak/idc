@@ -18,5 +18,8 @@ test_asm: all
 test_aterm: all
 	python $@.py -v
 
-.PHONY: test
+doc:
+	epydoc --css blue aterm.py
+
+.PHONY: all test doc
 	
