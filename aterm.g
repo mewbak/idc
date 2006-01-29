@@ -118,12 +118,12 @@ term returns [res]
 
 aterms returns [res]
 	:
-		{ res = self.factory.makeNil() }
+		{ res = self.factory.makeNilList() }
 	| head=term
 		(
-			{ res = self.factory.makeList(head) }
+			{ res = self.factory.makeConsList(head) }
 		| COMMA tail=aterms
-			{ res = self.factory.makeList(head, tail) }
+			{ res = self.factory.makeConsList(head, tail) }
 		)
 	| STAR
 		(

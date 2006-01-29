@@ -1,6 +1,8 @@
-'''Module for term representation and manipulatino. Loosely inspired on the Java
+'''Module for term representation and manipulation. Loosely inspired on the Java
 version of the ATerm library.'''
 
+# TODO: maximal sharing
+# TODO: annotations
 
 try:
 	from cStringIO import StringIO
@@ -55,14 +57,22 @@ class Factory(object):
 		'''Creates a new wildcard term'''
 		return Wildcard(self, annotations)
 
-	def makeNil(self, annotations = None):
+	def makeNilList(self, annotations = None):
 		'''Creates a new empty list term'''
 		return _NilList(self, annotations)
 
-	def makeList(self, head, tail = None, annotations = None):
+	def makeConsList(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''
 		return _ConsList(self, head, tail, annotations)
 
+	def makeList(self, seq, annotations = None):
+		res = self.makeNilList()
+		for i in range(len(seq)-1,-1,-1):
+			res = self.makeConsList(seq[i], res)
+		if annotations is not None:
+			res = res.setAnnotations(annotations)
+		return res
+		
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new appplication term'''
 		return Application(self, name, args, annotations)
@@ -154,7 +164,7 @@ class Term(object):
 
 	def getAnnotations(self):
 		if self.__annotations is None:
-			return self.factory.makeNil()
+			return self.factory.makeNilList()
 		else:
 			return self.__annotations
 	
@@ -387,7 +397,7 @@ class List(Term):
 			return self.getTail().__getitem__(index - 1)
 
 	def insert(self, element):
-		return self.factory.makeList(element, self)
+		return self.factory.makeConsList(element, self)
 	
 	def accept(self, visitor):
 		return visitor.visitList(self)
@@ -430,7 +440,7 @@ class _NilList(List):
 		return List._match(self, other, vars)
 
 	def setAnnotations(self, annotations):
-		return self.factory.makeNil(annotations)
+		return self.factory.makeNilList(annotations)
 
 
 class _ConsList(List):
@@ -440,7 +450,7 @@ class _ConsList(List):
 
 		self.head = head
 		if tail is None:
-			self.tail = self.factory.makeNil()
+			self.tail = self.factory.makeNilList()
 		else:
 			self.tail = tail
 	
@@ -477,10 +487,10 @@ class _ConsList(List):
 		return List._match(self, other, vars)
 
 	def _make(self, vars):
-		return self.factory.makeList(self.head._make(vars), self.tail._make(vars), self.annotations)
+		return self.factory.makeConsList(self.head._make(vars), self.tail._make(vars), self.annotations)
 	
 	def setAnnotations(self, annotations):
-		return self.factory.makeList(self.head, self.tail, annotations)
+		return self.factory.makeConsList(self.head, self.tail, annotations)
 
 
 class Application(Term):
@@ -490,7 +500,7 @@ class Application(Term):
 
 		self.name = name
 		if args is None:
-			self.args = self.factory.makeNil()
+			self.args = self.factory.makeNilList()
 		else:
 			self.args = args
 	
