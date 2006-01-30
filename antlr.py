@@ -29,6 +29,20 @@ EOF_CHAR            = ''
 ###                    general functions                           ###
 ###xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx###
 
+## Version should be automatically derived from configure.in. For now,
+## we need to bump it ourselfs. Don't remove the <version> tags.
+## <version>
+def version():
+    r = {
+        'major'  : '2',
+        'minor'  : '7',
+        'micro'  : '5',
+        'patch'  : '' ,
+        'version': '2.7.5'
+        }
+    return r
+## </version>
+
 def error(fmt,*args):
     if fmt:
         print "error: ", fmt % tuple(args)
@@ -39,6 +53,13 @@ def ifelse(cond,_then,_else):
     else:
         r = _else
     return r
+
+def is_string_type(x):
+    return  (isinstance(x,str) or isinstance(x,unicode))
+
+def assert_string_type(x):
+    assert is_string_type(x)
+    pass
 
 ###xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx###
 ###                     ANTLR Exceptions                           ###
@@ -54,15 +75,15 @@ class RecognitionException(ANTLRException):
 
     def __init__(self, *args):
         ANTLRException.__init__(self, *args)
-	self.fileName = None
-	self.line = -1
-	self.column = -1
+        self.fileName = None
+        self.line = -1
+        self.column = -1
         if len(args) >= 2:
-	    self.fileName = args[1]
+            self.fileName = args[1]
         if len(args) >= 3:
-	    self.line = args[2]
+            self.line = args[2]
         if len(args) >= 4:
-	    self.column = args[3]
+            self.column = args[3]
 
     def __str__(self):
         buf = ['']
@@ -113,23 +134,23 @@ class NoViableAltForCharException(RecognitionException):
 
     def __init__(self, *args):
         self.foundChar = None
-	if len(args) == 2:
+        if len(args) == 2:
             self.foundChar = args[0]
             scanner = args[1]
             RecognitionException.__init__(self, "NoViableAlt",
-	    				  scanner.getFilename(),
-					  scanner.getLine(),
-					  scanner.getColumn())
+                                          scanner.getFilename(),
+                                          scanner.getLine(),
+                                          scanner.getColumn())
         elif len(args) == 4:
             self.foundChar = args[0]
             fileName = args[1]
             line = args[2]
             column = args[3]
             RecognitionException.__init__(self, "NoViableAlt",
-	    				  fileName, line, column)
+                                          fileName, line, column)
         else:
             RecognitionException.__init__(self, "NoViableAlt",
-	    				  '', -1, -1)
+                                          '', -1, -1)
 
     def __str__(self):
         mesg = "unexpected char: "
@@ -137,8 +158,8 @@ class NoViableAltForCharException(RecognitionException):
             mesg += "'" + self.foundChar + "'"
         elif self.foundChar:
             mesg += "0x" + hex(ord(self.foundChar)).upper()[2:]
-	else:
-	    mesg += "<None>"
+        else:
+            mesg += "<None>"
         return mesg
 
     __repr__ = __str__
@@ -162,64 +183,64 @@ class MismatchedCharException(RecognitionException):
 
     def __init__(self, *args):
         self.args = args
-	if len(args) == 5:
+        if len(args) == 5:
             # Expected range / not range
-	    if args[3]:
-	        self.mismatchType = MismatchedCharException.NOT_RANGE
-	    else:
-	        self.mismatchType = MismatchedCharException.RANGE
-	    self.foundChar = args[0]
-	    self.expecting = args[1]
-	    self.upper = args[2]
-	    self.scanner = args[4]
+            if args[3]:
+                self.mismatchType = MismatchedCharException.NOT_RANGE
+            else:
+                self.mismatchType = MismatchedCharException.RANGE
+            self.foundChar = args[0]
+            self.expecting = args[1]
+            self.upper = args[2]
+            self.scanner = args[4]
             RecognitionException.__init__(self, "Mismatched char range",
-	    				  self.scanner.getFilename(),
-					  self.scanner.getLine(),
-					  self.scanner.getColumn())
-	elif len(args) == 4 and isinstance(args[1], str):
+                                          self.scanner.getFilename(),
+                                          self.scanner.getLine(),
+                                          self.scanner.getColumn())
+        elif len(args) == 4 and is_string_type(args[1]):
             # Expected char / not char
-	    if args[2]:
-	        self.mismatchType = MismatchedCharException.NOT_CHAR
-	    else:
-	        self.mismatchType = MismatchedCharException.CHAR
-	    self.foundChar = args[0]
-	    self.expecting = args[1]
-	    self.scanner = args[3]
+            if args[2]:
+                self.mismatchType = MismatchedCharException.NOT_CHAR
+            else:
+                self.mismatchType = MismatchedCharException.CHAR
+            self.foundChar = args[0]
+            self.expecting = args[1]
+            self.scanner = args[3]
             RecognitionException.__init__(self, "Mismatched char",
-	    				  self.scanner.getFilename(),
-					  self.scanner.getLine(),
-					  self.scanner.getColumn())
-	elif len(args) == 4 and isinstance(args[1], BitSet):
+                                          self.scanner.getFilename(),
+                                          self.scanner.getLine(),
+                                          self.scanner.getColumn())
+        elif len(args) == 4 and isinstance(args[1], BitSet):
             # Expected BitSet / not BitSet
-	    if args[2]:
-	        self.mismatchType = MismatchedCharException.NOT_SET
-	    else:
-	        self.mismatchType = MismatchedCharException.SET
-	    self.foundChar = args[0]
-	    self.set = args[1]
-	    self.scanner = args[3]
+            if args[2]:
+                self.mismatchType = MismatchedCharException.NOT_SET
+            else:
+                self.mismatchType = MismatchedCharException.SET
+            self.foundChar = args[0]
+            self.set = args[1]
+            self.scanner = args[3]
             RecognitionException.__init__(self, "Mismatched char set",
-	    				  self.scanner.getFilename(),
-					  self.scanner.getLine(),
-					  self.scanner.getColumn())
-	else:
-	    self.mismatchType = MismatchedCharException.NONE
+                                          self.scanner.getFilename(),
+                                          self.scanner.getLine(),
+                                          self.scanner.getColumn())
+        else:
+            self.mismatchType = MismatchedCharException.NONE
             RecognitionException.__init__(self, "Mismatched char")
 
     ## Append a char to the msg buffer.  If special,
     #  then show escaped version
     #
     def appendCharName(self, sb, c):
-	if not c or c == 65535:
+        if not c or c == 65535:
             # 65535 = (char) -1 = EOF
             sb.append("'<EOF>'")
-	elif c == '\n':
-	    sb.append("'\\n'")
-	elif c == '\r':
-	    sb.append("'\\r'");
-	elif c == '\t':
-	    sb.append("'\\t'")
-	else:
+        elif c == '\n':
+            sb.append("'\\n'")
+        elif c == '\r':
+            sb.append("'\\r'");
+        elif c == '\t':
+            sb.append("'\\t'")
+        else:
             sb.append('\'' + c + '\'')
 
     ##
@@ -227,13 +248,13 @@ class MismatchedCharException(RecognitionException):
     #
     def __str__(self):
         sb = ['']
-	sb.append(RecognitionException.__str__(self))
+        sb.append(RecognitionException.__str__(self))
 
         if self.mismatchType == MismatchedCharException.CHAR:
             sb.append("expecting ")
-	    self.appendCharName(sb, self.expecting)
+            self.appendCharName(sb, self.expecting)
             sb.append(", found ")
-	    self.appendCharName(sb, self.foundChar)
+            self.appendCharName(sb, self.foundChar)
         elif self.mismatchType == MismatchedCharException.NOT_CHAR:
             sb.append("expecting anything but '")
             self.appendCharName(sb, self.expecting)
@@ -279,37 +300,37 @@ class MismatchedTokenException(RecognitionException):
         self.token = None
         self.tokenText = ''
         self.node =  None
-	if len(args) == 6:
+        if len(args) == 6:
             # Expected range / not range
-	    if args[3]:
-	        self.mismatchType = MismatchedTokenException.NOT_RANGE
-	    else:
-	        self.mismatchType = MismatchedTokenException.RANGE
+            if args[3]:
+                self.mismatchType = MismatchedTokenException.NOT_RANGE
+            else:
+                self.mismatchType = MismatchedTokenException.RANGE
             self.tokenNames = args[0]
-	    self.expecting = args[2]
-	    self.upper = args[3]
-	    self.fileName = args[5]
+            self.expecting = args[2]
+            self.upper = args[3]
+            self.fileName = args[5]
 
-	elif len(args) == 4 and isinstance(args[2], int):
+        elif len(args) == 4 and isinstance(args[2], int):
             # Expected token / not token
-	    if args[3]:
-	        self.mismatchType = MismatchedTokenException.NOT_TOKEN
-	    else:
-	        self.mismatchType = MismatchedTokenException.TOKEN
+            if args[3]:
+                self.mismatchType = MismatchedTokenException.NOT_TOKEN
+            else:
+                self.mismatchType = MismatchedTokenException.TOKEN
             self.tokenNames = args[0]
-	    self.expecting = args[2]
+            self.expecting = args[2]
 
-	elif len(args) == 4 and isinstance(args[2], BitSet):
+        elif len(args) == 4 and isinstance(args[2], BitSet):
             # Expected BitSet / not BitSet
-	    if args[3]:
-	        self.mismatchType = MismatchedTokenException.NOT_SET
-	    else:
-	        self.mismatchType = MismatchedTokenException.SET
+            if args[3]:
+                self.mismatchType = MismatchedTokenException.NOT_SET
+            else:
+                self.mismatchType = MismatchedTokenException.SET
             self.tokenNames = args[0]
-	    self.set = args[2]
+            self.set = args[2]
 
-	else:
-	    self.mismatchType = MismatchedTokenException.NONE
+        else:
+            self.mismatchType = MismatchedTokenException.NONE
             RecognitionException.__init__(self, "Mismatched Token: expecting any AST node", "<AST>", -1, -1)
 
         if len(args) >= 2:
@@ -345,11 +366,11 @@ class MismatchedTokenException(RecognitionException):
     #
     def __str__(self):
         sb = ['']
-	sb.append(RecognitionException.__str__(self))
+        sb.append(RecognitionException.__str__(self))
 
         if self.mismatchType == MismatchedTokenException.TOKEN:
             sb.append("expecting ")
-	    self.appendTokenName(sb, self.expecting)
+            self.appendTokenName(sb, self.expecting)
             sb.append(", found " + self.tokenText)
         elif self.mismatchType == MismatchedTokenException.NOT_TOKEN:
             sb.append("expecting anything but '")
@@ -388,11 +409,11 @@ class TokenStreamException(ANTLRException):
 class TokenStreamIOException(TokenStreamException):
 
     def __init__(self, *args):
-	if args and isinstance(args[0], Exception):
-	    io = args[0]
+        if args and isinstance(args[0], Exception):
+            io = args[0]
             TokenStreamException.__init__(self, str(io))
-	    self.io = io
-	else:
+            self.io = io
+        else:
             TokenStreamException.__init__(self, *args)
             self.io = self
 
@@ -401,11 +422,11 @@ class TokenStreamIOException(TokenStreamException):
 class TokenStreamRecognitionException(TokenStreamException):
 
     def __init__(self, *args):
-	if args and isinstance(args[0], RecognitionException):
-	    recog = args[0]
+        if args and isinstance(args[0], RecognitionException):
+            recog = args[0]
             TokenStreamException.__init__(self, str(recog))
-	    self.recog = recog
-	else:
+            self.recog = recog
+        else:
             raise TypeError("TokenStreamRecognitionException requires RecognitionException argument")
 
     def __str__(self):
@@ -430,11 +451,11 @@ class CharStreamException(ANTLRException):
 class CharStreamIOException(CharStreamException):
 
     def __init__(self, *args):
-	if args and isinstance(args[0], Exception):
-	    io = args[0]
+        if args and isinstance(args[0], Exception):
+            io = args[0]
             CharStreamException.__init__(self, str(io))
-	    self.io = io
-	else:
+            self.io = io
+        else:
             CharStreamException.__init__(self, *args)
             self.io = self
 
@@ -484,7 +505,7 @@ class Token(object):
         return "<no text>"
 
     def setText(self,text):
-        if isinstance(text,str):
+        if is_string_type(text):
             pass
         else:
             raise TypeError("Token.setText requires string argument")
@@ -783,7 +804,7 @@ class CharBuffer(InputBuffer):
                 assert len(c) == 0 or len(c) == 1
 
                 ### And it shall be of type string (ASCII or UNICODE).
-                assert isinstance(c,str) or isinstance(c,unicode)
+                assert is_string_type(c)
 
                 ### Just append EOF char to buffer. Note that buffer may
                 ### contain then just more than one EOF char ..
@@ -900,7 +921,7 @@ class TokenStreamSelector(TokenStream):
         if isinstance(arg,TokenStream):
             self._input = arg
             return
-        if isinstance(arg,str):
+        if is_string_type(arg):
             self._input = self.getStream(arg)
             return
         raise TypeError("TokenStreamSelector.select requires " +
@@ -1152,7 +1173,7 @@ class CharScanner(TokenStream):
         ## and  open  a  stream  using 2nd argument as open
         ## mode. If there's no 2nd argument we fall back to
         ## mode '+rb'.
-        if isinstance(arg1,str):
+        if is_string_type(arg1):
             f = open(arg1,"rb")
             self.setInput(f)
             self.setFilename(arg1)
@@ -1294,7 +1315,7 @@ class CharScanner(TokenStream):
                 raise MismatchedCharException(self.LA(1), c, False, self)
 
     def match(self,item):
-        if isinstance(item,str) or isinstance(item,unicode):
+        if is_string_type(item):
             return self._match_string(item)
         else:
             return self._match_bitset(item)
@@ -1365,13 +1386,13 @@ class CharScanner(TokenStream):
         if not _text:
             return
 
-        assert isinstance(_text,str) or isinstance(_text,unicode)
+        assert is_string_type(_text)
         _type = self.testLiteralsTable(_text,_type)
         token.setType(_type)
         return _type
 
     def testLiteralsTable(self,*args):
-        if isinstance(args[0],str) or isinstance(args[0],unicode):
+        if is_string_type(args[0]):
             s = args[0]
             i = args[1]
         else:
@@ -1566,7 +1587,7 @@ class BitSet(object):
         if isinstance(item,int):
             return self.at(item)
 
-        if not (isinstance(item,str) or isinstance(item,unicode)):
+        if not is_string_type(item):
             raise TypeError(self,"char or unichar expected: %s" % (item))
 
         ## char is a (unicode) string with at most lenght 1, ie.
@@ -2461,6 +2482,8 @@ class CommonAST(BaseAST):
         super(CommonAST,self).__init__()
         self.ttype = INVALID_TYPE
         self.text  = "<no text>"
+        self.line  = 0
+        self.column= 0
         self.initialize(token)
         #assert self.text
 
@@ -2471,7 +2494,15 @@ class CommonAST(BaseAST):
     ### Get the token type for this node
     def getType(self):
         return self.ttype
+    
+    ### Get the line for this node
+    def getLine(self):
+        return self.line
 
+    ### Get the column for this node
+    def getColumn(self):
+        return self.column
+    
     def initialize(self,*args):
         if not args:
             return
@@ -2487,11 +2518,13 @@ class CommonAST(BaseAST):
         if isinstance(arg0,AST) or isinstance(arg0,Token):
             self.setText(arg0.getText())
             self.setType(arg0.getType())
+            self.line = arg0.getLine()
+            self.column = arg0.getColumn()
             return
 
     ### Set the token text for this node
     def setText(self,text_):
-        assert isinstance(text_,str)
+        assert is_string_type(text_)
         self.text = text_
 
     ### Set the token type for this node
@@ -2792,7 +2825,7 @@ def dupTree(t,factory):
     return result
 
 ###xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-### $Id$
+### $Id: antlr.py,v 1.1.1.1 2005/02/02 10:24:36 geronimo Exp $
 
 # Local Variables:    ***
 # mode: python        ***
