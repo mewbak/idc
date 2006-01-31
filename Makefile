@@ -12,10 +12,17 @@ test-aterm: atermLexer.py atermParser.py
 	python test_aterm.py -v
 
 test-asm: asmLexer.py asmParser.py
-	$(foreach FILE, $(wildcard examples/ex*.s), \
-		python asmLexer.py < examples/ex01.s; \
-		python asmParser.py < examples/ex01.s; \
+	$(foreach FILE, $(wildcard examples/*.s), \
+		python asmLexer.py < $(FILE); \
+		python asmParser.py < $(FILE); \
 	)
+
+test-ssl: sslLexer.py sslParser.py
+	$(foreach FILE, $(wildcard examples/*.ssl), \
+		python sslLexer.py < $(FILE); \
+		python sslParser.py < $(FILE); \
+	)
+	
 test: \
 	test-aterm \
 	test-asm
