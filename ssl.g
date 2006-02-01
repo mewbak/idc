@@ -63,10 +63,14 @@ FLOAT_OR_NUM
 	| (MINUS) => MINUS { $setType(MINUS); }
 	;
 
-NAME: ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'0'..'9')*;
+NAME: ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'0'..'9'|'_')*;
 
 REG_ID:  '%' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'0'..'9')*;
 
+DECOR
+	: '.' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'.'|'0'..'9')*
+	//| '^' '"' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z') '"'
+	;
 
 COLON: ':';
 EQUATE: ":=";
@@ -116,8 +120,24 @@ LE: "<=";
 GE: ">=";
 
 LSHIFT: "<<";
+RSHIFTA: ">>A";
 RSHIFT: ">>";
 
+MUL_F: "*f";
+MUL_FD: "*fd";
+MUL_FQ: "*fq";
+MUL_FSD: "*fsd";
+MUL_FDQ: "*fdq";
+DIV_F: "/f";
+DIV_FD: "/fd";
+DIV_FQ: "/fq";
+PLUS_F: "+f";
+PLUS_FD: "+fd";
+PLUS_FQ: "+fq";
+MINUS_F: "-f";
+MINUS_FD: "-fd";
+MINUS_FQ: "-fq";
+	
 QUEST: '?';
 S_E: '!';
 
@@ -128,10 +148,13 @@ DOLLAR: '$';
 
 UNDERSCORE: '_';
 
+FNEG: "~f";
+LNOT: "~L";
+
 class sslParser extends Parser;
 options {
 	buildAST = true;
-	k = 4;
+	k = 5;
 }
 
 start: specification EOF;
@@ -207,62 +230,68 @@ constants
 	: NAME EQUATE NUM ( ARITH_OP NUM )?
 	;
 
-table_assign: NAME EQUATE table_expr;
+table_assign: NAME EQUATE (table_expr)+;
 
 table_expr
-	: (str_expr) => str_expr
-	| opstr_expr
-	| exprstr_expr
-	;
-	
-str_expr
-	: (str_term)*
-	;
-
-opstr_expr
-	: LCURLY opstr (COMMA opstr)* RCURLY
+	: NAME
+	| LCURLY 
+		( (str_list) => str_list
+		| opstr_list
+		| exprstr_list
+		) RCURLY
 	;
 
-opstr
-	: QUOTE ( bit_op | arith_op | farith_op ) QUOTE
-	;
-	
-str_array
-	: /* str_array str_expr
-	| str_array COMMA QUOTE QUOTE
-	| */ str_expr
+str_list
+	: str_term (COMMA str_term)* 
 	;
 
 str_term
-	: LCURLY str_array RCURLY
-	| name_expand
+	: NAME
+	| name_contract
+	| QUOTE QUOTE
 	;
 
-name_expand
-	: "'" NAME "'"
+name_contract
+	: PRIME NAME PRIME
+	| NAME LSQUARE (NUM|NAME) RSQUARE
+	| DOLLAR NAME LSQUARE (NUM|NAME) RSQUARE
 	| QUOTE NAME QUOTE
-	| DOLLAR NAME
-	| NAME
 	;
 	
-bin_oper: BIT_OP | ARITH_OP | FARITH_OP;
+opstr_list
+	: opstr_term (COMMA opstr_term)*
+	;
 
-opstr_array: QUOTE bin_oper QUOTE (COMMA QUOTE bin_oper QUOTE)*;
+opstr_term
+	: QUOTE bin_oper QUOTE
+	;
 
-exprstr_expr: LCURLY exprstr_array RCURLY;
+bin_oper: bit_op | arith_op | farith_op;
 
-exprstr_array: QUOTE exp QUOTE (COMMA QUOTE exp QUOTE)*;
+exprstr_list: exprstr_term (COMMA exprstr_term)*;
+
+exprstr_term: QUOTE exp QUOTE;
 
 instr: instr_name list_parameter rt_list;
 
 instr_name: instr_elem (instr_decor)*;
 
 instr_elem
-	: n:NAME (LSQUARE (NUM | NAME) RSQUARE)?
+	: (NAME
+	| PRIME NAME PRIME
+	| NAME LSQUARE (NUM|NAME) RSQUARE
+	| DOLLAR NAME LSQUARE (NUM|NAME) RSQUARE
+	| QUOTE NAME QUOTE
+	) 
+	( PRIME NAME PRIME
+	| (NAME LSQUARE) => NAME LSQUARE (NUM|NAME) RSQUARE
+	| DOLLAR NAME LSQUARE (NUM|NAME) RSQUARE
+	| QUOTE NAME QUOTE
+	)*
 	;
 
 instr_decor
-	: DOT NAME
+	: DECOR // DOT (NAME | NUM)
 	| XOR QUOTE NAME QUOTE
 	;
 
@@ -291,53 +320,62 @@ assign_rt
 		| (exp) => exp
 		| variable EQUATE exp
 		)*/
-//	| FPUSH
-//	| FPOP
+	| "FPUSH"
+	| "FPOP"
 	;
 
-expr0
+primary_expr
 	: NUM
 	| FLOATNUM
 //	| TEMP
-	| value
+	| REG_ID
+	| "r" LSQUARE exp RSQUARE
+	| "m" LSQUARE exp RSQUARE
+	| NAME
 	| LPAREN exp RPAREN
 	| LSQUARE exp QUEST exp COLON exp RSQUARE
 	| "addr" LPAREN exp RPAREN
 //	| conv_func LPAREN NUM COMMA NUM COMMA exp RPAREN
-//	| FPUSH
-//	| FPOP
 //	| transcend LPAREN exp RPAREN
 	| NAME LPAREN list_actualparameter RPAREN
+	| NAME LSQUARE NAME RSQUARE
 	;
 
 // bit extraction
-expr1
-	: expr0 (AT LSQUARE exp COLON exp RSQUARE)?
+postfix_expr
+	: primary_expr (postfix_suffix)*
+	;
+
+postfix_suffix
+	: (AT) => AT LSQUARE exp COLON exp RSQUARE
+	| (S_E) => S_E
+	| (LCURLY NUM RCURLY) => LCURLY NUM RCURLY
+	;
+
+lookup_expr
+	: postfix_expr (
+		(lookup_op) => lookup_op lookup_expr
+		| )
+	;
+
+lookup_op
+	: NAME LSQUARE! NAME RSQUARE!
 	;
 
 // sign extension
-expr2
-	: expr1 (S_E)*
-	;
 
 // 
-expr23
-	: expr2 ((NAME LSQUARE) => NAME LSQUARE NAME RSQUARE expr2 | )
-	;
 
 // cast
-expr3
-	: expr23 (LCURLY NUM RCURLY)?
-	;
 
 // not
-expr4
-	: (NOT)* expr3
+unary_expr
+	: (NOT^ | FNEG^ | LNOT^)* lookup_expr
 	;
 	
 // floating point arithmetic
 expr5
-	: expr4 (farith_op expr4)*
+	: unary_expr (farith_op unary_expr)*
 	;
 
 // arithmetic
@@ -381,7 +419,7 @@ bit_op
 	| "rr"
 	| RSHIFT
 	| LSHIFT
-	| ">>A"
+	| RSHIFTA
 	| OR
 	| ORNOT
 	| AND
@@ -404,20 +442,21 @@ cond_op
 	;
 
 farith_op
-	: "*f"
-	| "*fd"
-	| "*fq"
-	| "*fsd"
-	| "*fdq"
-	| "/f"
-	| "/fd"
-	| "/fq"
-	| "+f"
-	| "+fd"
-	| "+fq"
-	| "-f"
-	| "-fd"
-	| "-fq"
+	: MUL_F
+	| MUL_FD
+	| MUL_FQ
+	| MUL_FSD
+	| MUL_FDQ
+	| DIV_F
+	| DIV_FD
+	| DIV_FQ
+	| PLUS_F
+	| PLUS_FD
+	| PLUS_FQ
+	| MINUS_F
+	| MINUS_FD
+	| MINUS_FQ
+	| "pow"
 	;
 
 log_op
@@ -426,10 +465,10 @@ log_op
 	;
 
 variable
-	: REG_ID
+	: (REG_ID
 	| "r" LSQUARE exp RSQUARE
 	| "m" LSQUARE exp RSQUARE
-	| NAME
+	| NAME )(AT LSQUARE exp COLON exp RSQUARE)*
 	;
 
 value
