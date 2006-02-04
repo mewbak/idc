@@ -13,18 +13,24 @@ header "sslParser.__main__" {
     lexer = Lexer()
     parser = Parser(lexer)
     parser.start()
-    def p(t):
-        for n,v in t.iteritems():
-            print n
-            print "", v
-            print
-    p(parser.constants)
-    p(parser.tables)
-    p(parser.functions)
-    p(parser.instructions)
+    ast = parser.getAST()
+    print ast
 }
 
-header "sslParser.__init__" {
+header "sslTreeParser.__main__" {
+    from sslLexer import Lexer
+    from sslParser import Parser
+    
+    lexer = Lexer()
+    parser = Parser(lexer)
+    parser.start()
+    walker = Walker()
+    ast = parser.getAST()
+    print ast
+    walker.start(ast)
+}
+
+header "sslTreeParser.__init__" {
     self.constants = {}
     self.tables = {}
     self.functions = {}
@@ -180,14 +186,19 @@ options {
 }
 
 tokens {
-	CONSTANT_DEF;
-	TABLE_DEF;
+	SPEC;
+	CONSTANT;
+	TABLE;
+	CROSSP;
+	INSTR;
+	RTL;
 }
 
 start: specification EOF;
 
 specification
 	: ( part SEMI! )*
+		{ ## = #(#[SPEC], ##) }
 	;
 
 part
@@ -204,33 +215,22 @@ part
 
 num: NUM;
 
-constant_def!
-	: name:NAME EQUATE! value=constant_expr
-		{ self.constants[name.getText()] = value }
+constant_def
+	: NAME EQUATE! v:constant_expr
+		{ ## = #(#[CONSTANT,"CONSTANT"], ##) }
 	;
 
-constant returns [res]
-	: n:NUM { res = int(n.getText()) }
+constant_expr
+	: NUM ((PLUS^|MINUS^) NUM)*
 	;
 
-constant_expr returns [res]
-	: x=constant { res = x }
-	| x=constant PLUS y=constant { res = x + y }
-	| x=constant MINUS y=constant { res = x - y }
-	;
-
-operands_decl
+operands_decl!
 	: "OPERAND" operand_decl ( COMMA operand_decl )*
 	;
 
 operand_decl
 	: NAME EQUATE LCURLY parameter_list RCURLY
-	| NAME parameter_list func_parameter ASSIGNSIZE exp
-	;
-	
-func_parameter
-	: LSQUARE parameter_list RSQUARE
-	|
+	| NAME parameter_list (LSQUARE parameter_list RSQUARE)? ASSIGNSIZE exp
 	;
 
 definition
@@ -247,16 +247,11 @@ aliases
 	: REG_ID THEN exp
 	;
 
-registers_decl
-	: register_type register_decl (COMMA register_decl)*
+registers_decl!
+	: ("INTEGER"^| "FLOAT"^) register_decl (COMMA register_decl)*
 	;
 
-register_type
-	: "INTEGER"
-	| "FLOAT"
-	;
-
-register_decl
+register_decl!
 	: REG_ID INDEX num
 	| REG_ID LSQUARE num RSQUARE INDEX num 
 		( "COVERS" REG_ID TO REG_ID
@@ -266,64 +261,39 @@ register_decl
 	;
 
 register_list
-	: REG_ID (COMMA REG_ID)*
+	: REG_ID (COMMA! REG_ID)*
 	;
 
 flag_func!
-	: NAME LPAREN! parameter_list RPAREN! LCURLY! rt_list RCURLY!
+	: n:NAME LPAREN! parameter_list RPAREN! LCURLY! rtl:rt_list RCURLY!
 	;
 
-table_def!
-	: n:NAME EQUATE! t=table
-		{
-            self.tables[n.getText()] = t
-        }
+table_def
+	: NAME EQUATE! table_expr
+		{ ## = #(#[TABLE,"TABLE"], ##); print ## }
 	;
 
-table returns [res]
-	: (str_table) => t=str_table { res = t }
-	| t=opstr_table { res = t }
-	| t=exprstr_table { res = t }
+table_expr
+	: (str_table) => str_table
+	| opstr_table
+	| exprstr_table
 	;
 
-
-str_table returns [res]
-	: t1=primary_str_table 
-		{
-            res = t1
-		}	
-	( t2=primary_str_table
-		{
-            tmp = []
-            for i1 in res:
-                for i2 in t2:
-                  tmp.append(i1 + i2)
-            res = tmp
-		}
-	)*
+str_table
+	: primary_str_table (primary_str_table
+		{ ## = #(#[CROSSP,"CROSSP"], ##) }
+	  )*
 	;
 
-primary_str_table returns [res]
-	: n:NAME
-		{ 
-            try:
-                res = self.tables[n.getText()]
-            except KeyError:
-                res = [n.getText()]
-        }
-	| LCURLY! x=str_term { res = x} (COMMA y=str_term { res.extend(y) } )* RCURLY!
+primary_str_table
+	: NAME
+	| LCURLY^ str_term (COMMA! str_term)* RCURLY!
 	;
 
-str_term returns [res]
-	: n:NAME
-		{ 
-            try:
-                res = self.tables[n.getText()]
-            except KeyError:
-                res = [n.getText()]
-        }
-	| QUOTE QUOTE { res = [""] }
-	| QUOTE s:NAME QUOTE { res = [s.getText()] }
+str_term
+	: NAME
+	| QUOTE QUOTE! { ## = #(##, #[NAME,""]) }
+	| QUOTE^ NAME QUOTE!
 	;
 
 name_contract
@@ -333,40 +303,43 @@ name_contract
 	| QUOTE NAME QUOTE
 	;
 
-opstr_table returns [res]
-	: LCURLY! h:opstr_term { res = [#h] } (COMMA t:opstr_term { res.append(#t) })* RCURLY!
+opstr_table 
+	: LCURLY^ opstr_term (COMMA! t:opstr_term)* RCURLY!
 	;
 
 opstr_term
-	: QUOTE! bin_oper QUOTE!
+	: QUOTE^ bin_oper QUOTE!
 	;
 
 bin_oper: bit_op | arith_op | farith_op;
 
-exprstr_table returns [res]
-	: LCURLY! h:exprstr_term { res = [#h] } (COMMA t:exprstr_term { res.append(#t) })* RCURLY!
+exprstr_table
+	: LCURLY^ exprstr_term (COMMA! t:exprstr_term)* RCURLY!
 	;
 
 exprstr_term
-	: QUOTE! exp QUOTE!
+	: QUOTE^ exp QUOTE!
 	;
 
-instr: instr_name parameter_list rt_list;
+instr!
+	: instr_name parameter_list rt_list
+	;
 
 instr_name: instr_elem (instr_decor)*;
 
 instr_elem
-	: (NAME
-	| PRIME NAME PRIME
-	| NAME LSQUARE (num|NAME) RSQUARE
-	| DOLLAR NAME LSQUARE (num|NAME) RSQUARE
-	| QUOTE NAME QUOTE
-	) 
-	( PRIME NAME PRIME
-	| (NAME LSQUARE) => NAME LSQUARE (num|NAME) RSQUARE
-	| DOLLAR NAME LSQUARE (num|NAME) RSQUARE
-	| QUOTE NAME QUOTE
-	)*
+	:
+		( NAME
+		| PRIME^ NAME PRIME!
+		| NAME LSQUARE^ (num|NAME) RSQUARE!
+		| DOLLAR! NAME LSQUARE (num|NAME) RSQUARE!
+		| QUOTE^ NAME QUOTE!
+		) 
+		( PRIME^ NAME PRIME!
+		| NAME LSQUARE^ (num|NAME) RSQUARE!
+		| DOLLAR! NAME LSQUARE^ (num|NAME) RSQUARE!
+		| QUOTE^ NAME QUOTE!
+		)*
 	;
 
 instr_decor
@@ -378,46 +351,43 @@ rt_list: (rt)+;
 
 rt
 	: assign_rt
-	| NAME LPAREN exp_list RPAREN
-//	| FLAGMACRO LPAREN flag_list RPAREN
+	| NAME LPAREN^ exp_list RPAREN!
+//	| FLAGMACRO LPAREN (REG_ID ( COMMA! REG_ID)* )? RPAREN
 	| UNDERSCORE
 	;
 
-flag_list
-	: (REG_ID ( COMMA REG_ID)* )?;
-	
 parameter_list
-	: (NAME) => NAME (COMMA NAME)*
-	|
+	: (NAME) => NAME (COMMA! t:NAME)*
+	| { res = [] }
 	;
 
-exp_list: (exp (COMMA exp)* )?;
+exp_list: (exp (COMMA! exp)* )?;
 
 assign_rt
-	: ASSIGNSIZE variable EQUATE exp
+	: ASSIGNSIZE^ variable EQUATE exp
 /*		( (exp THEN) => exp THEN variable EQUATE exp
 		| (exp) => exp
 		| variable EQUATE exp
 		)*/
-	| "FPUSH"
-	| "FPOP"
+	| "FPUSH"^
+	| "FPOP"^
 	;
 
 primary_expr
 	: num
-	| FLOATNUM
+	| FLOATNUM^
 //	| TEMP
-	| REG_ID
-	| "r" LSQUARE exp RSQUARE
-	| "m" LSQUARE exp RSQUARE
-	| NAME
-	| LPAREN exp RPAREN
-	| LSQUARE exp QUEST exp COLON exp RSQUARE
-	| "addr" LPAREN exp RPAREN
+	| REG_ID^
+	| "r"^ LSQUARE! exp RSQUARE!
+	| "m"^ LSQUARE! exp RSQUARE!
+	| NAME^
+	| LPAREN! exp RPAREN!
+	| LSQUARE! exp QUEST^ exp COLON! exp RSQUARE!
+	| "addr" LPAREN^ exp RPAREN!
 //	| conv_func LPAREN num COMMA num COMMA exp RPAREN
 //	| transcend LPAREN exp RPAREN
-	| NAME LPAREN exp_list RPAREN
-	| NAME LSQUARE NAME RSQUARE
+	| NAME LPAREN^ exp_list RPAREN!
+	| NAME LSQUARE^ NAME RSQUARE!
 	;
 
 // bit extraction
@@ -426,9 +396,9 @@ postfix_expr
 	;
 
 postfix_suffix
-	: (AT) => AT LSQUARE exp COLON exp RSQUARE
-	| (S_E) => S_E
-	| (LCURLY num RCURLY) => LCURLY num RCURLY
+	: (AT) => AT^ LSQUARE! exp COLON! exp RSQUARE!
+	| (S_E) => S_E^
+	| (LCURLY num RCURLY) => LCURLY^ num RCURLY!
 	;
 
 lookup_expr
@@ -438,7 +408,7 @@ lookup_expr
 	;
 
 lookup_op
-	: NAME LSQUARE! NAME RSQUARE!
+	: NAME LSQUARE^ NAME RSQUARE!
 	;
 
 // sign extension
@@ -544,10 +514,13 @@ log_op
 	;
 
 variable
-	: (REG_ID
-	| "r" LSQUARE exp RSQUARE
-	| "m" LSQUARE exp RSQUARE
-	| NAME )(AT LSQUARE exp COLON exp RSQUARE)*
+	: 
+		( REG_ID^
+		| "r"^ LSQUARE! exp RSQUARE!
+		| "m"^ LSQUARE! exp RSQUARE!
+		| NAME^
+		) 
+		( AT^ LSQUARE! exp COLON! exp RSQUARE! )*
 	;
 
 value
@@ -559,3 +532,41 @@ fastlist: "FAST" fastentry (COMMA fastentry)*;
 
 fastentry: NAME INDEX NAME;
 
+
+class sslTreeParser extends TreeParser;
+options {
+	buildAST = true;
+}
+
+start!
+	: #(SPEC (part)*)
+	;
+
+part!
+	: #(CONSTANT cn:NAME cv=constant_expr)
+		{ self.constants[cn.getText()] = #[NUM, str(cv)] }
+	| #(TABLE tn:NAME tv=table_expr)
+		{ self.tables[tn.getText()] = tv; print tv}
+	;
+
+constant_expr returns [res]
+	: n:NUM
+		{ res = int(n.getText()) }
+	| #(PLUS x=constant_expr y=constant_expr)
+		{ res = x + y }
+	| #(MINUS x=constant_expr y=constant_expr)
+		{ res = x - y }
+	;
+
+table_expr returns [res]
+	: #( LCURLY h=table_expr { res = h } (t=table_expr {res.extend(t)})* )
+	| #( CROSSP h=table_expr { res = h } (t=table_expr {res = [self.astFactory.create(NUM, hh.getText() + tt.getText()) for tt in t for hh in h]})* )
+	| #( QUOTE any:. ) { res = [any] }
+	| n:NAME
+		{
+            try:
+                res = self.tables[n.getText()]
+            except KeyError:
+                res = [n]
+		}
+	;
