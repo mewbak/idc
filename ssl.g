@@ -13,29 +13,37 @@ header "sslParser.__main__" {
     lexer = Lexer()
     parser = Parser(lexer)
     parser.start()
-    print parser.getAST()
+    def p(t):
+        for n,v in t.iteritems():
+            print n
+            print "", v
+            print
+    p(parser.constants)
+    p(parser.tables)
+    p(parser.functions)
+    p(parser.instructions)
 }
 
 header "sslParser.__init__" {
+    self.constants = {}
+    self.tables = {}
+    self.functions = {}
+    self.instructions = {}
 }
 
 options {
     language  = "Python";
 }
 
+
 class sslLexer extends Lexer;
 options {
-	k = 5;
+	k = 4;
 	testLiterals=true;
 }
 
 tokens {
 	WS;
-	INTEGER = "INTEGER";
-	FLOAT = "FLOAT";
-	OPERAND = "OPERAND";
-	FAST = "FAST";
-	FETCHEXEC = "FETCHEXEC";
 }
 
 // Whitespace -- ignored
@@ -51,11 +59,20 @@ SL_COMMENT
 	;
 
 protected
-NUM	: ('-')? ('0'..'9')+
-	| "0x" ('0'..'9'|'A'..'F')+ ;
+NUM	:
+	(
+		(   { s = 1 }
+		|'-'! { s = -1 }
+		)
+		( ('0'..'9')+ { v = int($getText) }
+		| "0x"! ('0'..'9'|'A'..'F')+ { v = int($getText, 16) }
+		| "2**"! ('0'..'9')+ { v = 2**int($getText) }
+		)
+	) { v = str(v*s); $setText(v) }
+	;
 
 protected
-FLOATNUM : NUM '.' ('0'..'9')+ ( ('e'|'E') NUM )?;
+FLOATNUM :  ('-')? ('0'..'9')+ '.' ('0'..'9')+ ( ('e'|'E') NUM )?;
 
 FLOAT_OR_NUM
 	: (FLOATNUM ) => FLOATNUM { $setType(FLOATNUM); }
@@ -113,11 +130,15 @@ SDIV: "/!";
 SMOD: "%!";
 
 EQ: '=';
+NE: "~=";
 LT: '<';
 GT: '>';
-NE: "~=";
 LE: "<=";
 GE: ">=";
+LTU: "<u";
+GTU: ">u";
+LEU: "<=u";
+GEU: ">=u";
 
 LSHIFT: "<<";
 RSHIFTA: ">>A";
@@ -151,48 +172,70 @@ UNDERSCORE: '_';
 FNEG: "~f";
 LNOT: "~L";
 
+
 class sslParser extends Parser;
 options {
 	buildAST = true;
 	k = 5;
 }
 
+tokens {
+	CONSTANT_DEF;
+	TABLE_DEF;
+}
+
 start: specification EOF;
 
 specification
-	: ( parts SEMI )*
+	: ( part SEMI! )*
 	;
 
-parts
-	: instr
-	| "FETCHEXEC" rt_list
-	| constants
-	| table_assign
+part
+	: constant_def
+	| registers_decl
+	| operands_decl
+	| flag_func
+	| table_def
 	| endianness
+	| instr
 	| fastlist
-	| reglist
 //	| definition
-	| flag_fnc
-	| "OPERAND" operandlist
-	;
-	
-operandlist
-	: operand ( COMMA operand )*
 	;
 
-operand
-	: NAME EQUATE LCURLY list_parameter RCURLY
-	| NAME list_parameter func_parameter ASSIGNSIZE exp
+num: NUM;
+
+constant_def!
+	: name:NAME EQUATE! value=constant_expr
+		{ self.constants[name.getText()] = value }
+	;
+
+constant returns [res]
+	: n:NUM { res = int(n.getText()) }
+	;
+
+constant_expr returns [res]
+	: x=constant { res = x }
+	| x=constant PLUS y=constant { res = x + y }
+	| x=constant MINUS y=constant { res = x - y }
+	;
+
+operands_decl
+	: "OPERAND" operand_decl ( COMMA operand_decl )*
+	;
+
+operand_decl
+	: NAME EQUATE LCURLY parameter_list RCURLY
+	| NAME parameter_list func_parameter ASSIGNSIZE exp
 	;
 	
 func_parameter
-	: LSQUARE list_parameter RSQUARE
+	: LSQUARE parameter_list RSQUARE
 	|
 	;
 
 definition
 	: internal_type NAME
-	| NAME ASSIGN NUM
+	| NAME ASSIGN num
 	| aliases
 	;
 
@@ -204,94 +247,130 @@ aliases
 	: REG_ID THEN exp
 	;
 
-reglist
-	: (INTEGER | FLOAT) a_reglist (COMMA a_reglist)*
+registers_decl
+	: register_type register_decl (COMMA register_decl)*
 	;
 
-a_reglist
-	: REG_ID INDEX NUM
-	| REG_ID LSQUARE NUM RSQUARE INDEX NUM 
-		(
-		| "COVERS" REG_ID TO REG_ID
-		| "SHARES" REG_ID AT LSQUARE NUM TO NUM RSQUARE
-		)
-	| LSQUARE reg_table RSQUARE LSQUARE NUM RSQUARE INDEX NUM (TO NUM)?
+register_type
+	: "INTEGER"
+	| "FLOAT"
 	;
 
-reg_table
+register_decl
+	: REG_ID INDEX num
+	| REG_ID LSQUARE num RSQUARE INDEX num 
+		( "COVERS" REG_ID TO REG_ID
+		| "SHARES" REG_ID AT LSQUARE num TO num RSQUARE
+		)?
+	| LSQUARE! register_list RSQUARE! LSQUARE num RSQUARE INDEX num (TO num)?
+	;
+
+register_list
 	: REG_ID (COMMA REG_ID)*
 	;
 
-flag_fnc
-	: NAME LPAREN list_parameter RPAREN LCURLY rt_list RCURLY
+flag_func!
+	: NAME LPAREN! parameter_list RPAREN! LCURLY! rt_list RCURLY!
 	;
 
-constants
-	: NAME EQUATE NUM ( ARITH_OP NUM )?
+table_def!
+	: n:NAME EQUATE! t=table
+		{
+            self.tables[n.getText()] = t
+        }
 	;
 
-table_assign: NAME EQUATE (table_expr)+;
-
-table_expr
-	: NAME
-	| LCURLY 
-		( (str_list) => str_list
-		| opstr_list
-		| exprstr_list
-		) RCURLY
+table returns [res]
+	: (str_table) => t=str_table { res = t }
+	| t=opstr_table { res = t }
+	| t=exprstr_table { res = t }
 	;
 
-str_list
-	: str_term (COMMA str_term)* 
+
+str_table returns [res]
+	: t1=primary_str_table 
+		{
+            res = t1
+		}	
+	( t2=primary_str_table
+		{
+            tmp = []
+            for i1 in res:
+                for i2 in t2:
+                  tmp.append(i1 + i2)
+            res = tmp
+		}
+	)*
 	;
 
-str_term
-	: NAME
-	| name_contract
-	| QUOTE QUOTE
+primary_str_table returns [res]
+	: n:NAME
+		{ 
+            try:
+                res = self.tables[n.getText()]
+            except KeyError:
+                res = [n.getText()]
+        }
+	| LCURLY! x=str_term { res = x} (COMMA y=str_term { res.extend(y) } )* RCURLY!
+	;
+
+str_term returns [res]
+	: n:NAME
+		{ 
+            try:
+                res = self.tables[n.getText()]
+            except KeyError:
+                res = [n.getText()]
+        }
+	| QUOTE QUOTE { res = [""] }
+	| QUOTE s:NAME QUOTE { res = [s.getText()] }
 	;
 
 name_contract
 	: PRIME NAME PRIME
-	| NAME LSQUARE (NUM|NAME) RSQUARE
-	| DOLLAR NAME LSQUARE (NUM|NAME) RSQUARE
+	| NAME LSQUARE (num|NAME) RSQUARE
+	| DOLLAR NAME LSQUARE (num|NAME) RSQUARE
 	| QUOTE NAME QUOTE
 	;
-	
-opstr_list
-	: opstr_term (COMMA opstr_term)*
+
+opstr_table returns [res]
+	: LCURLY! h:opstr_term { res = [#h] } (COMMA t:opstr_term { res.append(#t) })* RCURLY!
 	;
 
 opstr_term
-	: QUOTE bin_oper QUOTE
+	: QUOTE! bin_oper QUOTE!
 	;
 
 bin_oper: bit_op | arith_op | farith_op;
 
-exprstr_list: exprstr_term (COMMA exprstr_term)*;
+exprstr_table returns [res]
+	: LCURLY! h:exprstr_term { res = [#h] } (COMMA t:exprstr_term { res.append(#t) })* RCURLY!
+	;
 
-exprstr_term: QUOTE exp QUOTE;
+exprstr_term
+	: QUOTE! exp QUOTE!
+	;
 
-instr: instr_name list_parameter rt_list;
+instr: instr_name parameter_list rt_list;
 
 instr_name: instr_elem (instr_decor)*;
 
 instr_elem
 	: (NAME
 	| PRIME NAME PRIME
-	| NAME LSQUARE (NUM|NAME) RSQUARE
-	| DOLLAR NAME LSQUARE (NUM|NAME) RSQUARE
+	| NAME LSQUARE (num|NAME) RSQUARE
+	| DOLLAR NAME LSQUARE (num|NAME) RSQUARE
 	| QUOTE NAME QUOTE
 	) 
 	( PRIME NAME PRIME
-	| (NAME LSQUARE) => NAME LSQUARE (NUM|NAME) RSQUARE
-	| DOLLAR NAME LSQUARE (NUM|NAME) RSQUARE
+	| (NAME LSQUARE) => NAME LSQUARE (num|NAME) RSQUARE
+	| DOLLAR NAME LSQUARE (num|NAME) RSQUARE
 	| QUOTE NAME QUOTE
 	)*
 	;
 
 instr_decor
-	: DECOR // DOT (NAME | NUM)
+	: DECOR // DOT (NAME | num)
 	| XOR QUOTE NAME QUOTE
 	;
 
@@ -299,7 +378,7 @@ rt_list: (rt)+;
 
 rt
 	: assign_rt
-	| NAME LPAREN list_actualparameter RPAREN
+	| NAME LPAREN exp_list RPAREN
 //	| FLAGMACRO LPAREN flag_list RPAREN
 	| UNDERSCORE
 	;
@@ -307,12 +386,12 @@ rt
 flag_list
 	: (REG_ID ( COMMA REG_ID)* )?;
 	
-list_parameter
+parameter_list
 	: (NAME) => NAME (COMMA NAME)*
 	|
 	;
 
-list_actualparameter: (exp (COMMA exp)* )?;
+exp_list: (exp (COMMA exp)* )?;
 
 assign_rt
 	: ASSIGNSIZE variable EQUATE exp
@@ -325,7 +404,7 @@ assign_rt
 	;
 
 primary_expr
-	: NUM
+	: num
 	| FLOATNUM
 //	| TEMP
 	| REG_ID
@@ -335,9 +414,9 @@ primary_expr
 	| LPAREN exp RPAREN
 	| LSQUARE exp QUEST exp COLON exp RSQUARE
 	| "addr" LPAREN exp RPAREN
-//	| conv_func LPAREN NUM COMMA NUM COMMA exp RPAREN
+//	| conv_func LPAREN num COMMA num COMMA exp RPAREN
 //	| transcend LPAREN exp RPAREN
-	| NAME LPAREN list_actualparameter RPAREN
+	| NAME LPAREN exp_list RPAREN
 	| NAME LSQUARE NAME RSQUARE
 	;
 
@@ -349,7 +428,7 @@ postfix_expr
 postfix_suffix
 	: (AT) => AT LSQUARE exp COLON exp RSQUARE
 	| (S_E) => S_E
-	| (LCURLY NUM RCURLY) => LCURLY NUM RCURLY
+	| (LCURLY num RCURLY) => LCURLY num RCURLY
 	;
 
 lookup_expr
@@ -374,31 +453,31 @@ unary_expr
 	;
 	
 // floating point arithmetic
-expr5
+fp_expr
 	: unary_expr (farith_op unary_expr)*
 	;
 
 // arithmetic
-expr6
-	: expr5 (arith_op expr5)*
+arith_expr
+	: fp_expr (arith_op fp_expr)*
 	;
 
 // bit arithmetic
-expr7
-	: expr6 (bit_op expr6)*
+bit_expr
+	: arith_expr (bit_op arith_expr)*
 	;
 
 // conditionals
-expr8
-	: expr7 (cond_op expr7)*
+cond_expr
+	: bit_expr (cond_op bit_expr)*
 	;
 	
 // logicals
-expr9
-	: expr8 (log_op expr8)*
+log_expr
+	: cond_expr (log_op cond_expr)*
 	;
 
-exp: expr9;
+exp: log_expr;
 
 
 arith_op
@@ -435,10 +514,10 @@ cond_op
 	| GT
 	| LE
 	| GE
-	| "<u"
-	| ">u"
-	| "<=u"
-	| ">=u"
+	| LTU
+	| GTU
+	| LEU
+	| GEU
 	;
 
 farith_op
@@ -479,5 +558,4 @@ endianness: "ENDIANNESS" ( "BIG" | "LITTLE" );
 fastlist: "FAST" fastentry (COMMA fastentry)*;
 
 fastentry: NAME INDEX NAME;
-
 
