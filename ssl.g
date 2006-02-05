@@ -28,6 +28,13 @@ header "sslTreeParser.__main__" {
     ast = parser.getAST()
     print ast
     walker.start(ast)
+    
+    /*
+    for n, (p, b) in walker.functions.iteritems():
+        print "%s(%s) %s" % (n, ','.join(p), b.toStringList())
+    */
+    for n, (p, b) in walker.instructions.iteritems():
+        print "%s(%s) %s" % (n, ','.join(p), b.toStringList())
 }
 
 header "sslTreeParser.__init__" {
@@ -35,6 +42,7 @@ header "sslTreeParser.__init__" {
     self.tables = {}
     self.functions = {}
     self.instructions = {}
+    self.locals = [{}]
 }
 
 options {
@@ -92,8 +100,9 @@ REG_ID:  '%' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'0'..'9')*;
 
 DECOR
 	: '.' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'.'|'0'..'9')*
-	//| '^' '"' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z') '"'
 	;
+
+
 
 COLON: ':';
 EQUATE: ":=";
@@ -120,7 +129,11 @@ PRIME : '\'';
 NOT: '~';
 OR: '|';
 AND: '&';
-XOR: '^';
+XOR
+	: '^'
+		( ('"' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"') => '"'! ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"'! { $setType(DECOR); }
+		| )
+	;
 ORNOT: "|~";
 ANDNOT: "&~";
 XORNOT: "^~";
@@ -190,15 +203,18 @@ tokens {
 	CONSTANT;
 	TABLE;
 	CROSSP;
+	FUNCTION;
 	INSTR;
+	INSTR_NAME;
+	PARAMS;
 	RTL;
 }
 
-start: specification EOF;
+start: specification EOF!;
 
 specification
 	: ( part SEMI! )*
-		{ ## = #(#[SPEC], ##) }
+		{ ## = #(#[SPEC,"SPEC"], ##) }
 	;
 
 part
@@ -264,13 +280,14 @@ register_list
 	: REG_ID (COMMA! REG_ID)*
 	;
 
-flag_func!
-	: n:NAME LPAREN! parameter_list RPAREN! LCURLY! rtl:rt_list RCURLY!
+flag_func
+	: NAME LPAREN! parameter_list RPAREN! LCURLY! rt_list RCURLY!
+		{ ## = #(#[FUNCTION,"FUNCTION"], ##) }
 	;
 
 table_def
 	: NAME EQUATE! table_expr
-		{ ## = #(#[TABLE,"TABLE"], ##); print ## }
+		{ ## = #(#[TABLE,"TABLE"], ##) }
 	;
 
 table_expr
@@ -321,44 +338,55 @@ exprstr_term
 	: QUOTE^ exp QUOTE!
 	;
 
-instr!
+instr
 	: instr_name parameter_list rt_list
+		{ ## = #(#[INSTR,"INSTR"], ##) }
 	;
 
-instr_name: instr_elem (instr_decor)*;
-
-instr_elem
+instr_name
 	:
-		( NAME
-		| PRIME^ NAME PRIME!
-		| NAME LSQUARE^ (num|NAME) RSQUARE!
-		| DOLLAR! NAME LSQUARE (num|NAME) RSQUARE!
-		| QUOTE^ NAME QUOTE!
-		) 
-		( PRIME^ NAME PRIME!
-		| NAME LSQUARE^ (num|NAME) RSQUARE!
-		| DOLLAR! NAME LSQUARE^ (num|NAME) RSQUARE!
-		| QUOTE^ NAME QUOTE!
-		)*
+		instr_name_head
+		instr_name_tail
+		(instr_name_decor)*
+		{ ## = #(#[INSTR_NAME,"INSTR_NAME"], ##) }
 	;
 
-instr_decor
-	: DECOR // DOT (NAME | num)
-	| XOR QUOTE NAME QUOTE
+instr_name_head
+	: (instr_name_elem) => instr_name_elem instr_name_tail
+	| NAME^
 	;
 
-rt_list: (rt)+;
+instr_name_elem
+	: PRIME^ NAME PRIME!
+	| QUOTE! NAME^ QUOTE!
+	| NAME LSQUARE^ (num|NAME) RSQUARE!
+	| DOLLAR! NAME LSQUARE^ (num|NAME) RSQUARE!
+	;
+
+instr_name_tail
+	: (instr_name_elem) => instr_name_elem instr_name_tail
+	| 
+	;
+
+instr_name_decor
+	: DECOR^
+	;
+
+rt_list
+	: (rt)+
+		{ ## = #(#[RTL,"RTL"], ##) }
+	;
 
 rt
 	: assign_rt
 	| NAME LPAREN^ exp_list RPAREN!
 //	| FLAGMACRO LPAREN (REG_ID ( COMMA! REG_ID)* )? RPAREN
-	| UNDERSCORE
+	| UNDERSCORE^
 	;
 
 parameter_list
-	: (NAME) => NAME (COMMA! t:NAME)*
-	| { res = [] }
+	: ((NAME) => NAME (COMMA! t:NAME)* | )
+		{ ## = #(#[PARAMS,"PARAMS"], ##) }
 	;
 
 exp_list: (exp (COMMA! exp)* )?;
@@ -546,10 +574,30 @@ part!
 	: #(CONSTANT cn:NAME cv=constant_expr)
 		{ self.constants[cn.getText()] = #[NUM, str(cv)] }
 	| #(TABLE tn:NAME tv=table_expr)
-		{ self.tables[tn.getText()] = tv; print tv}
+		{ self.tables[tn.getText()] = tv /* ; print tn.getText() + ": " + ", ".join([tvi.toStringList() for tvi in tv]) */ }
+	| #(FUNCTION fn:NAME fp=parameter_list fb:RTL)
+		{ self.functions[fn.getText()] = fp, self.astFactory.dupTree(fb) }
+	| #(INSTR inam=instr_name ip=parameter_list ib:RTL)
+		{
+            for n, v in inam:
+                self.locals.append(v)
+                //print "Before: ", ib.toStringTree()
+                self.rtl_subst(self.astFactory.dupTree(ib))
+                //print "After :", self.returnAST
+                rtl = self.returnAST
+                //print
+                self.locals.pop()
+                
+                if n in self.instructions:
+                    old_ip, old_rtl = self.instructions[n]
+                    assert ip == old_ip
+                    old_rtl.addChild(rtl)
+                else:
+                    self.instructions[n] = ip, rtl
+        }
 	;
 
-constant_expr returns [res]
+constant_expr! returns [res]
 	: n:NUM
 		{ res = int(n.getText()) }
 	| #(PLUS x=constant_expr y=constant_expr)
@@ -558,15 +606,62 @@ constant_expr returns [res]
 		{ res = x - y }
 	;
 
-table_expr returns [res]
+table_expr! returns [res]
 	: #( LCURLY h=table_expr { res = h } (t=table_expr {res.extend(t)})* )
-	| #( CROSSP h=table_expr { res = h } (t=table_expr {res = [self.astFactory.create(NUM, hh.getText() + tt.getText()) for tt in t for hh in h]})* )
-	| #( QUOTE any:. ) { res = [any] }
-	| n:NAME
-		{
-            try:
-                res = self.tables[n.getText()]
-            except KeyError:
-                res = [n]
-		}
+	| #( CROSSP h=table_expr { res = h } (t=table_expr {res = [self.astFactory.create(NAME, hh.getText() + tt.getText()) for tt in t for hh in h]})* )
+	| #( QUOTE any:. ) { res = [self.astFactory.dupTree(any)] }
+	| n:NAME { res = self.tables.get(n.getText(), [n]) }
+	;
+
+parameter_list! returns [res]
+	: #(PARAMS { res = [] } (n:NAME { res.append(n.getText()) } )* )
+	;
+	
+instr_name! returns [res]
+	: #(INSTR_NAME {res = [("", {})] } (e=instr_name_elem {
+        tmp = []
+        for rn, rv in res:
+            for en, ev in e:
+                n = rn + en
+                v = rv.copy()
+                v.update(ev)
+                tmp.append((n, v))
+        res = tmp
+	})*
+	)
+	;
+
+instr_name_elem! returns [res]
+	: n:NAME { res = [(n.getText(), {})] }
+	| PRIME no:NAME { res = [("", {}), (no.getText(), {})] }
+	| #(LSQUARE t1:NAME v:NAME) { res = [(self.tables[t1.getText()][idx].getText(), {v.getText(): self.astFactory.create(NUM, str(idx))}) for idx in range(len(self.tables[t1.getText()]))] }
+	//| #(LSQUARE t2:NAME idx:NUM) { res = [(self.tables[t2.getText()][int(idx.getText())], {})] }
+	| d:DECOR { res = [('.' + d.getText()[1:], {})] }
+	;
+
+rtl_subst
+	: #(RTL (rtl_subst)*)
+	| n:NAME 
+        {
+            s = n.getText()
+            if s in self.locals[-1]:
+                ## = self.astFactory.dupTree(self.locals[-1][s])
+            if s in self.constants:
+                ## = self.astFactory.dupTree(self.constants[s])
+        }
+    | #(LSQUARE t:NAME i:rtl_subst)
+        {
+            if #i.getType() == NUM:
+                ## = self.astFactory.dup(self.tables[t.getText()][int(#i.getText())])
+        }
+    | #(LPAREN f:NAME { args = [] } (a:rtl_subst { args.append(a) } )* )
+        {
+            if f.getText() in self.functions:
+                params, rtl = self.functions[f.getText()]
+                self.locals.append(dict(zip(params, args)))
+                self.rtl_subst(rtl)
+                ## = self.returnAST
+                self.locals.pop()
+        }
+	| #(. (rtl_subst)* )
 	;
