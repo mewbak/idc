@@ -2732,13 +2732,13 @@ class ASTFactory(object):
     ### methods that have been moved to file scope - just listed
     ### here to be somewhat consistent with original API
     def dup(self,t):
-        return antlr.dup(t,self)
+        return dup(t,self)
 
     def dupList(self,t):
-        return antlr.dupList(t,self)
+        return dupList(t,self)
 
     def dupTree(self,t):
-        return antlr.dupTree(t,self)
+        return dupTree(t,self)
 
     ### methods moved to other classes
     ### 1. makeASTRoot  -> Parser
