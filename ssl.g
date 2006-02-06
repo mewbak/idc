@@ -313,13 +313,6 @@ str_term
 	| QUOTE^ NAME QUOTE!
 	;
 
-name_contract
-	: PRIME NAME PRIME
-	| NAME LSQUARE (num|NAME) RSQUARE
-	| DOLLAR NAME LSQUARE (num|NAME) RSQUARE
-	| QUOTE NAME QUOTE
-	;
-
 opstr_table 
 	: LCURLY^ opstr_term (COMMA! t:opstr_term)* RCURLY!
 	;
@@ -328,7 +321,11 @@ opstr_term
 	: QUOTE^ bin_oper QUOTE!
 	;
 
-bin_oper: bit_op | arith_op | farith_op;
+bin_oper
+	: MOD | MUL | DIV | SMUL | SDIV | SMOD | PLUS | MINUS 
+	| "rlc" | "rrc" | "rl" | "rr" | RSHIFT | LSHIFT | RSHIFTA | OR | ORNOT | AND | ANDNOT | XOR | XORNOT
+	| MUL_F | MUL_FD | MUL_FQ | MUL_FSD | MUL_FDQ | DIV_F | DIV_FD | DIV_FQ | PLUS_F | PLUS_FD | PLUS_FQ | MINUS_F | MINUS_FD | MINUS_FQ | "pow"
+	;
 
 exprstr_table
 	: LCURLY^ exprstr_term (COMMA! t:exprstr_term)* RCURLY!
@@ -344,10 +341,7 @@ instr
 	;
 
 instr_name
-	:
-		instr_name_head
-		instr_name_tail
-		(instr_name_decor)*
+	: instr_name_head instr_name_tail (instr_name_decor)*
 		{ ## = #(#[INSTR_NAME,"INSTR_NAME"], ##) }
 	;
 
@@ -392,7 +386,7 @@ parameter_list
 exp_list: (exp (COMMA! exp)* )?;
 
 assign_rt
-	: ASSIGNSIZE^ variable EQUATE exp
+	: ASSIGNSIZE^ variable EQUATE! exp
 /*		( (exp THEN) => exp THEN variable EQUATE exp
 		| (exp) => exp
 		| variable EQUATE exp
@@ -402,7 +396,7 @@ assign_rt
 	;
 
 primary_expr
-	: num
+	: NUM^
 	| FLOATNUM^
 //	| TEMP
 	| REG_ID^
@@ -418,32 +412,22 @@ primary_expr
 	| NAME LSQUARE^ NAME RSQUARE!
 	;
 
-// bit extraction
+// bit extraction, sign extension, cast
 postfix_expr
-	: primary_expr (postfix_suffix)*
+	: primary_expr 
+		( (AT) => AT^ LSQUARE! exp COLON! exp RSQUARE!
+		| (S_E) => S_E^
+		| (LCURLY num RCURLY) => LCURLY^ num RCURLY!
+		)*
 	;
 
-postfix_suffix
-	: (AT) => AT^ LSQUARE! exp COLON! exp RSQUARE!
-	| (S_E) => S_E^
-	| (LCURLY num RCURLY) => LCURLY^ num RCURLY!
-	;
-
+// operator lookup
 lookup_expr
-	: postfix_expr (
-		(lookup_op) => lookup_op lookup_expr
-		| )
+	: postfix_expr 
+		( (NAME LSQUARE NAME RSQUARE) => NAME LSQUARE! NAME RSQUARE^ lookup_expr
+		|
+		)
 	;
-
-lookup_op
-	: NAME LSQUARE^ NAME RSQUARE!
-	;
-
-// sign extension
-
-// 
-
-// cast
 
 // not
 unary_expr
@@ -452,94 +436,31 @@ unary_expr
 	
 // floating point arithmetic
 fp_expr
-	: unary_expr (farith_op unary_expr)*
+	: unary_expr ((MUL_F^ | MUL_FD^ | MUL_FQ^ | MUL_FSD^ | MUL_FDQ^ | DIV_F^ | DIV_FD^ | DIV_FQ^ | PLUS_F^ | PLUS_FD^ | PLUS_FQ^ | MINUS_F^ | MINUS_FD^ | MINUS_FQ^ | "pow"^) unary_expr)*
 	;
 
 // arithmetic
 arith_expr
-	: fp_expr (arith_op fp_expr)*
+	: fp_expr ((MOD^ | MUL^ | DIV^ | SMUL^ | SDIV^ | SMOD^ | PLUS^ | MINUS^) fp_expr)*
 	;
 
 // bit arithmetic
 bit_expr
-	: arith_expr (bit_op arith_expr)*
+	: arith_expr (("rlc"^ | "rrc"^ | "rl"^ | "rr"^ | RSHIFT^ | LSHIFT^ | RSHIFTA^ | OR^ | ORNOT^ | AND^ | ANDNOT^ | XOR^ | XORNOT^) arith_expr)*
 	;
 
 // conditionals
 cond_expr
-	: bit_expr (cond_op bit_expr)*
+	: bit_expr ((EQ^ | NE^ | LT^ | GT^ | LE^ | GE^ | LTU^ | GTU^ | LEU^ | GEU^) bit_expr)*
 	;
 	
 // logicals
 log_expr
-	: cond_expr (log_op cond_expr)*
+	: cond_expr (("and"^ | "or"^) cond_expr)*
 	;
 
 exp: log_expr;
 
-
-arith_op
-	: MOD
-	| MUL
-	| DIV
-	| SMUL
-	| SDIV
-	| SMOD
-	| PLUS
-	| MINUS
-	;
-	
-bit_op
-	: "rlc"
-	| "rrc"
-	| "rl"
-	| "rr"
-	| RSHIFT
-	| LSHIFT
-	| RSHIFTA
-	| OR
-	| ORNOT
-	| AND
-	| ANDNOT
-	| XOR
-	| XORNOT
-	;
-
-cond_op
-	: EQ
-	| NE
-	| LT
-	| GT
-	| LE
-	| GE
-	| LTU
-	| GTU
-	| LEU
-	| GEU
-	;
-
-farith_op
-	: MUL_F
-	| MUL_FD
-	| MUL_FQ
-	| MUL_FSD
-	| MUL_FDQ
-	| DIV_F
-	| DIV_FD
-	| DIV_FQ
-	| PLUS_F
-	| PLUS_FD
-	| PLUS_FQ
-	| MINUS_F
-	| MINUS_FD
-	| MINUS_FQ
-	| "pow"
-	;
-
-log_op
-	: "and"
-	| "or"
-	;
 
 variable
 	: 
@@ -552,7 +473,7 @@ variable
 	;
 
 value
-	: (PRIME)? variable;
+	: (PRIME^)? variable;
 
 endianness: "ENDIANNESS" ( "BIG" | "LITTLE" );
 
@@ -641,20 +562,25 @@ instr_name_elem! returns [res]
 
 rtl_subst
 	: #(RTL (rtl_subst)*)
-	| n:NAME 
+	|! n:NAME 
         {
             s = n.getText()
             if s in self.locals[-1]:
                 ## = self.astFactory.dupTree(self.locals[-1][s])
-            if s in self.constants:
+            elif s in self.constants:
                 ## = self.astFactory.dupTree(self.constants[s])
+            else:
+                ## = #(#n)
         }
-    | #(LSQUARE t:NAME i:rtl_subst)
+    |! #(RSQUARE lexpr:rtl_subst t:NAME i:rtl_subst rexpr:rtl_subst)
         {
             if #i.getType() == NUM:
-                ## = self.astFactory.dup(self.tables[t.getText()][int(#i.getText())])
+                op = self.astFactory.dup(self.tables[t.getText()][int(#i.getText())])
+                ## = #(#op, #lexpr, #rexpr)
+            else:
+                ## = #(RSQUARE, #lexpr, #t, #i, #rexpr)
         }
-    | #(LPAREN f:NAME { args = [] } (a:rtl_subst { args.append(a) } )* )
+    |! #(LPAREN f:NAME { args = [] } (a:rtl_subst { args.append(a) } )* )
         {
             if f.getText() in self.functions:
                 params, rtl = self.functions[f.getText()]
@@ -662,6 +588,9 @@ rtl_subst
                 self.rtl_subst(rtl)
                 ## = self.returnAST
                 self.locals.pop()
+            else:
+                pass
         }
-	| #(. (rtl_subst)* )
+	|! #(r:. {/*print "=>", #r; */## = self.astFactory.dup(#r)} (no:rtl_subst { ##.addChild(#no) } )* )
 	;
+
