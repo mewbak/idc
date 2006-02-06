@@ -56,17 +56,13 @@ options {
 	testLiterals=true;
 }
 
-tokens {
-	WS;
-}
-
 // Whitespace -- ignored
 WS	: (' '|'\t'|'\f')+ { $setType(SKIP); }
 	| ( '\r' ('\n')? | '\n') { $newline; $setType(SKIP); }
 	;
 
 // Single-line comments
-SL_COMMENT
+COMMENT
 	:	"#"
 		(~('\n'|'\r'))* ('\n'|'\r'('\n')?)?
 		{ $newline; $setType(SKIP); }
@@ -74,19 +70,20 @@ SL_COMMENT
 
 protected
 NUM	:
-	(
-		(   { s = 1 }
+		( { s = 1 }
 		|'-'! { s = -1 }
 		)
 		( ('0'..'9')+ { v = int($getText) }
 		| "0x"! ('0'..'9'|'A'..'F')+ { v = int($getText, 16) }
 		| "2**"! ('0'..'9')+ { v = 2**int($getText) }
 		)
-	) { v = str(v*s); $setText(v) }
+		{ v = str(v*s); $setText(v) }
 	;
 
 protected
-FLOATNUM :  ('-')? ('0'..'9')+ '.' ('0'..'9')+ ( ('e'|'E') NUM )?;
+FLOATNUM
+	: ('-')? ('0'..'9')+ '.' ('0'..'9')+ ( ('e'|'E') NUM )?
+	;
 
 FLOAT_OR_NUM
 	: (FLOATNUM ) => FLOATNUM { $setType(FLOATNUM); }
@@ -94,15 +91,17 @@ FLOAT_OR_NUM
 	| (MINUS) => MINUS { $setType(MINUS); }
 	;
 
-NAME: ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'0'..'9'|'_')*;
+NAME
+	: ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'0'..'9'|'_')*
+	;
 
-REG_ID:  '%' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'0'..'9')*;
+REG_ID
+	:  '%' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'0'..'9')*
+	;
 
 DECOR
 	: '.' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z'|'.'|'0'..'9')*
 	;
-
-
 
 COLON: ':';
 EQUATE: ":=";
@@ -122,7 +121,7 @@ INDEX : "->";
 THEN : "=>";
 TO	: "..";
 AT : '@';
-ASSIGNSIZE: '*' ('0'..'9')+ '*';
+ASSIGNTYPE: '*' /* ('a'..'z')?*/ ('0'..'9')* '*';
 
 PRIME : '\'';
 
@@ -134,6 +133,7 @@ XOR
 		( ('"' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"') => '"'! ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"'! { $setType(DECOR); }
 		| )
 	;
+
 ORNOT: "|~";
 ANDNOT: "&~";
 XORNOT: "^~";
@@ -195,7 +195,7 @@ LNOT: "~L";
 class sslParser extends Parser;
 options {
 	buildAST = true;
-	k = 5;
+	k = 3;
 }
 
 tokens {
@@ -246,7 +246,7 @@ operands_decl!
 
 operand_decl
 	: NAME EQUATE LCURLY parameter_list RCURLY
-	| NAME parameter_list (LSQUARE parameter_list RSQUARE)? ASSIGNSIZE exp
+	| NAME parameter_list (LSQUARE parameter_list RSQUARE)? ASSIGNTYPE expr
 	;
 
 definition
@@ -260,7 +260,7 @@ internal_type
 	;
 	
 aliases
-	: REG_ID THEN exp
+	: REG_ID THEN expr
 	;
 
 registers_decl!
@@ -332,7 +332,7 @@ exprstr_table
 	;
 
 exprstr_term
-	: QUOTE^ exp QUOTE!
+	: QUOTE^ expr QUOTE!
 	;
 
 instr
@@ -383,16 +383,26 @@ parameter_list
 		{ ## = #(#[PARAMS,"PARAMS"], ##) }
 	;
 
-exp_list: (exp (COMMA! exp)* )?;
+exp_list: (expr (COMMA! expr)* )?;
 
 assign_rt
-	: ASSIGNSIZE^ variable EQUATE! exp
-/*		( (exp THEN) => exp THEN variable EQUATE exp
-		| (exp) => exp
-		| variable EQUATE exp
-		)*/
+	: ASSIGNTYPE^ variable EQUATE! expr
+//	| ASSIGNTYPE^ expr THEN variable EQUATE! expr
+//	| ASSIGNTYPE^ expr
 	| "FPUSH"^
 	| "FPOP"^
+	;
+
+variable
+	: 
+		( REG_ID^
+		| "r"^ LSQUARE! expr RSQUARE!
+		| "m"^ LSQUARE! expr RSQUARE!
+		| NAME^
+		) 
+		( AT^ LSQUARE! expr COLON! expr RSQUARE! 
+		| PRIME^
+		)*
 	;
 
 primary_expr
@@ -400,14 +410,14 @@ primary_expr
 	| FLOATNUM^
 //	| TEMP
 	| REG_ID^
-	| "r"^ LSQUARE! exp RSQUARE!
-	| "m"^ LSQUARE! exp RSQUARE!
+	| "r"^ LSQUARE! expr RSQUARE!
+	| "m"^ LSQUARE! expr RSQUARE!
 	| NAME^
-	| LPAREN! exp RPAREN!
-	| LSQUARE! exp QUEST^ exp COLON! exp RSQUARE!
-	| "addr" LPAREN^ exp RPAREN!
-//	| conv_func LPAREN num COMMA num COMMA exp RPAREN
-//	| transcend LPAREN exp RPAREN
+	| LPAREN! expr RPAREN!
+	| LSQUARE! expr QUEST^ expr COLON! expr RSQUARE!
+	| "addr" LPAREN^ expr RPAREN!
+//	| conv_func LPAREN num COMMA num COMMA expr RPAREN
+//	| transcend LPAREN expr RPAREN
 	| NAME LPAREN^ exp_list RPAREN!
 	| NAME LSQUARE^ NAME RSQUARE!
 	;
@@ -415,7 +425,7 @@ primary_expr
 // bit extraction, sign extension, cast
 postfix_expr
 	: primary_expr 
-		( (AT) => AT^ LSQUARE! exp COLON! exp RSQUARE!
+		( (AT) => AT^ LSQUARE! expr COLON! expr RSQUARE!
 		| (S_E) => S_E^
 		| (LCURLY num RCURLY) => LCURLY^ num RCURLY!
 		)*
@@ -459,27 +469,13 @@ log_expr
 	: cond_expr (("and"^ | "or"^) cond_expr)*
 	;
 
-exp: log_expr;
+expr: log_expr;
 
+endianness: "ENDIANNESS"^ ( "BIG" | "LITTLE" );
 
-variable
-	: 
-		( REG_ID^
-		| "r"^ LSQUARE! exp RSQUARE!
-		| "m"^ LSQUARE! exp RSQUARE!
-		| NAME^
-		) 
-		( AT^ LSQUARE! exp COLON! exp RSQUARE! )*
-	;
+fastlist: "FAST"^ fastentry (COMMA! fastentry)*;
 
-value
-	: (PRIME^)? variable;
-
-endianness: "ENDIANNESS" ( "BIG" | "LITTLE" );
-
-fastlist: "FAST" fastentry (COMMA fastentry)*;
-
-fastentry: NAME INDEX NAME;
+fastentry: NAME INDEX^ NAME;
 
 
 class sslTreeParser extends TreeParser;
