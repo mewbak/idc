@@ -487,7 +487,7 @@ part!
             for n, v in inam:
                 self.locals.append(v)
                 //print "Before: ", ib.toStringTree()
-                self.rtl_subst(self.astFactory.dupTree(ib))
+                self.rtl_expand(self.astFactory.dupTree(ib))
                 //print "After :", self.returnAST
                 rtl = self.returnAST
                 //print
@@ -496,7 +496,8 @@ part!
                 if n in self.instructions:
                     old_ip, old_rtl = self.instructions[n]
                     assert ip == old_ip
-                    old_rtl.addChild(rtl)
+                    if rtl.getFirstChild():
+	                    old_rtl.addChild(rtl.getFirstChild())
                 else:
                     self.instructions[n] = ip, rtl
         }
@@ -544,8 +545,18 @@ instr_name_elem! returns [res]
 	| d:DECOR { res = [('.' + d.getText()[1:], {})] }
 	;
 
-rtl_subst
-	: #(RTL (rtl_subst)*)
+rtl_expand!
+	:! #( RTL 
+			{ ## = #(#[RTL,"RTL"]) }
+		(rt:rtl_expand!
+		 	{
+                if #rt.getType() == RTL:
+                    if #rt.getFirstChild():
+                        ##.addChild(#rt.getFirstChild())
+                else:
+                    ##.addChild(#rt)
+		 	}
+		)*)
 	|! n:NAME 
         {
             s = n.getText()
@@ -556,7 +567,7 @@ rtl_subst
             else:
                 ## = #(#n)
         }
-    |! #(RSQUARE lexpr:rtl_subst t:NAME i:rtl_subst rexpr:rtl_subst)
+    |! #(RSQUARE lexpr:rtl_expand t:NAME i:rtl_expand rexpr:rtl_expand)
         {
             if #i.getType() == NUM:
                 op = self.astFactory.dup(self.tables[t.getText()][int(#i.getText())])
@@ -564,17 +575,19 @@ rtl_subst
             else:
                 ## = #(RSQUARE, #lexpr, #t, #i, #rexpr)
         }
-    |! #(LPAREN f:NAME { args = [] } (a:rtl_subst { args.append(a) } )* )
+    |! #(LPAREN f:NAME { args = [] } (arg:rtl_expand { args.append(#arg) } )* )
         {
             if f.getText() in self.functions:
                 params, rtl = self.functions[f.getText()]
                 self.locals.append(dict(zip(params, args)))
-                self.rtl_subst(rtl)
+                self.rtl_expand(rtl)
                 ## = self.returnAST
                 self.locals.pop()
             else:
-                pass
+                ## = #(LPAREN, #f)
+                for _arg in args:
+                    ##.addChild(_arg)
         }
-	|! #(r:. {/*print "=>", #r; */## = self.astFactory.dup(#r)} (no:rtl_subst { ##.addChild(#no) } )* )
+	|! #(r:. {/*print "=>", #r; */## = self.astFactory.dup(#r)} (no:rtl_expand { ##.addChild(#no) } )* )
 	;
 
