@@ -26,15 +26,13 @@ header "sslTreeParser.__main__" {
     parser.start()
     walker = Walker()
     ast = parser.getAST()
-    print ast
     walker.start(ast)
     
-    /*
-    for n, (p, b) in walker.functions.iteritems():
-        print "%s(%s) %s" % (n, ','.join(p), b.toStringList())
-    */
-    for n, (p, b) in walker.instructions.iteritems():
-        print "%s(%s) %s" % (n, ','.join(p), b.toStringList())
+    names = walker.instructions.keys()
+    names.sort()
+    for name in names:
+        params, body = walker.instructions[name]
+        print "%s(%s) %s" % (name, ','.join(params), body.toStringList())
 }
 
 header "sslTreeParser.__init__" {
@@ -57,7 +55,8 @@ options {
 }
 
 // Whitespace -- ignored
-WS	: (' '|'\t'|'\f')+ { $setType(SKIP); }
+WS
+	: (' '|'\t'|'\f')+ { $setType(SKIP); }
 	| ( '\r' ('\n')? | '\n') { $newline; $setType(SKIP); }
 	;
 
@@ -108,29 +107,30 @@ EQUATE: ":=";
 ASSIGN: "::=";
 SEMI: ';';
 
-COMMA	: ',';
+COMMA: ',';
 
-LPAREN	: '(';
-RPAREN	: ')';
-LSQUARE	: '[';
-RSQUARE	: ']';
-LCURLY	: '{';
-RCURLY	: '}';
+LPAREN: '(';
+RPAREN: ')';
+LSQUARE: '[';
+RSQUARE: ']';
+LCURLY: '{';
+RCURLY: '}';
 
-INDEX : "->";
-THEN : "=>";
-TO	: "..";
-AT : '@';
+INDEX: "->";
+THEN: "=>";
+TO: "..";
+AT: '@';
 ASSIGNTYPE: '*' /* ('a'..'z')?*/ ('0'..'9')* '*';
 
-PRIME : '\'';
+PRIME: '\'';
 
 NOT: '~';
 OR: '|';
 AND: '&';
 XOR
 	: '^'
-		( ('"' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"') => '"'! ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"'! { $setType(DECOR); }
+		( ('"' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"') => 
+			'"'! ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"'! { $setType(DECOR); }
 		| )
 	;
 
@@ -210,7 +210,9 @@ tokens {
 	RTL;
 }
 
-start: specification EOF!;
+start
+	: specification EOF!
+	;
 
 specification
 	: ( part SEMI! )*
@@ -221,12 +223,11 @@ part
 	: constant_def
 	| registers_decl
 	| operands_decl
-	| flag_func
-	| table_def
 	| endianness
-	| instr
-	| fastlist
-//	| definition
+	| function_def
+	| table_def
+	| instr_def
+	| fast_list
 	;
 
 num: NUM;
@@ -238,29 +239,6 @@ constant_def
 
 constant_expr
 	: NUM ((PLUS^|MINUS^) NUM)*
-	;
-
-operands_decl!
-	: "OPERAND" operand_decl ( COMMA operand_decl )*
-	;
-
-operand_decl
-	: NAME EQUATE LCURLY parameter_list RCURLY
-	| NAME parameter_list (LSQUARE parameter_list RSQUARE)? ASSIGNTYPE expr
-	;
-
-definition
-	: internal_type NAME
-	| NAME ASSIGN num
-	| aliases
-	;
-
-internal_type
-	: INFINITESTACK
-	;
-	
-aliases
-	: REG_ID THEN expr
 	;
 
 registers_decl!
@@ -280,7 +258,18 @@ register_list
 	: REG_ID (COMMA! REG_ID)*
 	;
 
-flag_func
+operands_decl
+	: "OPERAND"^ operand_decl ( COMMA! operand_decl )*
+	;
+
+operand_decl
+	: NAME^ EQUATE LCURLY! parameter_list RCURLY!
+	| NAME^ parameter_list (LSQUARE parameter_list RSQUARE)? ASSIGNTYPE expr
+	;
+
+endianness: "ENDIANNESS"^ ( "BIG" | "LITTLE" );
+
+function_def
 	: NAME LPAREN! parameter_list RPAREN! LCURLY! rt_list RCURLY!
 		{ ## = #(#[FUNCTION,"FUNCTION"], ##) }
 	;
@@ -291,33 +280,33 @@ table_def
 	;
 
 table_expr
-	: (str_table) => str_table
+	: (str_table_expr) => str_table_expr
 	| opstr_table
 	| exprstr_table
 	;
 
-str_table
-	: primary_str_table (primary_str_table
+str_table_expr
+	: str_table (str_table
 		{ ## = #(#[CROSSP,"CROSSP"], ##) }
 	  )*
 	;
 
-primary_str_table
+str_table
 	: NAME
-	| LCURLY^ str_term (COMMA! str_term)* RCURLY!
+	| LCURLY^ str_entry (COMMA! str_entry)* RCURLY!
 	;
 
-str_term
+str_entry
 	: NAME
 	| QUOTE QUOTE! { ## = #(##, #[NAME,""]) }
 	| QUOTE^ NAME QUOTE!
 	;
 
 opstr_table 
-	: LCURLY^ opstr_term (COMMA! t:opstr_term)* RCURLY!
+	: LCURLY^ opstr_entry (COMMA! t:opstr_entry)* RCURLY!
 	;
 
-opstr_term
+opstr_entry
 	: QUOTE^ bin_oper QUOTE!
 	;
 
@@ -328,14 +317,14 @@ bin_oper
 	;
 
 exprstr_table
-	: LCURLY^ exprstr_term (COMMA! t:exprstr_term)* RCURLY!
+	: LCURLY^ exprstr_entry (COMMA! t:exprstr_entry)* RCURLY!
 	;
 
-exprstr_term
+exprstr_entry
 	: QUOTE^ expr QUOTE!
 	;
 
-instr
+instr_def
 	: instr_name parameter_list rt_list
 		{ ## = #(#[INSTR,"INSTR"], ##) }
 	;
@@ -366,6 +355,7 @@ instr_name_decor
 	: DECOR^
 	;
 
+// register transfer list
 rt_list
 	: (rt)+
 		{ ## = #(#[RTL,"RTL"], ##) }
@@ -373,7 +363,7 @@ rt_list
 
 rt
 	: assign_rt
-	| NAME LPAREN^ exp_list RPAREN!
+	| NAME LPAREN^ expr_list RPAREN!
 //	| FLAGMACRO LPAREN (REG_ID ( COMMA! REG_ID)* )? RPAREN
 	| UNDERSCORE^
 	;
@@ -382,8 +372,6 @@ parameter_list
 	: ((NAME) => NAME (COMMA! t:NAME)* | )
 		{ ## = #(#[PARAMS,"PARAMS"], ##) }
 	;
-
-exp_list: (expr (COMMA! expr)* )?;
 
 assign_rt
 	: ASSIGNTYPE^ variable EQUATE! expr
@@ -413,13 +401,13 @@ primary_expr
 	| "r"^ LSQUARE! expr RSQUARE!
 	| "m"^ LSQUARE! expr RSQUARE!
 	| NAME^
+	| NAME LSQUARE^ NAME RSQUARE!
 	| LPAREN! expr RPAREN!
 	| LSQUARE! expr QUEST^ expr COLON! expr RSQUARE!
-	| "addr" LPAREN^ expr RPAREN!
+	| NAME LPAREN^ expr_list RPAREN!
+//	| "addr" LPAREN expr RPAREN
 //	| conv_func LPAREN num COMMA num COMMA expr RPAREN
 //	| transcend LPAREN expr RPAREN
-	| NAME LPAREN^ exp_list RPAREN!
-	| NAME LSQUARE^ NAME RSQUARE!
 	;
 
 // bit extraction, sign extension, cast
@@ -471,11 +459,11 @@ log_expr
 
 expr: log_expr;
 
-endianness: "ENDIANNESS"^ ( "BIG" | "LITTLE" );
+expr_list: (expr (COMMA! expr)* )?;
 
-fastlist: "FAST"^ fastentry (COMMA! fastentry)*;
+fast_list: "FAST"^ fast_entry (COMMA! fast_entry)*;
 
-fastentry: NAME INDEX^ NAME;
+fast_entry: NAME INDEX^ NAME;
 
 
 class sslTreeParser extends TreeParser;
