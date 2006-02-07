@@ -3,6 +3,7 @@
 // Based on:
 // - citeseer.ist.psu.edu/cifuentes98specifying.html
 // - sslscanner.l and sslparser.y from UQBT source distribution.
+// - sslscanner.l and sslparser.y from boomerang source distribution.
 
 header {
 
@@ -225,6 +226,7 @@ tokens {
 	FUNCTION;
 	INSTR;
 	INSTR_NAME;
+	LOOKUP_OP;
 	PARAMS;
 	BUILTIN;
 	RTL;
@@ -261,11 +263,11 @@ constant_expr
 	: NUM ((PLUS^|MINUS^) NUM)*
 	;
 
-registers_decl!
-	: ("INTEGER"^| "FLOAT"^) register_decl (COMMA register_decl)*
+registers_decl
+	: ("INTEGER"^| "FLOAT"^) register_decl (COMMA! register_decl)*
 	;
 
-register_decl!
+register_decl
 	: REG_ID INDEX num
 	| REG_ID LSQUARE num RSQUARE INDEX num 
 		( "COVERS" REG_ID TO REG_ID
@@ -383,9 +385,9 @@ rt_list
 
 rt
 	: assign_rt
-	| NAME LPAREN^ expr_list RPAREN!
+	| NAME LPAREN! expr_list RPAREN! { ## = #(#[FUNCTION,"FUNCTION"], ##) }
 	| ("undefineflags"^| "defineflags"^) LPAREN! (REG_ID ( COMMA! REG_ID)* )? RPAREN!
-	| UNDERSCORE^
+	| UNDERSCORE!
 	;
 
 parameter_list
@@ -421,11 +423,10 @@ primary_expr
 	| "r"^ LSQUARE! expr RSQUARE!
 	| "m"^ LSQUARE! expr RSQUARE!
 	| NAME^
-	| NAME LSQUARE^ NAME RSQUARE!
+	| NAME LSQUARE! (NAME|NUM) RSQUARE!	{ ## = #([TABLE,"TABLE"], ##) }
 	| LPAREN! expr RPAREN!
 	| LSQUARE! expr QUEST^ expr COLON! expr RSQUARE!
-	| NAME LPAREN! expr_list RPAREN!
-		{ ## = #([BUILTIN,"BUILTIN"], ##) }
+	| NAME LPAREN! expr_list RPAREN! { ## = #([BUILTIN,"BUILTIN"], ##) }
 	;
 
 // bit extraction, sign extension, cast
@@ -440,7 +441,8 @@ postfix_expr
 // operator lookup
 lookup_expr
 	: postfix_expr 
-		( (NAME LSQUARE NAME RSQUARE) => NAME LSQUARE! NAME RSQUARE^ lookup_expr
+		( (NAME LSQUARE NAME RSQUARE) => NAME LSQUARE! NAME RSQUARE! lookup_expr
+			{ ## = #([LOOKUP_OP,"LOOKUP_OP"], ##) }
 		|
 		)
 	;
@@ -484,6 +486,8 @@ fast_list: "FAST"^ fast_entry (COMMA! fast_entry)*;
 fast_entry: NAME INDEX^ NAME;
 
 
+// SSL AST preprocessor that replaces references to constants, tables, and 
+// functions by their actual values.
 class sslPreprocessor extends TreeParser;
 options {
 	buildAST = true;
@@ -492,6 +496,7 @@ options {
 start
 	: #(SPEC (part)*)
 		{
+            // Rebuild the expanded instructions
             names = self.instructions.keys()
             names.sort()
             for name in names:
@@ -515,11 +520,8 @@ part
 		{
             for n, v in inam:
                 self.locals.append(v)
-                //print "Before: ", ib.toStringTree()
                 self.rtl_expand(self.astFactory.dupTree(ib))
-                //print "After :", self.returnAST
                 rtl = self.returnAST
-                //print
                 self.locals.pop()
                 
                 if n in self.instructions:
@@ -530,57 +532,88 @@ part
                 else:
                     self.instructions[n] = ip, rtl
         }
+	| #( . ( . )* )
+		// copy other parts unmodified
 	;
 
-constant_expr! returns [res]
+constant_expr! returns [v]
 	: n:NUM
-		{ res = int(n.getText()) }
-	| #(PLUS x=constant_expr y=constant_expr)
-		{ res = x + y }
-	| #(MINUS x=constant_expr y=constant_expr)
-		{ res = x - y }
+		{ v = int(n.getText()) }
+	| #(PLUS l=constant_expr r=constant_expr)
+		{ v = l + r }
+	| #(MINUS l=constant_expr r=constant_expr)
+		{ v = l - r }
 	;
 
 table_expr! returns [res]
-	: #( LCURLY h=table_expr { res = h } (t=table_expr {res.extend(t)})* )
-	| #( CROSSP h=table_expr { res = h } (t=table_expr {res = [self.astFactory.create(NAME, hh.getText() + tt.getText()) for tt in t for hh in h]})* )
+	: #( LCURLY h=table_expr { res = h } (t=table_expr { res.extend(t) })* )
+	| #( CROSSP h=table_expr { res = h } (t=table_expr { res = [self.astFactory.create(NAME, hh.getText() + tt.getText()) for tt in t for hh in h] })* )
 	| #( QUOTE any:. ) { res = [self.astFactory.dupTree(any)] }
 	| n:NAME { res = self.tables.get(n.getText(), [n]) }
 	;
 
 parameter_list! returns [res]
-	: #(PARAMS { res = [] } (n:NAME { res.append(n.getText()) } )* )
+	: #(PARAMS { res = [] } ( n:NAME { res.append(n.getText()) } )* )
 	;
-	
+
+// Returns a list of ('name', 'variables') pairs, where 'name' is the 
+// instruction name and 'variables' is a dict mapping the corresponding 
+// variables/values resulting from table lookup.
 instr_name! returns [res]
-	: #(INSTR_NAME {res = [("", {})] } (e=instr_name_elem {
-        tmp = []
-        for rn, rv in res:
-            for en, ev in e:
-                n = rn + en
-                v = rv.copy()
-                v.update(ev)
-                tmp.append((n, v))
-        res = tmp
-	})*
+	: #( INSTR_NAME 
+			{ res = [("", {})] }
+		( e=instr_name_elem
+            {
+                tmp = []
+                for rn, rv in res:
+                    for en, ev in e:
+                        n = rn + en
+                        v = rv.copy()
+                        v.update(ev)
+                        tmp.append((n, v))
+                res = tmp
+            }
+		)*
 	)
 	;
 
+// Same return value as 'instr_name'.
 instr_name_elem! returns [res]
-	: n:NAME { res = [(n.getText(), {})] }
-	| PRIME no:NAME { res = [("", {}), (no.getText(), {})] }
-	| #(LSQUARE t1:NAME 
-		( v:NAME { res = [(self.tables[t1.getText()][idx].getText(), {v.getText(): self.astFactory.create(NUM, str(idx))}) for idx in range(len(self.tables[t1.getText()]))] }
-		| idx:NUM { res = [(self.tables[t1.getText()][int(idx.getText())], {})] }
+	: name:NAME
+		{ res = [(#name.getText(), {})] }
+	| PRIME optname:NAME 
+		{ res = [("", {}), (#optname.getText(), {})] }
+	| #(LSQUARE tname:NAME
+		{
+            try:
+                table = self.tables[#tname.getText()]
+            except KeyError:
+                raise SemanticException(#tname, "undefined table")
+		}
+		( vname:NAME
+			{ res = [(table[idx].getText(), {#vname.getText(): #(#[NUM, str(idx)])}) for idx in range(len(table))]}
+		| tidx:NUM 
+			{
+                try:
+                    res = [(table[int(#tidx.getText())], {})]
+                except KeyError:
+                    raise SemanticException(#tname, "index outside bounds")
+            }
 		))
-	| d:DECOR { res = [('.' + d.getText()[1:], {})] }
+	| d:DECOR
+		{ res = [('.' + d.getText()[1:], {})] }
 	;
 
-rtl_expand!
+// Expands variables, table references, and functions in RTL.
+//
+// NOTE: Especial care must be taken here in order to *duplicate* AST nodes, and 
+// not simply refer to them, as that would result in corruption of the AST.
+rtl_expand
 	:! #( RTL 
 			{ ## = #(#[RTL,"RTL"]) }
 		(rt:rtl_expand
 		 	{
+                // do not nest RTL blocks
                 if #rt.getType() == RTL:
                     if #rt.getFirstChild():
                         ##.addChild(#rt.getFirstChild())
@@ -588,43 +621,73 @@ rtl_expand!
                     ##.addChild(#rt)
 		 	}
 		)*)
-	|! n:NAME 
+	|! name:NAME 
         {
-            s = n.getText()
+            s = #name.getText()
             if s in self.locals[-1]:
                 ## = self.astFactory.dupTree(self.locals[-1][s])
             elif s in self.constants:
                 ## = self.astFactory.dupTree(self.constants[s])
             else:
-                ## = #(#n)
+                ## = self.astFactory.dup(#name)
         }
-    |! #(LSQUARE etn:NAME eti:rtl_expand)
+    |! #(TABLE etname:NAME etindex:rtl_expand)
         {
-            if #eti.getType() != NUM:
+            try:
+                table = self.tables[#etname.getText()]
+            except KeyError:
                 ## = self.astFactory.dupTree(##_in)
-                raise SemanticException(#eti, "undefined indice")
-            ## = self.astFactory.dup(self.tables[etn.getText()][int(#eti.getText())])
-        }
-    |! #(RSQUARE lexpr:rtl_expand t:NAME i:rtl_expand rexpr:rtl_expand)
-        {
-            if #i.getType() != NUM:
-                ## = self.astFactory.dupTree(##_in)
-                raise SemanticException(#n, "undefined indice")
-            op = self.astFactory.dup(self.tables[t.getText()][int(#i.getText())])
-            ## = #(#op, #lexpr, #rexpr)
-        }
-    |! #(LPAREN f:NAME { args = [] } (arg:rtl_expand { args.append(#arg) } )* )
-        {
-            if f.getText() not in self.functions:
-                ## = self.astFactory.dupTree(##_in)
-                raise SemanticException(#f, "undefined function")
+                raise SemanticException(#etname, "undefined table")
             
-            params, rtl = self.functions[f.getText()]
-            self.locals.append(dict(zip(params, args)))
-            self.rtl_expand(rtl)
+            try:
+                index = int(#etindex.getText())
+            except ValueError:
+                ## = self.astFactory.dupTree(##_in)
+                raise SemanticException(#etname, "non-numeric indice")
+           
+            try:
+                expr = table[index]
+            except:
+                raise SemanticException(#etname, "indice out of bounds")
+           
+            ## = self.astFactory.dup(expr)
+        }
+    |! #(LOOKUP_OP lexpr:rtl_expand otname:NAME otindex:rtl_expand rexpr:rtl_expand)
+        {
+            try:
+                table = self.tables[#otname.getText()]
+            except KeyError:
+                ## = self.astFactory.dupTree(##_in)
+                raise SemanticException(#otname, "undefined table")
+            
+            try:
+                index = int(#otindex.getText())
+            except ValueError:
+                ## = self.astFactory.dupTree(##_in)
+                raise SemanticException(#otname, "non-numeric indice")
+           
+            try:
+                op = table[index]
+            except:
+                raise SemanticException(#otname, "indice out of bounds")
+           
+            op = self.astFactory.dup(op)
+            ## = #(op, #lexpr, #rexpr)
+        }
+    |! #(FUNCTION fname:NAME { fargs = [] } (farg:rtl_expand { fargs.append(#farg) } )* )
+        {
+            try:
+        	        fparams, fbody = self.functions[fname.getText()]
+        	    except KeyError:
+                ## = self.astFactory.dupTree(##_in)
+                raise SemanticException(#fname, "undefined function")
+            
+            self.locals.append(dict(zip(fparams, fargs)))
+            self.rtl_expand(fbody)
             ## = self.returnAST
             self.locals.pop()
         }
-	|! #(r:. {/*print "=>", #r; */## = self.astFactory.dup(#r)} (no:rtl_expand { ##.addChild(#no) } )* )
+	| #( . ( rtl_expand )* )
+		// recurse
 	;
 
