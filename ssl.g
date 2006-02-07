@@ -35,7 +35,7 @@ header "sslParser.__main__" {
     print ast
 }
 
-header "sslTreeParser.__main__" {
+header "sslPreprocessor.__main__" {
     from sslLexer import Lexer
     from sslParser import Parser
     
@@ -45,6 +45,7 @@ header "sslTreeParser.__main__" {
     walker = Walker()
     ast = parser.getAST()
     walker.start(ast)
+    ast = walker.getAST()
     
     names = walker.instructions.keys()
     names.sort()
@@ -53,7 +54,7 @@ header "sslTreeParser.__main__" {
         print "%s(%s) %s" % (name, ','.join(params), body.toStringList())
 }
 
-header "sslTreeParser.__init__" {
+header "sslPreprocessor.__init__" {
     self.constants = {}
     self.tables = {}
     self.functions = {}
@@ -225,6 +226,7 @@ tokens {
 	INSTR;
 	INSTR_NAME;
 	PARAMS;
+	BUILTIN;
 	RTL;
 }
 
@@ -382,7 +384,7 @@ rt_list
 rt
 	: assign_rt
 	| NAME LPAREN^ expr_list RPAREN!
-//	| FLAGMACRO LPAREN (REG_ID ( COMMA! REG_ID)* )? RPAREN
+	| ("undefineflags"^| "defineflags"^) LPAREN! (REG_ID ( COMMA! REG_ID)* )? RPAREN!
 	| UNDERSCORE^
 	;
 
@@ -422,10 +424,8 @@ primary_expr
 	| NAME LSQUARE^ NAME RSQUARE!
 	| LPAREN! expr RPAREN!
 	| LSQUARE! expr QUEST^ expr COLON! expr RSQUARE!
-	| NAME LPAREN^ expr_list RPAREN!
-//	| "addr" LPAREN expr RPAREN
-//	| conv_func LPAREN num COMMA num COMMA expr RPAREN
-//	| transcend LPAREN expr RPAREN
+	| NAME LPAREN! expr_list RPAREN!
+		{ ## = #([BUILTIN,"BUILTIN"], ##) }
 	;
 
 // bit extraction, sign extension, cast
@@ -484,23 +484,34 @@ fast_list: "FAST"^ fast_entry (COMMA! fast_entry)*;
 fast_entry: NAME INDEX^ NAME;
 
 
-class sslTreeParser extends TreeParser;
+class sslPreprocessor extends TreeParser;
 options {
 	buildAST = true;
 }
 
-start!
+start
 	: #(SPEC (part)*)
+		{
+            names = self.instructions.keys()
+            names.sort()
+            for name in names:
+                params, body_ast = self.instructions[name]
+                params_ast = #(#[PARAMS,"PARAMS"])
+                for param in params:
+                   params_ast.addChild(#(#[NAME,param]))
+                instr_ast = #(#[INSTR,"INSTR"], #[NAME,name], params_ast, body_ast)
+                ##.addChild(instr_ast)
+		}
 	;
 
-part!
-	: #(CONSTANT cn:NAME cv=constant_expr)
+part
+	:! #(CONSTANT cn:NAME cv=constant_expr)
 		{ self.constants[cn.getText()] = #[NUM, str(cv)] }
-	| #(TABLE tn:NAME tv=table_expr)
-		{ self.tables[tn.getText()] = tv /* ; print tn.getText() + ": " + ", ".join([tvi.toStringList() for tvi in tv]) */ }
-	| #(FUNCTION fn:NAME fp=parameter_list fb:RTL)
+	|! #(TABLE tn:NAME tv=table_expr)
+		{ self.tables[tn.getText()] = tv }
+	|! #(FUNCTION fn:NAME fp=parameter_list fb:RTL)
 		{ self.functions[fn.getText()] = fp, self.astFactory.dupTree(fb) }
-	| #(INSTR inam=instr_name ip=parameter_list ib:RTL)
+	|! #(INSTR inam=instr_name ip=parameter_list ib:RTL)
 		{
             for n, v in inam:
                 self.locals.append(v)
@@ -590,28 +601,29 @@ rtl_expand!
     |! #(LSQUARE etn:NAME eti:rtl_expand)
         {
             if #eti.getType() != NUM:
+                ## = self.astFactory.dupTree(##_in)
                 raise SemanticException(#eti, "undefined indice")
             ## = self.astFactory.dup(self.tables[etn.getText()][int(#eti.getText())])
         }
     |! #(RSQUARE lexpr:rtl_expand t:NAME i:rtl_expand rexpr:rtl_expand)
         {
             if #i.getType() != NUM:
+                ## = self.astFactory.dupTree(##_in)
                 raise SemanticException(#n, "undefined indice")
             op = self.astFactory.dup(self.tables[t.getText()][int(#i.getText())])
             ## = #(#op, #lexpr, #rexpr)
         }
     |! #(LPAREN f:NAME { args = [] } (arg:rtl_expand { args.append(#arg) } )* )
         {
-            if f.getText() in self.functions:
-                params, rtl = self.functions[f.getText()]
-                self.locals.append(dict(zip(params, args)))
-                self.rtl_expand(rtl)
-                ## = self.returnAST
-                self.locals.pop()
-            else:
-                ## = #(LPAREN, #f)
-                for _arg in args:
-                    ##.addChild(_arg)
+            if f.getText() not in self.functions:
+                ## = self.astFactory.dupTree(##_in)
+                raise SemanticException(#f, "undefined function")
+            
+            params, rtl = self.functions[f.getText()]
+            self.locals.append(dict(zip(params, args)))
+            self.rtl_expand(rtl)
+            ## = self.returnAST
+            self.locals.pop()
         }
 	|! #(r:. {/*print "=>", #r; */## = self.astFactory.dup(#r)} (no:rtl_expand { ##.addChild(#no) } )* )
 	;
