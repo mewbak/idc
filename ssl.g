@@ -5,6 +5,24 @@
 // - sslscanner.l and sslparser.y from UQBT source distribution.
 
 header {
+
+import antlr
+
+class SemanticException(antlr.SemanticException):
+
+    def __init__(self, token, msg):
+        antlr.SemanticException.__init__(self)
+        self.token = token
+        self.msg = msg
+
+    def __str__(self):
+        line = self.token.getLine()
+        col  = self.token.getColumn()
+        text = self.token.getText()
+        return "line %s (column %s): \"%s\": %s" % (line,col,text, self.msg)
+
+    __repr__ = __str__
+
 }
 
 header "sslParser.__main__" {
@@ -540,15 +558,17 @@ instr_name! returns [res]
 instr_name_elem! returns [res]
 	: n:NAME { res = [(n.getText(), {})] }
 	| PRIME no:NAME { res = [("", {}), (no.getText(), {})] }
-	| #(LSQUARE t1:NAME v:NAME) { res = [(self.tables[t1.getText()][idx].getText(), {v.getText(): self.astFactory.create(NUM, str(idx))}) for idx in range(len(self.tables[t1.getText()]))] }
-	//| #(LSQUARE t2:NAME idx:NUM) { res = [(self.tables[t2.getText()][int(idx.getText())], {})] }
+	| #(LSQUARE t1:NAME 
+		( v:NAME { res = [(self.tables[t1.getText()][idx].getText(), {v.getText(): self.astFactory.create(NUM, str(idx))}) for idx in range(len(self.tables[t1.getText()]))] }
+		| idx:NUM { res = [(self.tables[t1.getText()][int(idx.getText())], {})] }
+		))
 	| d:DECOR { res = [('.' + d.getText()[1:], {})] }
 	;
 
 rtl_expand!
 	:! #( RTL 
 			{ ## = #(#[RTL,"RTL"]) }
-		(rt:rtl_expand!
+		(rt:rtl_expand
 		 	{
                 if #rt.getType() == RTL:
                     if #rt.getFirstChild():
@@ -567,13 +587,18 @@ rtl_expand!
             else:
                 ## = #(#n)
         }
+    |! #(LSQUARE etn:NAME eti:rtl_expand)
+        {
+            if #eti.getType() != NUM:
+                raise SemanticException(#eti, "undefined indice")
+            ## = self.astFactory.dup(self.tables[etn.getText()][int(#eti.getText())])
+        }
     |! #(RSQUARE lexpr:rtl_expand t:NAME i:rtl_expand rexpr:rtl_expand)
         {
-            if #i.getType() == NUM:
-                op = self.astFactory.dup(self.tables[t.getText()][int(#i.getText())])
-                ## = #(#op, #lexpr, #rexpr)
-            else:
-                ## = #(RSQUARE, #lexpr, #t, #i, #rexpr)
+            if #i.getType() != NUM:
+                raise SemanticException(#n, "undefined indice")
+            op = self.astFactory.dup(self.tables[t.getText()][int(#i.getText())])
+            ## = #(#op, #lexpr, #rexpr)
         }
     |! #(LPAREN f:NAME { args = [] } (arg:rtl_expand { args.append(#arg) } )* )
         {
