@@ -11,16 +11,16 @@ import antlr
 
 class SemanticException(antlr.SemanticException):
 
-    def __init__(self, token, msg):
+    def __init__(self, node, msg):
         antlr.SemanticException.__init__(self)
-        self.token = token
+        self.node = node
         self.msg = msg
 
     def __str__(self):
-        line = self.token.getLine()
-        col  = self.token.getColumn()
-        text = self.token.getText()
-        return "line %s (column %s): \"%s\": %s" % (line,col,text, self.msg)
+        line = self.node.getLine()
+        col  = self.node.getColumn()
+        text = self.node.getText()
+        return "line %s:%s: \"%s\": %s" % (line, col, text, self.msg)
 
     __repr__ = __str__
 
@@ -521,7 +521,7 @@ part
             for n, v in inam:
                 self.locals.append(v)
                 self.rtl_expand(self.astFactory.dupTree(ib))
-                rtl = self.returnAST
+                rtl = self.getAST()
                 self.locals.pop()
                 
                 if n in self.instructions:
@@ -629,7 +629,7 @@ rtl_expand
             elif s in self.constants:
                 ## = self.astFactory.dupTree(self.constants[s])
             else:
-                ## = self.astFactory.dup(#name)
+                ## = self.astFactory.dupTree(#name)
         }
     |! #(TABLE etname:NAME etindex:rtl_expand)
         {
@@ -650,7 +650,7 @@ rtl_expand
             except:
                 raise SemanticException(#etname, "indice out of bounds")
            
-            ## = self.astFactory.dup(expr)
+            ## = self.astFactory.dupTree(expr)
         }
     |! #(LOOKUP_OP lexpr:rtl_expand otname:NAME otindex:rtl_expand rexpr:rtl_expand)
         {
@@ -671,7 +671,7 @@ rtl_expand
             except:
                 raise SemanticException(#otname, "indice out of bounds")
            
-            op = self.astFactory.dup(op)
+            op = self.astFactory.dupTree(op)
             ## = #(op, #lexpr, #rexpr)
         }
     |! #(FUNCTION fname:NAME { fargs = [] } (farg:rtl_expand { fargs.append(#farg) } )* )
@@ -684,7 +684,7 @@ rtl_expand
             
             self.locals.append(dict(zip(fparams, fargs)))
             self.rtl_expand(fbody)
-            ## = self.returnAST
+            ## = self.getAST()
             self.locals.pop()
         }
 	| #( . ( rtl_expand )* )
