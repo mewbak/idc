@@ -1,3 +1,7 @@
+ANTLR = java -cp /usr/share/java/antlr.jar
+ANTLR = runantlr
+ANTLR = ./antlr
+
 default: all
 
 all: \
@@ -5,7 +9,7 @@ all: \
 	$(patsubst %.g,%Parser.py,$(wildcard *.g))
 
 %Lexer.py %Parser.py: %.g
-	runantlr $<
+	$(ANTLR) $<
 	@touch $*Lexer.py $*Parser.py
 
 test-aterm: atermLexer.py atermParser.py
@@ -29,5 +33,8 @@ test: \
 
 doc:
 	epydoc --css blue aterm.py
+
+antlr: /usr/share/java/antlr.jar
+	gcj -O2 -o $@ --main=antlr.Tool $<
 
 .PHONY: default all test doc
