@@ -28,7 +28,7 @@ class SemanticException(antlr.SemanticException):
 
 header "sslParser.__main__" {
     from sslLexer import Lexer
-    
+
     lexer = Lexer()
     parser = Parser(lexer)
     parser.start()
@@ -39,7 +39,7 @@ header "sslParser.__main__" {
 header "sslPreprocessor.__main__" {
     from sslLexer import Lexer
     from sslParser import Parser
-    
+
     lexer = Lexer()
     parser = Parser(lexer)
     parser.start()
@@ -47,7 +47,7 @@ header "sslPreprocessor.__main__" {
     ast = parser.getAST()
     walker.start(ast)
     ast = walker.getAST()
-    
+
     names = walker.instructions.keys()
     names.sort()
     for name in names:
@@ -64,7 +64,7 @@ header "sslPreprocessor.__init__" {
 }
 
 options {
-    language  = "Python";
+	language  = "Python";
 }
 
 
@@ -149,7 +149,7 @@ OR: '|';
 AND: '&';
 XOR
 	: '^'
-		( ('"' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"') => 
+		( ('"' ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"') =>
 			'"'! ('A'..'Z'|'a'..'z')('A'..'Z'|'a'..'z')* '"'! { $setType(DECOR); }
 		| )
 	;
@@ -197,7 +197,7 @@ PLUS_FQ: "+fq";
 MINUS_F: "-f";
 MINUS_FD: "-fd";
 MINUS_FQ: "-fq";
-	
+
 QUEST: '?';
 S_E: '!';
 
@@ -219,7 +219,6 @@ options {
 }
 
 tokens {
-	SPEC;
 	CONSTANT;
 	TABLE;
 	CROSSP;
@@ -227,9 +226,8 @@ tokens {
 	INSTR;
 	INSTR_NAME;
 	LOOKUP_OP;
-	PARAMS;
-	BUILTIN;
 	RTL;
+	BUILTIN;
 }
 
 start
@@ -238,11 +236,11 @@ start
 
 specification
 	: ( part SEMI! )*
-		{ ## = #(#[SPEC,"SPEC"], ##) }
+		{ ## = #(#[SEMI,"SEMI"], ##) }
 	;
 
 part
-	: constant_def
+	: const_def
 	| registers_decl
 	| operands_decl
 	| endianness
@@ -254,12 +252,12 @@ part
 
 num: NUM;
 
-constant_def
-	: NAME EQUATE! v:constant_expr
+const_def
+	: NAME EQUATE! v:const_expr
 		{ ## = #(#[CONSTANT,"CONSTANT"], ##) }
 	;
 
-constant_expr
+const_expr
 	: NUM ((PLUS^|MINUS^) NUM)*
 	;
 
@@ -269,7 +267,7 @@ registers_decl
 
 register_decl
 	: REG_ID INDEX num
-	| REG_ID LSQUARE num RSQUARE INDEX num 
+	| REG_ID LSQUARE num RSQUARE INDEX num
 		( "COVERS" REG_ID TO REG_ID
 		| "SHARES" REG_ID AT LSQUARE num TO num RSQUARE
 		)?
@@ -285,14 +283,14 @@ operands_decl
 	;
 
 operand_decl
-	: NAME^ EQUATE LCURLY! parameter_list RCURLY!
-	| NAME^ parameter_list (LSQUARE parameter_list RSQUARE)? ASSIGNTYPE expr
+	: NAME^ EQUATE LCURLY! param_list RCURLY!
+	| NAME^ param_list (LSQUARE param_list RSQUARE)? ASSIGNTYPE expr
 	;
 
 endianness: "ENDIANNESS"^ ( "BIG" | "LITTLE" );
 
 function_def
-	: NAME LPAREN! parameter_list RPAREN! LCURLY! rt_list RCURLY!
+	: NAME LPAREN! param_list RPAREN! LCURLY! rt_list RCURLY!
 		{ ## = #(#[FUNCTION,"FUNCTION"], ##) }
 	;
 
@@ -303,8 +301,8 @@ table_def
 
 table_expr
 	: (str_table_expr) => str_table_expr
-	| opstr_table
-	| exprstr_table
+	| op_str_table
+	| expr_str_table
 	;
 
 str_table_expr
@@ -324,30 +322,30 @@ str_entry
 	| QUOTE^ NAME QUOTE!
 	;
 
-opstr_table 
-	: LCURLY^ opstr_entry (COMMA! t:opstr_entry)* RCURLY!
+op_str_table
+	: LCURLY^ op_str_entry (COMMA! t:op_str_entry)* RCURLY!
 	;
 
-opstr_entry
+op_str_entry
 	: QUOTE^ bin_oper QUOTE!
 	;
 
 bin_oper
-	: MOD | MUL | DIV | SMUL | SDIV | SMOD | PLUS | MINUS 
+	: MOD | MUL | DIV | SMUL | SDIV | SMOD | PLUS | MINUS
 	| "rlc" | "rrc" | "rl" | "rr" | RSHIFT | LSHIFT | RSHIFTA | OR | ORNOT | AND | ANDNOT | XOR | XORNOT
 	| MUL_F | MUL_FD | MUL_FQ | MUL_FSD | MUL_FDQ | DIV_F | DIV_FD | DIV_FQ | PLUS_F | PLUS_FD | PLUS_FQ | MINUS_F | MINUS_FD | MINUS_FQ | "pow"
 	;
 
-exprstr_table
-	: LCURLY^ exprstr_entry (COMMA! t:exprstr_entry)* RCURLY!
+expr_str_table
+	: LCURLY^ expr_str_entry (COMMA! t:expr_str_entry)* RCURLY!
 	;
 
-exprstr_entry
+expr_str_entry
 	: QUOTE^ expr QUOTE!
 	;
 
 instr_def
-	: instr_name parameter_list rt_list
+	: instr_name param_list rt_list
 		{ ## = #(#[INSTR,"INSTR"], ##) }
 	;
 
@@ -370,7 +368,7 @@ instr_name_elem
 
 instr_name_tail
 	: (instr_name_elem) => instr_name_elem instr_name_tail
-	| 
+	|
 	;
 
 instr_name_decor
@@ -390,9 +388,9 @@ rt
 	| UNDERSCORE!
 	;
 
-parameter_list
+param_list
 	: ((NAME) => NAME (COMMA! t:NAME)* | )
-		{ ## = #(#[PARAMS,"PARAMS"], ##) }
+		{ ## = #(#[COMMA,","], ##) }
 	;
 
 assign_rt
@@ -404,13 +402,13 @@ assign_rt
 	;
 
 variable
-	: 
+	:
 		( REG_ID^
 		| "r"^ LSQUARE! expr RSQUARE!
 		| "m"^ LSQUARE! expr RSQUARE!
 		| NAME^
-		) 
-		( AT^ LSQUARE! expr COLON! expr RSQUARE! 
+		)
+		( AT^ LSQUARE! expr COLON! expr RSQUARE!
 		| PRIME^
 		)*
 	;
@@ -423,7 +421,7 @@ primary_expr
 	| "r"^ LSQUARE! expr RSQUARE!
 	| "m"^ LSQUARE! expr RSQUARE!
 	| NAME^
-	| NAME LSQUARE! (NAME|NUM) RSQUARE!	{ ## = #([TABLE,"TABLE"], ##) }
+	| NAME LSQUARE^ (NAME|NUM) RSQUARE!
 	| LPAREN! expr RPAREN!
 	| LSQUARE! expr QUEST^ expr COLON! expr RSQUARE!
 	| NAME LPAREN! expr_list RPAREN! { ## = #([BUILTIN,"BUILTIN"], ##) }
@@ -431,7 +429,7 @@ primary_expr
 
 // bit extraction, sign extension, cast
 postfix_expr
-	: primary_expr 
+	: primary_expr
 		( (AT) => AT^ LSQUARE! expr COLON! expr RSQUARE!
 		| (S_E) => S_E^
 		| (LCURLY num RCURLY) => LCURLY^ num RCURLY!
@@ -440,7 +438,7 @@ postfix_expr
 
 // operator lookup
 lookup_expr
-	: postfix_expr 
+	: postfix_expr
 		( (NAME LSQUARE NAME RSQUARE) => NAME LSQUARE! NAME RSQUARE! lookup_expr
 			{ ## = #([LOOKUP_OP,"LOOKUP_OP"], ##) }
 		|
@@ -451,7 +449,7 @@ lookup_expr
 unary_expr
 	: (NOT^ | FNEG^ | LNOT^)* lookup_expr
 	;
-	
+
 // floating point arithmetic
 fp_expr
 	: unary_expr ((MUL_F^ | MUL_FD^ | MUL_FQ^ | MUL_FSD^ | MUL_FDQ^ | DIV_F^ | DIV_FD^ | DIV_FQ^ | PLUS_F^ | PLUS_FD^ | PLUS_FQ^ | MINUS_F^ | MINUS_FD^ | MINUS_FQ^ | "pow"^) unary_expr)*
@@ -471,7 +469,7 @@ bit_expr
 cond_expr
 	: bit_expr ((EQ^ | NE^ | LT^ | GT^ | LE^ | GE^ | LTU^ | GTU^ | LEU^ | GEU^) bit_expr)*
 	;
-	
+
 // logicals
 log_expr
 	: cond_expr (("and"^ | "or"^) cond_expr)*
@@ -486,7 +484,7 @@ fast_list: "FAST"^ fast_entry (COMMA! fast_entry)*;
 fast_entry: NAME INDEX^ NAME;
 
 
-// SSL AST preprocessor that replaces references to constants, tables, and 
+// SSL AST preprocessor that replaces references to constants, tables, and
 // functions by their actual values.
 class sslPreprocessor extends TreeParser;
 options {
@@ -494,54 +492,58 @@ options {
 }
 
 start
-	: #(SPEC (part)*)
+	: specification
+	;
+
+specification
+	: #(SEMI (part)*)
 		{
             // Rebuild the expanded instructions
             names = self.instructions.keys()
             names.sort()
             for name in names:
                 params, body_ast = self.instructions[name]
-                params_ast = #(#[PARAMS,"PARAMS"])
+                params_ast = #(#[COMMA,","])
                 for param in params:
-                   params_ast.addChild(#(#[NAME,param]))
+                    params_ast.addChild(#(#[NAME,param]))
                 instr_ast = #(#[INSTR,"INSTR"], #[NAME,name], params_ast, body_ast)
                 ##.addChild(instr_ast)
 		}
 	;
 
 part
-	:! #(CONSTANT cn:NAME cv=constant_expr)
+	:! #(CONSTANT cn:NAME cv=const_expr)
 		{ self.constants[cn.getText()] = #[NUM, str(cv)] }
 	|! #(TABLE tn:NAME tv=table_expr)
 		{ self.tables[tn.getText()] = tv }
-	|! #(FUNCTION fn:NAME fp=parameter_list fb:RTL)
+	|! #(FUNCTION fn:NAME fp=param_list fb:RTL)
 		{ self.functions[fn.getText()] = fp, self.astFactory.dupTree(fb) }
-	|! #(INSTR inam=instr_name ip=parameter_list ib:RTL)
+	|! #(INSTR inam=instr_name ip=param_list ib:RTL)
 		{
             for n, v in inam:
                 self.locals.append(v)
                 self.rtl_expand(self.astFactory.dupTree(ib))
                 rtl = self.getAST()
                 self.locals.pop()
-                
+
                 if n in self.instructions:
                     old_ip, old_rtl = self.instructions[n]
                     assert ip == old_ip
                     if rtl.getFirstChild():
-	                    old_rtl.addChild(rtl.getFirstChild())
+                        old_rtl.addChild(rtl.getFirstChild())
                 else:
                     self.instructions[n] = ip, rtl
-        }
+		}
 	| #( . ( . )* )
 		// copy other parts unmodified
 	;
 
-constant_expr! returns [v]
+const_expr! returns [v]
 	: n:NUM
 		{ v = int(n.getText()) }
-	| #(PLUS l=constant_expr r=constant_expr)
+	| #(PLUS l=const_expr r=const_expr)
 		{ v = l + r }
-	| #(MINUS l=constant_expr r=constant_expr)
+	| #(MINUS l=const_expr r=const_expr)
 		{ v = l - r }
 	;
 
@@ -552,18 +554,18 @@ table_expr! returns [res]
 	| n:NAME { res = self.tables.get(n.getText(), [n]) }
 	;
 
-parameter_list! returns [res]
-	: #(PARAMS { res = [] } ( n:NAME { res.append(n.getText()) } )* )
+param_list! returns [res]
+	: #(COMMA { res = [] } ( n:NAME { res.append(n.getText()) } )* )
 	;
 
-// Returns a list of ('name', 'variables') pairs, where 'name' is the 
-// instruction name and 'variables' is a dict mapping the corresponding 
+// Returns a list of ('name', 'variables') pairs, where 'name' is the
+// instruction name and 'variables' is a dict mapping the corresponding
 // variables/values resulting from table lookup.
 instr_name! returns [res]
-	: #( INSTR_NAME 
+	: #( INSTR_NAME
 			{ res = [("", {})] }
 		( e=instr_name_elem
-            {
+			{
                 tmp = []
                 for rn, rv in res:
                     for en, ev in e:
@@ -572,7 +574,7 @@ instr_name! returns [res]
                         v.update(ev)
                         tmp.append((n, v))
                 res = tmp
-            }
+			}
 		)*
 	)
 	;
@@ -581,7 +583,7 @@ instr_name! returns [res]
 instr_name_elem! returns [res]
 	: name:NAME
 		{ res = [(#name.getText(), {})] }
-	| PRIME optname:NAME 
+	| PRIME optname:NAME
 		{ res = [("", {}), (#optname.getText(), {})] }
 	| #(LSQUARE tname:NAME
 		{
@@ -592,13 +594,13 @@ instr_name_elem! returns [res]
 		}
 		( vname:NAME
 			{ res = [(table[idx].getText(), {#vname.getText(): #(#[NUM, str(idx)])}) for idx in range(len(table))]}
-		| tidx:NUM 
+		| tidx:NUM
 			{
                 try:
                     res = [(table[int(#tidx.getText())], {})]
                 except KeyError:
                     raise SemanticException(#tname, "index outside bounds")
-            }
+			}
 		))
 	| d:DECOR
 		{ res = [('.' + d.getText()[1:], {})] }
@@ -606,10 +608,10 @@ instr_name_elem! returns [res]
 
 // Expands variables, table references, and functions in RTL.
 //
-// NOTE: Especial care must be taken here in order to *duplicate* AST nodes, and 
+// NOTE: Especial care must be taken here in order to *duplicate* AST nodes, and
 // not simply refer to them, as that would result in corruption of the AST.
 rtl_expand
-	:! #( RTL 
+	:! #( RTL
 			{ ## = #(#[RTL,"RTL"]) }
 		(rt:rtl_expand
 		 	{
@@ -621,8 +623,8 @@ rtl_expand
                     ##.addChild(#rt)
 		 	}
 		)*)
-	|! name:NAME 
-        {
+	|! name:NAME
+		{
             s = #name.getText()
             if s in self.locals[-1]:
                 ## = self.astFactory.dupTree(self.locals[-1][s])
@@ -630,63 +632,63 @@ rtl_expand
                 ## = self.astFactory.dupTree(self.constants[s])
             else:
                 ## = self.astFactory.dupTree(#name)
-        }
-    |! #(TABLE etname:NAME etindex:rtl_expand)
-        {
+		}
+	|! #(LSQUARE etname:NAME etindex:rtl_expand)
+		{
             try:
                 table = self.tables[#etname.getText()]
             except KeyError:
                 ## = self.astFactory.dupTree(##_in)
                 raise SemanticException(#etname, "undefined table")
-            
+
             try:
                 index = int(#etindex.getText())
             except ValueError:
                 ## = self.astFactory.dupTree(##_in)
                 raise SemanticException(#etname, "non-numeric indice")
-           
+
             try:
                 expr = table[index]
             except:
                 raise SemanticException(#etname, "indice out of bounds")
-           
+
             ## = self.astFactory.dupTree(expr)
-        }
-    |! #(LOOKUP_OP lexpr:rtl_expand otname:NAME otindex:rtl_expand rexpr:rtl_expand)
-        {
+		}
+	|! #(LOOKUP_OP lexpr:rtl_expand otname:NAME otindex:rtl_expand rexpr:rtl_expand)
+		{
             try:
                 table = self.tables[#otname.getText()]
             except KeyError:
                 ## = self.astFactory.dupTree(##_in)
                 raise SemanticException(#otname, "undefined table")
-            
+
             try:
                 index = int(#otindex.getText())
             except ValueError:
                 ## = self.astFactory.dupTree(##_in)
                 raise SemanticException(#otname, "non-numeric indice")
-           
+
             try:
                 op = table[index]
             except:
                 raise SemanticException(#otname, "indice out of bounds")
-           
+
             op = self.astFactory.dupTree(op)
             ## = #(op, #lexpr, #rexpr)
-        }
-    |! #(FUNCTION fname:NAME { fargs = [] } (farg:rtl_expand { fargs.append(#farg) } )* )
-        {
+		}
+	|! #(FUNCTION fname:NAME { fargs = [] } (farg:rtl_expand { fargs.append(#farg) } )* )
+		{
             try:
-        	        fparams, fbody = self.functions[fname.getText()]
-        	    except KeyError:
+                fparams, fbody = self.functions[fname.getText()]
+            except KeyError:
                 ## = self.astFactory.dupTree(##_in)
                 raise SemanticException(#fname, "undefined function")
-            
+
             self.locals.append(dict(zip(fparams, fargs)))
             self.rtl_expand(fbody)
             ## = self.getAST()
             self.locals.pop()
-        }
+		}
 	| #( . ( rtl_expand )* )
 		// recurse
 	;
