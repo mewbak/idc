@@ -1,0 +1,70 @@
+-- Intermediate Representation in ASDL -- mostly for reference at the moment
+--
+-- NOTE: ASDL's five builtin types are identifier, int, string, object, bool
+
+mod
+	= Module(stmt*)
+
+stmt
+	= VarDef(type, string name, expr value)
+	| FuncDef(type, string name, type* args)
+	| Assign(type, expr dest, expr src)
+	| If(expr cond, stmt, stmt)
+	| While(expr, cond, stmt)
+	| Ret(type, expr value)
+	| Label(string name)
+	| Branch(expr label)
+	| Block(stmt*)
+	| Nil
+
+type
+	= Integer(int size, sign)
+	| Float(size)
+	| Char(size)
+	| String(size)
+	| Pointer(size)
+	
+sign
+	= Signed
+	| Unsigned
+
+expr
+	= True
+	| False
+	| Literal(type, object value)
+	| Symbol(string name)
+	| Cast(type, expr)
+	| Unary(unaryOp op, expr)
+	| Binary(binaryOp op, expr, expr
+	| Cond(expr cond, expr, expr)
+	| Call(expr func, expr* params)
+
+
+unaryOp
+	= Not
+	| BitNot(int size)
+	| Neg(type)
+
+binaryOp
+	= And
+	| Or
+	
+	| BitAnd(int size)
+	| BitOr(int size)
+	| BitXor(int size)
+	| LShift(int size)
+	| RShift(int size)
+	
+	| Plus(type)
+	| Minus(type)
+	| Mult(type)
+	| Div(type)
+	| Mod(type)
+	
+	| Eq(type)
+	| NotEq(type)
+	| Lt(type)
+	| LtEq(type)
+	| Gt(type)
+	| GtEq(type)
+
