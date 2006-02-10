@@ -21,8 +21,6 @@ options {
 }
 
 class atermLexer extends Lexer;
-options {
-}
 
 tokens {
 	INT;
@@ -30,18 +28,21 @@ tokens {
 }
 
 // Whitespace -- ignored
-WS	: (' '|'\t'|'\f')+ { $setType(SKIP); }
+WS	: ( ' ' | '\t' | '\f' )+ { $setType(SKIP); }
 	| ( '\r' ('\n')? | '\n') { $newline; $setType(SKIP); }
 	;
 
 REAL_OR_INT	
-	: { $setType(INT); }
-		('-')? // sign
-		(
-			('0'..'9')+ ( '.' ('0'..'9')* { $setType(REAL); } )?
-			| '.' ('0'..'9')+ { $setType(REAL); }
-		) // fraction
-		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )? // exponent
+	:
+		{ $setType(INT); }
+		// sign
+		('-')?
+		// fraction
+		( ('0'..'9')+ ( '.' ('0'..'9')* { $setType(REAL); } )?
+		| '.' ('0'..'9')+ { $setType(REAL); }
+		) 
+		// exponent
+		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )?
 	;
 
 STR	: '"'! (STRCHAR)* '"'!;
@@ -61,8 +62,8 @@ ESCCHAR	: '\\'!
 		)
 	;
 
-CONS: ('A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'*'|'+'|'-')* ;
-VAR: ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'*'|'+'|'-')* ;
+CONS: ('A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* ;
+VAR: ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* ;
 WILDCARD: '_';
 
 COMMA	: ',';
@@ -77,8 +78,6 @@ RCURLY	: '}';
 STAR	: '*';
 
 class atermParser extends Parser;
-options {
-}
 
 start returns [res]
 	: t=aterm EOF { res = t }
@@ -102,27 +101,39 @@ term returns [res]
 		{ res = self.factory.makeStr(sval.getText()) }
 	| LSQUARE elms=aterms RSQUARE
 		{ res = elms }
-	| 
-		( cname:CONS
-			{ res = self.factory.makeCons(cname.getText()) }	
-		| vname:VAR 
+	| LPAREN args=aterms RPAREN
+		{ res = self.factory.makeAppl(self.factory.makeStr(""), args) }
+	| cname:CONS
+		{ res = self.factory.makeStr(cname.getText()) }
+		( LPAREN args=aterms RPAREN
+			{ res = self.factory.makeAppl(res, args) }
+		|
+			{ res = self.factory.makeAppl(res) }
+		)
+		
+	|
+		( vname:VAR
 			{ res = self.factory.makeVar(vname.getText()) }
 		| WILDCARD 
 			{ res = self.factory.makeWildcard() }
 		)	
-		(
-		| LPAREN args=aterms RPAREN
+		( LPAREN args=aterms RPAREN
 			{ res = self.factory.makeAppl(res, args) }
-		)
+		)?
 	;
 
 aterms returns [res]
 	:
 		{ res = self.factory.makeNilList() }
-	| head=term
+	| aterms=aterms_rest
+		{ res = aterms }
+	;
+	
+aterms_rest returns [res]
+	: head=aterm
 		(
 			{ res = self.factory.makeConsList(head) }
-		| COMMA tail=aterms
+		| COMMA tail=aterms_rest
 			{ res = self.factory.makeConsList(head, tail) }
 		)
 	| STAR

@@ -88,7 +88,7 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(str(_term), termStr)
 	
 	applTestCases = [
-		('C()', 'C', 0),
+		('C', 'C', 0),
 		('C(1)', 'C', 1),
 		('C(1,2)', 'C', 2),
 		('f()', 'f', 0),
@@ -99,12 +99,12 @@ class TestCase(unittest.TestCase):
 		('_(_,_)', '_', 2),
 	]
 	
-	def testCons(self):
-		for termStr, name, arity in self.applTestCases:
+	def testAppl(self):
+		for termStr, symbol, arity in self.applTestCases:
 			_term = self.factory.parse(termStr)
 			self.failUnless(_term.factory is self.factory)
 			self.failUnlessEqual(_term.getType(), aterm.APPL)
-			self.failUnlessEqual(str(_term.getName()), name)
+			self.failUnlessEqual(_term.getName().getSymbol(), symbol)
 			self.failUnlessEqual(_term.getArity(), arity)
 			self.failUnlessEqual(str(_term), termStr)
 	
@@ -118,9 +118,6 @@ class TestCase(unittest.TestCase):
 		# strings
 		['""', '"s"', '"st"'],
 		
-		# cons
-		['C', 'D'],
-
 		# vars
 		['x', 'y'],
 
@@ -131,7 +128,7 @@ class TestCase(unittest.TestCase):
 		['[]', '[1]', '[1,2]', '[1,*]'],
 
 		# applications
-		['C()', 'D()', 'C(1)', 'C(1,2)', 'C(1,*)'],
+		['C', 'D', 'C(1)', 'C(1,2)', 'C(1,*)'],
 		['f()', 'g()', 'f(x)', 'f(x,y)', 'f(x,*y)'],
 		['_()', '_(_)', '_(_,_)', '_(_,*)'],
 		
@@ -198,15 +195,16 @@ class TestCase(unittest.TestCase):
 		('[1,2,1,2]', '[x,y,x,y]', True, {'x':'1', 'y':'2'}),
 
 		# appls
-		('C()', 'x', True, {'x':'C()'}),
+		('C', 'x', True, {'x':'C()'}),
+		('C()', 'x', True, {'x':'C'}),
 		('C(1)', 'x', True, {'x':'C(1)'}),
 		('C(1,2)', 'x', True, {'x':'C(1,2)'}),
 		('C(1)', 'C(x)', True, {'x':'1'}),
 		('C(1,2)', 'C(x,y)', True, {'x':'1', 'y':'2'}),
 		('C(1,2,3)', 'C(*x)', True, {'x':'[1, 2,3]'}),
 		('C(1,2,3)', 'C(x,*y)', True, {'x':'1', 'y':'[2,3]'}),
-		('C(1,2,3)', 'f(x,*y)', True, {'f':'C', 'x':'1', 'y':'[2,3]'}),
-		('C(1,2,3)', 'f()', False, {'f':'C'}),
+		('C(1,2,3)', 'f(x,*y)', True, {'f':'"C"', 'x':'1', 'y':'[2,3]'}),
+		('C(1,2,3)', 'f()', False, {'f':'"C"'}),
 	]
 	
 	def testMatch(self):
@@ -249,8 +247,8 @@ class TestCase(unittest.TestCase):
 		('C(x)', {'x':'1'}, 'C(1)'),
 		('C(x,y)', {'x':'1', 'y':'2'}, 'C(1,2)'),
 		('C(x,*y)', {'x':'1', 'y':'[2]'}, 'C(1,2)'),
-		('f()', {'f':'C'}, 'C()'),
-		('f(x,y)', {'f':'C', 'x':'1', 'y':'2'}, 'C(1,2)'),
+		('f()', {'f':'"C"'}, 'C()'),
+		('f(x,y)', {'f':'"C"', 'x':'1', 'y':'2'}, 'C(1,2)'),
 	]
 
 	def testMake(self):

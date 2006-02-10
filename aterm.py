@@ -10,7 +10,7 @@ except ImportError:
 	from StringIO import StringIO
 
 from atermLexer import Lexer
-from atermParser import Parser	
+from atermParser import Parser
 
 
 # Term types
@@ -45,10 +45,6 @@ class Factory(object):
 		'''Creates a new string literal term'''
 		return String(self, value, annotations)
 
-	def makeCons(self, name, annotations = None):
-		'''Creates a new constructor term'''
-		return Constructor(self, name, annotations)
-
 	def makeVar(self, name, annotations = None):
 		'''Creates a new variable term'''
 		return Variable(self, name, annotations)
@@ -72,7 +68,7 @@ class Factory(object):
 		if annotations is not None:
 			res = res.setAnnotations(annotations)
 		return res
-		
+	
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new appplication term'''
 		return Application(self, name, args, annotations)
@@ -282,6 +278,9 @@ class String(Literal):
 	def getType(self):
 		return STR
 
+	def getSymbol(self):
+		return self.getValue()
+
 	def setAnnotations(self, annotations):
 		return self.factory.makeStr(self.value, annotations)
 
@@ -289,53 +288,26 @@ class String(Literal):
 		return visitor.visitStr(self)
 
 
-class Atom(Term):
-	
-	def getName(self):
-		raise NotImplementedError
-
-	def __str__(self):
-		return self.getName()
-
-
-class Symbol(Atom):
+class Variable(Term):
 	
 	def __init__(self, factory, name, annotations = None):
-		Atom.__init__(self, factory, annotations)
+		Term.__init__(self, factory, annotations)
 		self.name = name
+	
+	def getType(self):
+		return VAR
 	
 	def getName(self):
 		return self.name
-	
+
+	def getSymbol(self):
+		return self.getName()
+
 	def isEquivalent(self, other):
 		return self.getType() == other.getType() and self.name == other.name
 
 	def isEqual(self, other):
 		return self.getType() == other.getType() and self.name == other.name
-
-
-class Constructor(Symbol):
-
-	def getType(self):
-		return CONS
-
-	def isConstant(self):
-		return True
-	
-	def _match(self, other, vars):
-		return self.isEquivalent(other)
-
-	def _make(self, vars):
-		return self
-
-	def accept(self, visitor):
-		return visitor.visitCons(self)
-
-
-class Variable(Symbol):
-	
-	def getType(self):
-		return VAR
 	
 	def isConstant(self):
 		return False
@@ -359,12 +331,12 @@ class Variable(Symbol):
 		return visitor.visitVar(self)
 
 
-class Wildcard(Atom):
+class Wildcard(Term):
 
 	def getType(self):
 		return WILDCARD
 	
-	def getName(self):
+	def getSymbol(self):
 		return '_'
 	
 	def isConstant(self):
@@ -465,10 +437,14 @@ class _ConsList(List):
 	def __init__(self, factory, head, tail = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 
+		if not isinstance(head, Term):
+			raise TypeError, "head is not a term: %r" % head
 		self.head = head
 		if tail is None:
 			self.tail = self.factory.makeNilList()
 		else:
+			if not isinstance(tail, (List, Variable, Wildcard)):
+				raise TypeError, "tail is not a list, variable, or wildcard term: %r" % tail
 			self.tail = tail
 	
 	def isEmpty(self):
@@ -515,10 +491,14 @@ class Application(Term):
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 
+		if not isinstance(name, (String, Variable, Wildcard)):
+			raise TypeError, "name is not a string, variable, or wildcard term: %r" % name
 		self.name = name
 		if args is None:
 			self.args = self.factory.makeNilList()
 		else:
+			if not isinstance(args, (List, Variable, Wildcard)):
+				raise TypeError, "args is not a list term: %r" % args
 			self.args = args
 	
 	def getType(self):
@@ -565,7 +545,7 @@ class Visitor:
 	
 	def visit(self, term):
 		if not isinstance(term, Term):
-			raise TypeError, 'not an Term instance: %r' % term
+			raise TypeError, 'not a term: %r' % term
 		return term.accept(self)
 
 	def visitTerm(self, term):
@@ -583,20 +563,11 @@ class Visitor:
 	def visitStr(self, term):
 		return self.visitLit(self, term)
 
-	def visitAtom(self,term):
-		return self.visitTerm(self, term)
-		
-	def visitSym(self, term):
-		return self.visitAtom(self, term)
-
-	def visitCons(self, term):
-		return self.visitSym(term)
-	
 	def visitVar(self, term):
-		return self.visitSym(term)
+		return self.visitTerm(term)
 	
 	def visitWildcard(self, term):
-		return self.visitAtom(self, term)
+		return self.visitTerm(self, term)
 
 	def visitList(self, term):
 		return self.visitTerm(self, term)
@@ -612,12 +583,12 @@ class TextWriter(Visitor):
 	
 	def writeTerms(self, terms):
 		if terms.getType() == LIST and not terms.isEmpty():
-			self.visit(terms.head)
-			terms = terms.tail
+			self.visit(terms.getHead())
+			terms = terms.getTail()
 			while terms.getType() == LIST and not terms.isEmpty():
 				self.fp.write(',')
-				self.visit(terms.head)
-				terms = terms.tail
+				self.visit(terms.getHead())
+				terms = terms.getTail()
 		if terms.getType() != LIST:
 			self.fp.write(',*')
 			if terms.getType() != WILDCARD:
@@ -647,7 +618,7 @@ class TextWriter(Visitor):
 		self.fp.write('"' + s + '"')
 		self.writeAnnotations(term)
 	
-	def visitSym(self, term):
+	def visitVar(self, term):
 		self.fp.write(str(term.getName()))
 		self.writeAnnotations(term)
 		
@@ -661,9 +632,13 @@ class TextWriter(Visitor):
 		self.writeAnnotations(term)
 
 	def visitAppl(self, term):
-		self.visit(term.getName())
-		self.fp.write('(')
-		self.writeTerms(term.getArgs())
-		self.fp.write(')')
+		name = term.getName()
+		# TODO: verify strings
+		self.fp.write(name.getSymbol())
+		args = term.getArgs()
+		if not args.isEmpty() or name.getType() != STR:
+			self.fp.write('(')
+			self.writeTerms(args)
+			self.fp.write(')')
 		self.writeAnnotations(term)
 	
