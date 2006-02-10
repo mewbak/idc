@@ -11,9 +11,12 @@ class TestCase(unittest.TestCase):
 	def setUp(self):
 		self.factory = aterm.Factory()
 
-	def parseVars(self, vars):
+	def parseArgs(self, args):
+		return [self.factory.parse(value) for value in args]
+	
+	def parseKargs(self, kargs):
 		res = {}
-		for name, value in vars.iteritems():
+		for name, value in kargs.iteritems():
 			res[name] = self.factory.parse(value)
 		return res
 	
@@ -212,7 +215,7 @@ class TestCase(unittest.TestCase):
 			
 			term = self.factory.parse(termStr)
 			pattern = self.factory.parse(patternStr)
-			expectedVars = self.parseVars(expectedVarsStr)
+			expectedVars = self.parseKargs(expectedVarsStr)
 			
 			vars = {}
 			result = pattern.match(term, vars)
@@ -222,40 +225,62 @@ class TestCase(unittest.TestCase):
 
 	makeTestCases = [
 		# constants terms
-		('1', {}, '1'),
-		('0.1', {}, '0.1'),
-		('"s"', {}, '"s"'),
-		('C', {}, 'C'),
-		('[1,2]', {}, '[1,2]'),
-		('C(1,2)', {}, 'C(1,2)'),
+		('1', [], {}, '1'),
+		('0.1', [], {}, '0.1'),
+		('"s"', [], {}, '"s"'),
+		('C', [], {}, 'C'),
+		('[1,2]', [], {}, '[1,2]'),
+		('C(1,2)', [], {}, 'C(1,2)'),
+		
+		# simple wildcard substitution
+		('_', ['1'], {}, '1'),
+		('_', ['0.1'], {}, '0.1'),
+		('_', ['"s"'], {}, '"s"'),
+		('_', ['C'], {}, 'C'),
+		('_', ['[1,2]'], {}, '[1,2]'),
+		('_', ['C(1,2)'], {}, 'C(1,2)'),
 		
 		# simple variable substitution
-		('x', {'x':'1'}, '1'),
-		('x', {'x':'0.1'}, '0.1'),
-		('x', {'x':'"s"'}, '"s"'),
-		('x', {'x':'C'}, 'C'),
-		('x', {'x':'[1,2]'}, '[1,2]'),
-		('x', {'x':'C(1,2)'}, 'C(1,2)'),
+		('x', [], {'x':'1'}, '1'),
+		('x', [], {'x':'0.1'}, '0.1'),
+		('x', [], {'x':'"s"'}, '"s"'),
+		('x', [], {'x':'C'}, 'C'),
+		('x', [], {'x':'[1,2]'}, '[1,2]'),
+		('x', [], {'x':'C(1,2)'}, 'C(1,2)'),
+		
+		# wildcard substitution in lists
+		('[_]', ['1'], {}, '[1]'),
+		('[_,_]', ['1', '2'], {}, '[1,2]'),
+		('[*]', ['[1,2]'], {}, '[1,2]'),
+		('[_,*]', ['1', '[2]'], {}, '[1,2]'),
 		
 		# variable substitution in lists
-		('[x]', {'x':'1'}, '[1]'),
-		('[x,y]', {'x':'1', 'y':'2'}, '[1,2]'),
-		('[*x]', {'x':'[1,2]'}, '[1,2]'),
-		('[x,*y]', {'x':'1', 'y':'[2]'}, '[1,2]'),
+		('[x]', [], {'x':'1'}, '[1]'),
+		('[x,y]', [], {'x':'1', 'y':'2'}, '[1,2]'),
+		('[*x]', [], {'x':'[1,2]'}, '[1,2]'),
+		('[x,*y]', [], {'x':'1', 'y':'[2]'}, '[1,2]'),
+		
+		# wildcard substitution in applications
+		('C(_)', ['1'], {}, 'C(1)'),
+		('C(_,_)', ['1', '2'], {}, 'C(1,2)'),
+		('C(_,*)', ['1', '[2]'], {}, 'C(1,2)'),
+		('_()', ['"C"'], {}, 'C()'),
+		('_(_,_)', ['"C"', '1', '2'], {}, 'C(1,2)'),
 		
 		# variable substitution in applications
-		('C(x)', {'x':'1'}, 'C(1)'),
-		('C(x,y)', {'x':'1', 'y':'2'}, 'C(1,2)'),
-		('C(x,*y)', {'x':'1', 'y':'[2]'}, 'C(1,2)'),
-		('f()', {'f':'"C"'}, 'C()'),
-		('f(x,y)', {'f':'"C"', 'x':'1', 'y':'2'}, 'C(1,2)'),
+		('C(x)', [], {'x':'1'}, 'C(1)'),
+		('C(x,y)', [], {'x':'1', 'y':'2'}, 'C(1,2)'),
+		('C(x,*y)', [], {'x':'1', 'y':'[2]'}, 'C(1,2)'),
+		('f()', [], {'f':'"C"'}, 'C()'),
+		('f(x,y)', [], {'f':'"C"', 'x':'1', 'y':'2'}, 'C(1,2)'),
 	]
 
 	def testMake(self):
-		for patternStr, varsStr, expectedResultStr in self.makeTestCases:
-			vars = self.parseVars(varsStr)
+		for patternStr, argsStr, kargsStr, expectedResultStr in self.makeTestCases:
+			args = self.parseArgs(argsStr)
+			kargs = self.parseKargs(kargsStr)
 			expectedResult = self.factory.parse(expectedResultStr)
-			result = self.factory.make(patternStr, **vars)
+			result = self.factory.make(patternStr, *args, **kargs)
 			self.failUnlessEqual(result, expectedResult)
 
 

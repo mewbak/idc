@@ -69,6 +69,8 @@ class Factory(object):
 			res = res.setAnnotations(annotations)
 		return res
 	
+	# TODO: add a makeTuple method?
+	
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new appplication term'''
 		return Application(self, name, args, annotations)
@@ -96,31 +98,40 @@ class Factory(object):
 			
 			return result
 
-	def make(self, pattern, **vars):
+	def make(self, pattern, *args, **kargs):
 		'''Creates a new term from a string pattern and a list of arguments. 
 		First the string pattern is parsed into an Term. Then the holes in 
 		the pattern are filled with arguments taken from the supplied list of 
 		arguments.'''
 		
-		for name, value in vars.iteritems():
-			if isinstance(value, Term):
-				continue
-			elif isinstance(value, Term):
-				value = self.makeInt(value)
-			elif isinstance(value, int):
-				value = self.makeInt(value)
-			elif isinstance(value, basestring):
-				value = self.makeStr(value)
-			elif isinstance(value, basestring):
-				value = self.makeStr(value)
-			elif isinstance(value, list):
-				value = self.makeList(value)
-			else:
-				raise TypeError, "variable '%s' is neither a term, a literal, or a list: %r" % (name, value)
-			vars[name] = value
-				
-		return self.parse(pattern).make(vars)
+		i = 0
+		_args = []
+		for i in range(len(args)):
+			_args.append(self._checkType(str(i), args[i]))
+			i += 1
+		
+		_kargs = {}
+		for name, value in kargs.iteritems():
+			_kargs[name] = self._checkType("'" + name + "'", value)
 
+		return self.parse(pattern).make(_args, _kargs)
+
+	def _checkType(self, name, value):
+		if isinstance(value, Term):
+			return value
+		elif isinstance(value, Term):
+			return self.makeInt(value)
+		elif isinstance(value, int):
+			return self.makeInt(value)
+		elif isinstance(value, basestring):
+			return self.makeStr(value)
+		elif isinstance(value, basestring):
+			return self.makeStr(value)
+		elif isinstance(value, list):
+			return self.makeList(value)
+		else:
+			raise TypeError, "argument %s is neither a term, a literal, or a list: %r" % (name, value)
+	
 
 class Term(object):
 	'''Base class for all Terms.'''
@@ -194,11 +205,11 @@ class Term(object):
 		'''Shorthand for the isEqual method.'''
 		return self.isEqual(other)
 
-	def make(self, vars):
+	def make(self, args, kargs):
 		'''Create a new term based on this term and a list of arguments.'''
-		return self._make(vars)
+		return self._make(args, kargs)
 
-	def _make(self, vars):
+	def _make(self, args, kargs):
 		return self
 
 	def accept(self, visitor):
@@ -320,10 +331,10 @@ class Variable(Term):
 			vars[name] = other
 			return True
 
-	def _make(self, vars):
+	def _make(self, args, kargs):
 		name = self.getName()
-		if name in vars:
-			return vars[name]
+		if name in kargs:
+			return kargs[name]
 		else:
 			raise ValueError, 'undefined term variable %s' % name
 
@@ -351,8 +362,11 @@ class Wildcard(Term):
 	def _match(self, other, vars):
 		return True
 
-	def _make(self, vars):
-		raise ValueError, 'Cannot make a term from a wildcard.'
+	def _make(self, args, kargs):
+		try:
+			return args.pop(0)
+		except IndexError:
+			raise TypeError, 'insufficient number of arguments'
 
 	def accept(self, visitor):
 		return visitor.visitWildcard(self)
@@ -432,6 +446,7 @@ class _NilList(List):
 	def setAnnotations(self, annotations):
 		return self.factory.makeNilList(annotations)
 
+
 class _ConsList(List):
 
 	def __init__(self, factory, head, tail = None, annotations = None):
@@ -479,8 +494,8 @@ class _ConsList(List):
 		
 		return List._match(self, other, vars)
 
-	def _make(self, vars):
-		return self.factory.makeConsList(self.head._make(vars), self.tail._make(vars), self.annotations)
+	def _make(self, args, kargs):
+		return self.factory.makeConsList(self.head._make(args, kargs), self.tail._make(args, kargs), self.annotations)
 	
 	def setAnnotations(self, annotations):
 		return self.factory.makeConsList(self.head, self.tail, annotations)
@@ -531,8 +546,8 @@ class Application(Term):
 		
 		return Term._match(self, other, vars)
 	
-	def _make(self, vars):
-		return self.factory.makeAppl(self.name._make(vars), self.args._make(vars), self.annotations)
+	def _make(self, args, kargs):
+		return self.factory.makeAppl(self.name._make(args, kargs), self.args._make(args, kargs), self.annotations)
 	
 	def setAnnotations(self, annotations):
 		return self.factory.makeAppl(self.name, self.args, annotations)
