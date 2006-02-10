@@ -170,58 +170,74 @@ class TestCase(unittest.TestCase):
 
 	matchTestCases = [
 		# ints
-		('1', 'x', True, {'x':'1'}),
-		('1', '_', True, {}),
+		('1', '_', True, ['1'], {}),
+		('1', 'x', True, [], {'x':'1'}),
 
 		# reals
-		('0.1', 'x', True, {'x':'0.1'}),
-		('0.1', '_', True, {}),
+		('0.1', '_', True, ['0.1'], {}),
+		('0.1', 'x', True, [], {'x':'0.1'}),
 		
 		# strings
-		('"s"', 'x', True, {'x':'"s"'}),
-		('"s"', '_', True, {}),
+		('"s"', '_', True, ['"s"'], {}),
+		('"s"', 'x', True, [], {'x':'"s"'}),
 		
 		# lists
-		('[]', '[*]', True, {}),
-		('[]', '[*x]', True, {'x':'[]'}),
-		('[1]', '[*]', True, {}),
-		('[1]', '[*x]', True, {'x':'[1]'}),
-		('[1,2]', '[*]', True, {}),
-		('[1,2]', '[*x]', True, {'x':'[1,2]'}),
-		('[1,2]', '[1,*]', True, {}),
-		('[1,2]', '[1,*x]', True, {'x':'[2]'}),
-		('[1,2]', '[1,2,*]', True, {}),
-		('[1,2]', '[1,2,*x]', True, {'x':'[]'}),
-		('[1,2]', 'x', True, {'x':'[1,2]'}),
-		('[1,0.2,"s"]', '[x,y,z]', True, {'x':'1', 'y':'0.2', 'z':'"s"'}),
-		('[1,2,3]', '[x,*y]', True, {'x':'1', 'y':'[2,3]'}),
-		('[1,2,1,2]', '[x,y,x,y]', True, {'x':'1', 'y':'2'}),
+		('[]', '[*]', True, ['[]'], {}),
+		('[]', '[*x]', True, [], {'x':'[]'}),
+		('[1]', '[*]', True, ['[1]'], {}),
+		('[1]', '[*x]', True, [], {'x':'[1]'}),
+		('[1,2]', '[*]', True, ['[1,2]'], {}),
+		('[1,2]', '[*x]', True, [], {'x':'[1,2]'}),
+		('[1,2]', '[1,*]', True, ['[2]'], {}),
+		('[1,2]', '[1,*x]', True, [], {'x':'[2]'}),
+		('[1,2]', '[1,2,*]', True, ['[]'], {}),
+		('[1,2]', '[1,2,*x]', True, [], {'x':'[]'}),
+		('[1,2]', 'x', True, [], {'x':'[1,2]'}),
+		('[1,0.2,"s"]', '[_,_,_]', True, ['1', '0.2', '"s"'], {}),
+		('[1,0.2,"s"]', '[x,y,z]', True, [], {'x':'1', 'y':'0.2', 'z':'"s"'}),
+		('[1,2,3]', '[_,*]', True, ['1', '[2,3]'], {}),
+		('[1,2,3]', '[x,*y]', True, [], {'x':'1', 'y':'[2,3]'}),
+		('[1,2,1,2]', '[x,y,x,y]', True, [], {'x':'1', 'y':'2'}),
 
 		# appls
-		('C', 'x', True, {'x':'C()'}),
-		('C()', 'x', True, {'x':'C'}),
-		('C(1)', 'x', True, {'x':'C(1)'}),
-		('C(1,2)', 'x', True, {'x':'C(1,2)'}),
-		('C(1)', 'C(x)', True, {'x':'1'}),
-		('C(1,2)', 'C(x,y)', True, {'x':'1', 'y':'2'}),
-		('C(1,2,3)', 'C(*x)', True, {'x':'[1, 2,3]'}),
-		('C(1,2,3)', 'C(x,*y)', True, {'x':'1', 'y':'[2,3]'}),
-		('C(1,2,3)', 'f(x,*y)', True, {'f':'"C"', 'x':'1', 'y':'[2,3]'}),
-		('C(1,2,3)', 'f()', False, {'f':'"C"'}),
+		('C', '_', True, ['C()'], {}),
+		('C', 'x', True, [], {'x':'C()'}),
+		('C()', '_', True, ['C'], {}),
+		('C()', 'x', True, [], {'x':'C'}),
+		('C(1)', '_', True, ['C(1)'], {}),
+		('C(1)', 'x', True, [], {'x':'C(1)'}),
+		('C(1,2)', '_', True, ['C(1,2)'], {}),
+		('C(1,2)', 'x', True, [], {'x':'C(1,2)'}),
+		('C(1)', 'C(_)', True, ['1'], {}),
+		('C(1)', 'C(x)', True, [], {'x':'1'}),
+		('C(1,2)', 'C(_,_)', True, ['1', '2'], {}),
+		('C(1,2)', 'C(x,y)', True, [], {'x':'1', 'y':'2'}),
+		('C(1,2,3)', 'C(*)', True, ['[1, 2,3]'], {}),
+		('C(1,2,3)', 'C(*x)', True, [], {'x':'[1, 2,3]'}),
+		('C(1,2,3)', 'C(_,*)', True, ['1', '[2,3]'], {}),
+		('C(1,2,3)', 'C(x,*y)', True, [], {'x':'1', 'y':'[2,3]'}),
+		('C(1,2,3)', '_(_,*)', True, ['"C"', '1', '[2,3]'], {}),
+		('C(1,2,3)', 'f(x,*y)', True, [], {'f':'"C"', 'x':'1', 'y':'[2,3]'}),
+		('C(1,2,3)', '_()', False, ['"C"'], {}),
+		('C(1,2,3)', 'f()', False, [], {'f':'"C"'}),
+		
 	]
 	
 	def testMatch(self):
-		for termStr, patternStr, expectedResult, expectedVarsStr in self.matchTestCases:
+		for termStr, patternStr, expectedResult, expectedArgsStr, expectedKargsStr in self.matchTestCases:
 			
 			term = self.factory.parse(termStr)
 			pattern = self.factory.parse(patternStr)
-			expectedVars = self.parseKargs(expectedVarsStr)
+			expectedArgs = self.parseArgs(expectedArgsStr)
+			expectedKargs = self.parseKargs(expectedKargsStr)
 			
-			vars = {}
-			result = pattern.match(term, vars)
+			args = []
+			kargs = {}
+			result = pattern.match(term, args, kargs)
 			
 			self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, result, expectedResult))
-			self.failUnlessEqual(vars, expectedVars, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, vars, expectedVars))
+			self.failUnlessEqual(args, expectedArgs, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, args, expectedArgs))
+			self.failUnlessEqual(kargs, expectedKargs, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, kargs, expectedKargs))
 
 	makeTestCases = [
 		# constants terms
