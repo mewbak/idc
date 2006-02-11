@@ -64,7 +64,7 @@ header "sslPreprocessor.__init__" {
 }
 
 options {
-	language  = "Python";
+	language = "Python";
 }
 
 
@@ -72,6 +72,14 @@ class sslLexer extends Lexer;
 options {
 	k = 4;
 	testLiterals=true;
+	exportVocab = ssl;
+}
+
+tokens {
+	REG_IDX="r";
+	MEM_IDX="m";
+	LAND="and";
+	LOR="or";
 }
 
 // Whitespace -- ignored
@@ -216,6 +224,7 @@ class sslParser extends Parser;
 options {
 	buildAST = true;
 	k = 3;
+	exportVocab = ssl;
 }
 
 tokens {
@@ -394,18 +403,18 @@ param_list
 	;
 
 assign_rt
-	: ASSIGNTYPE^ variable EQUATE! expr
-//	| ASSIGNTYPE^ expr THEN variable EQUATE! expr
+	: ASSIGNTYPE^ var EQUATE! expr
+//	| ASSIGNTYPE^ expr THEN var EQUATE! expr
 //	| ASSIGNTYPE^ expr
 	| "FPUSH"^
 	| "FPOP"^
 	;
 
-variable
+var
 	:
 		( REG_ID^
-		| "r"^ LSQUARE! expr RSQUARE!
-		| "m"^ LSQUARE! expr RSQUARE!
+		| REG_IDX^ LSQUARE! expr RSQUARE!
+		| MEM_IDX^ LSQUARE! expr RSQUARE!
 		| NAME^
 		)
 		( AT^ LSQUARE! expr COLON! expr RSQUARE!
@@ -418,8 +427,8 @@ primary_expr
 	| FLOATNUM^
 //	| TEMP
 	| REG_ID^
-	| "r"^ LSQUARE! expr RSQUARE!
-	| "m"^ LSQUARE! expr RSQUARE!
+	| REG_IDX^ LSQUARE! expr RSQUARE!
+	| MEM_IDX^ LSQUARE! expr RSQUARE!
 	| NAME^
 	| NAME LSQUARE^ (NAME|NUM) RSQUARE!
 	| LPAREN! expr RPAREN!
@@ -472,7 +481,7 @@ cond_expr
 
 // logicals
 log_expr
-	: cond_expr (("and"^ | "or"^) cond_expr)*
+	: cond_expr ((LAND^ | LOR^) cond_expr)*
 	;
 
 expr: log_expr;
