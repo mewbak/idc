@@ -1,16 +1,14 @@
-ANTLR = java -cp /usr/share/java/antlr.jar
-ANTLR = runantlr
-ANTLR = ./antlr
+JAVA = java
+ARCH = $(shell uname -m)
+
+ANTLR_JAR = /usr/share/java/antlr.jar
+#ANTLR = $(JAVA) -cp $(ANTLR_JAR) antlr.Tool
+#ANTLR = runantlr
+ANTLR = ./antlr.$(ARCH)
 
 default: all
 
-all: \
-	$(patsubst %.g,%Lexer.py,$(wildcard *.g)) \
-	$(patsubst %.g,%Parser.py,$(wildcard *.g))
-
-%Lexer.py %Parser.py: %.g
-	$(ANTLR) $<
-	@touch $*Lexer.py $*Parser.py
+all:
 
 test-aterm: atermLexer.py atermParser.py
 	python test_aterm.py -v
@@ -34,7 +32,18 @@ test: \
 doc:
 	epydoc --css blue aterm.py
 
-antlr: /usr/share/java/antlr.jar
+antlr: antlr.$(ARCH)
+
+antlr.$(ARCH): $(ANTLR_JAR)
 	gcj -O2 -o $@ --main=antlr.Tool $<
 
-.PHONY: default all test doc
+.PHONY: default all test doc antlr
+
+
+dependencies.mak: Makefile $(wildcard *.g)
+	@for FILE in *.g; \
+	do \
+		sed -n -e "s/.*\bclass \(\w\+\) extends \w\+;.*/all: \1.py\n\1.py: $$FILE\n\t\$$(ANTLR) \$$<\n\t@touch \$$@\n/p" < $$FILE; \
+	done > $@
+
+include dependencies.mak
