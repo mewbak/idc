@@ -1,5 +1,5 @@
-header {
-}
+// Grammar for aterm parsing
+
 
 header "atermParser.__main__" {
     from aterm import Factory
@@ -20,6 +20,7 @@ options {
 	language  = "Python";
 }
 
+
 class atermLexer extends Lexer;
 
 tokens {
@@ -28,8 +29,9 @@ tokens {
 }
 
 // Whitespace -- ignored
-WS	: ( ' ' | '\t' | '\f' )+ { $setType(SKIP); }
-	| ( '\r' ('\n')? | '\n') { $newline; $setType(SKIP); }
+WS	
+	: ( ' ' | '\t' | '\f' )+ { $setType(SKIP); }
+	| ( '\r' ('\n')? | '\n' ) { $newline; $setType(SKIP); }
 	;
 
 REAL_OR_INT	
@@ -45,15 +47,20 @@ REAL_OR_INT
 		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )?
 	;
 
-STR	: '"'! (STRCHAR)* '"'!;
+STR
+	: '"'! (STRCHAR)* '"'!
+	;
 
 protected
-STRCHAR: ESCCHAR
+STRCHAR
+	: ESCCHAR
 	| ~('"'|'\\')
 	;
 
 protected
-ESCCHAR	: '\\'!
+ESCCHAR
+	:
+		'\\'!
 		( 'n' { $setText("\n"); }
 		| 'r' { $setText("\r"); }
 		| 't' { $setText("\t"); }
@@ -62,20 +69,29 @@ ESCCHAR	: '\\'!
 		)
 	;
 
-CONS: ('A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* ;
-VAR: ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* ;
+CONS
+	: ('A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
+	;
+
+VAR
+	: ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
+	;
+
 WILDCARD: '_';
 
-COMMA	: ',';
+LPAREN: '(';
+RPAREN: ')';
 
-LPAREN	: '(';
-RPAREN	: ')';
-LSQUARE	: '[';
-RSQUARE	: ']';
-LCURLY	: '{';
-RCURLY	: '}';
+LSQUARE: '[';
+RSQUARE: ']';
+
+COMMA: ',';
 
 STAR	: '*';
+
+LCURLY: '{';
+RCURLY: '}';
+
 
 class atermParser extends Parser;
 
@@ -103,14 +119,14 @@ term returns [res]
 		{ res = elms }
 	| LPAREN args=aterms RPAREN
 		{ res = self.factory.makeAppl(self.factory.makeStr(""), args) }
-	| cname:CONS
-		{ res = self.factory.makeStr(cname.getText()) }
+	| 
+		cname:CONS
+			{ res = self.factory.makeStr(cname.getText()) }
 		( LPAREN args=aterms RPAREN
 			{ res = self.factory.makeAppl(res, args) }
 		|
 			{ res = self.factory.makeAppl(res) }
 		)
-		
 	|
 		( vname:VAR
 			{ res = self.factory.makeVar(vname.getText()) }
@@ -130,13 +146,15 @@ aterms returns [res]
 	;
 	
 aterms_rest returns [res]
-	: head=aterm
+	:
+		head=aterm
 		(
 			{ res = self.factory.makeConsList(head) }
 		| COMMA tail=aterms_rest
 			{ res = self.factory.makeConsList(head, tail) }
 		)
-	| STAR
+	|
+		STAR
 		( ( WILDCARD )?
 			{ res = self.factory.makeWildcard() }
 		| vname:VAR
