@@ -103,11 +103,11 @@ start returns [res]
 
 aterm returns [res]
 	: term=term 
-		( 
-			{ res = term }
-		| LCURLY anno=aterms RCURLY
+		( ( LCURLY ) => LCURLY anno=aterms RCURLY
 			{ res = term.setAnnotation(anno) }
- 		)
+ 		|
+			{ res = term }
+		)
 	;
 
 term returns [res]
