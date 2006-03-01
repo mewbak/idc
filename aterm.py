@@ -9,6 +9,7 @@ try:
 except ImportError:
 	from StringIO import StringIO
 
+import antlr
 from atermLexer import Lexer
 from atermParser import Parser
 
@@ -22,6 +23,24 @@ CONS = 5
 VAR = 6
 APPL = 7
 WILDCARD = 8
+
+
+class BaseException:
+	"""Base exception class for term operations."""
+	
+	pass
+
+
+class ParseException(BaseException):
+	"""Error parsing terms."""
+	
+	pass
+
+	
+class PatternMismatchException(BaseException):
+	"""Used internally to signal pattern mismatches."""
+	
+	pass
 
 
 class Factory(object):
@@ -77,10 +96,14 @@ class Factory(object):
 
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
-		lexer = Lexer(fp)
-		parser = Parser(lexer, factory = self)
-		# TODO: catch exceptions
-		return parser.term()
+		
+		try:
+			lexer = Lexer(fp)
+			parser = Parser(lexer, factory = self)
+			return parser.term()
+		except antlt.ANTLRException, ex:
+			# FIXME: this is not working
+			raise ParseException(str(ex))
 	
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
@@ -103,7 +126,13 @@ class Factory(object):
 		First the string pattern is parsed into an Term. .'''
 		
 		_pattern = self.parse(pattern)
-		return _pattern._match(other, args, kargs)
+		
+		try:
+			_pattern._match(other, args, kargs)
+		except PatternMismatchException:
+			return False
+		
+		return True
 
 	def make(self, pattern, *args, **kargs):
 		'''Creates a new term from a string pattern and a list of arguments. 
@@ -177,10 +206,15 @@ class Term(object):
 		if kargs is None:
 			kargs = {}
 		
-		return self._match(other, args, kargs)
+		try:
+			self._match(other, args, kargs)
+		except PatternMismatchException:
+			return False
+		
+		return True
 	
 	def _match(self, other, args, kargs):
-		return False
+		raise PatternMismatchException
 
 	# FIxME: annotations are not fully impletemented
 	
@@ -263,7 +297,7 @@ class Literal(Term):
 
 	def _match(self, other, args, kargs):
 		if other.isEquivalent(self):
-			return True
+			return other
 		
 		return Term._match(self, other, args, kargs)
 
@@ -336,11 +370,14 @@ class Variable(Term):
 	
 	def _match(self, other, args, kargs):
 		name = self.getName()
-		if name in kargs:
-			return kargs[name].isEquivalent(other)
-		else:
+		try:
+			value = kargs[name]
+			if not kargs[name].isEquivalent(other):
+				raise PatternMismatchException
+		except KeyError:
 			kargs[name] = other
-			return True
+		
+		return other
 
 	def _make(self, args, kargs):
 		name = self.getName()
@@ -372,7 +409,7 @@ class Wildcard(Term):
 	
 	def _match(self, other, args, kargs):
 		args.append(other)
-		return True
+		return other
 
 	def _make(self, args, kargs):
 		try:
@@ -447,13 +484,13 @@ class _NilList(List):
 
 	def _match(self, other, args, kargs):
 		if self is other:
-			return True
+			return other
 		
 		if other.type == LIST:
 			if other.isEmpty():
-				return True
-		
-		return List._match(self, other, args, kargs)
+				return other
+				
+		raise PatternMismatchException
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeNilList(annotations)
@@ -497,12 +534,13 @@ class _ConsList(List):
 	
 	def _match(self, other, args, kargs):
 		if self is other:
-			return True
+			return other
 		
 		if other.type == LIST:
 			if not other.isEmpty():
-				if self.head._match(other.head, args, kargs):
-					return self.tail._match(other.tail, args, kargs)
+				self.head._match(other.head, args, kargs)
+				self.tail._match(other.tail, args, kargs)
+				return other
 		
 		return List._match(self, other, args, kargs)
 
@@ -551,10 +589,12 @@ class Application(Term):
 		
 	def _match(self, other, args, kargs):
 		if other is self:
-			return True
+			return other
 		
 		if other.type == APPL:
-			return self.name._match(other.name, args, kargs) and self.args._match(other.args, args, kargs)
+			self.name._match(other.name, args, kargs) 
+			self.args._match(other.args, args, kargs)
+			return other
 		
 		return Term._match(self, other, args, kargs)
 	
