@@ -116,6 +116,10 @@ ACTION
 	: '{'! NESTED_ACTION '}'! ( '?'! { $setType(SEMPRED) } )?
 	;
 
+DOT
+	: '.'
+	;
+
 protected
 NESTED_ACTION
     :
@@ -141,6 +145,7 @@ tokens {
 	APPL;
 	LIST;
 	ARG;
+	TRANSF;
 }
 
 grammar
@@ -204,6 +209,8 @@ term
 		( LPAREN! terms RPAREN!
 			{ ## = #(#[APPL,"APPL"], ##) }	
 		)?
+	| DOT! ( UCID | LCID ) ( LPAREN! terms RPAREN! )?
+		{ ## = #(#[TRNSF,"TRNSF"], ##) }	
 	;
 
 terms
@@ -366,7 +373,16 @@ element
 	        }
 	    | match=term
 	        {
-                self.writeln("if not self.factory.match(%r, src, args, kargs):" % match)
+                pattern, args = match
+                self.writeln("if not self.factory.match(%r, src, args, kargs):" % pattern)
+                static = True
+                for i in range(len(args)):
+                    arg = args[i]
+                    if arg != "_":
+                        static = False
+                        self.writeln("args[%i] = self.%s(args[%i])" % (i, arg))
+                if not static:
+                    self.writeln("retval = self.factory.make(%r, *args, **kargs)" % pattern)
 	        }
 	    )
 	    {
@@ -376,32 +392,36 @@ element
 	    }
 	| #( INTO build=term )
 		{
-            self.writeln("retval = self.factory.make(%r, *args, **kargs)" % build)
+            pattern, args = build
+            self.writeln("retval = self.factory.make(%r, *args, **kargs)" % pattern)
         }
 	| action
 	;
 
+
 term returns [ret]
-	: i:INT { ret = #i.getText() }
-	| r:REAL { ret = #r.getText() }
-	| s:STR { ret = #s.getText() }
-	| v:LCID { ret = #v.getText() }
-	| w:WILDCARD { ret = #w.getText() }
+	: i:INT { ret = #i.getText(), [] }
+	| r:REAL { ret = #r.getText(), [] }
+	| s:STR { ret = #s.getText(), [] }
+	| v:LCID { ret = #v.getText(), [] }
+	| w:WILDCARD { ret = "_", ["_"] }
 	| #( LIST t=terms )
-		{ ret = "[%s]" % (t) }
+		{ ret = "[%s]" % (t[0]), t[1] }
 	| #( APPL c=cons a=terms )
-		{ ret = "%s(%s)" % (c, a) }
+		{ ret = "%s(%s)" % (c[0], a[0]), c[1] + a[1] }
+	| #( TRNSF s=id a=terms )
+		{ ret = "_", [s] }
 	;
 
 cons returns [ret]
-	: s:STR { ret = #s.getText() }
-	| c:UCID { ret = #c.getText() }
-	| v:LCID { ret = #v.getText() }
-	| w:WILDCARD { ret = #w.getText() }
+	: s:STR { ret = #s.getText(), [] }
+	| c:UCID { ret = #c.getText(), [] }
+	| v:LCID { ret = #v.getText(), [] }
+	| w:WILDCARD { ret = "_", ["_"] }
 	;
 
 terms returns [ret]
-		{ ret = [] }
-	: ( t=term { ret.append(t) } )*
-		{ ret = ','.join(ret) }
+		{ ret = [], [] }
+	: ( t=term { ret[0].append(t[0]); ret[1].extend(t[1]) } )*
+		{ ret = ','.join(ret[0]), ret[1] }
 	;
