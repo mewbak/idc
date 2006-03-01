@@ -9,6 +9,9 @@ class TransformationFailure(Exception):
 
 
 class Transformation:
+	
+	def __init__(self, factory):
+		self.factory = factory
 
 	def apply(self, term, context):
 		raise NotImplementedError

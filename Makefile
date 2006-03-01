@@ -10,7 +10,13 @@ default: all
 
 all:
 
-test-aterm: atermLexer.py atermParser.py
+test: \
+	test-aterm \
+	test-asm \
+	test-ssl \
+	test-tc
+
+test-aterm: test_aterm.py atermLexer.py atermParser.py
 	python test_aterm.py -v
 
 test-asm: asmLexer.py asmParser.py
@@ -25,9 +31,8 @@ test-ssl: sslLexer.py sslParser.py
 		python sslParser.py < $(FILE); \
 	)
 	
-test: \
-	test-aterm \
-	test-asm
+test-tc: test_tc.py transformation.py
+	python test_tc.py -v
 
 doc:
 	epydoc --css blue aterm.py
@@ -38,6 +43,10 @@ antlr.$(ARCH): $(ANTLR_JAR)
 	gcj -O2 -o $@ --main=antlr.Tool $<
 
 .PHONY: default all test doc antlr
+
+
+%.py: %.t tc transformationLexer.py transformationParser.py transformationWalker.py
+	python tc -o $@ $<
 
 
 dependencies.mak: Makefile $(wildcard *.g)

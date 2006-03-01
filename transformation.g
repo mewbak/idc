@@ -376,7 +376,7 @@ element
 	    }
 	| #( INTO build=term )
 		{
-            self.writeln("retval = self.factory.make(%r, args, kargs)" % build)
+            self.writeln("retval = self.factory.make(%r, *args, **kargs)" % build)
         }
 	| action
 	;
