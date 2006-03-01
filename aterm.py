@@ -64,9 +64,9 @@ class Factory(object):
 		'''Creates a new string literal term'''
 		return String(self, value, annotations)
 
-	def makeVar(self, name, annotations = None):
+	def makeVar(self, name, pattern, annotations = None):
 		'''Creates a new variable term'''
-		return Variable(self, name, annotations)
+		return Variable(self, name, pattern, annotations)
 
 	def makeWildcard(self, annotations = None):
 		'''Creates a new wildcard term'''
@@ -101,7 +101,7 @@ class Factory(object):
 			lexer = Lexer(fp)
 			parser = Parser(lexer, factory = self)
 			return parser.term()
-		except antlt.ANTLRException, ex:
+		except antlr.ANTLRException, ex:
 			# FIXME: this is not working
 			raise ParseException(str(ex))
 	
@@ -346,9 +346,10 @@ class String(Literal):
 
 class Variable(Term):
 	
-	def __init__(self, factory, name, annotations = None):
+	def __init__(self, factory, name, pattern, annotations = None):
 		Term.__init__(self, factory, annotations)
 		self.name = name
+		self.pattern = pattern
 	
 	def getType(self):
 		return VAR
@@ -356,14 +357,17 @@ class Variable(Term):
 	def getName(self):
 		return self.name
 
+	def getPattern(self):
+		return self.pattern
+
 	def getSymbol(self):
 		return self.getName()
 
 	def isEquivalent(self, other):
-		return self.getType() == other.getType() and self.name == other.name
+		return self.getType() == other.getType() and self.name == other.name and self.pattern == other.pattern
 
 	def isEqual(self, other):
-		return self.getType() == other.getType() and self.name == other.name
+		return self.getType() == other.getType() and self.name == other.name and self.pattern == other.pattern
 	
 	def isConstant(self):
 		return False
@@ -374,10 +378,11 @@ class Variable(Term):
 			value = kargs[name]
 			if not kargs[name].isEquivalent(other):
 				raise PatternMismatchException
+			return other
 		except KeyError:
-			kargs[name] = other
-		
-		return other
+			result = self.pattern._match(other, [], kargs)
+			kargs[name] = result
+			return result
 
 	def _make(self, args, kargs):
 		name = self.getName()

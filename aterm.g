@@ -129,10 +129,10 @@ term returns [res]
 		)
 	|
 		( vname:VAR
-			{ res = self.factory.makeVar(vname.getText()) }
+			{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
 		| WILDCARD 
 			{ res = self.factory.makeWildcard() }
-		)	
+		)
 		( LPAREN args=aterms RPAREN
 			{ res = self.factory.makeAppl(res, args) }
 		)?
@@ -158,6 +158,6 @@ aterms_rest returns [res]
 		( ( WILDCARD )?
 			{ res = self.factory.makeWildcard() }
 		| vname:VAR
-			{ res = self.factory.makeVar(vname.getText()) }
+			{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
 		)
 	;
