@@ -92,6 +92,8 @@ STAR	: '*';
 LCURLY: '{';
 RCURLY: '}';
 
+ASSIGN: '=';
+
 
 class atermParser extends Parser;
 
@@ -127,15 +129,22 @@ term returns [res]
 		|
 			{ res = self.factory.makeAppl(res) }
 		)
-	|
-		( vname:VAR
-			{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
-		| WILDCARD 
+	| 
+		WILDCARD 
 			{ res = self.factory.makeWildcard() }
-		)
 		( LPAREN args=aterms RPAREN
 			{ res = self.factory.makeAppl(res, args) }
 		)?
+	| 
+		vname:VAR
+		(
+			{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
+		| ASSIGN pattern=aterm
+			{ res = self.factory.makeVar(vname.getText(), pattern) }
+		| LPAREN args=aterms RPAREN
+			{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
+			{ res = self.factory.makeAppl(res, args) }
+		)
 	;
 
 aterms returns [res]

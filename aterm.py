@@ -387,6 +387,7 @@ class Variable(Term):
 	def _make(self, args, kargs):
 		name = self.getName()
 		if name in kargs:
+			# TODO: do something with the pattern here?
 			return kargs[name]
 		else:
 			raise ValueError, 'undefined term variable %s' % name
@@ -692,7 +693,9 @@ class TextWriter(Visitor):
 	
 	def visitVar(self, term):
 		self.fp.write(str(term.getName()))
-		self.writeAnnotations(term)
+		if term.pattern.getType() != WILDCARD:
+			self.fp.write('=')
+			self.visit(term.pattern)
 		
 	def visitWildcard(self, term):
 		self.fp.write('_')
@@ -708,7 +711,7 @@ class TextWriter(Visitor):
 		# TODO: verify strings
 		self.fp.write(name.getSymbol())
 		args = term.getArgs()
-		if not args.isEmpty() or name.getType() != STR:
+		if not args.isEmpty() or name.getType() != STR or name.getValue() == '':
 			self.fp.write('(')
 			self.writeTerms(args)
 			self.fp.write(')')
