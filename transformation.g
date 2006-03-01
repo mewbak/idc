@@ -5,18 +5,8 @@ header {
     import sys
 }
 
-header "transformationWriter.__main__" {
-    from transformationLexer import Lexer
-    from transformationParser import Parser
-
-    lexer = Lexer()
-    parser = Parser(lexer)
-    parser.grammar()
-    ast = parser.getAST()
-    sys.stderr.write(str(ast))
-
-    writer = Walker()
-    writer.start(ast)
+header "transformationWalker.__init__" {
+    self.fp = args[0]
 }
 
 options {
@@ -54,37 +44,10 @@ WS
 	;
 
 COMMENT
-    :
-        ( SL_COMMENT | t:ML_COMMENT { $setType(t.getType()) } )
-        {
-//            if $getType != DOC_COMMENT:
-                $setType(SKIP)
-        }
-	;
-
-protected
-SL_COMMENT
     : 
-        "//" 
+        "#" 
         ( ~('\n'|'\r') )*
         EOL
-	;
-
-protected
-ML_COMMENT
-    :
-        "/*"
-        ( { LA(2)!='/' }? '*' { $setType(DOC_COMMENT) }
-        |
-        )
-        (
-            options {
-                greedy=false;  // make it exit upon "*/"
-            }
-        :	EOL
-        |	~('\n'|'\r')
-        )*
-        "*/"
 	;
 
 REAL_OR_INT	
@@ -101,32 +64,15 @@ REAL_OR_INT
 	;
 
 STR
-	: '"'! (STR_CHAR)* '"'!
+	: '"' ( '\\' . | ~'"' )* '"'
+	| '\'' ( '\\' . | ~'\'' )* '\''
 	;
 
-protected
-STR_CHAR
-	: ESC_CHAR
-	| ~('"'|'\\')
-	;
-
-protected
-ESC_CHAR	
-	:
-		'\\'!
-		( 'n' { $setText("\n"); }
-		| 'r' { $setText("\r"); }
-		| 't' { $setText("\t"); }
-		| '"' { $setText("\""); }
-		| ~('n'|'r'|'t'|'"')
-		)
-	;
-
-UCASE_ID
+UCID
     options { testLiterals = true; }
     : ('A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
-LCASE_ID
+LCID
     options { testLiterals = true; }
     : ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
@@ -166,49 +112,21 @@ NOT_OP: '~';
 
 RCURLY: '}';
 
-protected
-STRING_LITERAL
-	: '"' ( ESC | ~'"' )* '"'
-	| '\'' ( ESC | ~'\'' )* '\''
-	;
-
-protected
-ESC
-	: '\\' .
-	;
-
-ARG_ACTION
-    : NESTED_ARG_ACTION
-	;
-
-protected
-NESTED_ARG_ACTION
-    :
-        '['
-        ( NESTED_ARG_ACTION
-        | STRING_LITERAL
-        | EOL
-        | ~']'
-        )*
-        ']'
-	;
-
 ACTION
-	: NESTED_ACTION ( '?'! { $setType(SEMPRED) } )?
+	: '{'! NESTED_ACTION '}'! ( '?'! { $setType(SEMPRED) } )?
 	;
 
 protected
 NESTED_ACTION
     :
-        '{'
-        ( NESTED_ACTION
+        ( '{' NESTED_ACTION '}'
         | COMMENT
-        | STRING_LITERAL
+        | STR
         | EOL
         | ~'}'
         )*
-        '}'
     ;
+
 
 
 class transformationParser extends Parser;
@@ -222,25 +140,16 @@ tokens {
 	ALTERNATIVE;
 	APPL;
 	LIST;
+	ARG;
 }
 
 grammar
-	:
-		( header_
-		| class_
-		)* 
-		EOF!
+	: ( part )* EOF!
 	;
 
-header_
+part
 	: HEADER^ ACTION
-	;
-
-class_
-	:
-		//( DOC_COMMENT )?
-        CLASS^ id ( LPAREN! id RPAREN! )? SEMI!
-		( method )*
+	| CLASS^ id ( LPAREN! id RPAREN! )? COLON! ( method )*
 	;
 
 method
@@ -250,24 +159,34 @@ method
 
 rule
 	:
-		//( DOC_COMMENT )?
-		id 
-		( ARG_ACTION )?
+		id ( args )?
 		( ACTION )?
 		COLON! block SEMI!
 		{ ## = #(#[RULE,"RULE"], ##) }
 	;
 
+args
+	: LPAREN^ ( arg ( COMMA! arg )* )? RPAREN!
+	;
+
+arg
+	: ( STAR ( STAR )? )? id
+		{ ## = #(#[ARG,"ARG"], ##) }
+	;
+	
 block
 	: alternative ( OR! alternative )*
 	;
 
 alternative
-	:
-		( p:SEMPRED )?
-		term ( INTO term )?
-		( a:ACTION )?
+	: ( p:SEMPRED )* term (element)*
 		{ ## = #(#[ALTERNATIVE,"ALTERNATIVE"], ##) }
+	;
+
+element
+	: p:SEMPRED^
+	| INTO^ term
+	| a:ACTION^
 	;
 
 term
@@ -277,15 +196,14 @@ term
 	| LSQUARE! terms RSQUARE!
 		{ ## = #(#[LIST,"LIST"], ##) }
 	| LPAREN! terms RPAREN!
-		{ ## = #(#[APPL,"APPL"], #[UCASE_ID,""], ##) }
-	| UCASE_ID ( LPAREN! terms RPAREN! )?
+		{ ## = #(#[APPL,"APPL"], #[UCID,""], ##) }
+	| UCID ( LPAREN! terms RPAREN! )?
 		{ ## = #(#[APPL,"APPL"], ##) }
 	|
-		( LCASE_ID | WILDCARD )
+		( LCID | WILDCARD )
 		( LPAREN! terms RPAREN!
 			{ ## = #(#[APPL,"APPL"], ##) }	
-		|
-		)
+		)?
 	;
 
 terms
@@ -299,15 +217,15 @@ terms_rest
 	;
 
 id
-	: UCASE_ID			
-	| LCASE_ID
+	: UCID			
+	| LCID
 	;
 
 
-class transformationWriter extends TreeParser;
+class transformationWalker extends TreeParser;
 
 {
-    indent = 0
+    _indent = 0
     
     def stripindent(self, lines):
         // Fix script indentation
@@ -324,11 +242,17 @@ class transformationWriter extends TreeParser;
             res.append(line[indent:])
         return res
 
+	def indent(self):
+        self._indent += 1
+
+	def deindent(self):
+        self._indent -= 1
+
     def write(self, str):
-        sys.stdout.write(str)
+        self.fp.write(str)
     
     def writeind(self, line=""):
-        self.write("\t"*self.indent)
+        self.write("\t"*self._indent)
     
     def writeeol(self):
         self.write("\n")
@@ -345,6 +269,10 @@ class transformationWriter extends TreeParser;
 }
 
 start
+			{
+                self.writeln("from transformation import Transformation, TransformationFailure")
+                self.writeln()
+            }
 	: (part)*
 	;
 
@@ -353,16 +281,14 @@ part
 	| #( CLASS 
 		n=id
 		( p=id
-			{
-                self.writeln("class %s(%s):" % (n, p))
-            }
 		|
 			{
-                self.writeln("class %s:" % (n))
+                p = "Transformation"
             }
 		)
 			{
-                self.indent += 1
+                self.writeln("class %s(%s):" % (n, p))
+                self.indent()
             }
 		( ( method )+
 		|
@@ -371,15 +297,15 @@ part
             }
 		)
 			{
-                self.indent -= 1
+                self.deindent()
                 self.writeln()
             }
 	  )
 	;
 
 id returns [ret]
-	: u:UCASE_ID { ret = #u.getText() }
-	| l:LCASE_ID { ret = #l.getText() }
+	: u:UCID { ret = #u.getText() }
+	| l:LCID { ret = #l.getText() }
 	;
 
 method
@@ -389,7 +315,7 @@ method
 
 action
 	: a:ACTION
-		{ self.writeblock(#a.getText()[1:-1]) }
+		{ self.writeblock(#a.getText()) }
 	;
 
 rule
@@ -398,71 +324,68 @@ rule
 			{
                 self.writeln()
                 self.writeln("def %s(self, src):" % n)
-                self.indent += 1
+                self.indent()
                 self.writeln("retval = src")
             }
 		( action )?
-		( alternative[True] ( alternative[False] )* )?
+		( alternative )+
 		    {
-                self.writeln("raise Exception")
-                self.indent -= 1
+                self.writeln()
+                self.writeln("raise TransformationFailure")
+                self.deindent()
 		    }
 	  )
 	;
 
-alternative[first]
+alternative
 	: #( ALTERNATIVE
 			{
-                self.writeln("args = []; kargs = {}")
-                self.writeind()
-                self.write("if ")
-                first = True
+                self.writeln()
+                self.writeln("try:")
+                self.indent()
+                self.writeln("args = []")
+                self.writeln("kargs = {}")
 			}
-		( p:SEMPRED 
-		    {
-                if not first:
-                    self.write(" and")
-                self.write("self.factory.match(%r, src)" % match)
-                first = False
-		    }
-		| match=term
-		    {
-                if not first:
-                    self.write(" and")
-                self.write("self.factory.match(%r, src, args, kargs)" % match)
-                first = False
-		    }
-		)*
-		    {
-                if first:
-                    self.write("true")
-	                first = False
-                self.write(":")
-                self.writeeol()
-                first = False
-                self.indent += 1
-		    }	
-		( INTO build=term 
-			{
-                self.writeln("retval = self.factory.make(%r, args, kargs)" % build)
-            }
-		| action
-		)*
+		( element )+
 			{
                 self.writeln("return retval")
-                self.indent -= 1
-                self.writeln()
+                self.deindent()
+                self.writeln("except TransformationFailure:")
+                self.indent()
+                self.writeln("pass")
+                self.deindent()
             }
-	 )
+	  )
 	;
 
-
+element
+	:
+		( p:SEMPRED 
+	        {
+                self.writeln("if not (p):" % p)
+	        }
+	    | match=term
+	        {
+                self.writeln("if not self.factory.match(%r, src, args, kargs):" % match)
+	        }
+	    )
+	    {
+            self.indent()
+            self.writeln("raise TransformationFailure")
+            self.deindent()
+	    }
+	| #( INTO build=term )
+		{
+            self.writeln("retval = self.factory.make(%r, args, kargs)" % build)
+        }
+	| action
+	;
 
 term returns [ret]
 	: i:INT { ret = #i.getText() }
 	| r:REAL { ret = #r.getText() }
 	| s:STR { ret = #s.getText() }
-	| v:LCASE_ID { ret = #v.getText() }
+	| v:LCID { ret = #v.getText() }
 	| w:WILDCARD { ret = #w.getText() }
 	| #( LIST t=terms )
 		{ ret = "[%s]" % (t) }
@@ -472,8 +395,8 @@ term returns [ret]
 
 cons returns [ret]
 	: s:STR { ret = #s.getText() }
-	| c:UCASE_ID { ret = #c.getText() }
-	| v:LCASE_ID { ret = #v.getText() }
+	| c:UCID { ret = #c.getText() }
+	| v:LCID { ret = #v.getText() }
 	| w:WILDCARD { ret = #w.getText() }
 	;
 

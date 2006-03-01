@@ -7,8 +7,6 @@
 
 header {
 
-import antlr
-
 from sslParser import SemanticException
 
 }
