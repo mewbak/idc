@@ -188,8 +188,9 @@ class Term(object):
 	type = property(lambda self: self.getType(), doc = '''Shorthand for type of this term.''')
 
 	def isConstant(self):
+		'''Whether this term is constants, as opposed to have variables or wildcards.'''
 		raise NotImplementedError
-	
+
 	def isEquivalent(self, term):
 		'''Checks for structural equivalence of this term agains another term.'''
 		raise NotImplementedError
@@ -370,7 +371,7 @@ class Variable(Term):
 		return self.getType() == other.getType() and self.name == other.name and self.pattern == other.pattern
 	
 	def isConstant(self):
-		return False
+		return self.pattern.isConstant()
 	
 	def _match(self, other, args, kargs):
 		name = self.getName()
@@ -588,10 +589,10 @@ class Application(Term):
 		return self.name.isConstant() and self.args.isConstant()
 	
 	def isEquivalent(self, other):
-		return other is self or (other.type == APPL and other.name == self.name and other.args.isEquivalent(self.args))
+		return other is self or (other.type == APPL and self.name.isEquivalent(other.name) and self.args.isEquivalent(other.args))
 
 	def isEqual(self, other):
-		return other is self or (other.type == APPL and other.name == self.name and other.args.isEqual(self.args) and other.annotations.isEquivalent(self.annotations))
+		return other is self or (other.type == APPL and self.name.isEqual(other.name) and self.args.isEqual(other.args))
 		
 	def _match(self, other, args, kargs):
 		if other is self:
@@ -655,15 +656,15 @@ class TextWriter(Visitor):
 		self.fp = fp
 	
 	def writeTerms(self, terms):
-		if terms.getType() == LIST and not terms.isEmpty():
+		sep = ''
+		while terms.getType() == LIST and not terms.isEmpty():
+			self.fp.write(sep)
 			self.visit(terms.getHead())
 			terms = terms.getTail()
-			while terms.getType() == LIST and not terms.isEmpty():
-				self.fp.write(',')
-				self.visit(terms.getHead())
-				terms = terms.getTail()
+			sep = ','
 		if terms.getType() != LIST:
-			self.fp.write(',*')
+			self.fp.write(sep)
+			self.fp.write('*')
 			if terms.getType() != WILDCARD:
 				self.visit(terms)
 
@@ -711,7 +712,7 @@ class TextWriter(Visitor):
 		# TODO: verify strings
 		self.fp.write(name.getSymbol())
 		args = term.getArgs()
-		if not args.isEmpty() or name.getType() != STR or name.getValue() == '':
+		if args.getType() != LIST or not args.isEmpty() or name.getType() != STR or name.getValue() == '':
 			self.fp.write('(')
 			self.writeTerms(args)
 			self.fp.write(')')
