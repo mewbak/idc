@@ -4,12 +4,12 @@ import sys
 import optparse
 import os.path
 
-from transformationLexer import Lexer
-from transformationParser import Parser
-from transformationWalker import Walker
+from walkerLexer import Lexer
+from walkerParser import Parser
+from walkerWalker import Walker
 
 
-def tc(fpin, fpout):
+def wc(fpin, fpout):
 	lexer = Lexer(fpin)
 	parser = Parser(lexer)
 	parser.grammar()
@@ -35,7 +35,7 @@ def main():
 		else:
 			fpout = file(options.output, 'wt')
 
-		tc(fpin, fpout)
+		wc(fpin, fpout)
 
 
 if __name__ == '__main__':

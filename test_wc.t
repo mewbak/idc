@@ -7,10 +7,10 @@ import transformation
 
 class Simple:
 
-swap
-	: C(x,y) -> C(y,x)
-	| _
-	;
+	swap
+		: C(x,y) -> C(y,x)
+		| _
+		;
 
 
 header {
