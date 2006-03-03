@@ -1,4 +1,7 @@
--- Intermediate Representation in ASDL -- mostly for reference at the moment
+-- ir.asdl
+-- 
+-- Definition of the intermediate representation in the Abstract Syntax
+-- Description Language (ASDL). Mostly for reference at the moment.
 --
 -- NOTE: ASDL's five builtin types are identifier, int, string, object, bool
 
