@@ -2,7 +2,7 @@ header {
 import unittest
 
 import aterm
-import transformation
+import walker
 }
 
 class Simple:
@@ -34,7 +34,7 @@ class TestCase(unittest.TestCase):
 
 			try:
 				result = self.transformation.swap(input)
-			except transformation.TransformationFailure:
+			except walker.TransformationFailureExcpetion:
 				result = None
 		
 			self.failUnlessEqual(result, expectedResult, msg = '%r -> %r (!= %r)' % (input, result, expectedResult))						

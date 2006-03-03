@@ -277,8 +277,7 @@ class walkerWalker extends TreeParser;
 
 start
 			{
-                self.writeln("from aterm import TransformationFailureException")
-                self.writeln("from walker import Walker")
+                self.writeln("from walker import Walker, TransformationFailureException")
                 self.writeln()
             }
 	: (part)*

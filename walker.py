@@ -3,6 +3,11 @@
 import aterm
 
 
+class TransformationFailureException(Exception):
+	
+	pass
+
+
 class Walker:
 
 	def __init__(self, factory):
