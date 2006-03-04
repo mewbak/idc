@@ -31,8 +31,8 @@ test-ssl: sslLexer.py sslParser.py
 		python sslParser.py < $(FILE); \
 	)
 	
-test-wc: test_wc.py aterm.py walker.py
-	python test_wc.py -v
+test-wgen: test_wgen.py aterm.py walker.py
+	python test_wgen.py -v
 
 doc:
 	epydoc --css blue aterm.py
@@ -45,8 +45,8 @@ antlr.$(ARCH): $(ANTLR_JAR)
 .PHONY: default all test doc antlr
 
 
-%.py: %.t wc walkerLexer.py walkerParser.py walkerWalker.py
-	python wc -o $@ $<
+%.py: %.w wgen wgenLexer.py wgenParser.py wgenWalker.py
+	python wgen -o $@ $<
 
 
 dependencies.mak: Makefile $(wildcard *.g)

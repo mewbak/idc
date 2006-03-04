@@ -1,11 +1,11 @@
-// Grammer for aterm walkers.
+// Grammer for aterm wgens.
 // It is inspired on ANTLR, Python and ATerm syntaxes.
 
 header {
     import sys
 }
 
-header "walkerWalker.__init__" {
+header "wgenWalker.__init__" {
     self.fp = args[0]
 }
 
@@ -14,7 +14,7 @@ options {
 }
 
 
-class walkerLexer extends Lexer;
+class wgenLexer extends Lexer;
 
 options {
 	k = 2;
@@ -129,7 +129,7 @@ NESTED_ACTION
     ;
 
 
-class walkerParser extends Parser;
+class wgenParser extends Parser;
 
 options {
 	k=2;
@@ -225,7 +225,7 @@ id
 	;
 
 
-class walkerWalker extends TreeParser;
+class wgenWalker extends TreeParser;
 
 {
     _indent = 0
