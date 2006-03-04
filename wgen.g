@@ -180,14 +180,20 @@ block
 	;
 
 alternative
-	: ( p:SEMPRED )* term (element)*
+	:
+		( SEMPRED
+		| ACTION
+		)*
+		term
+		( SEMPRED
+		| ACTION
+		)*
+		( INTO 
+			( ACTION )*
+			( term )
+			( ACTION )*
+		)?
 		{ ## = #(#[ALTERNATIVE,"ALTERNATIVE"], ##) }
-	;
-
-element
-	: p:SEMPRED^
-	| INTO^ term
-	| a:ACTION^
 	;
 
 term
@@ -201,7 +207,7 @@ term
 	| UCID ( LPAREN! terms RPAREN! )?
 		{ ## = #(#[APPL,"APPL"], ##) }
 	|
-		( LCID | WILDCARD )
+		( LCID^ | WILDCARD^ )
 		( LPAREN! terms RPAREN!
 			{ ## = #(#[APPL,"APPL"], ##) }	
 		)?
@@ -209,13 +215,21 @@ term
 		{ ## = #(#[TRNSF,"TRNSF"], ##) }	
 	;
 
+inner_term
+	: term
+	|
+		ACTION^
+		( LPAREN! terms RPAREN!
+			{ ## = #(#[APPL,"APPL"], ##) }	
+		)?	;
+
 terms
 	:
 	| terms_rest
 	;
 	
 terms_rest
-	: term ( COMMA! terms_rest )?
+	: inner_term ( COMMA! terms_rest )?
 	| STAR^ ( ( WILDCARD )? | VAR )
 	;
 
@@ -349,7 +363,8 @@ alternative
                 self.writeln("args = []")
                 self.writeln("kargs = {}")
 			}
-		( element )+
+		( predicate )+
+		( INTO ( production )+ )?
 			{
                 self.writeln("return result")
                 self.deindent()
@@ -361,38 +376,39 @@ alternative
 	  )
 	;
 
-element
-	:
-		( p:SEMPRED 
+predicate
+	: ( ACTION ) => action
+	| p:SEMPRED 
 	        {
                 self.writeln("if not (%s):" % p)
                 self.indent()
                 self.writeln("raise TransformationFailureException")
                 self.deindent()
 	        }
-	    | pattern=mpat:stringify_term
+	| pattern=t:stringify_term
 	        {
                 self.writeln("if not self.factory.match(%r, target, args, kargs):" % pattern)
                 self.indent()
                 self.writeln("raise TransformationFailureException")
                 self.deindent()
-                if not self.is_static_term(#mpat):
+                if not self.is_static_term(#t):
                     self.argn = 0
-                    self.post_match_term(#mpat)
+                    self.post_match_term(#t)
                     self.writeln("result = self.factory.make(%r, *args, **kargs)" % pattern)
 	        }
-	    )
-	| #( INTO bpat:. )
+	;
+
+production
+	: ( ACTION ) => action
+	| flag=t:is_static_term
 		{
-            print self.is_static_term(#bpat)
-            if self.is_static_term(#bpat):
-                pattern = self.stringify_term(#bpat)
+            if flag:
+                pattern = self.stringify_term(#t)
                 self.writeln("result = self.factory.make(%r, *args, **kargs)" % pattern)
             else:
-                pattern = self.build_term(#bpat)
+                pattern = self.build_term(#t)
                 self.writeln("result = %s.make(*args, **kargs)" % pattern)
         }
-	| action
 	;
 
 is_static_term returns [ret]
@@ -417,8 +433,9 @@ stringify_term returns [ret]
 		{ ret = "[%s]" % l }
 	| #( APPL c=stringify_term_cons a=stringify_term_list )
 		{ ret = "%s(%s)" % (c, a) }
-	| #( TRNSF . )
+	| TRNSF
 		{ ret = "_" }
+	| ACTION
 	;
 
 stringify_term_cons returns [ret]
@@ -444,9 +461,15 @@ post_match_term
 		{ self.argn += 1 }
 	| #( LIST ( post_match_term )* )
 	| #( APPL ( post_match_term )+ )
-	| #( TRNSF s=id )
+	| #( TRNSF n=id )
 		{
-            self.writeln("args[%i] = self.%s(args[%i])" % (self.argn, s, self.argn))
+            self.writeln("args[%i] = self.%s(args[%i])" % (self.argn, n, self.argn))
+            self.argn += 1
+		}
+	| a:ACTION
+		{
+            self.writeln("argn = %s " % self.argn)
+            self.writeln("args[%i] = %s" % (self.argn, #a.getText()))
             self.argn += 1
 		}
 	;
@@ -468,8 +491,10 @@ build_term returns [ret]
 		{ ret = l }
 	| #( APPL c=build_term a=build_term_list )
 		{ ret = "self.factory.makeAppl(%s,%s)" % (c, a) }
-	| #( TRNSF s=id /* a=build_term_args */)
-		{ ret = "self.%s(target)" % s }
+	| #( TRNSF n=id a=build_trnsf_args)
+		{ ret = "self.%s(target%s)" % (n, a) }
+	| a:ACTION
+		{ ret = #a.getText() }
 	;
 
 build_term_list returns [ret]
@@ -477,4 +502,11 @@ build_term_list returns [ret]
 		{ ret = "self.factory.makeConsList(%s,%s)" % (h, t) }
 	| 
 		{ ret = "self.factory.makeNilList()" }
+	;
+
+build_trnsf_args returns [ret]
+	: h=build_term t=build_trnsf_args
+		{ ret = ",%s%s" % (h, t) }
+	| 
+		{ ret = "" }
 	;
