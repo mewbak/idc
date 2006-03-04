@@ -12,6 +12,13 @@ class Simple:
 		| _
 		;
 
+	is_zero
+		: 0
+		;
+
+	simplify
+		: Or(.is_zero,x) -> x
+		;
 
 header {
 
@@ -34,7 +41,7 @@ class TestCase(unittest.TestCase):
 
 			try:
 				result = self.transformation.swap(input)
-			except walker.TransformationFailureExcpetion:
+			except walker.TransformationFailureException:
 				result = None
 		
 			self.failUnlessEqual(result, expectedResult, msg = '%r -> %r (!= %r)' % (input, result, expectedResult))						

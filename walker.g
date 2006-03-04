@@ -24,6 +24,7 @@ options {
 tokens {
 	HEADER="header";
 	CLASS="class";
+	DOT;
 }
 
 protected
@@ -50,14 +51,14 @@ COMMENT
         EOL
 	;
 
-REAL_OR_INT	
+REAL_OR_INT
 	:
 		{ $setType(INT); }
 		// sign
 		('-')?
 		// fraction
 		( ('0'..'9')+ ( '.' ('0'..'9')* { $setType(REAL); } )?
-		| '.' ('0'..'9')+ { $setType(REAL); }
+		| '.' { $setType(DOT); } ( ('0'..'9')+ { $setType(REAL); } )?
 		) 
 		// exponent
 		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )?
@@ -116,10 +117,6 @@ ACTION
 	: '{'! NESTED_ACTION '}'! ( '?'! { $setType(SEMPRED) } )?
 	;
 
-DOT
-	: '.'
-	;
-
 protected
 NESTED_ACTION
     :
@@ -130,7 +127,6 @@ NESTED_ACTION
         | ~'}'
         )*
     ;
-
 
 
 class walkerParser extends Parser;
@@ -330,9 +326,8 @@ rule
 		n=id
 			{
                 self.writeln()
-                self.writeln("def %s(self, src):" % n)
+                self.writeln("def %s(self, target):" % n)
                 self.indent()
-                self.writeln("retval = src")
             }
 		( action )?
 		( alternative )+
@@ -345,17 +340,18 @@ rule
 	;
 
 alternative
-	: #( ALTERNATIVE
+	: #(
+		ALTERNATIVE
 			{
-                self.writeln()
                 self.writeln("try:")
                 self.indent()
+                self.writeln("result = target")
                 self.writeln("args = []")
                 self.writeln("kargs = {}")
 			}
 		( element )+
 			{
-                self.writeln("return retval")
+                self.writeln("return result")
                 self.deindent()
                 self.writeln("except TransformationFailureException:")
                 self.indent()
@@ -369,59 +365,116 @@ element
 	:
 		( p:SEMPRED 
 	        {
-                self.writeln("if not (p):" % p)
+                self.writeln("if not (%s):" % p)
+                self.indent()
+                self.writeln("raise TransformationFailureException")
+                self.deindent()
 	        }
-	    | match=term
+	    | pattern=mpat:stringify_term
 	        {
-                pattern, args = match
-                self.writeln("if not self.factory.match(%r, src, args, kargs):" % pattern)
-                static = True
-                for i in range(len(args)):
-                    arg = args[i]
-                    if arg != "_":
-                        static = False
-                        self.writeln("args[%i] = self.%s(args[%i])" % (i, arg))
-                if not static:
-                    self.writeln("retval = self.factory.make(%r, *args, **kargs)" % pattern)
+                self.writeln("if not self.factory.match(%r, target, args, kargs):" % pattern)
+                self.indent()
+                self.writeln("raise TransformationFailureException")
+                self.deindent()
+                if not self.is_static_term(#mpat):
+                    self.argn = 0
+                    self.post_match_term(#mpat)
+                    self.writeln("result = self.factory.make(%r, *args, **kargs)" % pattern)
 	        }
 	    )
-	    {
-            self.indent()
-            self.writeln("raise TransformationFailureException")
-            self.deindent()
-	    }
-	| #( INTO build=term )
+	| #( INTO bpat:. )
 		{
-            pattern, args = build
-            self.writeln("retval = self.factory.make(%r, *args, **kargs)" % pattern)
+            print self.is_static_term(#bpat)
+            if self.is_static_term(#bpat):
+                pattern = self.stringify_term(#bpat)
+                self.writeln("result = self.factory.make(%r, *args, **kargs)" % pattern)
+            else:
+                pattern = self.build_term(#bpat)
+                self.writeln("result = %s.make(*args, **kargs)" % pattern)
         }
 	| action
 	;
 
-
-term returns [ret]
-	: i:INT { ret = #i.getText(), [] }
-	| r:REAL { ret = #r.getText(), [] }
-	| s:STR { ret = #s.getText(), [] }
-	| v:LCID { ret = #v.getText(), [] }
-	| w:WILDCARD { ret = "_", ["_"] }
-	| #( LIST t=terms )
-		{ ret = "[%s]" % (t[0]), t[1] }
-	| #( APPL c=cons a=terms )
-		{ ret = "%s(%s)" % (c[0], a[0]), c[1] + a[1] }
-	| #( TRNSF s=id a=terms )
-		{ ret = "_", [s] }
+is_static_term returns [ret]
+	: ( INT | REAL | STR | UCID | LCID | WILDCARD ) { ret = True }
+	| #( LIST { ret = True } ( e=is_static_term { ret = ret and e } )* )
+	| #( APPL ret=is_static_term ( a=is_static_term { ret = ret and a } )* )
+	| TRNSF { ret = False }
 	;
 
-cons returns [ret]
-	: s:STR { ret = #s.getText(), [] }
-	| c:UCID { ret = #c.getText(), [] }
-	| v:LCID { ret = #v.getText(), [] }
-	| w:WILDCARD { ret = "_", ["_"] }
+stringify_term returns [ret]
+	: i:INT 
+		{ ret = #i.getText() }
+	| r:REAL 
+		{ ret = #r.getText() }
+	| s:STR 
+		{ ret = repr(#s.getText()) }
+	| v:LCID 
+		{ ret = #v.getText() }
+	| w:WILDCARD 
+		{ ret = "_" }
+	| #( LIST l=stringify_term_list)
+		{ ret = "[%s]" % l }
+	| #( APPL c=stringify_term_cons a=stringify_term_list )
+		{ ret = "%s(%s)" % (c, a) }
+	| #( TRNSF . )
+		{ ret = "_" }
 	;
 
-terms returns [ret]
-		{ ret = [], [] }
-	: ( t=term { ret[0].append(t[0]); ret[1].extend(t[1]) } )*
-		{ ret = ','.join(ret[0]), ret[1] }
+stringify_term_cons returns [ret]
+	: s:STR 
+		{ ret = #s.getText() }
+	| c:UCID 
+		{ ret = #c.getText() }
+	| v:LCID 
+		{ ret = #v.getText() }
+	| w:WILDCARD 
+		{ ret = "_" }
+	;
+
+stringify_term_list returns [ret]
+		{ ret = [] }
+	: ( t=stringify_term { ret.append(t) } )*
+		{ ret = ','.join(ret) }
+	;
+
+post_match_term
+	: ( INT | REAL | STR | UCID | LCID )
+	| w:WILDCARD 
+		{ self.argn += 1 }
+	| #( LIST ( post_match_term )* )
+	| #( APPL ( post_match_term )+ )
+	| #( TRNSF s=id )
+		{
+            self.writeln("args[%i] = self.%s(args[%i])" % (self.argn, s, self.argn))
+            self.argn += 1
+		}
+	;
+
+build_term returns [ret]
+	: i:INT 
+		{ ret = "self.factory.makeInt(%r)" % #i.getText() }
+	| r:REAL 
+		{ ret = "self.factory.makeReal(%r)" % #r.getText() }
+	| s:STR 
+		{ ret = "self.factory.makeStr(%r)" % #s.getText() }
+	| c:UCID 
+		{ ret = "self.factory.makeStr(%r)" % #c.getText() }
+	| v:LCID 
+		{ ret = "self.factory.makeVar(%r,self.factory.makeWildcard())" % #v.getText() }
+	| w:WILDCARD 
+		{ ret = "self.factory.makeWildcard()" }
+	| #( LIST l=build_term_list )
+		{ ret = l }
+	| #( APPL c=build_term a=build_term_list )
+		{ ret = "self.factory.makeAppl(%s,%s)" % (c, a) }
+	| #( TRNSF s=id /* a=build_term_args */)
+		{ ret = "self.%s(target)" % s }
+	;
+
+build_term_list returns [ret]
+	: ( build_term build_term ) => h=build_term t=build_term_list
+		{ ret = "self.factory.makeConsList(%s,%s)" % (h, t) }
+	| 
+		{ ret = "self.factory.makeNilList()" }
 	;
