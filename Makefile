@@ -35,7 +35,11 @@ test-wgen: test_wgen.py aterm.py walker.py
 	python test_wgen.py -v
 
 doc:
-	epydoc --css blue aterm.py
+	epydoc \
+		--css blue \
+		aterm.py \
+		walker.py \
+		transformation.py
 
 antlr: antlr.$(ARCH)
 
