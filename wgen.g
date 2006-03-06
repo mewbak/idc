@@ -314,7 +314,7 @@ class wgenWalker extends TreeParser;
 
 start
 			{
-                self.writeln("from walker import Walker, TransformationFailureException")
+                self.writeln("from walker import Walker, Failure")
                 self.writeln()
             }
 	: (part)*
@@ -374,7 +374,7 @@ rule
 		( alternative )+
 		    {
                 self.writeln()
-                self.writeln("raise TransformationFailureException")
+                self.writeln("raise Failure")
                 self.deindent()
 		    }
 	  )
@@ -395,7 +395,7 @@ alternative
 			{
                 self.writeln("return result")
                 self.deindent()
-                self.writeln("except TransformationFailureException:")
+                self.writeln("except Failure:")
                 self.indent()
                 self.writeln("pass")
                 self.deindent()
@@ -409,14 +409,14 @@ predicate
 	        {
                 self.writeln("if not (%s):" % p)
                 self.indent()
-                self.writeln("raise TransformationFailureException")
+                self.writeln("raise Failure")
                 self.deindent()
 	        }
 	| pattern=t:stringify_term
 	        {
                 self.writeln("if not self.factory.match(%r, target, args, kargs):" % pattern)
                 self.indent()
-                self.writeln("raise TransformationFailureException")
+                self.writeln("raise Failure")
                 self.deindent()
                 if not self.is_static_term(#t):
                     self.argn = 0

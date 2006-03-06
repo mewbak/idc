@@ -3,7 +3,7 @@
 import aterm
 
 
-class TransformationFailureException(Exception):
+class Failure(Exception):
 	
 	pass
 
