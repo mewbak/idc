@@ -11,7 +11,7 @@ from wgenWalker import Walker
 
 def wc(fpin, fpout, debug = False):
 	lexer = Lexer(fpin)
-	parser = Parser(lexer)
+	parser = Parser(lexer, debug = debug)
 	parser.grammar()
 	ast = parser.getAST()
 	

@@ -1,12 +1,13 @@
 // Grammer for aterm wgens.
 // It is inspired on ANTLR, Python and ATerm syntaxes.
 
-header {
-    import sys
+header "wgenParser.__init__" {
+    self.debug = kwargs.get("debug", False)
 }
 
 header "wgenWalker.__init__" {
     self.fp = args[0]
+    self.debug = kwargs.get("debug", False)
 }
 
 options {
@@ -142,6 +143,7 @@ tokens {
 	LIST;
 	ARG;
 	TRANSF;
+	NIL;
 }
 
 grammar
@@ -184,16 +186,27 @@ alternative
 		( SEMPRED
 		| ACTION
 		)*
-		term
+		debug_term
 		( SEMPRED
 		| ACTION
 		)*
 		( INTO 
 			( ACTION )*
-			( term )
+			( debug_term )
 			( ACTION )*
 		)?
 		{ ## = #(#[ALTERNATIVE,"ALTERNATIVE"], ##) }
+	;
+
+debug_term
+	: t:term
+{
+    if self.debug:
+        import sys
+        sys.stderr.write("*** Term ***\n")
+        sys.stderr.write(#t.toStringTree())
+        sys.stderr.write("\n")
+}
 	;
 
 term
@@ -204,33 +217,47 @@ term
 		{ ## = #(#[LIST,"LIST"], ##) }
 	| LPAREN! terms RPAREN!
 		{ ## = #(#[APPL,"APPL"], #[UCID,""], ##) }
-	| UCID ( LPAREN! terms RPAREN! )?
+	| UCID opt_args
 		{ ## = #(#[APPL,"APPL"], ##) }
 	|
-		( LCID^ | WILDCARD^ )
+		( LCID | WILDCARD )
 		( LPAREN! terms RPAREN!
 			{ ## = #(#[APPL,"APPL"], ##) }	
 		)?
-	| DOT! ( UCID | LCID ) ( LPAREN! terms RPAREN! )?
+	| DOT! ( UCID | LCID ) opt_args
 		{ ## = #(#[TRNSF,"TRNSF"], ##) }	
 	;
 
+opt_args
+	: LPAREN! terms RPAREN!
+	| nil
+	;
+	
 inner_term
 	: term
-	|
-		ACTION^
-		( LPAREN! terms RPAREN!
-			{ ## = #(#[APPL,"APPL"], ##) }	
-		)?	;
+	| ACTION^ opt_args
+	;
+
+nil
+	:
+		{ ## = #(#[NIL,"NIL"]) }	
+	;
 
 terms
-	:
-	| terms_rest
+	: terms_rest
+	| nil
 	;
 	
 terms_rest
-	: inner_term ( COMMA! terms_rest )?
-	| STAR^ ( ( WILDCARD )? | VAR )
+	: inner_term (COMMA! terms_rest | nil )
+		{ ## = #(#[COMMA,","], ##) }	
+	| STAR^ ( LCID | opt_wildcard )
+	;
+	
+opt_wildcard
+	: WILDCARD
+	|
+		{ ## = #(#[WILDCARD,"_"]) }	
 	;
 
 id
@@ -412,10 +439,20 @@ production
 	;
 
 is_static_term returns [ret]
-	: ( INT | REAL | STR | UCID | LCID | WILDCARD ) { ret = True }
-	| #( LIST { ret = True } ( e=is_static_term { ret = ret and e } )* )
-	| #( APPL ret=is_static_term ( a=is_static_term { ret = ret and a } )* )
-	| TRNSF { ret = False }
+	: ( INT | REAL | STR | UCID | LCID | WILDCARD )
+		{ ret = True }
+	| #( LIST ret=is_static_term )
+	| #( APPL c=is_static_term a=is_static_term  )
+		{ ret = c and a }
+	| TRNSF 
+		{ ret = False }
+	| ACTION
+		{ ret = False }
+	| NIL
+		{ ret = True }
+	| #( COMMA h=is_static_term t=is_static_term )
+		{ ret = h and t }
+	| #( STAR ret=is_static_term )
 	;
 
 stringify_term returns [ret]
@@ -424,22 +461,6 @@ stringify_term returns [ret]
 	| r:REAL 
 		{ ret = #r.getText() }
 	| s:STR 
-		{ ret = repr(#s.getText()) }
-	| v:LCID 
-		{ ret = #v.getText() }
-	| w:WILDCARD 
-		{ ret = "_" }
-	| #( LIST l=stringify_term_list)
-		{ ret = "[%s]" % l }
-	| #( APPL c=stringify_term_cons a=stringify_term_list )
-		{ ret = "%s(%s)" % (c, a) }
-	| TRNSF
-		{ ret = "_" }
-	| ACTION
-	;
-
-stringify_term_cons returns [ret]
-	: s:STR 
 		{ ret = #s.getText() }
 	| c:UCID 
 		{ ret = #c.getText() }
@@ -447,20 +468,28 @@ stringify_term_cons returns [ret]
 		{ ret = #v.getText() }
 	| w:WILDCARD 
 		{ ret = "_" }
-	;
-
-stringify_term_list returns [ret]
-		{ ret = [] }
-	: ( t=stringify_term { ret.append(t) } )*
-		{ ret = ','.join(ret) }
+	| #( LIST l=stringify_term)
+		{ ret = "[%s]" % l }
+	| #( APPL c=stringify_term a=stringify_term )
+		{ ret = "%s(%s)" % (c, a) }
+	| TRNSF
+		{ ret = "_" }
+	| ACTION
+		{ ret = "_" }
+	| NIL
+		{ ret = "" }
+	| #( COMMA h=stringify_term t=stringify_term )
+		{ ret = ("%s,%s" % (h, t)).rstrip(",") }
+	| #( STAR p=stringify_term )
+		{ ret = "*%s" % p }
 	;
 
 post_match_term
 	: ( INT | REAL | STR | UCID | LCID )
 	| w:WILDCARD 
 		{ self.argn += 1 }
-	| #( LIST ( post_match_term )* )
-	| #( APPL ( post_match_term )+ )
+	| #( LIST post_match_term )
+	| #( APPL post_match_term post_match_term )
 	| #( TRNSF n=id )
 		{
             self.writeln("args[%i] = self.%s(args[%i])" % (self.argn, n, self.argn))
@@ -472,7 +501,9 @@ post_match_term
             self.writeln("args[%i] = %s" % (self.argn, #a.getText()))
             self.argn += 1
 		}
-	;
+	| NIL
+	| #( COMMA post_match_term post_match_term )
+	| #( STAR post_match_term )	;
 
 build_term returns [ret]
 	: i:INT 
@@ -480,33 +511,32 @@ build_term returns [ret]
 	| r:REAL 
 		{ ret = "self.factory.makeReal(%r)" % #r.getText() }
 	| s:STR 
-		{ ret = "self.factory.makeStr(%r)" % #s.getText() }
+		{ ret = "self.factory.parse(%r)" % #s.getText() }
 	| c:UCID 
 		{ ret = "self.factory.makeStr(%r)" % #c.getText() }
 	| v:LCID 
 		{ ret = "self.factory.makeVar(%r,self.factory.makeWildcard())" % #v.getText() }
 	| w:WILDCARD 
 		{ ret = "self.factory.makeWildcard()" }
-	| #( LIST l=build_term_list )
+	| #( LIST l=build_term )
 		{ ret = l }
-	| #( APPL c=build_term a=build_term_list )
+	| #( APPL c=build_term a=build_term )
 		{ ret = "self.factory.makeAppl(%s,%s)" % (c, a) }
 	| #( TRNSF n=id a=build_trnsf_args)
 		{ ret = "self.%s(target%s)" % (n, a) }
 	| a:ACTION
 		{ ret = #a.getText() }
-	;
-
-build_term_list returns [ret]
-	: ( build_term build_term ) => h=build_term t=build_term_list
-		{ ret = "self.factory.makeConsList(%s,%s)" % (h, t) }
-	| 
+	| NIL
 		{ ret = "self.factory.makeNilList()" }
+	| #( COMMA h=build_term t=build_term )
+		{ ret = "self.factory.makeConsList(%s,%s)" % (h, t) }
+	| #( STAR p=build_term )
+		{ ret = p }
 	;
 
 build_trnsf_args returns [ret]
-	: h=build_term t=build_trnsf_args
-		{ ret = ",%s%s" % (h, t) }
-	| 
+	: NIL
 		{ ret = "" }
+	| #(COMMA h=build_term t=build_trnsf_args)
+		{ ret = ",%s%s" % (h, t) }
 	;
