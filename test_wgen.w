@@ -5,9 +5,10 @@ import aterm
 import walker
 }
 
-class Simple:
 
-	match
+class WalkerTestSuite:
+
+	testMatch
 		: 1
 		| 0.1
 		| "s"
@@ -15,7 +16,23 @@ class Simple:
 		| C(1)
 		;
 	
-	build
+	{
+	testMatchData = [
+		('1', '1'),
+		('2', Failure),
+		('0.1', '0.1'),
+		('0.2', Failure),
+		('"s"', '"s"'),
+		('"t"', Failure),
+		('[1]', '[1]'),
+		('[1,2]', Failure),
+		('[1,2]', Failure),
+		('C(1)', 'C(1)'),
+		('D(1,2)', Failure),
+	]
+	}
+
+	testBuild
 		: 1 -> 2
 		| 0.1 -> 0.2
 		| "s" -> "t"
@@ -23,7 +40,17 @@ class Simple:
 		| C(1) -> D(2,3)
 		;
 	
-	variables
+	{
+	testBuildData = [
+		('1', '2'),
+		('0.1', '0.2'),
+		('"s"', '"t"'),
+		('[1]', '[2,3]'),
+		('C(1)', 'D(2,3)'),
+	]
+	}
+	
+	testVariables
 		: First(x,y) -> x
 		| Second(x,y) -> y
 		| Equal(x,x) -> x
@@ -31,11 +58,27 @@ class Simple:
 		| f(*a) -> Cons(f, a)
 		;
 		
-	swap
+	{
+	testVariablesData = [
+		('First(1,2)', '1'),
+		('Second(1,2)', '2'),
+		('Equal(1,1)', '1'),
+		('Equal(1,2)', 'Cons("Equal",[1,2])'),
+	]
+	}
+	
+	testSwap
 		: C(x,y) -> C(y,x)
 		| _
 		;
 
+	{
+	testSwapData = [
+		("C(1,2)", "C(2,1)"),
+		("C(1,2,3)", "C(1,2,3)"),
+		("D", "D"),
+	]
+	}
 	is_zero
 		: 0
 		;
@@ -44,83 +87,65 @@ class Simple:
 		: Or(.is_zero,x) -> x
 		;
 
+
 header {
 
-class TestCase(unittest.TestCase):
+class WalkerTestCase(unittest.TestCase):
 
+	def __init__(self, walkerClass, testMethodName, testDataName):
+		unittest.TestCase.__init__(self)
+
+		self.walkerClass = walkerClass
+		self.testMethodName = testMethodName
+		self.testDataName = testDataName
+	
 	def setUp(self):
 		self.factory = aterm.Factory()
-		self.transformation = Simple(self.factory)
+		self.walker = self.walkerClass(self.factory)
 
-	def runTestCases(self, method, testcases):
+	def runTest(self):
+	
 		failure = self.factory.parse("FAILURE")
-		for inputStr, expectedResultStr in testcases:
+
+		testMethod = getattr(self.walker, self.testMethodName)
+		testData = getattr(self.walker, self.testDataName)
+		
+		for inputStr, expectedResultStr in testData:
 			input = self.factory.parse(inputStr)
 
-			if expectedResultStr is None:
+			if expectedResultStr is Failure:
 				expectedResult = failure
 			else:
 				expectedResult = self.factory.parse(expectedResultStr)
 
 			try:
-				result = getattr(self.transformation, method)(input)
-			except walker.TransformationFailureException:
+				result = testMethod(input)
+			except walker.Failure, ex:
 				result = failure
 		
 			self.failUnlessEqual(result, expectedResult, msg = '%r -> %r (!= %r)' % (input, result, expectedResult))						
-	
-	matchTestCases = [
-		('1', '1'),
-		('2', None),
-		('0.1', '0.1'),
-		('0.2', None),
-		('"s"', '"s"'),
-		('"t"', None),
-		('[1]', '[1]'),
-		('[1,2]', None),
-		('[1,2]', None),
-		('C(1)', 'C(1)'),
-		('D(1,2)', None),
-	]
-	
-	def testMatch(self):
-		self.runTestCases("match", self.matchTestCases)
 
-	buildTestCases = [
-		('1', '2'),
-		('0.1', '0.2'),
-		('"s"', '"t"'),
-		('[1]', '[2,3]'),
-		('C(1)', 'D(2,3)'),
-	]
-	
-	def testBuild(self):
-		self.runTestCases("build", self.buildTestCases)
+	def id(self):
+		return self.testMethodName
 
-	variablesTestCases = [
-		('First(1,2)', '1'),
-		('Second(1,2)', '2'),
-		('Equal(1,1)', '1'),
-		('Equal(1,2)', 'Cons("Equal",[1,2])'),
-	]
-	
-	def testVariables(self):
-		self.runTestCases("variables", self.variablesTestCases)
-
-	swapTestCases = [
-		("C(1,2)", "C(2,1)"),
-		("C(1,2,3)", "C(1,2,3)"),
-		("D", "D"),
-	]
-	
-	def testSwap(self):
-		self.runTestCases("swap", self.swapTestCases)
-
+	def __str__(self):
+		return "%s (%s)" % (self.walkerClass.__name__, self.testMethodName)
 }
 
 header {
 
+def main():
+	suite = unittest.TestSuite()
+	walkerClass = WalkerTestSuite
+	for attr in dir(walkerClass):
+		if attr.startswith('test') and hasattr(walkerClass, attr + 'Data'):
+			suite.addTest(WalkerTestCase(walkerClass, attr, attr + 'Data'))
+	
+	runner = unittest.TextTestRunner(verbosity = 2)
+	runner.run(suite)
+
+
 if __name__ == '__main__':
-	unittest.main()
+	main()
 
 }
