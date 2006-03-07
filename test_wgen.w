@@ -13,6 +13,7 @@ class WalkerTestSuite:
 		| 0.1
 		| "s"
 		| [1]
+		| (1)
 		| C(1)
 		;
 	
@@ -27,6 +28,9 @@ class WalkerTestSuite:
 		('[1]', '[1]'),
 		('[1,2]', Failure),
 		('[1,2]', Failure),
+		('(1)', '(1)'),
+		('(1,2)', Failure),
+		('(1,2)', Failure),
 		('C(1)', 'C(1)'),
 		('D(1,2)', Failure),
 	]
@@ -37,6 +41,7 @@ class WalkerTestSuite:
 		| 0.1 -> 0.2
 		| "s" -> "t"
 		| [1] -> [2,3]
+		| (1) -> (2,3)
 		| C(1) -> D(2,3)
 		;
 	
@@ -46,46 +51,104 @@ class WalkerTestSuite:
 		('0.1', '0.2'),
 		('"s"', '"t"'),
 		('[1]', '[2,3]'),
+		('(1)', '(2,3)'),
 		('C(1)', 'D(2,3)'),
 	]
 	}
 	
 	testVariables
-		: First(x,y) -> x
-		| Second(x,y) -> y
+		: First(x,_) -> x
+		| Second(_,x) -> x
 		| Equal(x,x) -> x
-		| Tail(x,*y) -> y
-		| f(*a) -> Cons(f, a)
+		| Head(x,*) -> x
+		| Tail(_,*x) -> x
 		;
 		
 	{
 	testVariablesData = [
 		('First(1,2)', '1'),
+		('First(1)', Failure),
+		('First()', Failure),
+		('Second(1,2,3)', Failure),
 		('Second(1,2)', '2'),
+		('Second(1)', Failure),
 		('Equal(1,1)', '1'),
-		('Equal(1,2)', 'Cons("Equal",[1,2])'),
+		('Equal(1,2)', Failure),
+		('Equal(1)', Failure),
+		('Head(1,2,3)', '1'),
+		('Head(1,2)', '1'),
+		('Head(1)', '1'),
+		('Head()', Failure),
+		('Tail(1,2,3)', '[2,3]'),
+		('Tail(1,2)', '[2]'),
+		('Tail(1)', '[]'),
+		('Tail()', Failure),
 	]
 	}
-	
-	testSwap
-		: C(x,y) -> C(y,x)
-		| _
-		;
 
+	testConstructors
+		: f(*a) -> Appl(f, a)
+		;
+	
 	{
-	testSwapData = [
-		("C(1,2)", "C(2,1)"),
-		("C(1,2,3)", "C(1,2,3)"),
-		("D", "D"),
+	testConstructorsData = [
+		('()', 'Appl("",[])'),
+		('(1)', 'Appl("",[1])'),
+		('(1,2)', 'Appl("",[1,2])'),
+		('C', 'Appl("C",[])'),
+		('C(1)', 'Appl("C",[1])'),
+		('C(1,2)', 'Appl("C",[1,2])'),
+		('1', Failure),
+		('0.1', Failure),
+		('"s"', Failure),
+		('[1]', Failure),
 	]
 	}
-	is_zero
+
+	testPredicateAction
+		: x 
+			{ kargs['x'].getType() == aterm.INT and kargs['x'].getValue() > 0 }?
+		;
+	
+	{
+	testPredicateActionData = [
+		('1', '1'),
+		('0', Failure),
+		('-1', Failure),
+		('0.1', Failure),
+		('"s"', Failure),
+		('[1]', Failure),
+		('(1)', Failure),
+		('C(1,2)', Failure),
+	]
+	}
+
+	testProductionAction
+		: Plus(x,y)
+			{ result = self.factory.makeInt(kargs['x'].getValue() + kargs['y'].getValue()) }
+		;
+	
+	{
+	testProductionActionData = [
+		('Plus(1,2)', '3'),
+	]
+	}
+
+	isZero
 		: 0
 		;
 
-	simplify
-		: Or(.is_zero,x) -> x
+	testMethodCall
+		: Int(.isZero) -> Null
+		| Int(_)
 		;
+
+	{
+	testMethodCallData = [
+		('Int(0)', 'Null'),
+		('Int(1)', 'Int(1)'),
+	]
+	}
 
 
 header {
