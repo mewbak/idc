@@ -149,6 +149,17 @@ class WalkerTestSuite:
 		('Int(1)', 'Int(1)'),
 	]
 	}
+	
+	testMethodArg({arg})
+		: _ { result = arg }
+		;
+	
+	{
+	testMethodArgData = [
+		('1', '2', '2'),
+	]
+	}
+	
 
 
 header {
@@ -173,8 +184,14 @@ class WalkerTestCase(unittest.TestCase):
 		testMethod = getattr(self.walker, self.testMethodName)
 		testData = getattr(self.walker, self.testDataName)
 		
-		for inputStr, expectedResultStr in testData:
+		for testDataItem in testData:
+			inputStr = testDataItem[0]
+			argsStr = testDataItem[1:-1]
+			expectedResultStr = testDataItem[-1]
+			
 			input = self.factory.parse(inputStr)
+
+			args = [self.factory.parse(argStr) for argStr in argsStr]
 
 			if expectedResultStr is Failure:
 				expectedResult = failure
@@ -182,7 +199,7 @@ class WalkerTestCase(unittest.TestCase):
 				expectedResult = self.factory.parse(expectedResultStr)
 
 			try:
-				result = testMethod(input)
+				result = testMethod(input, *args)
 			except walker.Failure, ex:
 				result = failure
 		

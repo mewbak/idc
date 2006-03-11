@@ -175,6 +175,7 @@ args
 arg
 	: ( STAR ( STAR )? )? id
 		{ ## = #(#[ARG,"ARG"], ##) }
+	| ACTION
 	;
 	
 block
@@ -364,10 +365,10 @@ action
 
 rule
 	: #( RULE 
-		n=id
+		n=id args=args
 			{
                 self.writeln()
-                self.writeln("def %s(self, target):" % n)
+                self.writeln("def %s(self, target%s):" % (n, "".join([','+arg for arg in args])))
                 self.indent()
             }
 		( action )?
@@ -378,6 +379,18 @@ rule
                 self.deindent()
 		    }
 	  )
+	;
+
+args returns [ret]
+		{ ret = [] } 
+	: #(LPAREN (a=arg { ret.append(a) }) )
+	|
+	;
+	
+arg returns [ret]
+	: ret=id
+	| a:ACTION
+		{ ret = #a.getText() }
 	;
 
 alternative
