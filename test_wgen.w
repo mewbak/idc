@@ -107,7 +107,7 @@ class WalkerTestSuite:
 
 	testPredicateAction
 		: x 
-			{ kargs['x'].getType() == aterm.INT and kargs['x'].getValue() > 0 }?
+			{ $x.getType() == aterm.INT and $x.getValue() > 0 }?
 		;
 	
 	{
@@ -125,7 +125,7 @@ class WalkerTestSuite:
 
 	testProductionAction
 		: Plus(x,y)
-			{ result = self.factory.makeInt(kargs['x'].getValue() + kargs['y'].getValue()) }
+			{ $$ = self.factory.makeInt($x.getValue() + $y.getValue()) }
 		;
 	
 	{
@@ -151,7 +151,7 @@ class WalkerTestSuite:
 	}
 	
 	testMethodArg({arg})
-		: _ { result = arg }
+		: _ { $$ = arg }
 		;
 	
 	{

@@ -1,4 +1,4 @@
-// Grammer for aterm wgens.
+// Grammar for generating aterm walkers.
 // It is inspired on ANTLR, Python and ATerm syntaxes.
 
 header "wgenParser.__init__" {
@@ -119,12 +119,27 @@ ACTION
 	;
 
 protected
+ACTION_INTERPOLATION
+	:
+		'$'!
+		( ('a'..'z') ( options { warnWhenFollowAmbig=false; } : 'a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+			{ text = "kargs['%s']" % $getText }
+		| ( options { warnWhenFollowAmbig=false; } : '0'..'9')+
+			{ text = "args[%s]" % $getText }
+	    | '$'
+			{ text = "result" }
+		)
+			{ $setText(text) }
+	;
+	
+protected
 NESTED_ACTION
     :
         ( '{' NESTED_ACTION '}'
         | COMMENT
         | STR
         | EOL
+        | ACTION_INTERPOLATION
         | ~'}'
         )*
     ;
