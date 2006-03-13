@@ -123,11 +123,15 @@ ACTION_INTERPOLATION
 	:
 		'$'!
 		( ('a'..'z') ( options { warnWhenFollowAmbig=false; } : 'a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-			{ text = "kargs['%s']" % $getText }
+			{ text = "_kargs['%s']" % $getText }
 		| ( options { warnWhenFollowAmbig=false; } : '0'..'9')+
-			{ text = "args[%s]" % $getText }
+			{ text = "_args[%s]" % $getText }
 	    | '$'
-			{ text = "result" }
+			{ text = "_result" }
+	    | '#'
+			{ text = "_argn" }
+	    | '<'
+			{ text = "_target" }
 		)
 			{ $setText(text) }
 	;
@@ -383,7 +387,7 @@ rule
 		n=id args=args
 			{
                 self.writeln()
-                self.writeln("def %s(self, target%s):" % (n, "".join([','+arg for arg in args])))
+                self.writeln("def %s(self, _target%s):" % (n, "".join([','+arg for arg in args])))
                 self.indent()
             }
 		( action )?
@@ -414,14 +418,14 @@ alternative
 			{
                 self.writeln("try:")
                 self.indent()
-                self.writeln("result = target")
-                self.writeln("args = []")
-                self.writeln("kargs = {}")
+                self.writeln("_result = _target")
+                self.writeln("_args = []")
+                self.writeln("_kargs = {}")
 			}
 		( predicate )+
 		( INTO ( production )+ )?
 			{
-                self.writeln("return result")
+                self.writeln("return _result")
                 self.deindent()
                 self.writeln("except Failure:")
                 self.indent()
@@ -442,14 +446,14 @@ predicate
 	        }
 	| pattern=t:stringify_term
 	        {
-                self.writeln("if not self.factory.match(%r, target, args, kargs):" % pattern)
+                self.writeln("if not self.factory.match(%r, _target, _args, _kargs):" % pattern)
                 self.indent()
                 self.writeln("raise Failure")
                 self.deindent()
                 if not self.is_static_term(#t):
                     self.argn = 0
                     self.post_match_term(#t)
-                    self.writeln("result = self.factory.make(%r, *args, **kargs)" % pattern)
+                    self.writeln("_result = self.factory.make(%r, *_args, **_kargs)" % pattern)
 	        }
 	;
 
@@ -459,10 +463,10 @@ production
 		{
             if flag:
                 pattern = self.stringify_term(#t)
-                self.writeln("result = self.factory.make(%r, *args, **kargs)" % pattern)
+                self.writeln("_result = self.factory.make(%r, *_args, **_kargs)" % pattern)
             else:
                 pattern = self.build_term(#t)
-                self.writeln("result = %s.make(*args, **kargs)" % pattern)
+                self.writeln("_result = %s.make(*_args, **_kargs)" % pattern)
         }
 	;
 
@@ -520,13 +524,13 @@ post_match_term
 	| #( APPL post_match_term post_match_term )
 	| #( TRNSF n=id )
 		{
-            self.writeln("args[%i] = self.%s(args[%i])" % (self.argn, n, self.argn))
+            self.writeln("_args[%i] = self.%s(_args[%i])" % (self.argn, n, self.argn))
             self.argn += 1
 		}
 	| a:ACTION
 		{
-            self.writeln("argn = %s " % self.argn)
-            self.writeln("args[%i] = %s" % (self.argn, #a.getText()))
+            self.writeln("_argn = %s " % self.argn)
+            self.writeln("_args[%i] = %s" % (self.argn, #a.getText()))
             self.argn += 1
 		}
 	| NIL
@@ -551,7 +555,7 @@ build_term returns [ret]
 	| #( APPL c=build_term a=build_term )
 		{ ret = "self.factory.makeAppl(%s,%s)" % (c, a) }
 	| #( TRNSF n=id a=build_trnsf_args)
-		{ ret = "self.%s(target%s)" % (n, a) }
+		{ ret = "self.%s(_target%s)" % (n, a) }
 	| a:ACTION
 		{ ret = #a.getText() }
 	| NIL
