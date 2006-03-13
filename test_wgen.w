@@ -150,13 +150,15 @@ class WalkerTestSuite:
 	]
 	}
 	
-	testMethodArg({arg})
-		: _ { $$ = arg }
+	testMethodArg(x, {y})
+		: 1 -> x
+		| 2 { $$ = y }
 		;
 	
 	{
 	testMethodArgData = [
-		('1', '2', '2'),
+		('1', '"x"', '"y"', '"x"'),
+		('2', '"x"', '"y"', '"y"'),
 	]
 	}
 	

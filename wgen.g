@@ -160,7 +160,6 @@ tokens {
 	ALTERNATIVE;
 	APPL;
 	LIST;
-	ARG;
 	TRANSF;
 	NIL;
 }
@@ -181,7 +180,7 @@ method
 
 rule
 	:
-		id ( args )?
+		id args
 		( ACTION )?
 		COLON! block SEMI!
 		{ ## = #(#[RULE,"RULE"], ##) }
@@ -189,11 +188,12 @@ rule
 
 args
 	: LPAREN^ ( arg ( COMMA! arg )* )? RPAREN!
+	|
+		{ ## = #(#[LPAREN,"("]) }
 	;
 
 arg
-	: ( STAR ( STAR )? )? id
-		{ ## = #(#[ARG,"ARG"], ##) }
+	: id
 	| ACTION
 	;
 	
@@ -271,11 +271,11 @@ terms
 terms_rest
 	: inner_term (COMMA! terms_rest | nil )
 		{ ## = #(#[COMMA,","], ##) }	
-	| STAR^ ( LCID | opt_wildcard )
+	| STAR^ opt_wildcard
 	;
 	
 opt_wildcard
-	: WILDCARD
+	: inner_term
 	|
 		{ ## = #(#[WILDCARD,"_"]) }	
 	;
@@ -384,11 +384,17 @@ action
 
 rule
 	: #( RULE 
-		n=id args=args
+		n=id args:LPAREN
 			{
                 self.writeln()
-                self.writeln("def %s(self, _target%s):" % (n, "".join([','+arg for arg in args])))
+                self.writeind()
+                
+                self.write("def %s(self, _target" % n)
+                self.declare_args(#args)
+                self.write("):")
+                self.writeeol()
                 self.indent()
+                self.import_args(#args)
             }
 		( action )?
 		( alternative )+
@@ -400,16 +406,28 @@ rule
 	  )
 	;
 
-args returns [ret]
+declare_args
 		{ ret = [] } 
-	: #(LPAREN (a=arg { ret.append(a) }) )
-	|
+	: #(LPAREN ( declare_arg )* )
 	;
 	
-arg returns [ret]
-	: ret=id
+declare_arg
+		{ self.write(", ") }
+	: n=id
+		{ self.write(n) }
 	| a:ACTION
-		{ ret = #a.getText() }
+		{ self.write(#a.getText()) }
+	;
+
+import_args
+		{ self.writeln("__kargs = {}") } 
+	: #(LPAREN ( import_arg )* )
+	;
+	
+import_arg
+	: n=id
+		{ self.writeln("__kargs['%s'] = %s" % (n, n)) }
+	| a:ACTION
 	;
 
 alternative
@@ -420,7 +438,7 @@ alternative
                 self.indent()
                 self.writeln("_result = _target")
                 self.writeln("_args = []")
-                self.writeln("_kargs = {}")
+                self.writeln("_kargs = __kargs.copy()")
 			}
 		( predicate )+
 		( INTO ( production )+ )?
@@ -465,8 +483,9 @@ production
                 pattern = self.stringify_term(#t)
                 self.writeln("_result = self.factory.make(%r, *_args, **_kargs)" % pattern)
             else:
+                self.argn = 0
                 pattern = self.build_term(#t)
-                self.writeln("_result = %s.make(*_args, **_kargs)" % pattern)
+                self.writeln("_result = %s" % pattern)
         }
 	;
 
@@ -547,9 +566,14 @@ build_term returns [ret]
 	| c:UCID 
 		{ ret = "self.factory.makeStr(%r)" % #c.getText() }
 	| v:LCID 
-		{ ret = "self.factory.makeVar(%r,self.factory.makeWildcard())" % #v.getText() }
+//		{ ret = "self.factory.makeVar(%r,self.factory.makeWildcard())" % #v.getText() }
+		{ ret = "_kargs['%s']" % #v.getText() }
 	| w:WILDCARD 
-		{ ret = "self.factory.makeWildcard()" }
+//		{ ret = "self.factory.makeWildcard()" }
+		{
+            ret = "_args[%d]" % self.argn
+            self.argn += 1
+        }
 	| #( LIST l=build_term )
 		{ ret = l }
 	| #( APPL c=build_term a=build_term )
