@@ -22,11 +22,12 @@ class TestCase(unittest.TestCase):
 		return res
 	
 	box2TextTestCases = [
-		('S("a")', 'a'),
-		('H([S("a"),S("b")],0)', 'ab'),
-		('H([S("a"),S("b")],1)', 'a b'),
-		('V([S("a"),S("b")],1,0)', 'a\nb\n'),
-		('V([S("a"),S("b")],1,1)', '\ta\n\tb\n'),
+		('"a"', 'a'),
+		('H(["a","b"],0)', 'ab'),
+		('H(["a","b"],1)', 'a b'),
+		('V(["a","b"],1)', 'a\nb\n'),
+		('V(["a","b"],2)', 'a\n\nb\n\n'),
+		('V(["a",I("b",1),"c"],1)', 'a\n\tb\nc\n'),
 	]
 	
 	def testBox2Text(self):
@@ -47,7 +48,6 @@ class TestCase(unittest.TestCase):
 			input = self.factory.parse(inputStr)
 		
 			boxes = box.c2box(input)
-			print boxes
 			output = box.box2text(boxes)
 			
 			self.failUnlessEqual(output, expectedOutput)

@@ -41,34 +41,65 @@ class Box2Text:
 	}
 	
 	write_box
-		: H(b, hs)
+		: H(bl, hs)
 			{
-				import sys
-				sys.stderr.write(repr($b) + '\n')
-				sys.stderr.write(repr($hs) + '\n')
-				sys.stderr.write(repr($hs.getValue()) + '\n')
+				if $bl.getType() != aterm.LIST:
+					raise Failure
+				if $hs.getType() != aterm.INT:
+					raise Failure
 				sep = ' '*$hs.getValue()
 				first = True
-				for box in $b:
+				for b in $bl:
 					if first:
 						first = False
 					else:
 						self.write(sep)
-					self.write_box(box) 
+					self.write_box(b) 
 			}
-		| V(b, vs, is)
+		| V(bl, vs)
 			{
+				if $bl.getType() != aterm.LIST:
+					raise Failure
+				if $vs.getType() != aterm.INT:
+					raise Failure
+				for b in $bl:
+					self.write_vbox(b, $vs.getValue()) 
+			}
+		| I(b, is)
+			{
+				sys.stderr.write("warning: indent outside vbox: %r\n" % $<)
+				self.write_box($b)
+			}
+		| s
+			{
+				if $s.getType() != aterm.STR:
+					raise Failure
+				self.write($s.getValue())
+			}
+		| _
+			{
+				import sys
+				sys.stderr.write("error: bad box: %r\n" % $<)
+				raise Failure
+			}
+			
+		;
+
+	write_vbox({vs})
+		: I(b, is)
+			{
+				if $is.getType() != aterm.INT:
+					raise Failure
 				self.indent($is.getValue())
-				for box in $b:
-					self.write_indent()
-					self.write_box(box) 
-					for i in range($vs.getValue()):
-						self.write_eol()
+				self.write_vbox($b, vs)
 				self.deindent($is.getValue())
 			}
-		| S(s)
+		| b
 			{
-				self.write($s.getValue())
+				self.write_indent()
+				self.write_box($b)
+				for i in range(vs):
+					self.write_eol()
 			}
 		;
 
@@ -94,11 +125,11 @@ class Aterm2Box:
 		;
 		
 	convert
-		: f(*a) -> H([f, S("("), .convert_list(a), S(")")], 0)
-		| [] -> H([S("["), S("]")], 0)
-		| [h,*t] -> H([S("["), S("]")], 0)
+		: f(*a) -> H([f, "(", .convert_list(a), ")"], 0)
+		| [] -> H(["[", "]"], 0)
+		| [h,*t] -> H(["[", "]"], 0)
 		| _
-			{ $$ = self.factory.make("S(_)", repr($<.getValue())) }
+			{ $$ = self.factory.make("_", repr($<.getValue())) }
 		;
 	
 	convert_list
@@ -119,12 +150,12 @@ class C2Box:
 		;
 	
 	stmt
-		: Label(name) -> H([S(name),S(":")], 0)
-		| Assembly(opcode, operands) -> H([S("asm"),S("("), .string(opcode), S(")")], 0)
+		: Label(name) -> H([name,":"], 0)
+		| Assembly(opcode, operands) -> H(["asm","(", .string(opcode), ")"], 0)
 		;
 	
 	string
-		: _ -> H([S("\""), S(_), S("\"")], 0)
+		: _ -> H(["\"", _, "\""], 0)
 		;
 
 header {
