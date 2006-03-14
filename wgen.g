@@ -124,15 +124,15 @@ ACTION_INTERPOLATION
 	:
 		'$'!
 		( ('a'..'z') ( options { warnWhenFollowAmbig=false; } : 'a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-			{ text = "_kargs['%s']" % $getText }
+			{ text = "_k['%s']" % $getText }
 		| ( options { warnWhenFollowAmbig=false; } : '0'..'9')+
-			{ text = "_args[%s]" % $getText }
+			{ text = "_[%s]" % $getText }
 	    | '$'
-			{ text = "_result" }
+			{ text = "_r" }
 	    | '#'
-			{ text = "_argn" }
+			{ text = "_n" }
 	    | '<'
-			{ text = "_target" }
+			{ text = "_t" }
 		)
 			{ $setText(text) }
 	;
@@ -390,11 +390,12 @@ rule
                 self.writeln()
                 self.writeind()
                 
-                self.write("def %s(self, _target" % n)
+                self.write("def %s(self, _t" % n)
                 self.declare_args(#args)
                 self.write("):")
                 self.writeeol()
                 self.indent()
+                self.writeln("_f = self.factory")
                 self.import_args(#args)
             }
 		( action )?
@@ -421,13 +422,13 @@ declare_arg
 	;
 
 import_args
-		{ self.writeln("__kargs = {}") } 
+		{ self.writeln("_a = {}") } 
 	: #(LPAREN ( import_arg )* )
 	;
 	
 import_arg
 	: n=id
-		{ self.writeln("__kargs['%s'] = %s" % (n, n)) }
+		{ self.writeln("_a['%s'] = %s" % (n, n)) }
 	| a:ACTION
 	;
 
@@ -437,14 +438,14 @@ alternative
 			{
                 self.writeln("try:")
                 self.indent()
-                self.writeln("_result = _target")
-                self.writeln("_args = []")
-                self.writeln("_kargs = __kargs.copy()")
+                self.writeln("_r = _t")
+                self.writeln("_ = []")
+                self.writeln("_k = _a.copy()")
 			}
 		( predicate )+
 		( INTO ( production )+ )?
 			{
-                self.writeln("return _result")
+                self.writeln("return _r")
                 self.deindent()
                 self.writeln("except Failure:")
                 self.indent()
@@ -465,14 +466,14 @@ predicate
 	        }
 	| pattern=t:stringify_term
 	        {
-                self.writeln("if not self.factory.match(%r, _target, _args, _kargs):" % pattern)
+                self.writeln("if not _f.match(%r, _t, _, _k):" % pattern)
                 self.indent()
                 self.writeln("raise Failure")
                 self.deindent()
                 if not self.is_static_term(#t):
                     self.argn = 0
                     self.post_match_term(#t)
-                    self.writeln("_result = self.factory.make(%r, *_args, **_kargs)" % pattern)
+                    self.writeln("_r = _f.make(%r, *_, **_k)" % pattern)
 	        }
 	;
 
@@ -482,11 +483,11 @@ production
 		{
             if flag:
                 pattern = self.stringify_term(#t)
-                self.writeln("_result = self.factory.make(%r, *_args, **_kargs)" % pattern)
+                self.writeln("_r = _f.make(%r, *_, **_k)" % pattern)
             else:
                 self.argn = 0
                 pattern = self.build_term(#t)
-                self.writeln("_result = %s" % pattern)
+                self.writeln("_r = %s" % pattern)
         }
 	;
 
@@ -544,13 +545,13 @@ post_match_term
 	| #( APPL post_match_term post_match_term )
 	| #( TRNSF n=id )
 		{
-            self.writeln("_args[%i] = self.%s(_args[%i])" % (self.argn, n, self.argn))
+            self.writeln("_[%i] = self.%s(_[%i])" % (self.argn, n, self.argn))
             self.argn += 1
 		}
 	| a:ACTION
 		{
-            self.writeln("_argn = %s " % self.argn)
-            self.writeln("_args[%i] = %s" % (self.argn, #a.getText()))
+            self.writeln("_n = %s " % self.argn)
+            self.writeln("_[%i] = %s" % (self.argn, #a.getText()))
             self.argn += 1
 		}
 	| NIL
@@ -559,34 +560,34 @@ post_match_term
 
 build_term returns [ret]
 	: i:INT 
-		{ ret = "self.factory.makeInt(%s)" % #i.getText() }
+		{ ret = "_f.makeInt(%s)" % #i.getText() }
 	| r:REAL 
-		{ ret = "self.factory.makeReal(%s)" % #r.getText() }
+		{ ret = "_f.makeReal(%s)" % #r.getText() }
 	| s:STR 
-		{ ret = "self.factory.parse(%r)" % #s.getText() }
+		{ ret = "_f.parse(%r)" % #s.getText() }
 	| c:UCID 
-		{ ret = "self.factory.makeStr(%r)" % #c.getText() }
+		{ ret = "_f.makeStr(%r)" % #c.getText() }
 	| v:LCID 
-//		{ ret = "self.factory.makeVar(%r,self.factory.makeWildcard())" % #v.getText() }
-		{ ret = "_kargs[%r]" % #v.getText() }
+//		{ ret = "_f.makeVar(%r,_f.makeWildcard())" % #v.getText() }
+		{ ret = "_k[%r]" % #v.getText() }
 	| w:WILDCARD 
-//		{ ret = "self.factory.makeWildcard()" }
+//		{ ret = "_f.makeWildcard()" }
 		{
-            ret = "_args[%d]" % self.argn
+            ret = "_[%d]" % self.argn
             self.argn += 1
         }
 	| #( LIST l=build_term )
 		{ ret = l }
 	| #( APPL c=build_term a=build_term )
-		{ ret = "self.factory.makeAppl(%s,%s)" % (c, a) }
+		{ ret = "_f.makeAppl(%s,%s)" % (c, a) }
 	| #( TRNSF n=id a=build_trnsf_args)
 		{ ret = "self.%s(%s)" % (n, a) }
 	| a:ACTION
 		{ ret = #a.getText() }
 	| NIL
-		{ ret = "self.factory.makeNilList()" }
+		{ ret = "_f.makeNilList()" }
 	| #( COMMA h=build_term t=build_term )
-		{ ret = "self.factory.makeConsList(%s,%s)" % (h, t) }
+		{ ret = "_f.makeConsList(%s,%s)" % (h, t) }
 	| #( STAR p=build_term )
 		{ ret = p }
 	;
