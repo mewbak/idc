@@ -28,7 +28,7 @@ class Box2Text:
 	def indent(self, i):
 		self._indent += i
 	
-	def deindent(self, i):
+	def dedent(self, i):
 		self._indent -= i
 		assert self._indent >= 0
 
@@ -92,7 +92,7 @@ class Box2Text:
 					raise Failure
 				self.indent($is.getValue())
 				self.write_vbox($b, vs)
-				self.deindent($is.getValue())
+				self.dedent($is.getValue())
 			}
 		| b
 			{

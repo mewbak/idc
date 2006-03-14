@@ -310,7 +310,7 @@ class wgenWalker extends TreeParser;
 	def indent(self):
         self._indent += 1
 
-	def deindent(self):
+	def dedent(self):
         self._indent -= 1
 
     def write(self, str):
@@ -362,7 +362,7 @@ part
             }
 		)
 			{
-                self.deindent()
+                self.dedent()
                 self.writeln()
             }
 	  )
@@ -403,7 +403,7 @@ rule
 		    {
                 self.writeln()
                 self.writeln("raise Failure")
-                self.deindent()
+                self.dedent()
 		    }
 	  )
 	;
@@ -446,11 +446,11 @@ alternative
 		( INTO ( production )+ )?
 			{
                 self.writeln("return _r")
-                self.deindent()
+                self.dedent()
                 self.writeln("except Failure:")
                 self.indent()
                 self.writeln("pass")
-                self.deindent()
+                self.dedent()
             }
 	  )
 	;
@@ -462,14 +462,14 @@ predicate
                 self.writeln("if not (%s):" % p)
                 self.indent()
                 self.writeln("raise Failure")
-                self.deindent()
+                self.dedent()
 	        }
 	| pattern=t:stringify_term
 	        {
                 self.writeln("if not _f.match(%r, _t, _, _k):" % pattern)
                 self.indent()
                 self.writeln("raise Failure")
-                self.deindent()
+                self.dedent()
                 if not self.is_static_term(#t):
                     self.argn = 0
                     self.post_match_term(#t)
