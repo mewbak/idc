@@ -21,18 +21,21 @@ test-aterm: test_aterm.py atermLexer.py atermParser.py
 
 test-asm: asmLexer.py asmParser.py
 	$(foreach FILE, $(wildcard examples/*.s), \
-		python asmLexer.py < $(FILE); \
+		python asmLexer.py < $(FILE) > /dev/null; \
 		python asmParser.py < $(FILE); \
 	)
 
 test-ssl: sslLexer.py sslParser.py
 	$(foreach FILE, $(wildcard examples/*.ssl), \
-		python sslLexer.py < $(FILE); \
-		python sslParser.py < $(FILE); \
+		python sslLexer.py < $(FILE) > /dev/null; \
+		python sslParser.py < $(FILE) > /dev/null; \
 	)
 	
 test-wgen: test_wgen.py aterm.py walker.py
-	python test_wgen.py -v
+	python $< -v
+
+test-box: test_box.py box.py aterm.py walker.py
+	python $< -v
 
 doc:
 	epydoc \
