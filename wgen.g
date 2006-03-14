@@ -50,6 +50,7 @@ COMMENT
         "#" 
         ( ~('\n'|'\r') )*
         EOL
+        { $setType(SKIP); }
 	;
 
 REAL_OR_INT
@@ -558,16 +559,16 @@ post_match_term
 
 build_term returns [ret]
 	: i:INT 
-		{ ret = "self.factory.makeInt(%r)" % #i.getText() }
+		{ ret = "self.factory.makeInt(%s)" % #i.getText() }
 	| r:REAL 
-		{ ret = "self.factory.makeReal(%r)" % #r.getText() }
+		{ ret = "self.factory.makeReal(%s)" % #r.getText() }
 	| s:STR 
 		{ ret = "self.factory.parse(%r)" % #s.getText() }
 	| c:UCID 
 		{ ret = "self.factory.makeStr(%r)" % #c.getText() }
 	| v:LCID 
 //		{ ret = "self.factory.makeVar(%r,self.factory.makeWildcard())" % #v.getText() }
-		{ ret = "_kargs['%s']" % #v.getText() }
+		{ ret = "_kargs[%r]" % #v.getText() }
 	| w:WILDCARD 
 //		{ ret = "self.factory.makeWildcard()" }
 		{
@@ -579,7 +580,7 @@ build_term returns [ret]
 	| #( APPL c=build_term a=build_term )
 		{ ret = "self.factory.makeAppl(%s,%s)" % (c, a) }
 	| #( TRNSF n=id a=build_trnsf_args)
-		{ ret = "self.%s(_target%s)" % (n, a) }
+		{ ret = "self.%s(%s)" % (n, a) }
 	| a:ACTION
 		{ ret = #a.getText() }
 	| NIL
@@ -594,5 +595,5 @@ build_trnsf_args returns [ret]
 	: NIL
 		{ ret = "" }
 	| #(COMMA h=build_term t=build_trnsf_args)
-		{ ret = ",%s%s" % (h, t) }
+		{ ret = "%s,%s" % (h, t) }
 	;

@@ -138,15 +138,31 @@ class WalkerTestSuite:
 		: 0
 		;
 
-	testMethodCall
+	testPredicateMethod
 		: Int(.isZero) -> Null
 		| Int(_)
 		;
 
 	{
-	testMethodCallData = [
+	testPredicateMethodData = [
 		('Int(0)', 'Null'),
 		('Int(1)', 'Int(1)'),
+	]
+	}
+	
+	invert
+		: True -> False
+		| False -> True
+		;
+
+	testProductionMethod
+		: x -> .invert(x)
+		;
+
+	{
+	testProductionMethodData = [
+		('True', 'False'),
+		('False', 'True'),
 	]
 	}
 	
