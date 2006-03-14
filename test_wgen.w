@@ -1,3 +1,5 @@
+"""Unit-tests for walker generator."""
+
 header {
 import unittest
 
@@ -135,6 +137,7 @@ class WalkerTestSuite:
 	}
 
 	isZero
+		"""Matches zero"""
 		: 0
 		;
 

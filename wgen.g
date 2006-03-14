@@ -11,7 +11,7 @@ header "wgenWalker.__init__" {
 }
 
 options {
-	language  = "Python";
+	language = "Python";
 }
 
 
@@ -19,12 +19,12 @@ class wgenLexer extends Lexer;
 
 options {
 	k = 2;
-	testLiterals=false;
+	testLiterals = false;
 }
 
 tokens {
-	HEADER="header";
-	CLASS="class";
+	HEADER = "header";
+	CLASS = "class";
 	DOT;
 }
 
@@ -42,15 +42,16 @@ EOL
 	
 // Whitespace -- ignored
 WS	
-	: ( ' ' | '\t' | '\f' | EOL )+ { $setType(SKIP); }
+	: ( ' ' | '\t' | '\f' | EOL )+ 
+		{ $setType(SKIP); }
 	;
 
 COMMENT
     : 
-        "#" 
-        ( ~('\n'|'\r') )*
-        EOL
-        { $setType(SKIP); }
+		"#" 
+		( ~('\n'|'\r') )*
+		EOL
+			{ $setType(SKIP); }
 	;
 
 REAL_OR_INT
@@ -67,16 +68,24 @@ REAL_OR_INT
 	;
 
 STR
-	: '"' ( '\\' . | ~'"' )* '"'
-	| '\'' ( '\\' . | ~'\'' )* '\''
+options {generateAmbigWarnings = false;}
+    : "'''" (options {greedy = false;}: ESC | EOL | . )* "'''"
+    | "\"\"\"" (options {greedy = false;}: ESC | EOL | . )* "\"\"\""
+	| '\'' ( ESC | ~'\'' )* '\''
+	| '"' ( ESC | ~'"' )* '"'
 	;
 
+protected
+ESC
+    :   '\\' ( EOL | . )
+    ;
+
 UCID
-    options { testLiterals = true; }
+options { testLiterals = true; }
     : ('A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
 LCID
-    options { testLiterals = true; }
+options { testLiterals = true; }
     : ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
 
@@ -166,12 +175,18 @@ tokens {
 }
 
 grammar
-	: ( part )* EOF!
+	: 
+		( docstring )? 
+		( part )* 
+		EOF!
 	;
 
 part
 	: HEADER^ ACTION
-	| CLASS^ id ( LPAREN! id RPAREN! )? COLON! ( method )*
+	| 
+		CLASS^ id ( LPAREN! id RPAREN! )? COLON!
+		( docstring )?
+		( method )*
 	;
 
 method
@@ -182,9 +197,14 @@ method
 rule
 	:
 		id args
+		( docstring )?
 		( ACTION )?
 		COLON! block SEMI!
 		{ ## = #(#[RULE,"RULE"], ##) }
+	;
+
+docstring
+	: STR
 	;
 
 args
@@ -230,6 +250,7 @@ debug_term
 }
 	;
 
+// TODO: support variable assignments
 term
 	: INT^
 	| REAL^
@@ -334,13 +355,23 @@ class wgenWalker extends TreeParser;
 }
 
 start
+	:
+		( docstring )?
 			{
                 self.writeln("from walker import Walker, Failure")
                 self.writeln()
             }
-	: (part)*
+		(part)*
 	;
 
+docstring
+	: s:STR
+		{
+            self.writeln(#s.getText())
+            self.writeln()
+		}
+	;
+		
 part
 	: #( HEADER action )
 	| #( CLASS 
@@ -355,6 +386,7 @@ part
                 self.writeln("class %s(%s):" % (n, p))
                 self.indent()
             }
+        ( docstring )?
 		( ( method )+
 		|
 			{
@@ -395,6 +427,9 @@ rule
                 self.write("):")
                 self.writeeol()
                 self.indent()
+			}
+        ( docstring )?
+			{
                 self.writeln("_f = self.factory")
                 self.import_args(#args)
             }
