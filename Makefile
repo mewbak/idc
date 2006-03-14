@@ -37,12 +37,13 @@ test-wgen: test_wgen.py aterm.py walker.py
 test-box: test_box.py box.py aterm.py walker.py
 	python $< -v
 
-doc:
+doc: box.py
 	epydoc \
 		--css blue \
 		aterm.py \
 		walker.py \
-		transformation.py
+		box.py \
+		#transformation.py
 
 antlr: antlr.$(ARCH)
 

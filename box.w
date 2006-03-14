@@ -1,7 +1,10 @@
-# Pretty-printing using boxes
-#
-# See:
-#   http://www.cs.uu.nl/wiki/Visser/GenerationOfFormattersForContext-freeLanguages
+'''Pretty-printing of aterm code using boxes as an intermediate representation,
+allowing to easily support several frontend languages and backend formats.
+
+See
+http://www.cs.uu.nl/wiki/Visser/GenerationOfFormattersForContext-freeLanguages
+about the Box language, upon this code is lossely based.
+'''
 
 header {
 try:
@@ -15,6 +18,7 @@ import walker
 
 
 class Box2Text:
+	'''Convert box terms into ASCII text.'''
 
 	{
 	def __init__(self, factory, fp):
@@ -105,6 +109,8 @@ class Box2Text:
 
 header {
 def box2text(boxes):
+	'''Convert box terms into a string.'''
+
 	fp = StringIO()
 	writer = Box2Text(boxes.factory, fp)
 	writer.write_box(boxes)
@@ -112,6 +118,8 @@ def box2text(boxes):
 }
 
 class Aterm2Box:
+
+	# XXX: incomplete
 
 	depth
 		: f(*a)
@@ -146,7 +154,7 @@ class C2Box:
 		;
 	
 	module
-		: Module(stmts) -> V(.map(stmts, {self.stmt}), 1, 0)
+		: Module(stmts) -> V(.map(stmts, {self.stmt}), 1)
 		;
 	
 	stmt
@@ -160,6 +168,8 @@ class C2Box:
 
 header {
 def c2box(term):
+	'''Convert an aterm containg C code into its box representation.'''
+
 	boxer = C2Box(term.getFactory())
 	box = boxer.convert(term)
 	return box

@@ -1,5 +1,8 @@
-// Grammar for generating aterm walkers.
-// It is inspired on ANTLR, Python and ATerm syntaxes.
+/* 
+ * Grammar for generating aterm walkers. See walker.py for more information
+ * regarding the walker semantics. The syntax is inspired on ANTLR, Python, and
+ * ATerm syntaxes.
+ */
 
 header "wgenParser.__init__" {
     self.debug = kwargs.get("debug", False)
