@@ -176,7 +176,7 @@ class Term:
 	def __init__(self, factory, annotations = None):
 		self.factory = factory		
 		self.__annotations = annotations
-
+		
 	def getFactory(self):
 		'''Retrieves the factory responsible for creating this Term.'''
 		return self.factory
@@ -232,12 +232,17 @@ class Term:
 		raise NotImplementedError
 
 	def getAnnotations(self):
+		'''Returns the annotation list.'''
+		
 		if self.__annotations is None:
 			return self.factory.makeNilList()
 		else:
 			return self.__annotations
 
 	def __getattr__(self, name):
+		'''Provide attributes 'type' and 'annotations', 	shorthand  for 
+		getType() and getAnnotations() methods respectively.'''
+		
 		if name == 'type':
 			return self.getType()
 		elif name == 'annotations':
@@ -245,6 +250,14 @@ class Term:
 		else:
 			raise AttributeError
 			
+	def __setattr__(self, name, value):
+		'''Prevent modification of term attributes'''
+		
+		if name in self.__dict__ or name in ('type', 'annotations'):
+			raise TypeError, "attempt to modify read-only term attribute '%s'" % name
+		else:
+			self.__dict__[name] = value
+
 	def isEqual(self, other):
 		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
