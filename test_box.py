@@ -40,7 +40,8 @@ class TestCase(unittest.TestCase):
 
 	c2BoxTestCases = [
 		('Label("a")', 'a:'),
-		('Assembly("a",[])', 'asm("a")'),
+		('Assembly("ret",[])', 'asm("ret")'),
+		('Assembly("mov",[Register("ax"), Constant(1234)])', 'asm("mov", ax, 1234)'),
 	]
 	
 	def testC2Box(self):

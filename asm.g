@@ -1,9 +1,11 @@
 header {
+import sys
 }
 
 header "asmParser.__main__" {
     from asmLexer import Lexer
     from aterm import Factory
+    import box
     
     factory = Factory()
     lexer = Lexer()
@@ -12,6 +14,8 @@ header "asmParser.__main__" {
     print str(term)
     ast = parser.getAST()
     print ast.toStringList()
+    
+    print box.box2text(box.c2box(term))
 }
 
 header "asmParser.__init__" {
@@ -191,7 +195,7 @@ instruction returns [res]
 		{ operands = [] }
 	: opcode:INSTRUCTION^ (o=operand { operands.append(o) } (COMMA! o=operand  { operands.append(o) })* )?
 		{
-            res = self.factory.make("Assembly(opcode, operands)", opcode=opcode.getText().upper(), operands=operands)
+            res = self.factory.make("Assembly(opcode, operands)", opcode=opcode.getText().lower(), operands=operands)
 		}
 	;
  

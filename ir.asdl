@@ -41,6 +41,9 @@ expr
 	| Binary(binaryOp op, expr, expr
 	| Cond(expr cond, expr, expr)
 	| Call(expr func, expr* params)
+	| Addr(expr)
+	| Reference(expr)
+	| Register(name)
 
 
 unaryOp

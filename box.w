@@ -159,7 +159,27 @@ class C2Box:
 	
 	stmt
 		: Label(name) -> H([name,":"], 0)
-		| Assembly(opcode, operands) -> H(["asm","(", .string(opcode), ")"], 0)
+		| Assembly(opcode, operands) -> H(["asm","(", .string(opcode), H(.prefix(.map(operands, {self.expr}), ", "), 0), ")"], 0)
+		;
+	
+	expr
+		: Constant(num) -> .lit2str(num)
+		| Register(reg) -> reg
+		;
+	
+	lit2str
+		: n { $$ = self.factory.makeStr(str($n.getValue())) }
+		;
+	
+	join(s)
+		: [] -> []
+		| [h] -> [h]
+		| [h, *t] -> [h, *.prefix(t, s)]
+		;
+	
+	prefix(p)
+		: [] -> []
+		| [h, *t] -> [p, h, *.prefix(t, p)]
 		;
 	
 	string
