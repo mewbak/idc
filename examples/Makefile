@@ -1,10 +1,12 @@
-# Makefile for the COM examples.
+# Makefile
 
-# It requires the 8086 development environment available from
-# http://www.cix.co.uk/~mayday/ and http://elks.sourceforge.net/
 
 CC = gcc
-CFLAGS = -m32
+CFLAGS = -O
+ifeq ($(whell uname -m),x86_64)
+# force generation of 32bit in 64bit systems
+CFLAGS += -m32
+endif
 
 AS = as
 ASFLAGS = 
@@ -12,8 +14,6 @@ ASFLAGS =
 LD = ld
 LDFLAGS = 
 
-
-#all: $(basename $(wildcard *.s *.c))
 all: $(patsubst %.c,%.s,$(wildcard *.c))
 
 
@@ -31,7 +31,7 @@ all: $(patsubst %.c,%.s,$(wildcard *.c))
 
 
 clean:
-	rm -f *.o
+	rm -f $(patsubst %.c,%.s,$(wildcard *.c))
 
 
 .PHONY: all clean
