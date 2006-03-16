@@ -1,0 +1,24 @@
+INSTALLATION INSTRUCTIONS
+=========================
+
+
+1. Make the necessary modifications to the PYTHON, JAVA, and ANTLR_JAR
+   variables in the Makefile.
+
+2. If you have gcj installed, do:
+
+     make antlr
+
+   to compile a native-code antlr binary, which is much faster than the running
+   the Java byte-code binary.
+
+3. To build all the generated python code, do:
+
+     make all
+
+4. To run all the tests, do:
+
+     make test
+
+
+That's all that can be done at the present.
