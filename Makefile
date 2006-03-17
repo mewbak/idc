@@ -60,7 +60,7 @@ test: \
 	test_aterm \
 	test_asm \
 	test_ssl \
-	test_tc
+	test_wgen
 
 test_aterm: test_aterm.py atermLexer.py atermParser.py
 
