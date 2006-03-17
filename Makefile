@@ -10,8 +10,8 @@ ANTLR_JAR = /usr/share/java/antlr.jar
 # Use native code gcj-compiled ANTLR if possible, as it is much faster than
 # Java byte code.
 ARCH = $(shell uname -m)
-ifneq ($(shell which gcj),)
-ANTLR = ./antlr.$(ARCH)
+ifneq ($(wildcard bin/antlr.$(ARCH)),)
+ANTLR = bin/antlr.$(ARCH)
 else
 ANTLR = $(JAVA) -cp $(ANTLR_JAR) antlr.Tool
 endif
@@ -35,9 +35,12 @@ all:
 
 # Compile ANTLR into native-code using gcj
 
-antlr: antlr.$(ARCH)
+bin:
+	mkdir $@
 
-antlr.$(ARCH): $(ANTLR_JAR)
+antlr: bin/antlr.$(ARCH)
+
+bin/antlr.$(ARCH): $(ANTLR_JAR) bin
 	gcj -O2 -o $@ --main=antlr.Tool $<
 
 .PHONY: antlr
@@ -61,17 +64,14 @@ test: \
 
 test_aterm: test_aterm.py atermLexer.py atermParser.py
 
-test_asm: asmLexer.py asmParser.py
-	$(foreach FILE, $(wildcard examples/*.s), \
-		$(PYTHON) asmLexer.py < $(FILE) > /dev/null; \
-		$(PYTHON) asmParser.py < $(FILE); \
-	)
+examples:
+	$(MAKE) -C $@
 
-test_ssl: sslLexer.py sslParser.py
-	$(foreach FILE, $(wildcard ssl/*.ssl), \
-		$(PYTHON) sslLexer.py < $(FILE) > /dev/null; \
-		$(PYTHON) sslParser.py < $(FILE) > /dev/null; \
-	)
+.PHONY: examples
+	
+test_asm: test_asm.sh asmLexer.py asmParser.py examples
+
+test_ssl: test_ssl.sh sslLexer.py sslParser.py sslPreprocessor.py
 	
 test_wgen: test_wgen.py aterm.py walker.py
 

@@ -1,9 +1,6 @@
-// ANTLR grammar for the Semantics Specification Language (SSL)
-//
-// Based on:
-// - citeseer.ist.psu.edu/cifuentes98specifying.html
-// - sslscanner.l and sslparser.y from UQBT source distribution.
-// - sslscanner.l and sslparser.y from boomerang source distribution.
+// ANTLR grammar for translating the Semantics Specification Language (SSL)
+// into aterms
+
 
 header {
 

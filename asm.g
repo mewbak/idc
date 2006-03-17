@@ -5,17 +5,29 @@ import sys
 header "asmParser.__main__" {
     from asmLexer import Lexer
     from aterm import Factory
-    import box
     
     factory = Factory()
     lexer = Lexer()
     parser = Parser(lexer, factory = factory)
     term = parser.start()
-    print str(term)
+    
+    print "** ANTLR AST **"
     ast = parser.getAST()
     print ast.toStringList()
-    
-    print box.box2text(box.c2box(term))
+    print
+
+    print "** Aterm AST **"
+    print str(term)
+    print
+
+    try:
+       import box
+       text = box.box2text(box.c2box(term))
+       print "** C pretty-print **"
+       print text
+       print
+    except box.Failure:
+       pass
 }
 
 header "asmParser.__init__" {
