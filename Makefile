@@ -89,6 +89,7 @@ test_%: test_%.sh
 # Generate reference documentation
 
 doc: box.py
+	rm -rf html
 	epydoc \
 		--css blue \
 		aterm.py \
@@ -110,6 +111,20 @@ deps: .deps.mak
 	done > $@
 
 .PHONY: deps
+
+
+# Make a tarball
+
+dist: all doc
+	tar -cjf ../idc.tar.bz2 \
+		--exclude './bin' \
+		--exclude '.*.sw?' \
+		--exclude '.svn' \
+		--exclude '*.pyc' \
+		--exclude '*TokenTypes.txt' \
+		.
+
+.PHONY: dist
 
 
 # Clean the generated files
