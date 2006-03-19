@@ -148,7 +148,20 @@ INDEX: "->";
 THEN: "=>";
 TO: "..";
 AT: '@';
-ASSIGNTYPE: '*' /* ('a'..'z')?*/ ('0'..'9')* '*';
+
+protected
+ASSIGNTYPE: '*' ('a'..'z')? ('0'..'9')* '*';
+
+ASSIGNTYPE_OR_MUL
+	: ( ASSIGNTYPE ) => ASSIGNTYPE { $setType(ASSIGNTYPE); }
+	| MUL { $setType(MUL); }
+	| SMUL { $setType(SMUL); }
+	| MUL_F { $setType(MUL_F); }
+	| MUL_FD { $setType(MUL_FD); }
+	| MUL_FQ { $setType(MUL_FQ); }
+	| MUL_FSD { $setType(MUL_FSD); }
+	| MUL_FDQ { $setType(MUL_FDQ); }
+	;
 
 PRIME: '\'';
 
@@ -169,9 +182,11 @@ XORNOT: "^~";
 PLUS: '+';
 protected
 MINUS: '-';
+protected
 MUL: '*';
 DIV: '/';
 MOD: '%';
+protected
 SMUL: "*!";
 SDIV: "/!";
 SMOD: "%!";
@@ -191,10 +206,15 @@ LSHIFT: "<<";
 RSHIFTA: ">>A";
 RSHIFT: ">>";
 
+protected
 MUL_F: "*f";
+protected
 MUL_FD: "*fd";
+protected
 MUL_FQ: "*fq";
+protected
 MUL_FSD: "*fsd";
+protected
 MUL_FDQ: "*fdq";
 DIV_F: "/f";
 DIV_FD: "/fd";
