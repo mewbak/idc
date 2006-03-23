@@ -1,6 +1,6 @@
 #!/bin/sh
 
-for FILE in ssl/pentium.ssl #ssl/*.ssl
+for FILE in ssl/*.ssl
 do
 	echo "* File $FILE *"
 	echo
