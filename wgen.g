@@ -131,6 +131,8 @@ ACTION
 	: '{'! NESTED_ACTION '}'! ( '?'! { $setType(SEMPRED) } )?
 	;
 
+// FIXME: don't do this in the lexer, but in the walker, see
+// http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/475109
 protected
 ACTION_INTERPOLATION
 	:
