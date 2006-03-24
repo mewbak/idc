@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# See:
+# - http://www.pygtk.org/pygtk2tutorial/
+# - http://www.pygtk.org/pygtk2reference/
+
 import gtk
 import gtk.glade
 
@@ -12,18 +16,12 @@ import os.path
 
 
 class GladeWindow:
-	"""
-	Superclass for glade based applications. Just derive from this
-	and your subclass should create methods whose names correspond to
-	the signal handlers defined in the glade file. Any other attributes
-	in your class will be safely ignored.
+	"""Base class for glade based windows."""
 
-	This class will give you the ability to do:
-		subclass_instance.window.method(...)
-		subclass_instance.widget_name...
-
-	Based on http://www.pixelbeat.org/libs/libglade.py
-	"""
+	# See: 
+	# - http://www.jamesh.id.au/software/libglade/
+	# - http://www.pygtk.org/pygtk2reference/class-gladexml.html
+	# - http://www.pixelbeat.org/libs/libglade.py
 
 	def __init__(self, filename, windowname):
 		"""Load glade file."""
@@ -52,6 +50,7 @@ class GladeWindow:
 
 
 class GladeApp(GladeWindow):
+	"""Base class for glade based applications."""
 
 	def main(self):
 		"""Enter main loop."""
