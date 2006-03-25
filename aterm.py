@@ -87,9 +87,9 @@ class Factory:
 		'''Creates a new extended list term'''
 		return ConsList(self, head, tail, annotations)
 
-	def makeVarList(self, pattern, tail, annotations = None):
+	def makeManyList(self, pattern, tail, annotations = None):
 		'''Creates a new varible list term'''
-		return VariableList(self, pattern, tail, annotations)
+		return ManyList(self, pattern, tail, annotations)
 
 	def makeList(self, seq, annotations = None):
 		res = self.makeNilList()
@@ -294,12 +294,12 @@ class Term:
 	def _make(self, args, kargs):
 		return self
 
-	def accept(self, visitor):
+	def accept(self, visitor, *args, **kargs):
 		raise NotImplementedError
 
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
-		writer = TextWriter(fp)
+		writer = TextWriter(fp, self.factory)
 		writer.visit(self)
 
 	def __str__(self):
@@ -360,8 +360,8 @@ class Real(Literal):
 	def setAnnotations(self, annotations):
 		return self.factory.makeReal(self.value, annotations)
 
-	def accept(self, visitor):
-		return visitor.visitReal(self)
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitReal(self, *args, **kargs)
 
 
 class String(Literal):
@@ -375,8 +375,8 @@ class String(Literal):
 	def setAnnotations(self, annotations):
 		return self.factory.makeStr(self.value, annotations)
 
-	def accept(self, visitor):
-		return visitor.visitStr(self)
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitStr(self, *args, **kargs)
 
 
 class Wildcard(Term):
@@ -406,8 +406,8 @@ class Wildcard(Term):
 		except IndexError:
 			raise TypeError, 'insufficient number of arguments'
 
-	def accept(self, visitor):
-		return visitor.visitWildcard(self)
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitWildcard(self, *args, **kargs)
 
 
 class Variable(Term):
@@ -458,8 +458,8 @@ class Variable(Term):
 		else:
 			raise ValueError, 'undefined term variable %s' % name
 
-	def accept(self, visitor):
-		return visitor.visitVar(self)
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitVar(self, *args, **kargs)
 
 
 class List(Term):
@@ -493,8 +493,8 @@ class List(Term):
 	def insert(self, element):
 		return self.factory.makeConsList(element, self)
 	
-	def accept(self, visitor):
-		return visitor.visitList(self)
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitList(self, *args, **kargs)
 
 
 class NilList(List):
@@ -535,6 +535,9 @@ class NilList(List):
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeNilList(annotations)
+
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitNilList(self, *args, **kargs)
 
 
 class ConsList(List):
@@ -599,8 +602,11 @@ class ConsList(List):
 	def setAnnotations(self, annotations):
 		return self.factory.makeConsList(self.head, self.tail, annotations)
 
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitConsList(self, *args, **kargs)
 
-class VariableList(List):
+
+class ManyList(List):
 
 	def __init__(self, factory, pattern, tail = None, annotations = None):
 		Term.__init__(self, factory, annotations)
@@ -632,14 +638,14 @@ class VariableList(List):
 	
 	def _isEquivalent(self, other):
 		return (
-			isinstance(other, VariableList) and 
+			isinstance(other, ManyList) and 
 			self.pattern.isEquivalent(other.pattern) and 
 			self.tail.isEquivalent(other.tail)
 		)
 		
 	def _isEqual(self, other):
 		return (
-			isinstance(other, VariableList) and 
+			isinstance(other, ManyList) and 
 			self.pattern.isEqual(other.head) and 
 			self.tail.isEqual(other.tail)
 		)
@@ -671,7 +677,10 @@ class VariableList(List):
 			raise TypeError, 'insufficient number of arguments'
 	
 	def setAnnotations(self, annotations):
-		return self.factory.makeVarList(self.pattern, self.tail, annotations)
+		return self.factory.makeManyList(self.pattern, self.tail, annotations)
+
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitManyList(self, *args, **kargs)
 
 
 class Application(Term):
@@ -724,79 +733,70 @@ class Application(Term):
 	def setAnnotations(self, annotations):
 		return self.factory.makeAppl(self.name, self.args, annotations)
 
-	def accept(self, visitor):
-		return visitor.visitAppl(self)
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitAppl(self, *args, **kargs)
 
 
 class Visitor:
 	
-	def visit(self, term):
+	def visit(self, term, *args, **kargs):
 		if not isinstance(term, Term):
 			raise TypeError, 'not a term: %r' % term
-		return term.accept(self)
+		return term.accept(self, *args, **kargs)
 
-	def visitTerm(self, term):
+	def visitTerm(self, term, *args, **kargs):
 		pass
 
-	def visitLit(self, term):
-		return self.visitTerm(self, term)
+	def visitLit(self, term, *args, **kargs):
+		return self.visitTerm(self, term, *args, **kargs)
 		
-	def visitInt(self, term):
-		return self.visitLit(self, term)
+	def visitInt(self, term, *args, **kargs):
+		return self.visitLit(self, term, *args, **kargs)
 
-	def visitReal(self, term):
-		return self.visitLit(self, term)
+	def visitReal(self, term, *args, **kargs):
+		return self.visitLit(self, term, *args, **kargs)
 
-	def visitStr(self, term):
-		return self.visitLit(self, term)
+	def visitStr(self, term, *args, **kargs):
+		return self.visitLit(self, term, *args, **kargs)
 
-	def visitVar(self, term):
-		return self.visitTerm(term)
+	def visitWildcard(self, term, *args, **kargs):
+		return self.visitTerm(self, term, *args, **kargs)
+
+	def visitVar(self, term, *args, **kargs):
+		return self.visitTerm(term, *args, **kargs)
 	
-	def visitWildcard(self, term):
-		return self.visitTerm(self, term)
+	def visitList(self, term, *args, **kargs):
+		return self.visitTerm(self, term, *args, **kargs)
 
-	def visitList(self, term):
-		return self.visitTerm(self, term)
+	def visitNilList(self, term, *args, **kargs):
+		return self.visitList(self, term, *args, **kargs)
 
-	def visitAppl(self, term):
-		return self.visitTerm(self, term)
+	def visitConsList(self, term, *args, **kargs):
+		return self.visitList(self, term, *args, **kargs)
+
+	def visitManyList(self, term, *args, **kargs):
+		return self.visitList(self, term, *args, **kargs)
+
+	def visitAppl(self, term, *args, **kargs):
+		return self.visitTerm(self, term, *args, **kargs)
 
 
 class TextWriter(Visitor):
 	
-	def __init__(self, fp):
+	def __init__(self, fp, factory):
 		self.fp = fp
-	
-	def writeTerms(self, terms):
-		sep = ''
-		while True:
-			try:
-				head = terms.getHead()
-				self.fp.write(sep)
-				self.visit(head)
-			except ListBoundException:
-				break
-			except VariableTermException:
-				self.fp.write(sep)
-				self.fp.write('*')
-				pattern = terms.getPattern()
-				if pattern.getType() != WILDCARD:
-					self.visit(pattern)
-			except AttributeError:
-				self.fp.write(sep)
-				self.fp.write('*')
-				self.fp.write(terms.getName())
-				break
-			
-			terms = terms.getTail()
-			sep = ','
+		
+		self.nil = factory.makeNilList()
+		self.wildcard = factory.makeWildcard()
+		self.tail = factory.makeManyList(self.wildcard, self.nil)
 
 	def writeAnnotations(self, term):
 		annotations = term.getAnnotations()
 		if not annotations.isEmpty():
 			self.fp.write('{')
+			in_list = self.in_list.set(True)
 			self.writeTerms(annotations)
+			self.in_list.unset(in_list)
 			self.fp.write('}')
 
 	def visitInt(self, term):
@@ -816,21 +816,60 @@ class TextWriter(Visitor):
 		self.fp.write('"' + s + '"')
 		self.writeAnnotations(term)
 	
-	def visitVar(self, term):
-		self.fp.write(str(term.getName()))
+	def visitVar(self, term, istail=False):
 		pattern = term.getPattern()
-		if pattern.getType() != WILDCARD:
-			self.fp.write('=')
-			self.visit(pattern)
+		if istail:
+			self.fp.write('*')
+			self.fp.write(str(term.getName()))
+			if not pattern.isEquivalent(self.tail):
+				self.fp.write('=')
+				self.visit(pattern)
+		else:
+			self.fp.write(str(term.getName()))
+			if not pattern.isEquivalent(self.wildcard):
+				self.fp.write('=')
+				self.visit(pattern)
 		
-	def visitWildcard(self, term):
-		self.fp.write('_')
+	def visitWildcard(self, term, istail=False):
+		if istail:
+			self.fp.write('*')
+		else:
+			self.fp.write('_')
 	
-	def visitList(self, term):
-		self.fp.write('[')
-		self.writeTerms(term)			
-		self.fp.write(']')
-		self.writeAnnotations(term)
+	def visitNilList(self, term, istail=False):
+		if not istail:
+			self.fp.write('[]')
+			self.writeAnnotations(term)
+
+	def visitConsList(self, term, istail=False):
+		head = term.getHead()
+		tail = term.getTail()
+		if tail.isEquivalent(self.nil):
+			sep = ""
+		else:
+			sep = ","
+		if not istail:
+			self.fp.write('[')
+			self.visit(head)
+			self.fp.write(sep)
+			self.visit(tail, istail=True)
+			self.fp.write(']')
+			self.writeAnnotations(term)
+		else:
+			self.visit(head)
+			self.fp.write(sep)
+			self.visit(tail, istail=True)
+
+	def visitManyList(self, term, istail=False):
+		if not istail:
+			self.visit(term.pattern)
+			self.writeAnnotations(term)
+			self.fp.write('*')
+		else:
+			pattern = term.getPattern()
+			if not isinstance(pattern, Wildcard):
+				self.visit(pattern)
+			self.fp.write('*')
 
 	def visitAppl(self, term):
 		name = term.getName()
@@ -839,7 +878,7 @@ class TextWriter(Visitor):
 		args = term.getArgs()
 		if name.getType() != STR or name.getValue() == '' or not args.isEquivalent(args.factory.makeNilList()):
 			self.fp.write('(')
-			self.writeTerms(args)
+			self.visit(args, istail=True)
 			self.fp.write(')')
 		self.writeAnnotations(term)
 	
