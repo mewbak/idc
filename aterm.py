@@ -371,12 +371,48 @@ class String(Literal):
 		return visitor.visitStr(self)
 
 
-class Variable(Term):
+class Proxy(Term):
+	
+	def __init__(self, factory, subterm, annotations = None):
+		Term.__init__(self, factory, annotations)
+		self.subterm = subterm
+	
+	def getType(self):
+		return self.subterm.getType()
+	
+	def getSubterm(self):
+		return self.subterm
+	
+	def isConstant(self):
+		return self.subterm.isConstant()
+	
+	def isEquivalent(self, other):
+		return other is self or self.subterm.isEquivalent(other.subterm)
+	
+	def isEqual(self, other):
+		return other is self or (
+			self.subterm.isEqual(other.subterm) and
+			self.annotations.isEquivalent(other.annotations)
+		)
+
+	def __getattr__(self, name):
+		return getattr(self.subterm, name)
+			
+	def _match(self, other, args, kargs):
+		return self.subterm._match(self, other, args, kargs)
+
+	def _make(self, args, kargs):
+		return self.subterm._make(args, kargs)
+
+	def accept(self, visitor):
+		return self.subterm.accept(visitor)
+
+
+class Variable(Proxy):
 	
 	def __init__(self, factory, name, pattern, annotations = None):
-		Term.__init__(self, factory, annotations)
+		Proxy.__init__(self, factory, pattern, annotations)
 		self.name = name
-		self.pattern = pattern
 	
 	def getType(self):
 		return VAR
@@ -385,19 +421,19 @@ class Variable(Term):
 		return self.name
 
 	def getPattern(self):
-		return self.pattern
+		return self.getSubterm()
 
 	def getSymbol(self):
 		return self.getName()
 
 	def isEquivalent(self, other):
-		return self.getType() == other.getType() and self.name == other.name and self.pattern == other.pattern
+		return self.getType() == other.getType() and self.name == other.name and self.subterm.isEquivalent(other.subterm)
 
 	def isEqual(self, other):
-		return self.getType() == other.getType() and self.name == other.name and self.pattern == other.pattern
+		return self.getType() == other.getType() and self.name == other.name and self.subterm.isEqual(other.subterm)
 	
-	def isConstant(self):
-		return self.pattern.isConstant()
+	#def isConstant(self):
+	#	return self.pattern.isConstant()
 	
 	def _match(self, other, args, kargs):
 		name = self.getName()
@@ -407,7 +443,7 @@ class Variable(Term):
 				raise PatternMismatchException
 			return other
 		except KeyError:
-			result = self.pattern._match(other, [], kargs)
+			result = self.subterm._match(other, [], kargs)
 			kargs[name] = result
 			return result
 
@@ -819,9 +855,10 @@ class TextWriter(Visitor):
 	
 	def visitVar(self, term):
 		self.fp.write(str(term.getName()))
-		if term.pattern.getType() != WILDCARD:
+		pattern = term.getPattern()
+		if pattern.getType() != WILDCARD:
 			self.fp.write('=')
-			self.visit(term.pattern)
+			self.visit(pattern)
 		
 	def visitWildcard(self, term):
 		self.fp.write('_')
