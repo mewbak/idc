@@ -25,21 +25,28 @@ APPL = 7
 WILDCARD = 8
 
 
-class BaseException:
-	"""Base exception class for term operations."""
-	
+class BaseException(Exception):
+	"""Base class for all term-related exceptions."""
 	pass
 
 
 class ParseException(BaseException):
 	"""Error parsing terms."""
-	
 	pass
 
 	
 class PatternMismatchException(BaseException):
-	"""Used internally to signal pattern mismatches."""
-	
+	"""Term does not match pattern."""	
+	pass
+
+
+class ListBoundException(BaseException):
+	"""Attempt to access beyond the end of the list."""
+	pass
+
+
+class VariableTermException(BaseException):
+	"""Operation invalid for non-constant term."""
 	pass
 
 
@@ -79,6 +86,10 @@ class Factory:
 	def makeConsList(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''
 		return _ConsList(self, head, tail, annotations)
+
+	def makeVarList(self, pattern, tail, annotations = None):
+		'''Creates a new varible list term'''
+		return VariableList(self, pattern, tail, annotations)
 
 	def makeList(self, seq, annotations = None):
 		res = self.makeNilList()
@@ -248,7 +259,7 @@ class Term:
 		elif name == 'annotations':
 			return self.getAnnotations()
 		else:
-			raise AttributeError
+			raise AttributeError, "'%s' object has no attribute '%s'" % (self.__class__.__name__, name)
 			
 	def __setattr__(self, name, value):
 		'''Prevent modification of term attributes'''
@@ -490,22 +501,22 @@ class _NilList(List):
 		return 0
 
 	def getHead(self):
-		return None
+		raise ListBoundException
 	
 	def getTail(self):
-		return None
+		raise ListBoundException
 
 	def isConstant(self):
 		return True
 	
 	def isEquivalent(self, other):
-		return other is self or (other.getType() == LIST and other.isEmpty())
+		return other is self or isinstance(other, _NilList)
 
 	def isEqual(self, other):
-		return self.isEquivalent(other) and self.annotations.isEquivalent(other)
+		return other is self or isinstance(other, _NilList) and self.annotations.isEquivalent(other)
 
 	def _match(self, other, args, kargs):
-		if self is other:
+		if other is self:
 			return other
 		
 		if other.getType() == LIST:
@@ -549,10 +560,19 @@ class _ConsList(List):
 		return self.head.isConstant() and self.tail.isConstant()
 	
 	def isEquivalent(self, other):
-		return other is self or (other.getType() == LIST and not other.isEmpty() and other.head.isEquivalent(self.head) and other.tail.isEquivalent(self.tail))
+		return other is self or (
+			isinstance(other, _ConsList) and 
+			other.head.isEquivalent(self.head) and 
+			other.tail.isEquivalent(self.tail)
+		)
 		
 	def isEqual(self, other):
-		return other is self or (other.getType() == LIST and not other.isEmpty() and other.head.isEqual(self.head) and other.tail.isEqual(self.tail)) and self.annotations.isEquivalent(other.annotations)
+		return other is self or (
+			isinstance(other, _ConsList) and 
+			other.head.isEqual(self.head) and 
+			other.tail.isEqual(self.tail) and 
+			self.annotations.isEquivalent(other.annotations)
+		)
 	
 	def _match(self, other, args, kargs):
 		if self is other:
@@ -571,6 +591,85 @@ class _ConsList(List):
 	
 	def setAnnotations(self, annotations):
 		return self.factory.makeConsList(self.head, self.tail, annotations)
+
+
+class VariableList(List):
+
+	def __init__(self, factory, pattern, tail = None, annotations = None):
+		Term.__init__(self, factory, annotations)
+
+		if not isinstance(pattern, Term):
+			raise TypeError, "head is not a term: %r" % head
+		self.pattern = pattern
+		if not isinstance(tail, (List, Variable)):
+			raise TypeError, "tail is not a list, variable term: %r" % tail
+		self.tail = tail
+	
+	def isEmpty(self):
+		raise VariableTermException
+	
+	def getLength(self):
+		raise VariableTermException
+	
+	def getHead(self):
+		raise VariableTermException
+	
+	def getPattern(self):
+		return self.pattern
+	
+	def getTail(self):
+		return self.tail
+
+	def isConstant(self):
+		return False
+	
+	def isEquivalent(self, other):
+		return other is self or (
+			isinstance(other, VariableList) and 
+			self.pattern.isEquivalent(other.pattern) and 
+			self.tail.isEquivalent(other.tail)
+		)
+		
+	def isEqual(self, other):
+		return other is self or (
+			isinstance(other, VariableList) and 
+			self.head.isEqual(other.head) and 
+			self.tail.isEqual(other.tail) and
+			self.annotations.isEquivalent(other.annotations)
+		)
+	
+	def _match(self, other, args, kargs):
+		result = self.__match(other, args, kargs)
+		
+		args.append(result)
+		return result
+		
+	def __match(self, other, args, kargs):
+		
+		if other is self:
+			return other
+		
+		if other.getType() == LIST:
+			try:
+				head = self.pattern._match(other.getHead(), [], kargs)
+			except PatternMismatchException:
+				return self.factory.makeNilList()
+			except ListBoundException:
+				return self.factory.makeNilList()
+			
+			return self.factory.makeConsList(head, self.__match(other.tail, args, kargs))
+		
+		return List._match(self, other, args, kargs)
+
+	def _make(self, args, kargs):
+		# TODO: do something with the pattern here?
+		try:
+			return args.pop(0)
+		except IndexError:
+			raise TypeError, 'insufficient number of arguments'
+	
+	def setAnnotations(self, annotations):
+		return self.factory.makeVarList(self.pattern, self.tail, annotations)
 
 
 class Application(Term):
@@ -640,7 +739,7 @@ class Visitor:
 	def visitTerm(self, term):
 		pass
 
-	def visitLit(self,term):
+	def visitLit(self, term):
 		return self.visitTerm(self, term)
 		
 	def visitInt(self, term):
@@ -672,16 +771,27 @@ class TextWriter(Visitor):
 	
 	def writeTerms(self, terms):
 		sep = ''
-		while terms.getType() == LIST and not terms.isEmpty():
-			self.fp.write(sep)
-			self.visit(terms.getHead())
+		while True:
+			try:
+				head = terms.getHead()
+				self.fp.write(sep)
+				self.visit(head)
+			except ListBoundException:
+				break
+			except VariableTermException:
+				self.fp.write(sep)
+				self.fp.write('*')
+				pattern = terms.getPattern()
+				if pattern.getType() != WILDCARD:
+					self.visit(pattern)
+			except AttributeError:
+				self.fp.write(sep)
+				self.fp.write('*')
+				self.fp.write(terms.getName())
+				break
+			
 			terms = terms.getTail()
 			sep = ','
-		if terms.getType() != LIST:
-			self.fp.write(sep)
-			self.fp.write('*')
-			if terms.getType() != WILDCARD:
-				self.visit(terms)
 
 	def writeAnnotations(self, term):
 		annotations = term.getAnnotations()
@@ -727,7 +837,7 @@ class TextWriter(Visitor):
 		# TODO: verify strings
 		self.fp.write(name.getSymbol())
 		args = term.getArgs()
-		if args.getType() != LIST or not args.isEmpty() or name.getType() != STR or name.getValue() == '':
+		if name.getType() != STR or name.getValue() == '' or not args.isEquivalent(args.factory.makeNilList()):
 			self.fp.write('(')
 			self.writeTerms(args)
 			self.fp.write(')')

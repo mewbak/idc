@@ -158,7 +158,7 @@ class TestCase(unittest.TestCase):
 						result = term1.isEqual(term2)
 						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))						
 
-						if term1.isConstant():
+						if term1.isConstant() and term2.isConstant():
 							result = term1.match(term2)
 							self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 						

@@ -159,9 +159,9 @@ aterms returns [res]
         { res = self.factory.makeConsList(head, tail) }
 	|
 		STAR
-		( ( WILDCARD )?
 			{ res = self.factory.makeWildcard() }
-		| vname:VAR
-			{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
-		)
+			{ res = self.factory.makeVarList(res, self.factory.makeNilList()) }
+		( vname:VAR
+			{ res = self.factory.makeVar(vname.getText(), res) }
+		)?
 	;
