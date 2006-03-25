@@ -150,18 +150,13 @@ term returns [res]
 aterms returns [res]
 	:
 		{ res = self.factory.makeNilList() }
-	| aterms=aterms_rest
-		{ res = aterms }
-	;
-	
-aterms_rest returns [res]
-	:
-		head=aterm
-		(
-			{ res = self.factory.makeConsList(head) }
-		| COMMA tail=aterms_rest
-			{ res = self.factory.makeConsList(head, tail) }
-		)
+	|
+		head=aterm 
+        ( COMMA tail=aterms 
+        |
+            { tail = self.factory.makeNilList() }
+        )
+        { res = self.factory.makeConsList(head, tail) }
 	|
 		STAR
 		( ( WILDCARD )?
