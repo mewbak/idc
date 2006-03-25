@@ -200,10 +200,14 @@ class Term:
 		'''Whether this term is constants, as opposed to have variables or wildcards.'''
 		raise NotImplementedError
 
-	def isEquivalent(self, term):
+	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
-		raise NotImplementedError
 		
+		return self is other or self._isEquivalent(other)
+		
+	def _isEquivalent(self, other):
+		raise NotImplementedError
+	
 	def match(self, other, args = None, kargs = None):
 		'''Matches this term agains a string or term pattern.'''
 		
@@ -273,6 +277,10 @@ class Term:
 		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
+		
+		return self is other or self._isEqual(other) and self.annotations.isEquivalent(other.annotations)
+		
+	def _isEqual(self, other):
 		raise NotImplementedError
 
 	def __eq__(self, other):
@@ -316,11 +324,11 @@ class Literal(Term):
 	def isConstant(self):
 		return True
 	
-	def isEquivalent(self, other):
-		return other is self or (other.getType() == self.getType() and other.value == self.value)
+	def _isEquivalent(self, other):
+		return self.getType() == other.getType() and self.value == other.value
 
-	def isEqual(self, other):
-		return other is self or (other.getType() == self.getType() and other.value == self.value) and self.annotations.isEquivalent(other.annotations)
+	def _isEqual(self, other):
+		return self._isEquivalent(other)
 
 	def _match(self, other, args, kargs):
 		if other.isEquivalent(self):
@@ -386,14 +394,11 @@ class Proxy(Term):
 	def isConstant(self):
 		return self.subterm.isConstant()
 	
-	def isEquivalent(self, other):
-		return other is self or self.subterm.isEquivalent(other.subterm)
+	def _isEquivalent(self, other):
+		return self.subterm.isEquivalent(other.subterm)
 	
-	def isEqual(self, other):
-		return other is self or (
-			self.subterm.isEqual(other.subterm) and
-			self.annotations.isEquivalent(other.annotations)
-		)
+	def _isEqual(self, other):
+		return self.subterm.isEqual(other.subterm)
 
 	def __getattr__(self, name):
 		return getattr(self.subterm, name)
@@ -426,10 +431,10 @@ class Variable(Proxy):
 	def getSymbol(self):
 		return self.getName()
 
-	def isEquivalent(self, other):
+	def _isEquivalent(self, other):
 		return self.getType() == other.getType() and self.name == other.name and self.subterm.isEquivalent(other.subterm)
 
-	def isEqual(self, other):
+	def _isEqual(self, other):
 		return self.getType() == other.getType() and self.name == other.name and self.subterm.isEqual(other.subterm)
 	
 	#def isConstant(self):
@@ -470,11 +475,11 @@ class Wildcard(Term):
 	def isConstant(self):
 		return False
 	
-	def isEquivalent(self, other):
+	def _isEquivalent(self, other):
 		return other.getType() == WILDCARD
 	
-	def isEqual(self, other):
-		return other.getType() == WILDCARD and self.annotations.isEquivalent(other.annotations)
+	def _isEqual(self, other):
+		return self._isEquivalent(other)
 	
 	def _match(self, other, args, kargs):
 		args.append(other)
@@ -545,14 +550,14 @@ class _NilList(List):
 	def isConstant(self):
 		return True
 	
-	def isEquivalent(self, other):
-		return other is self or isinstance(other, _NilList)
+	def _isEquivalent(self, other):
+		return isinstance(other, _NilList)
 
-	def isEqual(self, other):
-		return other is self or isinstance(other, _NilList) and self.annotations.isEquivalent(other)
+	def _isEqual(self, other):
+		return self._isEquivalent(other)
 
 	def _match(self, other, args, kargs):
-		if other is self:
+		if self is other:
 			return other
 		
 		if other.getType() == LIST:
@@ -595,19 +600,18 @@ class _ConsList(List):
 	def isConstant(self):
 		return self.head.isConstant() and self.tail.isConstant()
 	
-	def isEquivalent(self, other):
-		return other is self or (
+	def _isEquivalent(self, other):
+		return (
 			isinstance(other, _ConsList) and 
 			other.head.isEquivalent(self.head) and 
 			other.tail.isEquivalent(self.tail)
 		)
 		
-	def isEqual(self, other):
-		return other is self or (
+	def _isEqual(self, other):
+		return (
 			isinstance(other, _ConsList) and 
 			other.head.isEqual(self.head) and 
-			other.tail.isEqual(self.tail) and 
-			self.annotations.isEquivalent(other.annotations)
+			other.tail.isEqual(self.tail)
 		)
 	
 	def _match(self, other, args, kargs):
@@ -659,19 +663,18 @@ class VariableList(List):
 	def isConstant(self):
 		return False
 	
-	def isEquivalent(self, other):
-		return other is self or (
+	def _isEquivalent(self, other):
+		return (
 			isinstance(other, VariableList) and 
 			self.pattern.isEquivalent(other.pattern) and 
 			self.tail.isEquivalent(other.tail)
 		)
 		
-	def isEqual(self, other):
-		return other is self or (
+	def _isEqual(self, other):
+		return (
 			isinstance(other, VariableList) and 
-			self.head.isEqual(other.head) and 
-			self.tail.isEqual(other.tail) and
-			self.annotations.isEquivalent(other.annotations)
+			self.pattern.isEqual(other.head) and 
+			self.tail.isEqual(other.tail)
 		)
 	
 	def _match(self, other, args, kargs):
@@ -681,10 +684,6 @@ class VariableList(List):
 		return result
 		
 	def __match(self, other, args, kargs):
-		
-		if other is self:
-			return other
-		
 		if other.getType() == LIST:
 			try:
 				head = self.pattern._match(other.getHead(), [], kargs)
@@ -738,16 +737,13 @@ class Application(Term):
 	def isConstant(self):
 		return self.name.isConstant() and self.args.isConstant()
 	
-	def isEquivalent(self, other):
-		return other is self or (other.getType() == APPL and self.name.isEquivalent(other.name) and self.args.isEquivalent(other.args))
+	def _isEquivalent(self, other):
+		return other.getType() == APPL and self.name.isEquivalent(other.name) and self.args.isEquivalent(other.args)
 
-	def isEqual(self, other):
-		return other is self or (other.getType() == APPL and self.name.isEqual(other.name) and self.args.isEqual(other.args))
+	def _isEqual(self, other):
+		return other.getType() == APPL and self.name.isEqual(other.name) and self.args.isEqual(other.args)
 		
 	def _match(self, other, args, kargs):
-		if other is self:
-			return other
-		
 		if other.getType() == APPL:
 			self.name._match(other.name, args, kargs) 
 			self.args._match(other.args, args, kargs)
