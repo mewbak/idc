@@ -77,6 +77,8 @@ test_wgen: test_wgen.py aterm.py walker.py
 
 test_box: test_box.py box.py aterm.py walker.py
 
+test_ir: test_ir.py ir.py aterm.py walker.py
+
 test_%: test_%.py
 	$(PYTHON) $< -v
 

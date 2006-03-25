@@ -117,7 +117,7 @@ def box2text(boxes):
 	return fp.getvalue()
 }
 
-class Aterm2Box:
+class Term2Box:
 
 	# XXX: incomplete
 
@@ -146,51 +146,11 @@ class Aterm2Box:
 		;
 	
 	
-class C2Box:
-
-	convert
-		: .module
-		| .stmt
-		;
-	
-	module
-		: Module(stmts) -> V(.map(stmts, {self.stmt}), 1)
-		;
-	
-	stmt
-		: Label(name) -> H([name,":"], 0)
-		| Assembly(opcode, operands) -> H(["asm","(", .string(opcode), H(.prefix(.map(operands, {self.expr}), ", "), 0), ")"], 0)
-		;
-	
-	expr
-		: Constant(num) -> .lit2str(num)
-		| Register(reg) -> reg
-		;
-	
-	lit2str
-		: n { $$ = self.factory.makeStr(str($n.getValue())) }
-		;
-	
-	join(s)
-		: [] -> []
-		| [h] -> [h]
-		| [h, *t] -> [h, *.prefix(t, s)]
-		;
-	
-	prefix(p)
-		: [] -> []
-		| [h, *t] -> [p, h, *.prefix(t, p)]
-		;
-	
-	string
-		: _ -> H(["\"", _, "\""], 0)
-		;
-
 header {
-def c2box(term):
-	'''Convert an aterm containg C code into its box representation.'''
+def term2box(term):
+	'''Convert an aterm into its box representation.'''
 
-	boxer = C2Box(term.getFactory())
+	boxer = Term2Box(term.getFactory())
 	box = boxer.convert(term)
 	return box
 }

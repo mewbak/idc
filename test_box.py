@@ -38,17 +38,14 @@ class TestCase(unittest.TestCase):
 			
 			self.failUnlessEqual(output, expectedOutput)
 
-	c2BoxTestCases = [
-		('Label("a")', 'a:'),
-		('Assembly("ret",[])', 'asm("ret")'),
-		('Assembly("mov",[Register("ax"), Constant(1234)])', 'asm("mov", ax, 1234)'),
+	term2BoxTestCases = [
 	]
 	
-	def testC2Box(self):
-		for inputStr, expectedOutput in self.c2BoxTestCases:
+	def testTerm2Box(self):
+		for inputStr, expectedOutput in self.term2BoxTestCases:
 			input = self.factory.parse(inputStr)
 		
-			boxes = box.c2box(input)
+			boxes = box.term2box(input)
 			output = box.box2text(boxes)
 			
 			self.failUnlessEqual(output, expectedOutput)
