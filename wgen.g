@@ -291,12 +291,8 @@ nil
 	;
 
 terms
-	: terms_rest
-	| nil
-	;
-	
-terms_rest
-	: inner_term (COMMA! terms_rest | nil )
+	: nil
+	| inner_term ( COMMA! terms | nil )
 		{ ## = #(#[COMMA,","], ##) }	
 	| STAR^ opt_wildcard
 	;
