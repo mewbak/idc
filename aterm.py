@@ -81,11 +81,11 @@ class Factory:
 
 	def makeNilList(self, annotations = None):
 		'''Creates a new empty list term'''
-		return _NilList(self, annotations)
+		return NilList(self, annotations)
 
 	def makeConsList(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''
-		return _ConsList(self, head, tail, annotations)
+		return ConsList(self, head, tail, annotations)
 
 	def makeVarList(self, pattern, tail, annotations = None):
 		'''Creates a new varible list term'''
@@ -379,91 +379,6 @@ class String(Literal):
 		return visitor.visitStr(self)
 
 
-class Proxy(Term):
-	
-	def __init__(self, factory, subterm, annotations = None):
-		Term.__init__(self, factory, annotations)
-		self.subterm = subterm
-	
-	def getType(self):
-		return self.subterm.getType()
-	
-	def getSubterm(self):
-		return self.subterm
-	
-	def isConstant(self):
-		return self.subterm.isConstant()
-	
-	def _isEquivalent(self, other):
-		return self.subterm.isEquivalent(other.subterm)
-	
-	def _isEqual(self, other):
-		return self.subterm.isEqual(other.subterm)
-
-	def __getattr__(self, name):
-		return getattr(self.subterm, name)
-			
-	def _match(self, other, args, kargs):
-		return self.subterm._match(self, other, args, kargs)
-
-	def _make(self, args, kargs):
-		return self.subterm._make(args, kargs)
-
-	def accept(self, visitor):
-		return self.subterm.accept(visitor)
-
-
-class Variable(Proxy):
-	
-	def __init__(self, factory, name, pattern, annotations = None):
-		Proxy.__init__(self, factory, pattern, annotations)
-		self.name = name
-	
-	def getType(self):
-		return VAR
-	
-	def getName(self):
-		return self.name
-
-	def getPattern(self):
-		return self.getSubterm()
-
-	def getSymbol(self):
-		return self.getName()
-
-	def _isEquivalent(self, other):
-		return self.getType() == other.getType() and self.name == other.name and self.subterm.isEquivalent(other.subterm)
-
-	def _isEqual(self, other):
-		return self.getType() == other.getType() and self.name == other.name and self.subterm.isEqual(other.subterm)
-	
-	#def isConstant(self):
-	#	return self.pattern.isConstant()
-	
-	def _match(self, other, args, kargs):
-		name = self.getName()
-		try:
-			value = kargs[name]
-			if not kargs[name].isEquivalent(other):
-				raise PatternMismatchException
-			return other
-		except KeyError:
-			result = self.subterm._match(other, [], kargs)
-			kargs[name] = result
-			return result
-
-	def _make(self, args, kargs):
-		name = self.getName()
-		if name in kargs:
-			# TODO: do something with the pattern here?
-			return kargs[name]
-		else:
-			raise ValueError, 'undefined term variable %s' % name
-
-	def accept(self, visitor):
-		return visitor.visitVar(self)
-
-
 class Wildcard(Term):
 
 	def getType(self):
@@ -493,6 +408,58 @@ class Wildcard(Term):
 
 	def accept(self, visitor):
 		return visitor.visitWildcard(self)
+
+
+class Variable(Term):
+	
+	def __init__(self, factory, name, pattern, annotations = None):
+		Term.__init__(self, factory, annotations)
+		self.name = name
+		self.pattern = pattern
+	
+	def getType(self):
+		return VAR
+	
+	def getName(self):
+		return self.name
+
+	def getPattern(self):
+		return self.pattern
+
+	def getSymbol(self):
+		return self.getName()
+
+	def _isEquivalent(self, other):
+		return self.getType() == other.getType() and self.name == other.name and self.pattern.isEquivalent(other.pattern)
+
+	def _isEqual(self, other):
+		return self.getType() == other.getType() and self.name == other.name and self.pattern.isEqual(other.pattern)
+	
+	def isConstant(self):
+		return self.pattern.isConstant()
+	
+	def _match(self, other, args, kargs):
+		name = self.getName()
+		try:
+			value = kargs[name]
+			if not kargs[name].isEquivalent(other):
+				raise PatternMismatchException
+			return other
+		except KeyError:
+			result = self.pattern._match(other, [], kargs)
+			kargs[name] = result
+			return result
+
+	def _make(self, args, kargs):
+		name = self.getName()
+		if name in kargs:
+			# TODO: do something with the pattern here?
+			return kargs[name]
+		else:
+			raise ValueError, 'undefined term variable %s' % name
+
+	def accept(self, visitor):
+		return visitor.visitVar(self)
 
 
 class List(Term):
@@ -530,7 +497,7 @@ class List(Term):
 		return visitor.visitList(self)
 
 
-class _NilList(List):
+class NilList(List):
 	
 	def __init__(self, factory, annotations = None):
 		Term.__init__(self, factory, annotations)
@@ -551,7 +518,7 @@ class _NilList(List):
 		return True
 	
 	def _isEquivalent(self, other):
-		return isinstance(other, _NilList)
+		return isinstance(other, NilList)
 
 	def _isEqual(self, other):
 		return self._isEquivalent(other)
@@ -570,7 +537,7 @@ class _NilList(List):
 		return self.factory.makeNilList(annotations)
 
 
-class _ConsList(List):
+class ConsList(List):
 
 	def __init__(self, factory, head, tail = None, annotations = None):
 		Term.__init__(self, factory, annotations)
@@ -602,14 +569,14 @@ class _ConsList(List):
 	
 	def _isEquivalent(self, other):
 		return (
-			isinstance(other, _ConsList) and 
+			isinstance(other, ConsList) and 
 			other.head.isEquivalent(self.head) and 
 			other.tail.isEquivalent(self.tail)
 		)
 		
 	def _isEqual(self, other):
 		return (
-			isinstance(other, _ConsList) and 
+			isinstance(other, ConsList) and 
 			other.head.isEqual(self.head) and 
 			other.tail.isEqual(self.tail)
 		)
