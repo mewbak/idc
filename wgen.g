@@ -28,7 +28,6 @@ options {
 tokens {
 	HEADER = "header";
 	CLASS = "class";
-	DOT;
 }
 
 protected
@@ -64,7 +63,7 @@ REAL_OR_INT
 		('-')?
 		// fraction
 		( ('0'..'9')+ ( '.' ('0'..'9')* { $setType(REAL); } )?
-		| '.' { $setType(DOT); } ( ('0'..'9')+ { $setType(REAL); } )?
+		| '.' ( ('0'..'9')+ { $setType(REAL); } )?
 		) 
 		// exponent
 		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )?
@@ -91,6 +90,10 @@ LCID
 options { testLiterals = true; }
     : ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
+
+DOT
+	: '.'! ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+	;
 
 LSQUARE	: '[';
 RSQUARE	: ']';
@@ -271,7 +274,7 @@ term
 		( LPAREN! terms RPAREN!
 			{ ## = #(#[APPL,"APPL"], ##) }	
 		)?
-	| DOT! ( UCID | LCID ) opt_args
+	| DOT opt_args
 		{ ## = #(#[TRNSF,"TRNSF"], ##) }	
 	;
 
@@ -306,6 +309,7 @@ opt_wildcard
 id
 	: UCID			
 	| LCID
+	| DOT
 	;
 
 
@@ -404,6 +408,7 @@ part
 id returns [ret]
 	: u:UCID { ret = #u.getText() }
 	| l:LCID { ret = #l.getText() }
+	| d:DOT { ret = #d.getText() }
 	;
 
 method

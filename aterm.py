@@ -20,9 +20,9 @@ REAL = 2
 STR = 3
 LIST = 4
 CONS = 5
-VAR = 6
-APPL = 7
-WILDCARD = 8
+APPL = 6
+WILDCARD = 7
+VAR = 8
 
 
 class BaseException(Exception):
