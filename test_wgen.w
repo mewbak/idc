@@ -142,30 +142,38 @@ class WalkerTestSuite:
 		;
 
 	testPredicateMethod
-		: Int(_isZero) -> Null
-		| Int(_)
+		: TestOne(_isZero) -> True
+		| TestOne(_) -> False
+		| TestAll(_isZero*) -> True
+		| TestAll(_) -> False
 		;
 
 	{
 	testPredicateMethodData = [
-		('Int(0)', 'Null'),
-		('Int(1)', 'Int(1)'),
+		('TestOne(0)', 'True'),
+		('TestOne(1)', 'False'),
+		('TestAll([0,0])', 'True'),
+		('TestAll([0,1])', 'False'),
+		('TestAll([1,0])', 'False'),
+		('TestAll([1,1])', 'False'),
 	]
 	}
 	
-	invert
+	negate
 		: True -> False
 		| False -> True
 		;
 
 	testProductionMethod
-		: x -> _invert(x)
+		: TestOne(x) -> _negate(x)
+		| TestAll(x) -> _negate(x)*
 		;
 
 	{
 	testProductionMethodData = [
-		('True', 'False'),
-		('False', 'True'),
+		('TestOne(True)', 'False'),
+		('TestOne(False)', 'True'),
+		('TestAll([True,False])', '[False,True]'),
 	]
 	}
 	
