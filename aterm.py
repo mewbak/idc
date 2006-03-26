@@ -295,7 +295,7 @@ class Term:
 
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
-		writer = TextWriter(fp, self.factory)
+		writer = TextWriter(fp)
 		writer.visit(self)
 
 	def __str__(self):
@@ -514,7 +514,7 @@ class NilList(List):
 		return True
 	
 	def _isEquivalent(self, other):
-		return isinstance(other, NilList)
+		return other.getType() == LIST and other.isEmpty()
 
 	def _isEqual(self, other):
 		return self._isEquivalent(other)
@@ -568,14 +568,14 @@ class ConsList(List):
 	
 	def _isEquivalent(self, other):
 		return (
-			isinstance(other, ConsList) and 
+			other.getType() == LIST and not other.isEmpty() and 
 			other.head.isEquivalent(self.head) and 
 			other.tail.isEquivalent(self.tail)
 		)
 		
 	def _isEqual(self, other):
 		return (
-			isinstance(other, ConsList) and 
+			other.getType() == LIST and not other.isEmpty() and 
 			other.head.isEqual(self.head) and 
 			other.tail.isEqual(self.tail)
 		)
@@ -699,11 +699,8 @@ class Visitor:
 
 class TextWriter(Visitor):
 	
-	def __init__(self, fp, factory):
+	def __init__(self, fp):
 		self.fp = fp
-		
-		self.nil = factory.makeNilList()
-		self.wildcard = factory.makeWildcard()
 
 	def writeAnnotations(self, term):
 		annotations = term.getAnnotations()
@@ -731,29 +728,24 @@ class TextWriter(Visitor):
 		self.fp.write('"' + s + '"')
 		self.writeAnnotations(term)
 	
-	def visitNilList(self, term, istail=False):
-		if not istail:
+	def visitNilList(self, term, inside_list = False):
+		if not inside_list:
 			self.fp.write('[]')
 			self.writeAnnotations(term)
 
-	def visitConsList(self, term, istail=False):
+	def visitConsList(self, term, inside_list = False):
+		if not inside_list:
+			self.fp.write('[')	 
 		head = term.getHead()
+		self.visit(head)
 		tail = term.getTail()
-		if tail.isEquivalent(self.nil):
-			sep = ""
-		else:
-			sep = ","
-		if not istail:
-			self.fp.write('[')
-			self.visit(head)
-			self.fp.write(sep)
-			self.visit(tail, istail=True)
+		last = tail.getType() == LIST and tail.isEmpty()
+		if not last:
+			self.fp.write(",")
+			self.visit(tail, inside_list = True)		
+		if not inside_list:
 			self.fp.write(']')
 			self.writeAnnotations(term)
-		else:
-			self.visit(head)
-			self.fp.write(sep)
-			self.visit(tail, istail=True)
 
 	def visitAppl(self, term):
 		name = term.getName()
@@ -762,12 +754,12 @@ class TextWriter(Visitor):
 		args = term.getArgs()
 		if name.getType() != STR or name.getValue() == '' or not args.isEquivalent(args.factory.makeNilList()):
 			self.fp.write('(')
-			self.visit(args, istail=True)
+			self.visit(args, inside_list = True)
 			self.fp.write(')')
 		self.writeAnnotations(term)
 
-	def visitVar(self, term, istail=False):
-		if istail:
+	def visitVar(self, term, inside_list = False):
+		if inside_list:
 			self.fp.write('*')
 		self.fp.write(str(term.getName()))
 		pattern = term.getPattern()
@@ -775,8 +767,8 @@ class TextWriter(Visitor):
 			self.fp.write('=')
 			self.visit(pattern)
 		
-	def visitWildcard(self, term, istail=False):
-		if istail:
+	def visitWildcard(self, term, inside_list = False):
+		if inside_list:
 			self.fp.write('*')
 		else:
 			self.fp.write('_')
