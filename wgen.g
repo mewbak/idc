@@ -239,15 +239,15 @@ alternative
 predicate
 	: ( SEMPRED ) => SEMPRED
 	| ( ACTION ) => ACTION
-	| term_debug
+	| debug_term
 	;
 
 production
 	: ( ACTION ) => ACTION
-	| term_debug
+	| debug_term
 	;
 
-term_debug
+debug_term
 	: t:term
 		{
             if self.debug:
@@ -274,7 +274,9 @@ term
 		( (LPAREN) => LPAREN! term_list RPAREN!
 			{ ## = #(#[APPL,"APPL"], ##) }	
 		)?
-	| TRANSF^ opt_args ( STAR^ )?
+	| TRANSF^ 
+		( ( LPAREN ) => LPAREN! ( term ( COMMA! term )* )? RPAREN! )?
+		( STAR^ )?
 	| ACTION^
 	;
 
@@ -636,13 +638,14 @@ build_term returns [ret]
 		{ ret = "_f.makeNilList()" }
 	| #( COMMA h=build_term t=build_term )
 		{ ret = "_f.makeConsList(%s,%s)" % (h, t) }
-    | #( STAR #( t2:TRANSF #( COMMA ah=build_term at=build_trnsf_args ) ) )
+    | #( STAR #( t2:TRANSF ah=build_term at=build_trnsf_args ) )
 		{ ret = "self.map(%s,self.%s,%s)" % (ah, #t2.getText(), at) }
 	;
 
 build_trnsf_args returns [ret]
-	: NIL
-		{ ret = "" }
-	| #(COMMA h=build_term t=build_trnsf_args)
-		{ ret = "%s,%s" % (h, t) }
+	:
+		{ ret = "" } { sep = "" }
+	 	( t=build_term
+		{ ret += sep + t } { sep = "," }
+		)*
 	;
