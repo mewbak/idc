@@ -160,7 +160,6 @@ aterms returns [res]
 	|
 		STAR
 			{ res = self.factory.makeWildcard() }
-			{ res = self.factory.makeManyList(res, self.factory.makeNilList()) }
 		( vname:VAR
 			{ res = self.factory.makeVar(vname.getText(), res) }
 		)?

@@ -40,13 +40,13 @@ class PatternMismatchException(BaseException):
 	pass
 
 
-class ListBoundException(BaseException):
+class EmptyListException(BaseException):
 	"""Attempt to access beyond the end of the list."""
 	pass
 
 
-class VariableTermException(BaseException):
-	"""Operation invalid for non-constant term."""
+class PlaceholderException(BaseException):
+	"""Operation invalid for an unbound placeholder term."""
 	pass
 
 
@@ -86,10 +86,6 @@ class Factory:
 	def makeConsList(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''
 		return ConsList(self, head, tail, annotations)
-
-	def makeManyList(self, pattern, tail, annotations = None):
-		'''Creates a new varible list term'''
-		return ManyList(self, pattern, tail, annotations)
 
 	def makeList(self, seq, annotations = None):
 		res = self.makeNilList()
@@ -509,10 +505,10 @@ class NilList(List):
 		return 0
 
 	def getHead(self):
-		raise ListBoundException
+		raise EmptyListException
 	
 	def getTail(self):
-		raise ListBoundException
+		raise EmptyListException
 
 	def isConstant(self):
 		return True
@@ -606,83 +602,6 @@ class ConsList(List):
 		return visitor.visitConsList(self, *args, **kargs)
 
 
-class ManyList(List):
-
-	def __init__(self, factory, pattern, tail = None, annotations = None):
-		Term.__init__(self, factory, annotations)
-
-		if not isinstance(pattern, Term):
-			raise TypeError, "head is not a term: %r" % head
-		self.pattern = pattern
-		if not isinstance(tail, (List, Variable)):
-			raise TypeError, "tail is not a list, variable term: %r" % tail
-		self.tail = tail
-	
-	def isEmpty(self):
-		raise VariableTermException
-	
-	def getLength(self):
-		raise VariableTermException
-	
-	def getHead(self):
-		raise VariableTermException
-	
-	def getPattern(self):
-		return self.pattern
-	
-	def getTail(self):
-		return self.tail
-
-	def isConstant(self):
-		return False
-	
-	def _isEquivalent(self, other):
-		return (
-			isinstance(other, ManyList) and 
-			self.pattern.isEquivalent(other.pattern) and 
-			self.tail.isEquivalent(other.tail)
-		)
-		
-	def _isEqual(self, other):
-		return (
-			isinstance(other, ManyList) and 
-			self.pattern.isEqual(other.head) and 
-			self.tail.isEqual(other.tail)
-		)
-	
-	def _match(self, other, args, kargs):
-		result = self.__match(other, args, kargs)
-		
-		args.append(result)
-		return result
-		
-	def __match(self, other, args, kargs):
-		if other.getType() == LIST:
-			try:
-				head = self.pattern._match(other.getHead(), [], kargs)
-			except PatternMismatchException:
-				return self.factory.makeNilList()
-			except ListBoundException:
-				return self.factory.makeNilList()
-			
-			return self.factory.makeConsList(head, self.__match(other.tail, args, kargs))
-		
-		return List._match(self, other, args, kargs)
-
-	def _make(self, args, kargs):
-		# TODO: do something with the pattern here?
-		try:
-			return args.pop(0)
-		except IndexError:
-			raise TypeError, 'insufficient number of arguments'
-	
-	def setAnnotations(self, annotations):
-		return self.factory.makeManyList(self.pattern, self.tail, annotations)
-
-	def accept(self, visitor, *args, **kargs):
-		return visitor.visitManyList(self, *args, **kargs)
-
-
 class Application(Term):
 
 	def __init__(self, factory, name, args = None, annotations = None):
@@ -774,9 +693,6 @@ class Visitor:
 	def visitConsList(self, term, *args, **kargs):
 		return self.visitList(self, term, *args, **kargs)
 
-	def visitManyList(self, term, *args, **kargs):
-		return self.visitList(self, term, *args, **kargs)
-
 	def visitAppl(self, term, *args, **kargs):
 		return self.visitTerm(self, term, *args, **kargs)
 
@@ -788,7 +704,6 @@ class TextWriter(Visitor):
 		
 		self.nil = factory.makeNilList()
 		self.wildcard = factory.makeWildcard()
-		self.tail = factory.makeManyList(self.wildcard, self.nil)
 
 	def writeAnnotations(self, term):
 		annotations = term.getAnnotations()
@@ -816,26 +731,6 @@ class TextWriter(Visitor):
 		self.fp.write('"' + s + '"')
 		self.writeAnnotations(term)
 	
-	def visitVar(self, term, istail=False):
-		pattern = term.getPattern()
-		if istail:
-			self.fp.write('*')
-			self.fp.write(str(term.getName()))
-			if not pattern.isEquivalent(self.tail):
-				self.fp.write('=')
-				self.visit(pattern)
-		else:
-			self.fp.write(str(term.getName()))
-			if not pattern.isEquivalent(self.wildcard):
-				self.fp.write('=')
-				self.visit(pattern)
-		
-	def visitWildcard(self, term, istail=False):
-		if istail:
-			self.fp.write('*')
-		else:
-			self.fp.write('_')
-	
 	def visitNilList(self, term, istail=False):
 		if not istail:
 			self.fp.write('[]')
@@ -860,17 +755,6 @@ class TextWriter(Visitor):
 			self.fp.write(sep)
 			self.visit(tail, istail=True)
 
-	def visitManyList(self, term, istail=False):
-		if not istail:
-			self.visit(term.pattern)
-			self.writeAnnotations(term)
-			self.fp.write('*')
-		else:
-			pattern = term.getPattern()
-			if not isinstance(pattern, Wildcard):
-				self.visit(pattern)
-			self.fp.write('*')
-
 	def visitAppl(self, term):
 		name = term.getName()
 		# TODO: verify strings
@@ -881,4 +765,19 @@ class TextWriter(Visitor):
 			self.visit(args, istail=True)
 			self.fp.write(')')
 		self.writeAnnotations(term)
-	
+
+	def visitVar(self, term, istail=False):
+		if istail:
+			self.fp.write('*')
+		self.fp.write(str(term.getName()))
+		pattern = term.getPattern()
+		if pattern.getType() != WILDCARD:
+			self.fp.write('=')
+			self.visit(pattern)
+		
+	def visitWildcard(self, term, istail=False):
+		if istail:
+			self.fp.write('*')
+		else:
+			self.fp.write('_')
+
