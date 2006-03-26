@@ -21,7 +21,7 @@ options {
 class wgenLexer extends Lexer;
 
 options {
-	k = 2;
+	k = 3;
 	testLiterals = false;
 }
 
@@ -63,8 +63,8 @@ REAL_OR_INT
 		('-')?
 		// fraction
 		( ('0'..'9')+ ( '.' ('0'..'9')* { $setType(REAL); } )?
-		| '.' ( ('0'..'9')+ { $setType(REAL); } )?
-		) 
+		| '.' ('0'..'9')+ { $setType(REAL); }
+		)
 		// exponent
 		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )?
 	;
@@ -185,21 +185,23 @@ tokens {
 grammar
 	: 
 		( docstring )? 
-		( part )* 
+		( headr
+		| walker 
+		)* 
 		EOF!
 	;
 
-part
+headr
 	: HEADER^ ACTION
-	| 
-		CLASS^ id ( LPAREN! id RPAREN! )? COLON!
-		( docstring )?
-		( method )*
 	;
 
-method
-	: ACTION
-	| rule
+walker
+	:
+		CLASS^ id ( LPAREN! id RPAREN! )? COLON!
+		( docstring )?
+		( ACTION 
+		| rule 
+		)*
 	;
 
 rule
@@ -231,31 +233,19 @@ block
 	;
 
 alternative
-	:
-		( SEMPRED
-		| ACTION
-		)*
-		debug_term
-		( SEMPRED
-		| ACTION
-		)*
-		( INTO 
-			( ACTION )*
-			( debug_term )
-			( ACTION )*
-		)?
+	: ( predicate )* ( INTO ( production )* )?
 		{ ## = #(#[ALTERNATIVE,"ALTERNATIVE"], ##) }
 	;
 
-debug_term
-	: t:term
-{
-    if self.debug:
-        import sys
-        sys.stderr.write("*** Term ***\n")
-        sys.stderr.write(#t.toStringTree())
-        sys.stderr.write("\n")
-}
+predicate
+	: ( SEMPRED ) => SEMPRED
+	| ( ACTION ) => ACTION
+	| term
+	;
+
+production
+	: ( ACTION ) => ACTION
+	| term
 	;
 
 // TODO: support variable assignments
@@ -271,23 +261,19 @@ term
 		{ ## = #(#[APPL,"APPL"], ##) }
 	|
 		( LCID | WILDCARD )
-		( LPAREN! terms RPAREN!
+		( (LPAREN) => LPAREN! terms RPAREN!
 			{ ## = #(#[APPL,"APPL"], ##) }	
 		)?
 	| DOT opt_args
 		{ ## = #(#[TRNSF,"TRNSF"], ##) }	
-	;
-
-opt_args
-	: LPAREN! terms RPAREN!
-	| nil
-	;
-	
-inner_term
-	: term
 	| ACTION^ opt_args
 	;
 
+opt_args
+	: (LPAREN) => LPAREN! terms RPAREN!
+	| nil
+	;
+	
 nil
 	:
 		{ ## = #(#[NIL,"NIL"]) }	
@@ -295,13 +281,13 @@ nil
 
 terms
 	: nil
-	| inner_term ( COMMA! terms | nil )
+	| term ( COMMA! terms | nil )
 		{ ## = #(#[COMMA,","], ##) }	
 	| STAR^ opt_wildcard
 	;
 	
 opt_wildcard
-	: inner_term
+	: term
 	|
 		{ ## = #(#[WILDCARD,"_"]) }	
 	;
@@ -498,7 +484,7 @@ alternative
 
 predicate
 	: ( ACTION ) => action
-	| p:SEMPRED 
+	| ( SEMPRED ) => p:SEMPRED 
 	        {
                 self.writeln("if not (%s):" % p)
                 self.indent()
