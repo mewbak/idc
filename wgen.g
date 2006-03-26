@@ -82,17 +82,17 @@ ESC
     :   '\\' ( EOL | . )
     ;
 
-UCID
+CONS
 options { testLiterals = true; }
     : ('A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
-LCID
+VAR
 options { testLiterals = true; }
     : ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
 
-DOT
-	: '.'! ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+TRANSF
+	: '_'! ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
 	;
 
 LSQUARE	: '[';
@@ -178,7 +178,6 @@ tokens {
 	ALTERNATIVE;
 	APPL;
 	LIST;
-	TRANSF;
 	NIL;
 }
 
@@ -256,16 +255,15 @@ term
 	| LSQUARE! terms RSQUARE!
 		{ ## = #(#[LIST,"LIST"], ##) }
 	| LPAREN! terms RPAREN!
-		{ ## = #(#[APPL,"APPL"], #[UCID,""], ##) }
-	| UCID opt_args
+		{ ## = #(#[APPL,"APPL"], #[CONS,""], ##) }
+	| CONS opt_args
 		{ ## = #(#[APPL,"APPL"], ##) }
 	|
-		( LCID | WILDCARD )
+		( VAR | WILDCARD )
 		( (LPAREN) => LPAREN! terms RPAREN!
 			{ ## = #(#[APPL,"APPL"], ##) }	
 		)?
-	| DOT opt_args
-		{ ## = #(#[TRNSF,"TRNSF"], ##) }	
+	| TRANSF^ opt_args
 	| ACTION^ opt_args
 	;
 
@@ -293,9 +291,9 @@ opt_wildcard
 	;
 
 id
-	: UCID			
-	| LCID
-	| DOT
+	: CONS
+	| VAR
+	| TRANSF
 	;
 
 
@@ -392,9 +390,9 @@ part
 	;
 
 id returns [ret]
-	: u:UCID { ret = #u.getText() }
-	| l:LCID { ret = #l.getText() }
-	| d:DOT { ret = #d.getText() }
+	: u:CONS { ret = #u.getText() }
+	| l:VAR { ret = #l.getText() }
+	| d:TRANSF { ret = #d.getText() }
 	;
 
 method
@@ -519,12 +517,12 @@ production
 	;
 
 is_static_term returns [ret]
-	: ( INT | REAL | STR | UCID | LCID | WILDCARD )
+	: ( INT | REAL | STR | CONS | VAR | WILDCARD )
 		{ ret = True }
 	| #( LIST ret=is_static_term )
 	| #( APPL c=is_static_term a=is_static_term  )
 		{ ret = c and a }
-	| TRNSF 
+	| TRANSF 
 		{ ret = False }
 	| ACTION
 		{ ret = False }
@@ -542,9 +540,9 @@ stringify_term returns [ret]
 		{ ret = #r.getText() }
 	| s:STR 
 		{ ret = #s.getText() }
-	| c:UCID 
+	| c:CONS 
 		{ ret = #c.getText() }
-	| v:LCID 
+	| v:VAR 
 		{ ret = #v.getText() }
 	| w:WILDCARD 
 		{ ret = "_" }
@@ -552,7 +550,7 @@ stringify_term returns [ret]
 		{ ret = "[%s]" % l }
 	| #( APPL c=stringify_term a=stringify_term )
 		{ ret = "%s(%s)" % (c, a) }
-	| TRNSF
+	| TRANSF
 		{ ret = "_" }
 	| ACTION
 		{ ret = "_" }
@@ -565,14 +563,14 @@ stringify_term returns [ret]
 	;
 
 post_match_term
-	: ( INT | REAL | STR | UCID | LCID )
+	: ( INT | REAL | STR | CONS | VAR )
 	| w:WILDCARD 
 		{ self.argn += 1 }
 	| #( LIST post_match_term )
 	| #( APPL post_match_term post_match_term )
-	| #( TRNSF n=id )
+	| t:TRANSF
 		{
-            self.writeln("_[%i] = self.%s(_[%i])" % (self.argn, n, self.argn))
+            self.writeln("_[%i] = self.%s(_[%i])" % (self.argn, #t.getText(), self.argn))
             self.argn += 1
 		}
 	| a:ACTION
@@ -592,9 +590,9 @@ build_term returns [ret]
 		{ ret = "_f.makeReal(%s)" % #r.getText() }
 	| s:STR 
 		{ ret = "_f.parse(%r)" % #s.getText() }
-	| c:UCID 
+	| c:CONS 
 		{ ret = "_f.makeStr(%r)" % #c.getText() }
-	| v:LCID 
+	| v:VAR 
 //		{ ret = "_f.makeVar(%r,_f.makeWildcard())" % #v.getText() }
 		{ ret = "_k[%r]" % #v.getText() }
 	| w:WILDCARD 
@@ -607,8 +605,8 @@ build_term returns [ret]
 		{ ret = l }
 	| #( APPL c=build_term a=build_term )
 		{ ret = "_f.makeAppl(%s,%s)" % (c, a) }
-	| #( TRNSF n=id a=build_trnsf_args)
-		{ ret = "self.%s(%s)" % (n, a) }
+	| #( t:TRANSF a=build_trnsf_args)
+		{ ret = "self.%s(%s)" % (#t.getText(), a) }
 	| a:ACTION
 		{ ret = #a.getText() }
 	| NIL

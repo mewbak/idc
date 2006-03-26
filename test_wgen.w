@@ -142,7 +142,7 @@ class WalkerTestSuite:
 		;
 
 	testPredicateMethod
-		: Int(.isZero) -> Null
+		: Int(_isZero) -> Null
 		| Int(_)
 		;
 
@@ -159,7 +159,7 @@ class WalkerTestSuite:
 		;
 
 	testProductionMethod
-		: x -> .invert(x)
+		: x -> _invert(x)
 		;
 
 	{

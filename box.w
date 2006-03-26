@@ -133,7 +133,7 @@ class Term2Box:
 		;
 		
 	convert
-		: f(*a) -> H([f, "(", .convert_list(a), ")"], 0)
+		: f(*a) -> H([f, "(", _convert_list(a), ")"], 0)
 		| [] -> H(["[", "]"], 0)
 		| [h,*t] -> H(["[", "]"], 0)
 		| _
@@ -142,7 +142,7 @@ class Term2Box:
 	
 	convert_list
 		: [] -> []
-		| [h, *t] -> [.convert(h), * .convert_list(t)]
+		| [h, *t] -> [_convert(h), * _convert_list(t)]
 		;
 	
 	

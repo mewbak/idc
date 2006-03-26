@@ -15,21 +15,21 @@ import walker
 class Ir2Box:
 
 	convert
-		: .module
-		| .stmt
+		: _module
+		| _stmt
 		;
 	
 	module
-		: Module(stmts) -> V(.map(stmts, {self.stmt}), 1)
+		: Module(stmts) -> V(_map(stmts, {self_stmt}), 1)
 		;
 	
 	stmt
 		: Label(name) -> H([name,":"], 0)
-		| Assembly(opcode, operands) -> H(["asm","(", .string(opcode), H(.prefix(.map(operands, {self.expr}), ", "), 0), ")"], 0)
+		| Assembly(opcode, operands) -> H(["asm","(", _string(opcode), H(_prefix(_map(operands, {self.expr}), ", "), 0), ")"], 0)
 		;
 	
 	expr
-		: Constant(num) -> .lit2str(num)
+		: Constant(num) -> _lit2str(num)
 		| Register(reg) -> reg
 		;
 	
@@ -40,12 +40,12 @@ class Ir2Box:
 	join(s)
 		: [] -> []
 		| [h] -> [h]
-		| [h, *t] -> [h, *.prefix(t, s)]
+		| [h, *t] -> [h, *_prefix(t, s)]
 		;
 	
 	prefix(p)
 		: [] -> []
-		| [h, *t] -> [p, h, *.prefix(t, p)]
+		| [h, *t] -> [p, h, *_prefix(t, p)]
 		;
 	
 	string
