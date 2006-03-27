@@ -21,8 +21,9 @@ header "asmParser.__main__" {
     print
 
     try:
+       import ir
        import box
-       text = box.box2text(box.c2box(term))
+       text = box.box2text(ir.ir2box(term))
        print "** C pretty-print **"
        print text
        print

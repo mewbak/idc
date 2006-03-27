@@ -29,11 +29,11 @@ class Box2Text:
 	def write(self, s):
 		self._fp.write(s)
 	
-	def indent(self, i):
-		self._indent += i
+	def indent(self):
+		self._indent += 1
 	
-	def dedent(self, i):
-		self._indent -= i
+	def dedent(self):
+		self._indent -= 1
 		assert self._indent >= 0
 
 	def write_indent(self):
@@ -45,31 +45,21 @@ class Box2Text:
 	}
 	
 	write_box
-		: H(bl, hs)
+		: H(bl)
 			{
 				if $bl.getType() != aterm.LIST:
 					raise Failure
-				if $hs.getType() != aterm.INT:
-					raise Failure
-				sep = ' '*$hs.getValue()
-				first = True
 				for b in $bl:
-					if first:
-						first = False
-					else:
-						self.write(sep)
 					self.write_box(b) 
 			}
-		| V(bl, vs)
+		| V(bl)
 			{
 				if $bl.getType() != aterm.LIST:
 					raise Failure
-				if $vs.getType() != aterm.INT:
-					raise Failure
 				for b in $bl:
-					self.write_vbox(b, $vs.getValue()) 
+					self.write_vbox(b) 
 			}
-		| I(b, is)
+		| I(b)
 			{
 				sys.stderr.write("warning: indent outside vbox: %r\n" % $<)
 				self.write_box($b)
@@ -89,21 +79,18 @@ class Box2Text:
 			
 		;
 
-	write_vbox({vs})
-		: I(b, is)
+	write_vbox
+		: I(b)
 			{
-				if $is.getType() != aterm.INT:
-					raise Failure
-				self.indent($is.getValue())
-				self.write_vbox($b, vs)
-				self.dedent($is.getValue())
+				self.indent()
+				self.write_vbox($b)
+				self.dedent()
 			}
 		| b
 			{
 				self.write_indent()
 				self.write_box($b)
-				for i in range(vs):
-					self.write_eol()
+				self.write_eol()
 			}
 		;
 
@@ -154,3 +141,5 @@ def term2box(term):
 	box = boxer.convert(term)
 	return box
 }
+
+# vim:set syntax=python:

@@ -23,11 +23,9 @@ class TestCase(unittest.TestCase):
 	
 	box2TextTestCases = [
 		('"a"', 'a'),
-		('H(["a","b"],0)', 'ab'),
-		('H(["a","b"],1)', 'a b'),
-		('V(["a","b"],1)', 'a\nb\n'),
-		('V(["a","b"],2)', 'a\n\nb\n\n'),
-		('V(["a",I("b",1),"c"],1)', 'a\n\tb\nc\n'),
+		('H(["a","b"])', 'ab'),
+		('V(["a","b"])', 'a\nb\n'),
+		('V(["a",I("b"),"c"])', 'a\n\tb\nc\n'),
 	]
 	
 	def testBox2Text(self):

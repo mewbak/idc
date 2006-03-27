@@ -20,12 +20,12 @@ class Ir2Box:
 		;
 	
 	module
-		: Module(stmts) -> V(_stmt(stmts)*, 1)
+		: Module(stmts) -> V(_stmt(stmts)*)
 		;
 	
 	stmt
-		: Label(name) -> H([name,":"], 0)
-		| Assembly(opcode, operands) -> H(["asm","(", _string(opcode), H(_prefix(_expr(operands)*, ", "), 0), ")"], 0)
+		: Label(name) -> H([name,":"])
+		| Assembly(opcode, operands) -> H(["asm","(", _string(opcode), H(_prefix(_expr(operands)*, ", ")), ")"])
 		;
 	
 	expr
@@ -49,7 +49,7 @@ class Ir2Box:
 		;
 	
 	string
-		: _ -> H(["\"", _, "\""], 0)
+		: _ -> H(["\"", _, "\""])
 		;
 
 header {
