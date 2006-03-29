@@ -603,7 +603,7 @@ post_match_term
 	| #( COMMA post_match_term post_match_term )
 	| #( STAR t2:TRANSF /* TODO: handle args */ )
 		{
-            self.writeln("_[%i] = self.map(_[%i], self.%s)" % (self.argn, self.argn, #t2.getText()))
+            self.writeln("_[%i] = self._map(_[%i], self.%s)" % (self.argn, self.argn, #t2.getText()))
             self.argn += 1
 		}
 	;
@@ -639,7 +639,7 @@ build_term returns [ret]
 	| #( COMMA h=build_term t=build_term )
 		{ ret = "_f.makeConsList(%s,%s)" % (h, t) }
     | #( STAR #( t2:TRANSF ah=build_term at=build_trnsf_args ) )
-		{ ret = "self.map(%s,self.%s,%s)" % (ah, #t2.getText(), at) }
+		{ ret = "self._map(%s,self.%s,%s)" % (ah, #t2.getText(), at) }
 	;
 
 build_trnsf_args returns [ret]

@@ -44,7 +44,7 @@ class Walker:
 		
 		raise NotImplementedError
 		
-	def map(self, target, func, *args, **kargs):
+	def _map(self, target, func, *args, **kargs):
 		'''Applies the given function to every element in the target. The target must be
 		a list, and the result will also be a list.'''
 		
@@ -56,6 +56,6 @@ class Walker:
 
 		return self.factory.makeConsList(
 				func(target.getHead(), *args), 
-				self.map(target.getTail(), func, *args, **kargs)
+				self._map(target.getTail(), func, *args, **kargs)
 			)
 		
