@@ -28,9 +28,9 @@ class Walker:
 
 	def __init__(self, factory):
 		self.factory = factory
-		self.setup()
+		self._setup()
 	
-	def setup(self):
+	def _setup(self):
 		'''Called by the constructor method after setting the factory attribute to
 		perform initial setup. It may be used, for example, parse/make aterm
 		patterns.'''
