@@ -98,13 +98,8 @@ TRANSF_NAME
 	;
 	
 TRANSF
-	: '@'! TRANSF_NAME
+	: ':'! TRANSF_NAME
 	;
-
-TRANSF_ADDR
-	: '&'! TRANSF_NAME
-	;
-
 
 LSQUARE	: '[';
 RSQUARE	: ']';
@@ -122,8 +117,6 @@ COLON: ':';
 STAR: '*';
 
 PLUS: '+';
-
-ASSIGN: '=';
 
 INTO: "->";
 
@@ -284,7 +277,7 @@ term
 		{ ## = #(#[APPL,"APPL"], ##) }
 	| WILDCARD term_args
 		{ ## = #(#[APPL,"APPL"], ##) }
-	| VAR^ term_pattern
+	| VAR^ term_implicit_wildcard
 	| WILDCARD^
 	| VAR TRANSF^ transf_args ( STAR^ )?
 	| term_implicit_wildcard TRANSF^  transf_args ( STAR^ )?
@@ -302,11 +295,6 @@ extended_term
 	
 term_args
 	: LPAREN! term_list RPAREN!
-	;
-
-term_pattern
-	: term_implicit_wildcard
-	| ASSIGN! term
 	;
 
 transf_args
