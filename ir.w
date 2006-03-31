@@ -2,8 +2,6 @@
 '''
 
 header {
-import sys
-
 import aterm
 import walker
 }
@@ -12,133 +10,130 @@ class Checker:
 	'''Check the code correcteness.'''
 
 	module
-		: Module(_stmt*)
-		#| fail
+		: Module(@stmt*)
+		| @fail
 		;
 	
 	stmt
-		: VarDef(_type, _name, _expr)
-		| FuncDef(_type, _name, _arg*)
-		| Assign(_type, _expr, _expr) # dst src
-		| If(_expr, _stmt, _stmt)
-		| While(_expr, _stmt)
-		| Ret(_type, _expr)
-		| Label(_name)
-		| Branch(_addr) # label
-		| Block(_stmt*)
+		: VarDef(@type, @name, @expr)
+		| FuncDef(@type, @name, @arg*)
+		| Assign(@type, @expr, @expr) # dst src
+		| If(@expr, @stmt, @stmt)
+		| While(@expr, @stmt)
+		| Ret(@type, @expr)
+		| Label(@name)
+		| Branch(@addr) # label
+		| Block(@stmt*)
 		| NoOp
-		| fail
+		| @fail
 		;
 	
 	type
-		: Integer(_size, _sign)
-		| Float(_size)
-		| Char(_size)
-		#| String(_size)
-		| Pointer(_size)
-		| Array(_type)
-		| fail
+		: Integer(@size, @sign)
+		| Float(@size)
+		| Char(@size)
+		#| String(@size)
+		| Pointer(@size)
+		| Array(@type)
+		| @fail
 		;
 		
 	sign
 		: Signed
 		| Unsigned
-		| fail
+		| @fail
 		;
 	
 	expr
 		: True
 		| False
-		| Literal(_type, _value)
-		| Symbol(_name)
-		| Cast(_type, _expr)
-		| Unary(_unaryOp, _expr)
-		| Binary(_binaryOp, _expr, expr)
-		| Cond(_expr, _expr, _expr)
-		| Call(_addr, _expr*)
-		| Addr(_expr)
-		| Reference(_addr)
+		| Literal(@type, @value)
+		| Symbol(@name)
+		| Cast(@type, @expr)
+		| Unary(@unaryOp, @expr)
+		| Binary(@binaryOp, @expr, expr)
+		| Cond(@expr, @expr, @expr)
+		| Call(@addr, @expr*)
+		| Addr(@expr)
+		| Reference(@addr)
 		| Register(name)
-		| fail
+		| @fail
 		;
 
 	addr
-		: _expr
-		| fail
+		: @expr
+		| @fail
 		;
 	
 	unaryOp
 		: Not
-		| BitNot(_size)
-		| Neg(_type)
-		| fail
+		| BitNot(@size)
+		| Neg(@type)
+		| @fail
 		;
 
 	binaryOp
 		: And
 		| Or
 		
-		| BitAnd(_size)
-		| BitOr(_size)
-		| BitXor(_size)
-		| LShift(_size)
-		| RShift(_size)
+		| BitAnd(@size)
+		| BitOr(@size)
+		| BitXor(@size)
+		| LShift(@size)
+		| RShift(@size)
 		
-		| Plus(_type)
-		| Minus(_type)
-		| Mult(_type)
-		| Div(_type)
-		| Mod(_type)
+		| Plus(@type)
+		| Minus(@type)
+		| Mult(@type)
+		| Div(@type)
+		| Mod(@type)
 		
-		| Eq(_type)
-		| NotEq(_type)
-		| Lt(_type)
-		| LtEq(_type)
-		| Gt(_type)
-		| GtEq(_type)
+		| Eq(@type)
+		| NotEq(@type)
+		| Lt(@type)
+		| LtEq(@type)
+		| Gt(@type)
+		| GtEq(@type)
 
-		| fail
+		| @fail
 		;
 
 	name	
 		: n { $n.getType() == aterm.STR }?
-		| fail
+		| @fail
 		;
 
 	size
 		: s  { $n.getType() == aterm.INT }?
-		| fail
+		| @fail
 		;
 
 {
-	def fail(self, target, expected):
-		msg = 'error: a %s expected, but %r found\n' % (expected.getValue(), target)
-		sys.stderr.write(msg)
+	def fail(self, target):
+		msg = 'error: %r unexpected\n' % target
 		raise Failure, msg
 	
 }
-		
-		 	
 
 
 class PrettyPrinter:
 
 	convert
-		: _module
-		| _stmt
+		: @module
+		| @stmt
 		;
 	
 	module
-		: Module(stmts) -> V(_stmt(stmts)*)
+		: Module(stmts) -> V(@stmt(stmts)*)
 		;
 	
 	stmt
 		: Label(name) -> H([name,":"])
-		| Assembly(opcode, operands) -> H(["asm","(", _string(opcode), H(_prefix(_expr(operands)*, ", ")), ")"])
+		| Assembly(opcode, operands) -> H(["asm","(", @string(opcode), H(@prefix(@expr(operands)*, ", ")), ")"])
 		;
 	
 	expr
-		: Constant(num) -> _lit2str(num)
+		: Constant(num) -> @lit2str(num)
 		| Register(reg) -> reg
 		;
 	
@@ -149,12 +144,12 @@ class PrettyPrinter:
 	join(s)
 		: [] -> []
 		| [h] -> [h]
-		| [h, *t] -> [h, *_prefix(t, s)]
+		| [h, *t] -> [h, *@prefix(t, s)]
 		;
 	
 	prefix(p)
 		: [] -> []
-		| [h, *t] -> [p, h, *_prefix(t, p)]
+		| [h, *t] -> [p, h, *@prefix(t, p)]
 		;
 	
 	string

@@ -142,9 +142,9 @@ class WalkerTestSuite:
 		;
 
 	testPredicateMethod
-		: TestOne(_isZero) -> True
+		: TestOne(@isZero) -> True
 		| TestOne(_) -> False
-		| TestAll(_isZero*) -> True
+		| TestAll(@isZero*) -> True
 		| TestAll(_) -> False
 		;
 
@@ -165,8 +165,8 @@ class WalkerTestSuite:
 		;
 
 	testProductionMethod
-		: TestOne(x) -> _negate(x)
-		| TestAll(x) -> _negate(x)*
+		: TestOne(x) -> @negate(x)
+		| TestAll(x) -> @negate(x)*
 		;
 
 	{
