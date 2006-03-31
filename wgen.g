@@ -280,13 +280,19 @@ term
 		{ ## = #(#[APPL,"APPL"], #[CONS,""], ##) }
 	| CONS ( (LPAREN) => term_args | term_nil_list)
 		{ ## = #(#[APPL,"APPL"], ##) }
-	|! VAR args:term_args
-		{ ## = #(#[APPL,"APPL"], #(#VAR, #[WILDCARD,"_"]), #args) }
+	| VAR term_args
+		{ ## = #(#[APPL,"APPL"], ##) }
 	| WILDCARD term_args
 		{ ## = #(#[APPL,"APPL"], ##) }
 	| VAR^ term_pattern
 	| WILDCARD^
-	| TRANSF^ transf_args ( STAR^ )?
+	| VAR TRANSF^ transf_args ( STAR^ )?
+	| term_implicit_wildcard TRANSF^  transf_args ( STAR^ )?
+	;
+
+term_implicit_wildcard
+	:
+		{ ## = #(#[WILDCARD,"_"]) }
 	;
 
 extended_term
@@ -299,8 +305,7 @@ term_args
 	;
 
 term_pattern
-	:
-		{ ## = #(#[WILDCARD,"_"]) }
+	: term_implicit_wildcard
 	| ASSIGN! term
 	;
 
@@ -596,12 +601,10 @@ stringify_term returns [ret]
 		{ ret = "[%s]" % l }
 	| #( APPL c=stringify_term a=stringify_term_list )
 		{ ret = "%s(%s)" % (c, a) }
-	| TRANSF
-		{ ret = "_" }
+	| #( TRANSF ret=stringify_term )
 	| ACTION
 		{ ret = "_" }
-	| STAR
-		{ ret = "_" }
+	| #( STAR ret=stringify_term)
 	;
 
 stringify_term_list returns [ret]
@@ -621,10 +624,9 @@ post_match_term
 		{ self.argn += 1 }
 	| #( LIST post_match_term )
 	| #( APPL post_match_term post_match_term )
-	| t:TRANSF // TODO: handle args
+	| #(t:TRANSF tgt=post_match_term_transf_target) // TODO: handle args
 		{
-            self.writeln("_[%i] = self.%s(_[%i])" % (self.argn, #t.getText(), self.argn))
-            self.argn += 1
+            self.writeln("%s = self.%s(%s)" % (tgt, #t.getText(), tgt))
 		}
 	| a:ACTION
 		{
@@ -634,12 +636,19 @@ post_match_term
 		}
 	| NIL
 	| #( COMMA post_match_term post_match_term )
-	| #( STAR t2:TRANSF /* TODO: handle args */ )
+	| #( STAR #( t2:TRANSF tgt=post_match_term_transf_target /* TODO: handle args */ ) )
 		{
-            self.writeln("_[%i] = self._map(_[%i], self.%s)" % (self.argn, self.argn, #t2.getText()))
-            self.argn += 1
+            self.writeln("%s = self._map(%s, self.%s)" % (tgt, tgt, #t2.getText()))
 		}
 	;
+
+post_match_term_transf_target returns [ret]
+	: v:VAR
+		{ ret = "_k[%r]" % #v.getText() }
+	| WILDCARD
+		{ ret = "_[%i]" % self.argn }
+		{ self.argn += 1 }
+	;	
 
 build_term returns [ret]
 	: i:INT 
@@ -663,7 +672,7 @@ build_term returns [ret]
 		{ ret = l }
 	| #( APPL c=build_term a=build_term )
 		{ ret = "_f.makeAppl(%s,%s)" % (c, a) }
-	| #( t:TRANSF a=build_trnsf_args)
+	| #( t:TRANSF . a=build_trnsf_args)
 		{ ret = "self.%s(%s)" % (#t.getText(), a) }
 	| a:ACTION
 		{ ret = #a.getText() }
@@ -671,7 +680,7 @@ build_term returns [ret]
 		{ ret = "_f.makeNilList()" }
 	| #( COMMA h=build_term t=build_term )
 		{ ret = "_f.makeConsList(%s,%s)" % (h, t) }
-    | #( STAR #( t2:TRANSF ah=build_term at=build_trnsf_args ) )
+    | #( STAR #( t2:TRANSF . ah=build_term at=build_trnsf_args ) )
 		{ ret = "self._map(%s,self.%s,%s)" % (ah, #t2.getText(), at) }
 	;
 

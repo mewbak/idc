@@ -10,20 +10,20 @@ class Checker:
 	'''Check the code correcteness.'''
 
 	module
-		: Module(@stmt*)
+		: Module(stmts@stmt*)
 		| @fail
 		;
 	
 	stmt
-		: VarDef(@type, @name, @expr)
-		| FuncDef(@type, @name, @arg*)
-		| Assign(@type, @expr, @expr) # dst src
+		: VarDef(type@type, name@name, value@expr)
+		| FuncDef(type@type, name@name, args@arg*)
+		| Assign(@type, dest@expr, src@expr)
 		| If(@expr, @stmt, @stmt)
 		| While(@expr, @stmt)
 		| Ret(@type, @expr)
 		| Label(@name)
-		| Branch(@addr) # label
-		| Block(@stmt*)
+		| Branch(label@addr)
+		| Block(stmts@stmt*)
 		| NoOp
 		| @fail
 		;
