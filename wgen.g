@@ -91,9 +91,20 @@ options { testLiterals = true; }
     : ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
 
-TRANSF
-	: '@'! ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+
+protected
+TRANSF_NAME
+	: ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
 	;
+	
+TRANSF
+	: '@'! TRANSF_NAME
+	;
+
+TRANSF_ADDR
+	: '&'! TRANSF_NAME
+	;
+
 
 LSQUARE	: '[';
 RSQUARE	: ']';
@@ -232,19 +243,19 @@ block
 	;
 
 alternative
-	: ( predicate )* ( INTO ( production )* )?
+	: 
+		( predicate )* 	debug_term 	( predicate )* 
+		( INTO ( production )* debug_term ( production )* )?
 		{ ## = #(#[ALTERNATIVE,"ALTERNATIVE"], ##) }
 	;
 
 predicate
-	: ( SEMPRED ) => SEMPRED
-	| ( ACTION ) => ACTION
-	| debug_term
+	: SEMPRED
+	| ACTION
 	;
 
 production
-	: ( ACTION ) => ACTION
-	| debug_term
+	: ACTION
 	;
 
 debug_term
@@ -265,40 +276,63 @@ term
 	| STR^
 	| LSQUARE! term_list RSQUARE!
 		{ ## = #(#[LIST,"LIST"], ##) }
-	| LPAREN! term_list RPAREN!
+	| term_args
 		{ ## = #(#[APPL,"APPL"], #[CONS,""], ##) }
-	| CONS opt_args
+	| CONS ( (LPAREN) => term_args | term_nil_list)
 		{ ## = #(#[APPL,"APPL"], ##) }
-	|
-		( VAR | WILDCARD )
-		( (LPAREN) => LPAREN! term_list RPAREN!
-			{ ## = #(#[APPL,"APPL"], ##) }	
-		)?
-	| TRANSF^ 
-		( ( LPAREN ) => LPAREN! ( term ( COMMA! term )* )? RPAREN! )?
-		( STAR^ )?
-	| ACTION^
+	|! VAR args:term_args
+		{ ## = #(#[APPL,"APPL"], #(#VAR, #[WILDCARD,"_"]), #args) }
+	| WILDCARD term_args
+		{ ## = #(#[APPL,"APPL"], ##) }
+	| VAR^ term_pattern
+	| WILDCARD^
+	| TRANSF^ transf_args ( STAR^ )?
 	;
 
-opt_args
-	: (LPAREN) => LPAREN! term_list RPAREN!
-	| nil
+extended_term
+	: term
+	| ACTION^
 	;
 	
-nil
+term_args
+	: LPAREN! term_list RPAREN!
+	;
+
+term_pattern
+	:
+		{ ## = #(#[WILDCARD,"_"]) }
+	| ASSIGN! term
+	;
+
+transf_args
+	: LPAREN! ( transf_arg ( COMMA! transf_arg )* )? RPAREN!
+	| 
+	;
+
+transf_arg
+	: extended_term
+	| TRANSF_ADDR^
+	;
+
+term_opt_args
+	: ( LPAREN ) => LPAREN! term_list RPAREN!
+	| term_nil_list
+	;
+	
+term_nil_list
 	:
 		{ ## = #(#[NIL,"NIL"]) }	
 	;
 
 term_list
-	: nil
-	| term ( COMMA! term_list | nil )
+	: term_nil_list
+	| extended_term ( COMMA! term_list | term_nil_list )
 		{ ## = #(#[COMMA,","], ##) }	
-	| STAR! opt_wildcard
+	| STAR! term_opt_wildcard
 	;
 	
-opt_wildcard
-	: term
+term_opt_wildcard
+	: extended_term
 	|
 		{ ## = #(#[WILDCARD,"_"]) }	
 	;
@@ -306,7 +340,6 @@ opt_wildcard
 id
 	: CONS
 	| VAR
-	| TRANSF
 	;
 
 
@@ -617,8 +650,8 @@ build_term returns [ret]
 		{ ret = "_f.parse(%r)" % #s.getText() }
 	| c:CONS 
 		{ ret = "_f.makeStr(%r)" % #c.getText() }
-	| v:VAR 
-//		{ ret = "_f.makeVar(%r,_f.makeWildcard())" % #v.getText() }
+	| v:VAR // p=build_term
+//		{ ret = "_f.makeVar(%r,%s)" % (#v.getText(), p) }
 		{ ret = "_k[%r]" % #v.getText() }
 	| w:WILDCARD 
 //		{ ret = "_f.makeWildcard()" }
