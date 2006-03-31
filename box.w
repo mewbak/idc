@@ -45,17 +45,13 @@ class Box2Text:
 	}
 	
 	write_box
-		: H(bl)
+		: H(bl:_list)
 			{
-				if $bl.getType() != aterm.LIST:
-					raise Failure
 				for b in $bl:
 					self.write_box(b) 
 			}
-		| V(bl)
+		| V(bl:_list)
 			{
-				if $bl.getType() != aterm.LIST:
-					raise Failure
 				for b in $bl:
 					self.write_vbox(b) 
 			}
@@ -64,19 +60,10 @@ class Box2Text:
 				sys.stderr.write("warning: indent outside vbox: %r\n" % $<)
 				self.write_box($b)
 			}
-		| s
+		| s:_str
 			{
-				if $s.getType() != aterm.STR:
-					raise Failure
 				self.write($s.getValue())
 			}
-		| _
-			{
-				import sys
-				sys.stderr.write("error: bad box: %r\n" % $<)
-				raise Failure
-			}
-			
 		;
 
 	write_vbox

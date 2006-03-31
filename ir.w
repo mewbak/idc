@@ -24,12 +24,14 @@ class Checker:
 		| Label(:name)
 		| Branch(label:addr)
 		| Block(stmts:stmt*)
+		| Break
+		| Continue
 		| NoOp
 		| :fail
 		;
 	
 	arg
-		: (:type, :name)
+		: ArgDef(:type, :name)
 		;
 		
 	type
@@ -104,12 +106,12 @@ class Checker:
 		;
 
 	name	
-		: n { $n.getType() == aterm.STR }?
+		: n:_str
 		| :fail
 		;
 
 	size
-		: s  { $n.getType() == aterm.INT }?
+		: s:_int
 		| :fail
 		;
 
@@ -129,12 +131,15 @@ class PrettyPrinter:
 		;
 	
 	module
-		: Module(stmts) -> V(:stmt(stmts)*)
+		: Module(stmts) 
+			-> V(:stmt(stmts)*)
 		;
 	
 	stmt
-		: Label(name) -> H([name,":"])
-		| Assembly(opcode, operands) -> H(["asm","(", :string(opcode), H(:prefix(:expr(operands)*, ", ")), ")"])
+		: Label(name) 
+			-> H([name,":"])
+		| Assembly(opcode, operands) 
+			-> H(["asm","(", :string(opcode), H(:prefix(:expr(operands)*, ", ")), ")"])
 		;
 	
 	expr

@@ -20,7 +20,18 @@ import aterm
 class Failure(Exception):
 	'''Failure to transform a term.'''
 	
-	pass
+	def __init__(self, msg = None, *args):
+		Exception.__init__(self, *args)
+		self.msg = msg
+	
+	def __str__(self):
+		if self.msg is None:
+			return Exception.__str(self)
+		else:
+			if len(self.args):
+				return self.msg % self.args
+			else:
+				return self.msg
 
 
 class Walker:
@@ -43,13 +54,42 @@ class Walker:
 		lifetime. May not be implemented for every walkers.'''
 		
 		raise NotImplementedError
-		
+
+	def _int(self, target):
+		'''Enforce the target is an integer term.'''
+		if target.getType() != aterm.INT:
+			raise Failure("'%r' is not an integer term", target)
+		return target
+	
+	def _real(self, target):
+		'''Enforce the target is a real term.'''
+		if target.getType() != aterm.REAL:
+			raise Failure("'%r' is not a real term", target)
+		return target
+	
+	def _str(self, target):
+		'''Enforce the target is a string term.'''
+		if target.getType() != aterm.STR:
+			raise Failure("'%r' is not a string term", target)
+		return target
+	
+	def _list(self, target):
+		'''Enforce the target is a list term.'''
+		if target.getType() != aterm.LIST:
+			raise Failure("'%r' is not a list term", target)
+		return target
+	
+	def _appl(self, target):
+		'''Enforce the target is an application term.'''
+		if target.getType() != aterm.APPL:
+			raise Failure("'%r' is not an application term", target)
+		return target
+	
 	def _map(self, target, func, *args, **kargs):
 		'''Applies the given function to every element in the target. The target must be
 		a list, and the result will also be a list.'''
 		
-		if target.getType() != aterm.LIST:
-			raise Failure
+		self._list(target)
 
 		if target.isEmpty():
 			return target

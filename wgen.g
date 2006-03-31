@@ -466,7 +466,7 @@ rule
 		( alternative )+
 		    {
                 self.writeln()
-                self.writeln("raise Failure")
+                self.writeln("raise Failure(\"failed to transform '%r' in " + n + "\", _t)")
                 self.dedent()
 		    }
 	  )
