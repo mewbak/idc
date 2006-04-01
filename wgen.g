@@ -237,8 +237,8 @@ block
 
 alternative
 	: 
-		( predicate )* 	debug_term 	( predicate )* 
-		( INTO ( production )* debug_term ( production )* )?
+		( predicate )* 	debug_term[True] ( predicate )* 
+		( INTO ( production )* debug_term[False] ( production )* )?
 		{ ## = #(#[ALTERNATIVE,"ALTERNATIVE"], ##) }
 	;
 
@@ -251,8 +251,8 @@ production
 	: ACTION
 	;
 
-debug_term
-	: t:term
+debug_term[matching]
+	: t:term[matching]
 		{
             if self.debug:
                 import sys
@@ -263,24 +263,35 @@ debug_term
 	;
 
 // TODO: support variable assignments
-term
-	: INT^
-	| REAL^
-	| STR^
-	| LSQUARE! term_list RSQUARE!
+term[matching]
+	: INT
+	| REAL
+	| STR
+	| LSQUARE! term_list[matching] RSQUARE!
 		{ ## = #(#[LIST,"LIST"], ##) }
-	| term_args
+	| term_args[matching]
 		{ ## = #(#[APPL,"APPL"], #[CONS,""], ##) }
-	| CONS ( (LPAREN) => term_args | term_nil_list)
+	| CONS ( (LPAREN) => term_args[matching] | term_nil_list)
 		{ ## = #(#[APPL,"APPL"], ##) }
-	| VAR term_args
+	| VAR term_args[matching]
 		{ ## = #(#[APPL,"APPL"], ##) }
-	| WILDCARD term_args
+	| WILDCARD term_args[matching]
 		{ ## = #(#[APPL,"APPL"], ##) }
-	| VAR^ term_implicit_wildcard
-	| WILDCARD^
-	| VAR ( TRANSF^ | TRANSF_MAP^) transf_args
-	| term_implicit_wildcard ( TRANSF^ | TRANSF_MAP^) transf_args
+	| VAR
+	| WILDCARD
+	| { matching }? VAR ( TRANSF^ | TRANSF_MAP^) ( transf_args )?
+	|
+		{
+            if matching:
+                ## = #(#[WILDCARD,"_"])
+		}
+		( t:TRANSF^ | TRANSF_MAP^) 
+		( transf_args | 
+		{
+            if not matching:
+                #t.setType(TRANSF_ADDR)
+		}
+		)
 	;
 
 term_implicit_wildcard
@@ -288,27 +299,21 @@ term_implicit_wildcard
 		{ ## = #(#[WILDCARD,"_"]) }
 	;
 
-extended_term
-	: term
+extended_term[matching]
+	: term[matching]
 	| ACTION^
 	;
 	
-term_args
-	: LPAREN! term_list RPAREN!
+term_args[matching]
+	: LPAREN! term_list[matching] RPAREN!
 	;
 
 transf_args
-	: LPAREN! ( transf_arg ( COMMA! transf_arg )* )? RPAREN!
-	| 
+	: LPAREN! ( extended_term[False] ( COMMA! extended_term[False] )* )? RPAREN!
 	;
 
-transf_arg
-	: extended_term
-	| TRANSF_ADDR^
-	;
-
-term_opt_args
-	: ( LPAREN ) => LPAREN! term_list RPAREN!
+term_opt_args[matching]
+	: ( LPAREN ) => LPAREN! term_list[matching] RPAREN!
 	| term_nil_list
 	;
 	
@@ -317,15 +322,15 @@ term_nil_list
 		{ ## = #(#[NIL,"NIL"]) }	
 	;
 
-term_list
+term_list[matching]
 	: term_nil_list
-	| extended_term ( COMMA! term_list | term_nil_list )
+	| extended_term[matching] ( COMMA! term_list[matching] | term_nil_list )
 		{ ## = #(#[COMMA,","], ##) }	
-	| STAR! term_opt_wildcard
+	| STAR! term_opt_wildcard[matching]
 	;
 	
-term_opt_wildcard
-	: extended_term
+term_opt_wildcard[matching]
+	: extended_term[matching]
 	|
 		{ ## = #(#[WILDCARD,"_"]) }	
 	;
@@ -613,13 +618,13 @@ post_match_term
 		{ self.argn += 1 }
 	| #( LIST post_match_term )
 	| #( APPL post_match_term post_match_term )
-	| #( t:TRANSF tgt=post_match_term_transf_target /* TODO: handle args */ )
+	| #( t:TRANSF tgt=post_match_term_transf_target args=build_trnsf_args )
 		{
-            self.writeln("%s = self.%s(%s)" % (tgt, #t.getText(), tgt))
+            self.writeln("%s = self.%s(%s,%s)" % (tgt, #t.getText(), tgt, args))
 		}
-	| #( tm:TRANSF_MAP tgt=post_match_term_transf_target /* TODO: handle args */ )
+	| #( tm:TRANSF_MAP tgt=post_match_term_transf_target args=build_trnsf_args )
 		{
-            self.writeln("%s = self._map(%s, self.%s)" % (tgt, tgt, #tm.getText()))
+            self.writeln("%s = self._map(%s,self.%s,%s)" % (tgt, tgt, #tm.getText(), args))
 		}
 	| a:ACTION
 		{
@@ -648,8 +653,8 @@ build_term returns [ret]
 		{ ret = "_f.parse(%r)" % #s.getText() }
 	| c:CONS 
 		{ ret = "_f.makeStr(%r)" % #c.getText() }
-	| v:VAR // p=build_term
-//		{ ret = "_f.makeVar(%r,%s)" % (#v.getText(), p) }
+	| v:VAR
+//		{ ret = "_f.makeVar(%r,_f.makeWildcard())" % #v.getText() }
 		{ ret = "_k[%r]" % #v.getText() }
 	| w:WILDCARD 
 //		{ ret = "_f.makeWildcard()" }
@@ -661,9 +666,9 @@ build_term returns [ret]
 		{ ret = l }
 	| #( APPL c=build_term a=build_term )
 		{ ret = "_f.makeAppl(%s,%s)" % (c, a) }
-	| #( t:TRANSF . a=build_trnsf_args)
+	| #( t:TRANSF a=build_trnsf_args)
 		{ ret = "self.%s(%s)" % (#t.getText(), a) }
-	| #( tm:TRANSF_MAP . ah=build_term at=build_trnsf_args )
+	| #( tm:TRANSF_MAP ah=build_term at=build_trnsf_args )
 		{ ret = "self._map(%s,self.%s,%s)" % (ah, #tm.getText(), at) }
 	| a:ACTION
 		{ ret = #a.getText() }
