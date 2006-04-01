@@ -21,13 +21,16 @@ options {
 class wgenLexer extends Lexer;
 
 options {
-	k = 3;
+	k = 2;
 	testLiterals = false;
 }
 
 tokens {
 	HEADER = "header";
 	CLASS = "class";
+	TRANSF_MAP;
+	INT;
+	REAL;
 }
 
 protected
@@ -79,7 +82,7 @@ options {generateAmbigWarnings = false;}
 
 protected
 ESC
-    :   '\\' ( EOL | . )
+    : '\\' ( EOL | . )
     ;
 
 CONS
@@ -91,14 +94,11 @@ options { testLiterals = true; }
     : ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
 
-
-protected
-TRANSF_NAME
-	: ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-	;
-	
 TRANSF
-	: ':'! TRANSF_NAME
+	:
+		':'! 
+		('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
+		('*'! { $setType(TRANSF_MAP); } )?
 	;
 
 LSQUARE	: '[';
@@ -279,8 +279,8 @@ term
 		{ ## = #(#[APPL,"APPL"], ##) }
 	| VAR^ term_implicit_wildcard
 	| WILDCARD^
-	| VAR TRANSF^ transf_args ( STAR^ )?
-	| term_implicit_wildcard TRANSF^  transf_args ( STAR^ )?
+	| VAR ( TRANSF^ | TRANSF_MAP^) transf_args
+	| term_implicit_wildcard ( TRANSF^ | TRANSF_MAP^) transf_args
 	;
 
 term_implicit_wildcard
@@ -563,13 +563,14 @@ is_static_term returns [ret]
 		{ ret = c and a }
 	| TRANSF 
 		{ ret = False }
+	| TRANSF_MAP
+		{ ret = False }
 	| ACTION
 		{ ret = False }
 	| NIL
 		{ ret = True }
 	| #( COMMA h=is_static_term t=is_static_term )
 		{ ret = h and t }
-	| #( STAR ret=is_static_term )
 	;
 
 stringify_term returns [ret]
@@ -590,9 +591,9 @@ stringify_term returns [ret]
 	| #( APPL c=stringify_term a=stringify_term_list )
 		{ ret = "%s(%s)" % (c, a) }
 	| #( TRANSF ret=stringify_term )
+	| #( TRANSF_MAP ret=stringify_term )
 	| ACTION
 		{ ret = "_" }
-	| #( STAR ret=stringify_term)
 	;
 
 stringify_term_list returns [ret]
@@ -612,9 +613,13 @@ post_match_term
 		{ self.argn += 1 }
 	| #( LIST post_match_term )
 	| #( APPL post_match_term post_match_term )
-	| #(t:TRANSF tgt=post_match_term_transf_target) // TODO: handle args
+	| #( t:TRANSF tgt=post_match_term_transf_target /* TODO: handle args */ )
 		{
             self.writeln("%s = self.%s(%s)" % (tgt, #t.getText(), tgt))
+		}
+	| #( tm:TRANSF_MAP tgt=post_match_term_transf_target /* TODO: handle args */ )
+		{
+            self.writeln("%s = self._map(%s, self.%s)" % (tgt, tgt, #tm.getText()))
 		}
 	| a:ACTION
 		{
@@ -624,10 +629,6 @@ post_match_term
 		}
 	| NIL
 	| #( COMMA post_match_term post_match_term )
-	| #( STAR #( t2:TRANSF tgt=post_match_term_transf_target /* TODO: handle args */ ) )
-		{
-            self.writeln("%s = self._map(%s, self.%s)" % (tgt, tgt, #t2.getText()))
-		}
 	;
 
 post_match_term_transf_target returns [ret]
@@ -662,14 +663,14 @@ build_term returns [ret]
 		{ ret = "_f.makeAppl(%s,%s)" % (c, a) }
 	| #( t:TRANSF . a=build_trnsf_args)
 		{ ret = "self.%s(%s)" % (#t.getText(), a) }
+	| #( tm:TRANSF_MAP . ah=build_term at=build_trnsf_args )
+		{ ret = "self._map(%s,self.%s,%s)" % (ah, #tm.getText(), at) }
 	| a:ACTION
 		{ ret = #a.getText() }
 	| NIL
 		{ ret = "_f.makeNilList()" }
 	| #( COMMA h=build_term t=build_term )
 		{ ret = "_f.makeConsList(%s,%s)" % (h, t) }
-    | #( STAR #( t2:TRANSF . ah=build_term at=build_trnsf_args ) )
-		{ ret = "self._map(%s,self.%s,%s)" % (ah, #t2.getText(), at) }
 	;
 
 build_trnsf_args returns [ret]

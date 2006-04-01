@@ -166,7 +166,7 @@ class WalkerTestSuite:
 
 	testProductionMethod
 		: TestOne(x) -> :negate(x)
-		| TestAll(x) -> :negate(x)*
+		| TestAll(x) -> :negate*(x)
 		;
 
 	{

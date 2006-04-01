@@ -132,14 +132,14 @@ class PrettyPrinter:
 	
 	module
 		: Module(stmts) 
-			-> V(:stmt(stmts)*)
+			-> V(:stmt*(stmts))
 		;
 	
 	stmt
 		: Label(name) 
 			-> H([name,":"])
 		| Assembly(opcode, operands) 
-			-> H(["asm","(", :string(opcode), H(:prefix(:expr(operands)*, ", ")), ")"])
+			-> H(["asm","(", :string(opcode), H(:prefix(:expr*(operands), ", ")), ")"])
 		;
 	
 	expr
