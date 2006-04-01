@@ -44,20 +44,31 @@ class TestCase(unittest.TestCase):
 					msg = '%s(%s) = %r (%r expected)' % (methodName, inputStr, output, expectedOutput)
 			)
 
-	prettyPrinterTestCases = [
-		('Label("a")', 'a:'),
-		('Assembly("ret",[])', 'asm("ret")'),
-		('Assembly("mov",[Register("ax"), Constant(1234)])', 'asm("mov", ax, 1234)'),
-	]
+	prettyPrinterTestCases = {
+		'expr': [
+			('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Symbol("x"))', '(1)+(x)'),
+		],
+		
+		'stmt': [
+			('Label("label")', 'label:'),
+			('Assembly("ret",[])', 'asm("ret");'),
+			('Assembly("mov",[Register("ax"), Constant(1234)])', 'asm("mov", ax, 1234);'),
+		],
+		
+		
+	}
 	
 	def testPrettyPrinter(self):
-		for inputStr, expectedOutput in self.prettyPrinterTestCases:
-			input = self.factory.parse(inputStr)
-		
-			boxes = ir.prettyPrint(input)
-			output = box.box2text(boxes)
+		for methodName, subTestCases in self.prettyPrinterTestCases.iteritems():
+			for inputStr, expectedOutput in subTestCases:
+				input = self.factory.parse(inputStr)
 			
-			self.failUnlessEqual(output, expectedOutput)
+				printer = ir.PrettyPrinter(self.factory)
+				boxes = getattr(printer, methodName)(input)
+				
+				output = box.box2text(boxes)
+				
+				self.failUnlessEqual(output, expectedOutput)
 
 
 if __name__ == '__main__':

@@ -7,19 +7,18 @@ import walker
 }
 
 class Checker:
-	'''Check the code correcteness.'''
+	'''Check the code correctness.'''
 
 	module
 		: Module(stmts:stmt*)
-		| :fail
 		;
 	
 	stmt
 		: VarDef(:type, :name, :expr)
 		| FuncDef(:type, :name, :arg*)
 		| Assign(:type, dst:expr, src:expr)
-		| If(:expr, true:stmt, false:stmt)
-		| While(:expr, :stmt)
+		| If(cond:expr, ifTrue:stmt, ifFalse:stmt)
+		| While(cond:expr, :stmt)
 		| Ret(:type, :expr)
 		| Label(:name)
 		| Branch(label:addr)
@@ -27,7 +26,6 @@ class Checker:
 		| Break
 		| Continue
 		| NoOp
-		| :fail
 		;
 	
 	arg
@@ -35,48 +33,43 @@ class Checker:
 		;
 		
 	type
-		: Integer(:size, :sign)
+		: Int(:size, :sign)
 		| Float(:size)
 		| Char(:size)
 		#| String(:size)
 		| Pointer(:size,:type)
 		| Array(:type)
 		| Void
-		| :fail
 		;
 		
 	sign
 		: Signed
 		| Unsigned
-		| :fail
 		;
 	
 	expr
 		: True
 		| False
-		| Literal(:type, :value)
+		| Lit(:type, :value)
 		| Symbol(:name)
 		| Cast(:type, :expr)
 		| Unary(:unaryOp, :expr)
 		| Binary(:binaryOp, :expr, expr)
-		| Cond(:expr, :expr, :expr)
-		| Call(:addr, :expr*)
+		| Cond(:expr, onTrue:expr, onFalse:expr)
+		| Call(:addr, args:expr*)
 		| Addr(:expr)
 		| Reference(:addr)
 		| Register(name)
-		| :fail
 		;
 
 	addr
 		: :expr
-		| :fail
 		;
 	
 	unaryOp
 		: Not
 		| BitNot(:size)
 		| Neg(:type)
-		| :fail
 		;
 
 	binaryOp
@@ -102,25 +95,15 @@ class Checker:
 		| Gt(:type)
 		| GtEq(:type)
 
-		| :fail
 		;
 
 	name	
 		: n:_str
-		| :fail
 		;
 
 	size
 		: s:_int
-		| :fail
 		;
-
-{
-	def fail(self, target):
-		msg = 'error: %r unexpected\n' % target
-		raise Failure, msg
-	
-}
 
 
 class PrettyPrinter:
@@ -134,23 +117,165 @@ class PrettyPrinter:
 		: Module(stmts) 
 			-> V(:stmt*(stmts))
 		;
-	
+
 	stmt
-		: Label(name) 
+		: VarDef(type, name, value)
+		| FuncDef(type, name, args)
+		| Assign(type, dst, src)
+			-> :semi(H([:expr(dst)," ","="," ",:expr(src)]))
+		| If(cond, ifTrue, NoOp)
+			-> V([
+				H([:kw("if"),"(",:expr(cond),")"]),
+				:block(ifTrue)
+			])
+		| If(cond:expr, ifTrue, ifFalse)
+			-> V([
+				H([:kw("if"),"(",:expr(cond),")"]),
+				:block(ifTrue),
+				:kw("else"),
+				:block(ifFalse)
+			])
+		| While(cond, stmt)
+			-> V([
+				H([:kw("while"),"(",:expr(cond),")"]),
+				:block(stmt)
+			])
+		| Ret(type, value)
+			-> :semi(H([:kw("return"), " ", :expr(value)]))
+		| Label(name:_str)
 			-> H([name,":"])
+		| Branch(label)
+			-> :semi(H([:kw("goto"), " ", :expr(label)]))
+		| Block(stmts)
+			-> V(["{",I(:stmt*(stmts)),"}"])
+		| Break
+			-> :semi(:kw("break"))
+		| Continue
+			-> :semi(:kw("continue"))
 		| Assembly(opcode, operands) 
-			-> H(["asm","(", :string(opcode), H(:prefix(:expr*(operands), ", ")), ")"])
+			-> :semi(H([:kw("asm"),"(", :commas([:repr(opcode), *:expr*(operands)]), ")"]))
+		| :_fatal("bad statement")
 		;
 	
+	block
+		: Block(stmts) 
+			-> V(["{",I(:stmt*(stmts)),"}"])
+		| stmt 
+			-> I(:stmt(stmt))
+		;
+		
+	semi
+		: stmt -> H([stmt, ";"])
+		;
+		
+	arg
+		: ArgDef(:type, :name)
+		;
+
+	type
+		: Int(size, sign)
+			-> H([:sign(sign), " ", :integerSize(size)])
+		| Float(32)
+			-> :kw("float")
+		| Float(64)
+			-> :kw("float")
+		| Char(size)
+			-> :kw("char")
+		| Pointer(size,type) 
+			-> H([:type(type), " ", "*"])
+		| Array(type)
+			-> H([:type(type), "[", "]"])
+		| Void
+			-> :kw("void")
+		| :fail
+		;
+	
+	# TODO: at some point these names must be derived from architecture specs
+	integerSize
+		: 8 -> :kw("char")
+		| 16 -> H([:kw("short"), " ", :kw("int")])
+		| 32 -> :kw("int")
+		| 64 -> H([:kw("long"), " ", :kw("int")])
+		| n:_int -> H(["int", :repr(n)])
+		;
+	
+	sign
+		: Signed -> :kw("signed")
+		| Unsigned -> :kw("unsigned")
+		;
+		
 	expr
-		: Constant(num) -> :lit2str(num)
-		| Register(reg) -> reg
+		: False 
+			-> "FALSE"
+		| True 
+			-> "TRUE"
+		| Lit(type, value:_lit)
+			-> :repr(value)
+		| Symbol(name:_str)
+			-> name
+		| Cast(type, expr)
+			-> H(["(", "(", :type(type), ")", " ", "(", :expr(expr), ")", ")"])
+		| Unary(op, expr)
+			-> H([:unaryOp(op), "(", :expr(expr), ")"])
+		| Binary(op, lexpr, rexpr)
+			-> H(["(", :expr(lexpr), ")", :binaryOp(op), "(", :expr(rexpr), ")"])
+		| Cond(cond, texpr, fexpr)
+			-> H(["(", :expr(cond), "?", :expr(texpr), ":", :expr(fexpr), ")"])
+		| Call(addr, args)
+			-> H([:expr(addr), "(", :commas(:expr*(args)), ")"])
+		| Addr(expr)
+			-> H(["(", :expr(expr), ")", :op("*")])
+		| Reference(:addr)
+			-> H([:op("&"), "(", :expr(expr), ")"])
+		| Constant(value:_int) # FIXME: remove this
+			-> :repr(value)
+		| Register(name:_str) # FIXME: remove this
+			-> name
+		| :_fatal("bad expression term")
 		;
-	
-	lit2str
-		: n { $$ = self.factory.makeStr(str($n.getValue())) }
+
+	unaryOp
+		: Not -> "!"
+		| BitNot(size) -> "~"
+		| Neg(type) -> "-"
 		;
-	
+
+	binaryOp
+		: And -> "&&"
+		| Or -> "||"
+
+		| BitAnd(size) -> "&"
+		| BitOr(size) -> "|"
+		| BitXor(size) -> "^"
+		| LShift(size) -> "<<"
+		| RShift(size) -> ">>"
+		
+		| Plus(type) -> "+"
+		| Minus(type) -> "-"
+		| Mult(type) -> "*"
+		| Div(type) -> "/"
+		| Mod(type) -> "%"
+		
+		| Eq(type) -> "=="
+		| NotEq(type) -> "!="
+		| Lt(type) -> "<"
+		| LtEq(type) -> "<="
+		| Gt(type) -> ">"
+		| GtEq(type) -> ">="
+		;
+
+	name
+		: n:_str
+		;
+
+	size
+		: s:_int
+		;
+
+	commas
+		: l:_list -> H(:join(l, ", "))
+		;
+
 	join(s)
 		: [] -> []
 		| [h] -> [h]
@@ -162,10 +287,23 @@ class PrettyPrinter:
 		| [h, *t] -> [p, h, *:prefix(t, p)]
 		;
 	
-	string
-		: _ -> H(["\"", _, "\""])
+	kw
+		: s:_str
+		;
+		
+	op
+		: s:_str
 		;
 
+	repr
+		: s:_int
+			{ $$ = self.factory.makeStr(repr($s.getValue())) }
+		| s:_real 
+			{ $$ = self.factory.makeStr(repr($s.getValue())) }
+		| s:_str
+			{ $$ = self.factory.makeStr('"' + repr($s.getValue())[1:-1] + '"') }
+		;
+	
 
 header {
 def prettyPrint(term):

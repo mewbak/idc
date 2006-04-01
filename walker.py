@@ -16,6 +16,8 @@ However, it is usually expected that first call after setting up a walker will.
 
 import aterm
 
+import sys
+
 
 class Failure(Exception):
 	'''Failure to transform a term.'''
@@ -55,6 +57,19 @@ class Walker:
 		
 		raise NotImplementedError
 
+	def _fail(self, target, msg = None, fatal = False):
+		if msg is None:
+			msg = "failed to transform '%r'"
+		else:
+			self._str(msg)
+			msg = msg.getValue().replace('%', '%%') + ": '%r'"
+		if fatal:
+			sys.stderr.write(msg % target + '\n')
+		raise Failure(msg, target)
+	
+	def _fatal(self, target, msg = None):
+		self._fail(target, msg, True)
+	
 	def _int(self, target):
 		'''Enforce the target is an integer term.'''
 		if target.getType() != aterm.INT:
@@ -71,6 +86,12 @@ class Walker:
 		'''Enforce the target is a string term.'''
 		if target.getType() != aterm.STR:
 			raise Failure("'%r' is not a string term", target)
+		return target
+	
+	def _lit(self, target):
+		'''Enforce the target to be a literal term.'''
+		if not target.getType() in (aterm.INT, aterm.REAL, aterm.STR):
+			raise Failure("'%r' is not a literal term", target)
 		return target
 	
 	def _list(self, target):

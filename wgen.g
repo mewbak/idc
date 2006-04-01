@@ -145,7 +145,7 @@ ACTION_INTERPOLATION
 	:
 		'$'!
 		( ('a'..'z') ( options { warnWhenFollowAmbig=false; } : 'a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-			{ text = "_k['%s']" % $getText }
+			{ text = "_k[%r]" % $getText }
 		| ( options { warnWhenFollowAmbig=false; } : '0'..'9')+
 			{ text = "_[%s]" % $getText }
 	    | '$'
