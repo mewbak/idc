@@ -51,15 +51,14 @@ class Checker:
 		: True
 		| False
 		| Lit(:type, :value)
-		| Symbol(:name)
+		| Sym(:name)
 		| Cast(:type, :expr)
 		| Unary(:unaryOp, :expr)
 		| Binary(:binaryOp, :expr, expr)
 		| Cond(:expr, onTrue:expr, onFalse:expr)
 		| Call(:addr, args:expr*)
 		| Addr(:expr)
-		| Reference(:addr)
-		| Register(name)
+		| Ref(:addr)
 		;
 
 	addr
@@ -152,9 +151,9 @@ class PrettyPrinter:
 			-> :semi(:kw("break"))
 		| Continue
 			-> :semi(:kw("continue"))
-		| Assembly(opcode, operands) 
+		| Asm(opcode, operands) 
 			-> :semi(H([:kw("asm"),"(", :commas([:repr(opcode), *:expr*(operands)]), ")"]))
-		| :_fatal("bad statement")
+		| :_fatal("bad statement term")
 		;
 	
 	block
@@ -187,7 +186,7 @@ class PrettyPrinter:
 			-> H([:type(type), "[", "]"])
 		| Void
 			-> :kw("void")
-		| :fail
+		| :_fatal("bad type term")
 		;
 	
 	# TODO: at some point these names must be derived from architecture specs
@@ -211,7 +210,7 @@ class PrettyPrinter:
 			-> "TRUE"
 		| Lit(type, value:_lit)
 			-> :repr(value)
-		| Symbol(name:_str)
+		| Sym(name:_str)
 			-> name
 		| Cast(type, expr)
 			-> H(["(", "(", :type(type), ")", " ", "(", :expr(expr), ")", ")"])
@@ -223,14 +222,10 @@ class PrettyPrinter:
 			-> H(["(", :expr(cond), "?", :expr(texpr), ":", :expr(fexpr), ")"])
 		| Call(addr, args)
 			-> H([:expr(addr), "(", :commas(:expr*(args)), ")"])
-		| Addr(expr)
-			-> H(["(", :expr(expr), ")", :op("*")])
-		| Reference(:addr)
+		| Addr(addr)
+			-> H([:op("*"), "(", :expr(addr), ")"])
+		| Ref(expr)
 			-> H([:op("&"), "(", :expr(expr), ")"])
-		| Constant(value:_int) # FIXME: remove this
-			-> :repr(value)
-		| Register(name:_str) # FIXME: remove this
-			-> name
 		| :_fatal("bad expression term")
 		;
 

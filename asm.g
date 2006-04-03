@@ -21,14 +21,17 @@ header "asmParser.__main__" {
     print
 
     try:
-       import ir
-       import box
-       text = box.box2text(ir.ir2box(term))
-       print "** C pretty-print **"
-       print text
-       print
-    except box.Failure:
-       pass
+        from walker import Failure
+        from ir import PrettyPrinter
+        from box import box2text
+       
+        printer = PrettyPrinter(factory)
+        text = box2text(printer.module(term))
+        print "** C pretty-print **"
+        print text
+        print
+    except Failure:
+        pass
 }
 
 header "asmParser.__init__" {
@@ -208,7 +211,7 @@ instruction returns [res]
 		{ operands = [] }
 	: opcode:INSTRUCTION^ (o=operand { operands.append(o) } (COMMA! o=operand  { operands.append(o) })* )?
 		{
-            res = self.factory.make("Assembly(opcode, operands)", opcode=opcode.getText().lower(), operands=operands)
+            res = self.factory.make("Asm(_, _)", #opcode.getText().lower(), operands)
 		}
 	;
  
@@ -227,26 +230,52 @@ immediate returns [ret]
 	;
 
 register returns [ret]
-	: PERCENTAGE^ reg=symbol
-		{ ret = self.factory.make("Register(reg)", reg=reg) }
+	: PERCENTAGE^ name=symbol
+		{ ret = self.factory.make("Sym(_)", name) }
 	;
 
 memory returns [ret]
-	: disp=constant 
-		(
-		{ ret = self.factory.make("Address()") }
-		| LPAR! (base=register)? (COMMA! (index=register)? (COMMA! (scale=integer)? )? )? RPAR!
-		{ ret = self.factory.make("Address()") }
-		)
-	| LPAR! (base=register)? (COMMA! (index=register)? (COMMA! (scale=integer)? )? )? RPAR!
-		{ ret = self.factory.make("Address()") }
+		{
+            disp = None
+            base = None
+		}
+	: ( disp=constant ( base=memory_base )? | base=memory_base )
+		{
+            if base is None:
+                addr = disp
+            elif disp is None:
+                addr = base
+            else:
+                addr = self.factory.make("Binary(Plus(Int(32,Signed),_,_)", base, disp)
+            ret = self.factory.make("Ref(_)", addr)
+		}
+	;
+
+memory_base returns [ret]
+		{
+            base = None
+            index = None
+            scale = 1
+		}
+	: LPAR! (base=register)? (COMMA! (index=register)? (COMMA! (scale=integer)? )? )? RPAR!
+		{
+            if not index is None and scale != 1:
+                scale = self.factory.make("Lit(Int(32,Signed),_))", scale)
+                index = self.factory.make("Binary(Plus(Int(32,Signed),_,_)", index, scale)
+            if base is None:
+                ret = index
+            elif index is None:
+                ret = base
+            else:
+                ret = self.factory.make("Binary(Plus(Int(32,Signed),_,_)", base, index)
+		}
 	;
 
 constant returns [ret] 
 	: sym=symbol
-		{ ret = self.factory.make("Symbol(sym)", sym=sym) }
+		{ ret = self.factory.make("Sym(_)", sym) }
 	| value=integer
-		{ ret = self.factory.make("Constant(value)", value=value) }
+		{ ret = self.factory.make("Lit(Int(32,Signed),_)", value) }
 	;
 
 symbol returns [name]

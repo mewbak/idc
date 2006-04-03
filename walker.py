@@ -35,6 +35,8 @@ class Failure(Exception):
 			else:
 				return self.msg
 
+# TODO: create/use another exception for fatal/assertion errors
+
 
 class Walker:
 	'''Aterm walker base class.'''

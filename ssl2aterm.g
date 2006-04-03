@@ -52,26 +52,26 @@ opTable = {
     OR: "BitOr(size)",
     XOR: "BitOr(size)",
 
-    EQ: "Eq(Integer(size,sign))",
-    NE: "NotEq(Integer(size,sign))",
-    LT: "Lt(Integer(size,Signed))",
-    GT: "Gt(Integer(size,Signed))",
-    LE: "LtEq(Integer(size,Signed))",
-    GE: "GtEq(Integer(size,Signed))",
-    LTU: "Lt(Integer(size,Unsigned))",
-    GTU: "Gt(Integer(size,Unsigned))",
-    LEU: "LtEq(Integer(size,Unsigned))",
-    GEU: "GtEq(Integer(size,Unsigned))",
+    EQ: "Eq(Int(size,sign))",
+    NE: "NotEq(Int(size,sign))",
+    LT: "Lt(Int(size,Signed))",
+    GT: "Gt(Int(size,Signed))",
+    LE: "LtEq(Int(size,Signed))",
+    GE: "GtEq(Int(size,Signed))",
+    LTU: "Lt(Int(size,Unsigned))",
+    GTU: "Gt(Int(size,Unsigned))",
+    LEU: "LtEq(Int(size,Unsigned))",
+    GEU: "GtEq(Int(size,Unsigned))",
 
-    //NEG: "Neg(Integer(size, Signed))",
-    PLUS: "Plus(Integer(size,sign))",
-    MINUS: "Minus(Integer(size,sign))",
-    MUL: "Mult(Integer(size,Unsigned))",
-    DIV: "Div(Integer(size,Unsigned))",
-    MOD: "Mod(Integer(size,Unsigned))",
-    SMUL: "Mult(Integer(size,Signed))",
-    SDIV: "Div(Integer(size,Signed))",
-    SMOD: "Mod(Integer(size,Signed))",
+    //NEG: "Neg(Int(size, Signed))",
+    PLUS: "Plus(Int(size,sign))",
+    MINUS: "Minus(Int(size,sign))",
+    MUL: "Mult(Int(size,Unsigned))",
+    DIV: "Div(Int(size,Unsigned))",
+    MOD: "Mod(Int(size,Unsigned))",
+    SMUL: "Mult(Int(size,Signed))",
+    SDIV: "Div(Int(size,Signed))",
+    SMOD: "Mod(Int(size,Signed))",
 
     FNEG: "Neg(Float)",
     MUL_F: "Mult(Float)",
@@ -131,7 +131,7 @@ rtl returns [res]
 rt returns [res]
 	: #(s:ASSIGNTYPE v=lvalue e=expr)
 		{ print "*" }
-		{ res = [self.factory.make("Assign(Integer(s),v,e)",
+		{ res = [self.factory.make("Assign(Int(s),v,e)",
             s = int(#s.getText()[1:-1]),
             v = v,
             e = e)]
@@ -141,7 +141,7 @@ rt returns [res]
 var returns [res]
 		{ res = self.factory.make("Unsupported") }
 	: r:REG_ID
-		{ res = self.factory.make("Symbol(_)", #r.getText()[1:]) }
+		{ res = self.factory.make("Sym(_)", #r.getText()[1:]) }
 	| #(ri:REG_IDX i=expr)
 		{ raise SemanticException(#ri, "register indexes not supported") }
 	| #(mi:MEM_IDX i=expr)
@@ -152,7 +152,7 @@ var returns [res]
             try:
                 res = self.locals[-1][#v.getText()]
             except KeyError:
-                res = self.factory.make("Symbol(_)", #v.getText())
+                res = self.factory.make("Sym(_)", #v.getText())
 		}
     ;
 
@@ -177,17 +177,17 @@ num returns [res]
 expr returns [res]
 		{ res = self.factory.make("Unsupported") }
 	: n:NUM
-		{ res = self.factory.make("Literal(Integer,_)", int(#n.getText())) }
+		{ res = self.factory.make("Lit(Int,_)", int(#n.getText())) }
 	| f:FLOATNUM
-		{ res = self.factory.make("Literal(Float,_)", float(#f.getText())) }
+		{ res = self.factory.make("Lit(Float,_)", float(#f.getText())) }
 	| v=var 
 		{ res = v }
 	| #(AT e=expr l=num r=num)
 		{
             res = e
             if l != 0:
-                res = self.factory.make("LShift(expr,Literal(Integer,bits))", expr=res, bits=l)
-            res = self.factory.make("BitAnd(expr,Literal(Integer,mask))", expr=res, mask=2**r-1)
+                res = self.factory.make("LShift(expr,Lit(Int,bits))", expr=res, bits=l)
+            res = self.factory.make("BitAnd(expr,Litl(Int,mask))", expr=res, mask=2**r-1)
 		}
 	| #( QUEST c=expr t=expr f=expr)
 		{ res = self.factory.make("Quest(_,_,_)", c, t, f) }
@@ -199,13 +199,13 @@ expr returns [res]
 			{ res = self.factory.makeList(res) }
       )
 	| #(LCURLY e=expr n=num)
-		{ res = self.factory.make("Cast(Integer(size,Unsigned),expr)", expr=e, size=n) }
+		{ res = self.factory.make("Cast(Int(size,Unsigned),expr)", expr=e, size=n) }
 	| #( o:.
 			{
                 print "%d:%d" % (#o.getLine(), #o.getColumn())
 				
                 op = opTable[#o.getType()]
-                op = self.factory.make(op, type="Integer", size=32, sign="Unsigned")
+                op = self.factory.make(op, type="Int", size=32, sign="Unsigned")
 			}
 		l=expr
 		( 

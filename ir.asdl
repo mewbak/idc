@@ -35,7 +35,7 @@ expr
 	= True
 	| False
 	| Literal(type, object value)
-	| Symbol(string name)
+	| Sym(string name)
 	| Cast(type, expr)
 	| Unary(unaryOp op, expr)
 	| Binary(binaryOp op, expr, expr

@@ -46,13 +46,13 @@ class TestCase(unittest.TestCase):
 
 	prettyPrinterTestCases = {
 		'expr': [
-			('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Symbol("x"))', '(1)+(x)'),
+			('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Sym("x"))', '(1)+(x)'),
 		],
 		
 		'stmt': [
 			('Label("label")', 'label:'),
-			('Assembly("ret",[])', 'asm("ret");'),
-			('Assembly("mov",[Register("ax"), Constant(1234)])', 'asm("mov", ax, 1234);'),
+			('Asm("ret",[])', 'asm("ret");'),
+			('Asm("mov",[Register("ax"), Constant(1234)])', 'asm("mov", ax, 1234);'),
 		],
 		
 		

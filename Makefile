@@ -69,7 +69,7 @@ examples:
 
 .PHONY: examples
 	
-test_asm: test_asm.sh asmLexer.py asmParser.py examples
+test_asm: test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
 
 test_ssl: test_ssl.sh sslLexer.py sslParser.py sslPreprocessor.py
 	
