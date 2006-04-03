@@ -237,7 +237,7 @@ block
 
 alternative
 	: 
-		( predicate )* 	debug_term[True] ( predicate )* 
+		( predicate )* ( debug_term[True] ( predicate )* )?
 		( INTO ( production )* debug_term[False] ( production )* )?
 		{ ## = #(#[ALTERNATIVE,"ALTERNATIVE"], ##) }
 	;
@@ -511,8 +511,8 @@ alternative
                 self.writeln("_ = []")
                 self.writeln("_k = _a.copy()")
 			}
-		( predicate )+
-		( INTO ( production )+ )?
+		( predicate )*
+		( INTO ( production )* )?
 			{
                 self.writeln("return _r")
                 self.dedent()
@@ -528,7 +528,7 @@ predicate
 	: ( ACTION ) => action
 	| ( SEMPRED ) => p:SEMPRED 
 	        {
-                self.writeln("if not (%s):" % p)
+                self.writeln("if not (%s):" % #p.getText() )
                 self.indent()
                 self.writeln("raise Failure")
                 self.dedent()
@@ -552,7 +552,7 @@ production
 		{
             if flag:
                 pattern = self.stringify_term(#t)
-                self.writeln("_r = _f.make(%r, *_, **_k)" % pattern)
+                self.writeln("_r = _f.make(%r, _t, **_k)" % pattern)
             else:
                 self.argn = 0
                 pattern = self.build_term(#t)
@@ -658,10 +658,11 @@ build_term returns [ret]
 		{ ret = "_k[%r]" % #v.getText() }
 	| w:WILDCARD 
 //		{ ret = "_f.makeWildcard()" }
-		{
+/*		{
             ret = "_[%d]" % self.argn
             self.argn += 1
-        }
+        }*/
+        { ret = "_t" }
 	| #( LIST l=build_term )
 		{ ret = l }
 	| #( APPL c=build_term a=build_term )
