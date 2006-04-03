@@ -15,6 +15,12 @@ import gettext
 import os.path
 
 
+import aterm
+import asm
+import ir
+import box
+
+
 class GladeWindow:
 	"""Base class for glade based windows."""
 
@@ -100,6 +106,9 @@ class MainApp(GladeApp):
 
 	def __init__(self):
 		GladeApp.__init__(self, "./idc.glade", "main_window")
+		
+		self.factory = aterm.Factory()
+		self.term = self.factory.parse("Module([])")
 
 	def on_open_activate(self, event):
 		path = self.open(
@@ -113,18 +122,28 @@ class MainApp(GladeApp):
 		)
 		
 		if path is not None:
-			# See http://www.pygtk.org/pygtk2tutorial/sec-TextViews.html
+			# TODO: catch exceptions here
+			term = asm.load(self.factory, file(path, 'rt'))
+			term = asm.translate(term)
+			self.term = term
 			
-			text = file(path, 'rt').read()
-			textbuffer = self.textview.get_buffer()
-			textbuffer.set_text(text)
+			self.update_textview()
+
+	def update_textview(self):
+		boxes = ir.prettyPrint(self.term)
+		text = box.box2text(boxes)
+
+		# See http://www.pygtk.org/pygtk2tutorial/sec-TextViews.html	
+		textbuffer = self.textview.get_buffer()
+		textbuffer.set_text(text)
+		
+		# FIXME: use tags and/or other source view widgets
 
 	def on_quit_activate(self, event):
 		self.quit()
 
 	def on_main_window_destroy(self, event):
 		self.quit()
-
 
 
 if __name__ == '__main__':

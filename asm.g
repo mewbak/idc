@@ -159,7 +159,7 @@ SL_COMMENT
 
 class asmParser extends Parser;
 options {
-	buildAST=true;
+	buildAST=true; // TODO: remove -- only used for debugging
 	k = 3;
 }
 
@@ -182,7 +182,7 @@ statement returns [res]
  	;
 
 labels returns [res]
-	: (symbol COLON) => (lbl=symbol COLON^ lbls=labels)
+	: ( symbol COLON ) => (lbl=symbol COLON^ lbls=labels)
 		{
             res = [self.factory.make("Label(lbl)", lbl=lbl)]
             res.extend(lbls)
@@ -195,22 +195,26 @@ tail returns [res]
 	: /* empty statement */
 		{ res = [] }
 	| DIRECTIVE^ (~EOL)*
+		// FIXME: Do not ignore directives
 		{ res = [] }
 	| insn=prefixed_instruction
 		{ res = [insn] }
 	;
 
 prefixed_instruction returns [res]
-	: (instruction) => insn=instruction
+	: ( instruction ) => insn=instruction
 		{ res = insn }
 	| INSTRUCTION insn=instruction
+		// FIXME: Do not ignore instruction prefixes
 		{ res = insn }
 	;
 
 instruction returns [res]
 		{ operands = [] }
-	: opcode:INSTRUCTION^ (o=operand { operands.append(o) } (COMMA! o=operand  { operands.append(o) })* )?
+	: opcode:INSTRUCTION^ ( o=operand { operands.append(o) } ( COMMA! o=operand { operands.append(o) } )* )?
 		{
+            // have destination operand as first
+			operands.reverse()
             res = self.factory.make("Asm(_, _)", #opcode.getText().lower(), operands)
 		}
 	;
@@ -257,7 +261,7 @@ memory_base returns [ret]
             index = None
             scale = 1
 		}
-	: LPAR! (base=register)? (COMMA! (index=register)? (COMMA! (scale=integer)? )? )? RPAR!
+	: LPAR! (base=register)? ( COMMA! (index=register)? ( COMMA! (scale=integer)? )? )? RPAR!
 		{
             if not index is None and scale != 1:
                 scale = self.factory.make("Lit(Int(32,Signed),_))", scale)
@@ -281,22 +285,22 @@ constant returns [ret]
 symbol returns [name]
 	: 
 		( d:DIRECTIVE 
-			{ name = d.getText() }
+			{ name = #d.getText() }
 		| i:INSTRUCTION
-			{ name = i.getText() }
+			{ name = #i.getText() }
 		)
 	;
 
 integer returns [value]
 	:
 		( b:BINARY
-			{ value = int(b.getText()[2:], 2) }
+			{ value = int(#b.getText()[2:], 2) }
 		| o:OCTAL 
-			{ value = int(o.getText(), 8) }
+			{ value = int(#o.getText(), 8) }
 		| d:DECIMAL
-			{ value = int(d.getText()) }
+			{ value = int(#d.getText()) }
 		| h:HEXADECIMAL
-			{ value = int(h.getText()[2:], 16) }
+			{ value = int(#h.getText()[2:], 16) }
 		| MINUS^ i=integer
 			{ value = -i }
 		) 
