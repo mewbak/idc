@@ -228,8 +228,8 @@ expr returns [res]
 		{
             res = e
             if l != 0:
-                res = self.factory.make("Binary(LShift(32),expr,Lit(Int(32,Signed),bits))", expr=res, bits=l)
-            res = self.factory.make("Binary(BitAnd(32),expr,Lit(Int(32,Signed),mask))", expr=res, mask=2**r-1)
+                res = self.factory.make("Binary(RShift(32),expr,Lit(Int(32,Signed),bits))", expr=res, bits=l)
+            res = self.factory.make("Binary(BitAnd(32),expr,Lit(Int(32,Signed),mask))", expr=res, mask=2**(r-l+1)-1)
 		}
 	| #( QUEST c=expr t=expr f=expr )
 		{ res = self.factory.make("Cond(_,_,_)", c, t, f) }
