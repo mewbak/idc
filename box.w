@@ -7,6 +7,8 @@ about the Box language, upon this code is lossely based.
 '''
 
 header {
+import sys
+
 try:
 	from cStringIO import StringIO
 except ImportError:
@@ -64,6 +66,7 @@ class Box2Text:
 			{
 				self.write($s.getValue())
 			}
+		| :_fatal("bad box")
 		;
 
 	write_vbox
@@ -73,12 +76,18 @@ class Box2Text:
 				self.write_vbox($b)
 				self.dedent()
 			}
+		| V(bl:_list)
+			{
+				for b in $bl:
+					self.write_vbox(b) 
+			}
 		| b
 			{
 				self.write_indent()
 				self.write_box($b)
 				self.write_eol()
 			}
+		| :_fatal("bad box")
 		;
 
 header {

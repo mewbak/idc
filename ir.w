@@ -33,18 +33,23 @@ class Checker:
 		;
 		
 	type
-		: Int(:size, :sign)
+		: Void
+		| Bool
+		| Int(:size, :sign)
 		| Float(:size)
 		| Char(:size)
-		#| String(:size)
 		| Pointer(:size,:type)
+		| Func(:type, :type*)
 		| Array(:type)
-		| Void
+		| Compound(:type*)
+		| Union(:type*)
+		| Blob(:size)
 		;
 		
 	sign
 		: Signed
 		| Unsigned
+		| Unknown
 		;
 	
 	expr
@@ -146,7 +151,7 @@ class PrettyPrinter:
 		| Branch(label)
 			-> :semi(H([:kw("goto"), " ", :expr(label)]))
 		| Block(stmts)
-			-> V(["{",I(:stmt*(stmts)),"}"])
+			-> V(["{",I(V(:stmt*(stmts))),"}"])
 		| Break
 			-> :semi(:kw("break"))
 		| Continue
@@ -158,9 +163,9 @@ class PrettyPrinter:
 	
 	block
 		: Block(stmts) 
-			-> V(["{",I(:stmt*(stmts)),"}"])
+			-> V(["{",I(V(:stmt*(stmts))),"}"])
 		| stmt 
-			-> I(:stmt(stmt))
+			-> V([I(:stmt(stmt))])
 		;
 		
 	semi
