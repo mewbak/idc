@@ -167,8 +167,8 @@ class Factory:
 			return self.makeInt(value)
 		elif isinstance(value, int):
 			return self.makeInt(value)
-		elif isinstance(value, basestring):
-			return self.makeStr(value)
+		elif isinstance(value, float):
+			return self.makeReal(value)
 		elif isinstance(value, basestring):
 			return self.makeStr(value)
 		elif isinstance(value, list):
