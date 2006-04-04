@@ -6,6 +6,8 @@ header {
 
 from sslParser import SemanticException
 
+import ir
+
 }
 
 header "ssl2aterm.__main__" {
@@ -50,7 +52,10 @@ opTable = {
     NOT: "BitNot(size)",
     AND: "BitAnd(size)",
     OR: "BitOr(size)",
-    XOR: "BitOr(size)",
+    XOR: "BitXor(size)",
+    LSHIFT: "LShift(size)",
+    RSHIFT: "RShift(size)",
+    RSHIFTA: "RShift(size)", // FIXME: handle sign here
 
     EQ: "Eq(Int(size,sign))",
     NE: "NotEq(Int(size,sign))",
@@ -63,7 +68,7 @@ opTable = {
     LEU: "LtEq(Int(size,Unsigned))",
     GEU: "GtEq(Int(size,Unsigned))",
 
-    //NEG: "Neg(Int(size, Signed))",
+    //NEG: "Neg(Int(size,Signed))",
     PLUS: "Plus(Int(size,sign))",
     MINUS: "Minus(Int(size,sign))",
     MUL: "Mult(Int(size,Unsigned))",
@@ -88,6 +93,14 @@ opTable = {
     MINUS_F: "Minus(Float)",
     MINUS_FD: "Minus(Float)",
     MINUS_FQ: "Minus(Float)",
+}
+
+builtinTable = {
+    LITERAL_rlc: "rlc",
+    LITERAL_rrc: "rrc",
+    LITERAL_rl: "rl",
+    LITERAL_rr: "rr",
+    LITERAL_pow: "pow",
 }
 
 }
@@ -139,6 +152,7 @@ rtl returns [res]
     ;
 
 rt returns [res]
+		{ res = [] }
 	: #( at:ASSIGNTYPE 
 		{
             t = #at.getText()[1:-1]
@@ -178,16 +192,18 @@ rt returns [res]
                 e)
             ]
 		}
+	| any:.
+		{ raise SemanticException(#any, "unsupported") }
     ;
 
 var returns [res]
-		{ res = self.factory.make("Unsupported") }
+		{ res = self.factory.make("Sym(\"UNKNOWN\")") }
 	: r:REG_ID
 		{ res = self.factory.make("Sym(_)", #r.getText()[1:]) }
 	| #( ri:REG_IDX i=expr )
 		{ raise SemanticException(#ri, "register indexes not supported") }
 	| #( mi:MEM_IDX i=expr )
-		{ res = self.factory.make("Reference(_)", i) }
+		{ res = self.factory.make("Ref(_)", i) }
 //    | t:TEMP
 	| v:NAME
 		{
@@ -202,6 +218,7 @@ lvalue returns [res]
 	: v=var 
 		{ res = v }
 	| #( a:AT v=var l=expr r=expr )
+		{ res = v }
 		{ raise SemanticException(#a, "unsupported") }
 	| #( p:PRIME v=var )
 		{ raise SemanticException(#p, "unsupported") }
@@ -217,46 +234,67 @@ num returns [res]
 	;
 
 expr returns [res]
-		{ res = self.factory.make("Unsupported") }
+		{ res = self.factory.make("Sym(\"UNSUPPORTED_EXPR\")") }
 	: n:NUM
 		{ res = self.factory.make("Lit(Int(32,Signed),_)", int(#n.getText())) }
 	| f:FLOATNUM
 		{ res = self.factory.make("Lit(Float(32),_)", float(#f.getText())) }
 	| v=var 
 		{ res = v }
-	| #( AT e=expr l=num r=num )
+	| #( AT e=expr 
+		( ( num num ) => l=num r=num 
 		{
             res = e
             if l != 0:
-                res = self.factory.make("Binary(RShift(32),expr,Lit(Int(32,Signed),bits))", expr=res, bits=l)
-            res = self.factory.make("Binary(BitAnd(32),expr,Lit(Int(32,Signed),mask))", expr=res, mask=2**(r-l+1)-1)
+                res = self.factory.make("Binary(RShift(32),expr,Lit(Int(32,Signed),bits))", expr=res, bits=min(r, l))
+            res = self.factory.make("Binary(BitAnd(32),expr,Lit(Int(32,Signed),mask))", 
+            	expr=res, 
+            	mask= 1 << (abs(l-r)+1) - 1
+            )
 		}
+		| l=expr r=expr
+		{
+            e = ir.Expr(e)
+            l = ir.Expr(l)
+            r = ir.Expr(r)
+            
+            res = (e >> r) & (1 << (l - r + 1) - 1)
+            
+            res = res.term
+		}
+		) )
 	| #( QUEST c=expr t=expr f=expr )
 		{ res = self.factory.make("Cond(_,_,_)", c, t, f) }
-	| #( BUILTIN b:NAME
-			{ res = [] }
+	| #( BUILTIN b:NAME args=expr_list )
+		{ res = self.factory.make("Call(Sym(_),_)", #b.getText(), args) }
+	| #( LCURLY e=expr n=num )
+		{ res = self.factory.make("Cast(Int(size,Unsigned),expr)", expr=e, size=n) }
+	| #( S_E e=expr )
+		// FIXME: handle type and size correctly
+		{ res = self.factory.make("Cast(Int(size,Signed),expr)", expr=e, size=32) }
+	| #( t:. args=expr_list )
+		{
+            //print "%d:%d" % (#o.getLine(), #o.getColumn())
+            typ = #t.getType()
+            if typ in opTable:
+                op = opTable[typ]
+                op = self.factory.make(op, type="Int", size=32, sign="Signed")
+                if len(args) == 1:
+                    res = self.factory.make("Unary(_,_)", op, *args)
+                elif len(args) == 2:
+                    res = self.factory.make("Binary(_,_,_)", op, *args)
+                else:
+                    raise SemanticException(#t, "bad number of args %i" % len(args))
+            else:
+                op = builtinTable[typ]
+                res = self.factory.make("Call(Sym(_),_)", op, args)
+        }
+    ;
+
+expr_list returns [res]
+	:
+		{ res = [] }
         ( e=expr
 			{ res.append(e) }
         )*
-			{ res = self.factory.makeList(res) }
-      )
-	| #( LCURLY e=expr n=num )
-		{ res = self.factory.make("Cast(Int(size,Unsigned),expr)", expr=e, size=n) }
-	| #( o:.
-			{
-                //print "%d:%d" % (#o.getLine(), #o.getColumn())
-                op = opTable[#o.getType()]
-                op = self.factory.make(op, type="Int", size=32, sign="Signed")
-			}
-		l=expr
-		( 
-			{
-                res = self.factory.make("Unary(_,_)", op, l)
-			}
-		| r=expr
-			{
-                res = self.factory.make("Binary(_,_,_)", op, l, r)
-			}
-		)
-	 )
-    ;
+     ;
