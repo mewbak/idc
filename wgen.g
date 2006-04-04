@@ -94,6 +94,11 @@ options { testLiterals = true; }
     : ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
     ;
 
+// Identifiers (CONS and VAR will become IDs too)
+ID
+	: '_' ('a'..'z'|'A'..'Z'|'0'..'9'|'_')+
+	;
+	
 TRANSF
 	:
 		':'! 
@@ -336,8 +341,9 @@ term_opt_wildcard[matching]
 	;
 
 id
-	: CONS
-	| VAR
+	: c:CONS { #c.setType(ID) }
+	| v:VAR { #v.setType(ID) }
+	| ID
 	;
 
 
@@ -434,9 +440,7 @@ part
 	;
 
 id returns [ret]
-	: u:CONS { ret = #u.getText() }
-	| l:VAR { ret = #l.getText() }
-	| d:TRANSF { ret = #d.getText() }
+	: i:ID { ret = #i.getText() }
 	;
 
 method
