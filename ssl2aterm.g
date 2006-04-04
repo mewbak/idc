@@ -3,6 +3,7 @@
 
 
 header {
+import sys
 
 from sslParser import SemanticException
 
@@ -25,18 +26,18 @@ header "ssl2aterm.__main__" {
     preprocessor = Preprocessor()
     preprocessor.start(ast)
     ast = preprocessor.getAST()
-	print ast
+	//print ast
 	
     factory = Factory()
-    walker = Walker(factory)
+    walker = Walker(factory, debug=True)
     walker.start(ast)
 }
 
 header "ssl2aterm.__init__" {
     self.factory = args[0]
+    self.debug = kwargs.get("debug", False)
     self.registers = {}
     self.instructions = {}
-    self.locals = [{}]
 }
 
 options {
@@ -116,22 +117,43 @@ start
 
 specification
 	: #( SEMI ( part )* )
+		{
+            sys.stdout.write("insn_table = {\n")
+            names = self.instructions.keys()
+            names.sort()
+            for name in names:
+                params, temps, body = self.instructions[name]
+                sys.stdout.write("\t%r: (%r, %r, %r),\n" % (name, params, temps, str(body)))
+            sys.stdout.write("}\n")
+		}
     ;
 
 part
-	: #( INSTR iname:NAME iparams=param_list ibody=rtl )
+	: #( INSTR iname:NAME iparams=param_list ibody=r:rtl )
 		{
-            print "*** %s(%s) ***" % (#iname.getText(), ", ".join(iparams))
-            print ibody
+            tmpnames = self.collect_temps(#r)
             
-            from ir import PrettyPrinter
-            from box import box2text
-       
-            printer = PrettyPrinter(factory)
-            text = box2text(printer.stmt(ibody))
-            print text
-            print
-            print
+            
+            if self.debug:
+                sys.stderr.write("*** %s(%s;%s) ***\n" % (#iname.getText(), ",".join(iparams), ",".join(tmpnames)))
+
+            self.instructions[#iname.getText()] = (iparams, tmpnames, ibody)
+            
+            if self.debug:
+           	    from ir import PrettyPrinter
+                from box import box2text
+
+                kargs = {}
+                for nam in iparams + tmpnames:
+                   kargs[nam] = self.factory.make("Sym(_)", nam)
+                   
+                term = ibody.make(**kargs)
+                term = self.factory.make("Block(_)", term)
+                
+                printer = PrettyPrinter(self.factory)
+                text = box2text(printer.stmt(term))
+                sys.stderr.write(text)
+                sys.stderr.write("\n\n\n")
 		}
 	| .
 		// ignore
@@ -148,7 +170,7 @@ rtl returns [res]
 			{ res.extend(t) }
         )*
       )
-			{ res = self.factory.make("Block(_)", res) }
+			{ res = self.factory.makeList(res) }
     ;
 
 rt returns [res]
@@ -206,12 +228,7 @@ var returns [res]
 		{ res = self.factory.make("Ref(_)", i) }
 //    | t:TEMP
 	| v:NAME
-		{
-            try:
-                res = self.locals[-1][#v.getText()]
-            except KeyError:
-                res = self.factory.make("Sym(_)", #v.getText())
-		}
+		{ res = self.factory.makeVar(#v.getText(), self.factory.makeWildcard()) }
     ;
 
 lvalue returns [res]
@@ -298,3 +315,18 @@ expr_list returns [res]
 			{ res.append(e) }
         )*
      ;
+
+collect_temps returns [res]
+		{ res = {} }
+	: do_collect_temps[res]
+		{ res = res.keys() }
+	;
+
+do_collect_temps[res]
+	: n:NAME
+		{
+            if #n.getText().startswith("tmp"):
+               res[#n.getText()] = None
+		}
+	| #( . ( do_collect_temps[res] )* )
+	;
