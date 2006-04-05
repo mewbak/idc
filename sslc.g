@@ -5,19 +5,15 @@
 header {
 import sys
 
-from sslParser import SemanticException
-
+import aterm
 import ir
 
-}
+from sslLexer import Lexer
+from sslParser import Parser, SemanticException
+from sslPreprocessor import Walker as Preprocessor
 
-header "ssl2aterm.__main__" {
-    from sslLexer import Lexer
-    from sslParser import Parser
-    from sslPreprocessor import Walker as Preprocessor
-    from aterm import Factory
-
-    lexer = Lexer()
+def sslc(fpin, fpout, debug = False):
+    lexer = Lexer(fpin)
 
     parser = Parser(lexer)
     parser.start()
@@ -26,15 +22,53 @@ header "ssl2aterm.__main__" {
     preprocessor = Preprocessor()
     preprocessor.start(ast)
     ast = preprocessor.getAST()
-	//print ast
 	
-    factory = Factory()
-    walker = Walker(factory, debug=True)
-    walker.start(ast)
+    if debug:
+        sys.stderr.write("*** AST begin ***\n")
+        sys.stderr.write(ast.toStringList())
+        sys.stderr.write("\n")
+        sys.stderr.write("*** AST end ***\n")
+
+    factory = aterm.Factory()
+
+    writer = Walker(factory, fpout, debug = debug)
+    writer.start(ast)
 }
 
-header "ssl2aterm.__init__" {
+header "sslc.__main__" {
+    import optparse
+    import os.path
+
+    parser = optparse.OptionParser(
+        usage = "\n\t%prog [options] file ...", 
+        version = "%prog 1.0")
+    parser.add_option(
+        "-d", "--debug", 
+        action = "store_true", dest = "debug", default = False, 
+        help = "show debugging info")
+    parser.add_option(
+        "-o", "--output", 
+        type = "string", dest = "output", 
+        help = "specify output file")
+    (options, args) = parser.parse_args(sys.argv[1:])
+
+    for arg in args:
+        fpin = file(arg, "rt")
+
+        if options.output is None:
+            root, ext = os.path.splitext(arg)
+            fpout = file(root + ".py", "wt")
+        elif options.output is "-":
+            fpout = sys.stdout
+        else:
+            fpout = file(options.output, "wt")
+
+        sslc(fpin, fpout, options.debug)
+}
+
+header "sslc.__init__" {
     self.factory = args[0]
+    self.fp = args[1]
     self.debug = kwargs.get("debug", False)
     self.registers = {}
     self.instructions = {}
@@ -106,7 +140,7 @@ builtinTable = {
 
 }
 
-class ssl2aterm extends TreeParser;
+class sslc extends TreeParser;
 options {
     importVocab = ssl;
 }
@@ -118,13 +152,13 @@ start
 specification
 	: #( SEMI ( part )* )
 		{
-            sys.stdout.write("insn_table = {\n")
+            self.fp.write("insn_table = {\n")
             names = self.instructions.keys()
             names.sort()
             for name in names:
                 params, temps, body = self.instructions[name]
-                sys.stdout.write("\t%r: (%r, %r, %r),\n" % (name, params, temps, str(body)))
-            sys.stdout.write("}\n")
+                self.fp.write("\t%r: (%r, %r, %r),\n" % (name, params, temps, str(body)))
+            self.fp.write("}\n")
 		}
     ;
 

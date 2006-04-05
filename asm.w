@@ -26,7 +26,7 @@ def translate(term):
 	
 	return term
 
-from pentium import insn_table
+from ssl.pentium import insn_table
 
 opcode_table = {
 	"andl": "AND.RMOD",
