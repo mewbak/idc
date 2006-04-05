@@ -96,8 +96,7 @@ doc: box.py
 		--css blue \
 		aterm.py \
 		walker.py \
-		box.py \
-		#transformation.py
+		box.py
 
 .PHONY: doc
 
