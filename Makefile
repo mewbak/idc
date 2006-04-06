@@ -105,11 +105,8 @@ doc: box.py
 
 deps: .deps.mak
 
-.deps.mak: Makefile $(wildcard *.g)
-	@for FILE in *.g; \
-	do \
-		sed -n -e "s/.*\bclass \(\w\+\) extends \w\+;.*/all: \1.py\n\1.py: $$FILE\n\t\$$(ANTLR) \$$<\n\t@touch \$$@\n/p" < $$FILE; \
-	done > $@
+.deps.mak: Makefile makedeps.pl $(shell find -iname '*.g')
+	find -iname '*.g' | xargs perl makedeps.pl > $@
 
 .PHONY: deps
 
@@ -131,8 +128,7 @@ dist: all doc
 # Clean the generated files
 
 clean:
-	rm -f .deps.mak
-	# FIXME: 
+	@$(RM) .deps.mak
 
 .PHONY: clean
 
