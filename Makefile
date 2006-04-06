@@ -73,11 +73,11 @@ test_asm: test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
 
 test_ssl: test_ssl.sh sslLexer.py sslParser.py sslPreprocessor.py
 	
-test_wgen: test_wgen.py aterm.py walker.py
+test_wgen: test_wgen.py
 
-test_box: test_box.py box.py aterm.py walker.py
+test_box: test_box.py box.py
 
-test_ir: test_ir.py ir.py aterm.py walker.py
+test_ir: test_ir.py ir.py
 
 test_%: test_%.py
 	$(PYTHON) $< -v
