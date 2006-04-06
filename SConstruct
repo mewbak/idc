@@ -73,6 +73,7 @@ def Glob(includes = Split('*'), excludes = None, dir = '.'):
                nodes.append(gen_node(os.path.join(dir,os.path.basename(str(s)))))
 
    return nodes
+
 def Glob(match):
     """Similar to glob.glob, except globs SCons nodes, and thus sees
     generated files and files from build directories.  Basically, it sees
@@ -107,33 +108,15 @@ def Glob(match):
 antlr_cmd = "java -cp /usr/share/java/antlr.jar antlr.Tool -o ${SOURCE.dir} $SOURCE"
 antlr_cmd = "bin/antlr.`uname -m` -o ${SOURCE.dir} $SOURCE"
 
-antlr_res={}
+antlr_re = re.compile(r'^class\s+(\S+)\s+extends\s+(\S+)', re.MULTILINE)
 
-def make_re(classtype):
-        return re.compile('^class\\s+(\\S+)\\s+extends\\s+'+classtype,re.MULTILINE)
-
-def append_re(res,classtype,fn):
-        res[classtype]=[make_re(classtype),fn]
-
-def lexer_append(target,classname):
-        target_append(target, classname)
-        #target.append(classname+'TokenTypes'+'.txt')
-
-def target_append(target,classname):
-        target.append(classname+'.py')
-
-append_re(antlr_res,'Lexer',lexer_append)
-append_re(antlr_res,'Parser',target_append)
-append_re(antlr_res,'TreeParser',target_append)
-
-def antlr_emitter(target,source,env):
+def antlr_emitter(target, source, env):
         target = []
         for src in source:
                 contents = src.get_contents();
-                for type_re in antlr_res:
-                        found = antlr_res[type_re][0].findall(contents)
-                        for classname in found:
-                                antlr_res[type_re][1](target,classname)
+		for classname, classtype in antlr_re.findall(contents):
+			target.append(os.path.join(str(src.dir), classname + '.py'))
+			#target.append(os.path.join(str(src.dir), classname + 'TokenTypes' + '.txt'))
         return target, source
 
 antlr_bld = Builder(
@@ -217,8 +200,13 @@ env.SSL('ssl/pentium.ssl')
 ###############################################################################
 # Unit tests
 
-# See http://www.scons.org/cgi-sys/cgiwrap/scons/moin.cgi/UnitTests
-# http://spacepants.org/blog/scons-unit-test
+# See:
+#   http://www.scons.org/cgi-sys/cgiwrap/scons/moin.cgi/UnitTests
+#   http://spacepants.org/blog/scons-unit-test
 
+test = env.Alias('test', env.Command('test_aterm', ['test_wgen.py', aterm_sources], 'python test_aterm.py'))
+test = env.Alias('test', env.Command('test_wgen', ['test_wgen.py', wgen_sources], 'python test_wgen.py'))
+test = env.Alias('test', env.Command('test_ir', ['test_ir.py'], 'python test_ir.py'))
+test = env.Alias('test', env.Command('test_box', ['test_box.py'], 'python test_box.py'))
 
 # vim: set syntax=python:
