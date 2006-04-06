@@ -1,4 +1,4 @@
-// Grammar for aterm parsing
+// Grammar for term parsing
 
 
 header "parser.__init__" {

@@ -94,7 +94,7 @@ doc: box.py
 	rm -rf html
 	epydoc \
 		--css blue \
-		aterm.py \
+		aterm \
 		walker.py \
 		box.py
 

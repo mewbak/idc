@@ -1,0 +1,82 @@
+'''Textual representation of terms.'''
+
+
+from aterm.constants import *
+from aterm.visitor import Visitor
+
+
+class TextWriter(Visitor):
+	
+	def __init__(self, fp):
+		Visitor.__init__(self)
+		self.fp = fp
+
+	def writeAnnotations(self, term):
+		annotations = term.getAnnotations()
+		if not annotations.isEmpty():
+			self.fp.write('{')
+			self.visit(annotations, inside_list = True)
+			self.fp.write('}')
+
+	def visitInt(self, term):
+		self.fp.write(str(term.getValue()))
+		self.writeAnnotations(term)
+	
+	def visitReal(self, term):
+		self.fp.write('%g' % term.getValue())
+		self.writeAnnotations(term)
+	
+	def visitStr(self, term):
+		s = str(term.getValue())
+		s = s.replace('\"', '\\"')
+		s = s.replace('\t', '\\t')
+		s = s.replace('\r', '\\r')
+		s = s.replace('\n', '\\n')
+		self.fp.write('"' + s + '"')
+		self.writeAnnotations(term)
+	
+	def visitNilList(self, term, inside_list = False):
+		if not inside_list:
+			self.fp.write('[]')
+			self.writeAnnotations(term)
+
+	def visitConsList(self, term, inside_list = False):
+		if not inside_list:
+			self.fp.write('[')	 
+		head = term.getHead()
+		self.visit(head)
+		tail = term.getTail()
+		last = tail.getType() == LIST and tail.isEmpty()
+		if not last:
+			self.fp.write(",")
+			self.visit(tail, inside_list = True)		
+		if not inside_list:
+			self.fp.write(']')
+			self.writeAnnotations(term)
+
+	def visitAppl(self, term):
+		name = term.getName()
+		# TODO: verify strings
+		self.fp.write(name.getSymbol())
+		args = term.getArgs()
+		if name.getType() != STR or name.getValue() == '' or not args.isEquivalent(args.factory.makeNilList()):
+			self.fp.write('(')
+			self.visit(args, inside_list = True)
+			self.fp.write(')')
+		self.writeAnnotations(term)
+
+	def visitVar(self, term, inside_list = False):
+		if inside_list:
+			self.fp.write('*')
+		self.fp.write(str(term.getName()))
+		pattern = term.getPattern()
+		if pattern.getType() != WILDCARD:
+			self.fp.write('=')
+			self.visit(pattern)
+		
+	def visitWildcard(self, term, inside_list = False):
+		if inside_list:
+			self.fp.write('*')
+		else:
+			self.fp.write('_')
+
