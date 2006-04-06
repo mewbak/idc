@@ -1,27 +1,16 @@
 // Grammar for aterm parsing
 
 
-header "atermParser.__main__" {
-    from aterm import Factory
-    from atermLexer import Lexer
-
-    factory = Factory()
-    lexer = Lexer()
-    parser = Parser(lexer, factory = factory)
-    t = parser.term()
-    print t
-}
-
-header "atermParser.__init__" {
+header "parser.__init__" {
     self.factory = kwargs["factory"]
 }
 
 options {
-	language  = "Python";
+	language = "Python";
 }
 
 
-class atermLexer extends Lexer;
+class lexer extends Lexer;
 
 tokens {
 	INT;
@@ -48,17 +37,11 @@ REAL_OR_INT
 	;
 
 STR
-	: '"'! (STRCHAR)* '"'!
+	: '"'! ( CHAR )* '"'!
 	;
 
 protected
-STRCHAR
-	: ESCCHAR
-	| ~('"'|'\\')
-	;
-
-protected
-ESCCHAR
+CHAR
 	:
 		'\\'!
 		( 'n' { $setText("\n"); }
@@ -67,6 +50,7 @@ ESCCHAR
 		| '"' { $setText("\""); }
 		| ~('n'|'r'|'t'|'"')
 		)
+	| ~('"'|'\\')
 	;
 
 CONS
@@ -87,7 +71,7 @@ RSQUARE: ']';
 
 COMMA: ',';
 
-STAR	: '*';
+STAR: '*';
 
 LCURLY: '{';
 RCURLY: '}';
@@ -95,7 +79,7 @@ RCURLY: '}';
 ASSIGN: '=';
 
 
-class atermParser extends Parser;
+class parser extends Parser;
 
 start returns [res]
 	: t=aterm EOF { res = t }

@@ -62,7 +62,7 @@ test: \
 	test_ssl \
 	test_wgen
 
-test_aterm: test_aterm.py atermLexer.py atermParser.py
+test_aterm: test_aterm.py aterm/lexer.py aterm/parser.py
 
 examples:
 	$(MAKE) -C $@

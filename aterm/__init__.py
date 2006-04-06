@@ -10,8 +10,8 @@ except ImportError:
 	from StringIO import StringIO
 
 import antlr
-from atermLexer import Lexer
-from atermParser import Parser
+from aterm.lexer import Lexer
+from aterm.parser import Parser
 
 
 # Term types
