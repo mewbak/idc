@@ -21,13 +21,13 @@ try:
 except ImportError:
 	from StringIO import StringIO
 
-from aterm.constants import *
-from aterm.exceptions import *
-from aterm.text import TextWriter
+from aterm import types
+from aterm import exceptions
+from aterm import text
 
 
 class Term:
-	'''Base class for all Terms.'''
+	'''Base class for all terms.'''
 
 	def __init__(self, factory, annotations = None):
 		self.factory = factory		
@@ -42,12 +42,11 @@ class Term:
 		raise NotImplementedError
 
 	def isConstant(self):
-		'''Whether this term is constants, as opposed to have variables or wildcards.'''
+		'''Whether this term is types, as opposed to have variables or wildcards.'''
 		raise NotImplementedError
 
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
-		
 		return self is other or self._isEquivalent(other)
 		
 	def _isEquivalent(self, other):
@@ -67,15 +66,15 @@ class Term:
 		
 		try:
 			self._match(other, args, kargs)
-		except PatternMismatchException:
+		except exceptions.PatternMismatchException:
 			return False
 		
 		return True
 	
 	def _match(self, other, args, kargs):
-		raise PatternMismatchException
+		raise exceptions.PatternMismatchException
 
-	# FIxME: annotations are not fully impletemented
+	# FIXME: annotations are not fully impletemented
 	
 	def getAnnotation(self, label):
 		'''Gets an annotation associated with label'''
@@ -93,7 +92,6 @@ class Term:
 
 	def getAnnotations(self):
 		'''Returns the annotation list.'''
-		
 		if self.__annotations is None:
 			return self.factory.makeNilList()
 		else:
@@ -102,19 +100,18 @@ class Term:
 	def __getattr__(self, name):
 		'''Provide attributes 'type' and 'annotations', 	shorthand  for 
 		getType() and getAnnotations() methods respectively.'''
-		
 		if name == 'type':
 			return self.getType()
 		elif name == 'annotations':
 			return self.getAnnotations()
 		else:
-			raise AttributeError, "'%s' object has no attribute '%s'" % (self.__class__.__name__, name)
+			raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
 			
 	def __setattr__(self, name, value):
 		'''Prevent modification of term attributes'''
 		
 		if name in self.__dict__ or name in ('type', 'annotations'):
-			raise TypeError, "attempt to modify read-only term attribute '%s'" % name
+			raise TypeError("attempt to modify read-only term attribute '%s'" % name)
 		else:
 			self.__dict__[name] = value
 
@@ -122,7 +119,6 @@ class Term:
 		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
-		
 		return self is other or self._isEqual(other) and self.annotations.isEquivalent(other.annotations)
 		
 	def _isEqual(self, other):
@@ -140,11 +136,12 @@ class Term:
 		return self
 
 	def accept(self, visitor, *args, **kargs):
+		'''Accept a visitor.'''
 		raise NotImplementedError
 
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
-		writer = TextWriter(fp)
+		writer = text.TextWriter(fp)
 		writer.visit(self)
 
 	def __str__(self):
@@ -158,6 +155,7 @@ class Term:
 
 
 class Literal(Term):
+	'''Base class for literal terms.'''
 
 	def __init__(self, factory, value, annotations = None):
 		Term.__init__(self, factory, annotations)
@@ -178,14 +176,15 @@ class Literal(Term):
 	def _match(self, other, args, kargs):
 		if other.isEquivalent(self):
 			return other
-		
-		return Term._match(self, other, args, kargs)
+		else:
+			return Term._match(self, other, args, kargs)
 
 		
 class Integer(Literal):
+	'''Integer literal term.'''
 
 	def getType(self):
-		return INT
+		return types.INT
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeInt(self.value, annotations)
@@ -195,9 +194,10 @@ class Integer(Literal):
 
 
 class Real(Literal):
-
+	'''Real literal term.'''
+	
 	def getType(self):
-		return REAL
+		return types.REAL
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeReal(self.value, annotations)
@@ -207,9 +207,10 @@ class Real(Literal):
 
 
 class String(Literal):
-
+	'''String literal term.'''
+	
 	def getType(self):
-		return STR
+		return types.STR
 
 	def getSymbol(self):
 		return self.getValue()
@@ -222,9 +223,10 @@ class String(Literal):
 
 
 class Wildcard(Term):
+	'''Wildcard term.'''
 
 	def getType(self):
-		return WILDCARD
+		return types.WILDCARD
 	
 	def getSymbol(self):
 		return '_'
@@ -233,7 +235,7 @@ class Wildcard(Term):
 		return False
 	
 	def _isEquivalent(self, other):
-		return other.getType() == WILDCARD
+		return other.getType() == types.WILDCARD
 	
 	def _isEqual(self, other):
 		return self._isEquivalent(other)
@@ -246,13 +248,14 @@ class Wildcard(Term):
 		try:
 			return args.pop(0)
 		except IndexError:
-			raise TypeError, 'insufficient number of arguments'
+			raise TypeError('insufficient number of arguments')
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitWildcard(self, *args, **kargs)
 
 
 class Variable(Term):
+	'''Variable term.'''
 	
 	def __init__(self, factory, name, pattern, annotations = None):
 		Term.__init__(self, factory, annotations)
@@ -260,7 +263,7 @@ class Variable(Term):
 		self.pattern = pattern
 	
 	def getType(self):
-		return VAR
+		return types.VAR
 	
 	def getName(self):
 		return self.name
@@ -285,7 +288,7 @@ class Variable(Term):
 		try:
 			value = kargs[name]
 			if not kargs[name].isEquivalent(other):
-				raise PatternMismatchException
+				raise exceptions.PatternMismatchException
 			return other
 		except KeyError:
 			result = self.pattern._match(other, [], kargs)
@@ -298,16 +301,17 @@ class Variable(Term):
 			# TODO: do something with the pattern here?
 			return kargs[name]
 		else:
-			raise ValueError, 'undefined term variable %s' % name
+			raise ValueError('undefined term variable %s' % name)
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitVar(self, *args, **kargs)
 
 
 class List(Term):
+	'''List term.'''
 
 	def getType(self):
-		return LIST
+		return types.LIST
 
 	def isEmpty(self):	
 		return NotImplementedError
@@ -340,6 +344,7 @@ class List(Term):
 
 
 class NilList(List):
+	'''Empty list term.'''
 	
 	def __init__(self, factory, annotations = None):
 		List.__init__(self, factory, annotations)
@@ -351,16 +356,16 @@ class NilList(List):
 		return 0
 
 	def getHead(self):
-		raise EmptyListException
+		raise exceptions.EmptyListException
 	
 	def getTail(self):
-		raise EmptyListException
+		raise exceptions.EmptyListException
 
 	def isConstant(self):
 		return True
 	
 	def _isEquivalent(self, other):
-		return other.getType() == LIST and other.isEmpty()
+		return other.getType() == types.LIST and other.isEmpty()
 
 	def _isEqual(self, other):
 		return self._isEquivalent(other)
@@ -369,11 +374,11 @@ class NilList(List):
 		if self is other:
 			return other
 		
-		if other.getType() == LIST:
+		if other.getType() == types.LIST:
 			if other.isEmpty():
 				return other
 				
-		raise PatternMismatchException
+		raise exceptions.PatternMismatchException
 
 	def setAnnotations(self, annotations):
 		return self.factory.makeNilList(annotations)
@@ -383,18 +388,19 @@ class NilList(List):
 
 
 class ConsList(List):
-
+	'''Concatenated list term.'''
+	
 	def __init__(self, factory, head, tail = None, annotations = None):
 		List.__init__(self, factory, annotations)
 
 		if not isinstance(head, Term):
-			raise TypeError, "head is not a term: %r" % head
+			raise TypeError("head is not a term: %r" % head)
 		self.head = head
 		if tail is None:
 			self.tail = self.factory.makeNilList()
 		else:
 			if not isinstance(tail, (List, Variable, Wildcard)):
-				raise TypeError, "tail is not a list, variable, or wildcard term: %r" % tail
+				raise TypeError("tail is not a list, variable, or wildcard term: %r" % tail)
 			self.tail = tail
 	
 	def isEmpty(self):
@@ -414,14 +420,14 @@ class ConsList(List):
 	
 	def _isEquivalent(self, other):
 		return (
-			other.getType() == LIST and not other.isEmpty() and 
+			other.getType() == types.LIST and not other.isEmpty() and 
 			other.head.isEquivalent(self.head) and 
 			other.tail.isEquivalent(self.tail)
 		)
 		
 	def _isEqual(self, other):
 		return (
-			other.getType() == LIST and not other.isEmpty() and 
+			other.getType() == types.LIST and not other.isEmpty() and 
 			other.head.isEqual(self.head) and 
 			other.tail.isEqual(self.tail)
 		)
@@ -430,7 +436,7 @@ class ConsList(List):
 		if self is other:
 			return other
 		
-		if other.getType() == LIST:
+		if other.getType() == types.LIST:
 			if not other.isEmpty():
 				self.head._match(other.head, args, kargs)
 				self.tail._match(other.tail, args, kargs)
@@ -449,22 +455,23 @@ class ConsList(List):
 
 
 class Application(Term):
+	'''Application term.'''
 
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 
 		if not isinstance(name, (String, Variable, Wildcard)):
-			raise TypeError, "name is not a string, variable, or wildcard term: %r" % name
+			raise TypeError("name is not a string, variable, or wildcard term: %r" % name)
 		self.name = name
 		if args is None:
 			self.args = self.factory.makeNilList()
 		else:
 			if not isinstance(args, (List, Variable, Wildcard)):
-				raise TypeError, "args is not a list term: %r" % args
+				raise TypeError("args is not a list term: %r" % args)
 			self.args = args
 	
 	def getType(self):
-		return APPL
+		return types.APPL
 
 	def getName(self):
 		return self.name
@@ -479,13 +486,13 @@ class Application(Term):
 		return self.name.isConstant() and self.args.isConstant()
 	
 	def _isEquivalent(self, other):
-		return other.getType() == APPL and self.name.isEquivalent(other.name) and self.args.isEquivalent(other.args)
+		return other.getType() == types.APPL and self.name.isEquivalent(other.name) and self.args.isEquivalent(other.args)
 
 	def _isEqual(self, other):
-		return other.getType() == APPL and self.name.isEqual(other.name) and self.args.isEqual(other.args)
+		return other.getType() == types.APPL and self.name.isEqual(other.name) and self.args.isEqual(other.args)
 		
 	def _match(self, other, args, kargs):
-		if other.getType() == APPL:
+		if other.getType() == types.APPL:
 			self.name._match(other.name, args, kargs) 
 			self.args._match(other.args, args, kargs)
 			return other

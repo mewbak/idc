@@ -1,14 +1,15 @@
 '''Textual representation of terms.'''
 
 
-from aterm.constants import *
-from aterm.visitor import Visitor
+from aterm import types
+from aterm import visitor
 
 
-class TextWriter(Visitor):
+class TextWriter(visitor.Visitor):
+	'''Writes a term to a text stream.'''
 	
 	def __init__(self, fp):
-		Visitor.__init__(self)
+		visitor.Visitor.__init__(self)
 		self.fp = fp
 
 	def writeAnnotations(self, term):
@@ -46,7 +47,7 @@ class TextWriter(Visitor):
 		head = term.getHead()
 		self.visit(head)
 		tail = term.getTail()
-		last = tail.getType() == LIST and tail.isEmpty()
+		last = tail.getType() == types.LIST and tail.isEmpty()
 		if not last:
 			self.fp.write(",")
 			self.visit(tail, inside_list = True)		
@@ -59,7 +60,10 @@ class TextWriter(Visitor):
 		# TODO: verify strings
 		self.fp.write(name.getSymbol())
 		args = term.getArgs()
-		if name.getType() != STR or name.getValue() == '' or not args.isEquivalent(args.factory.makeNilList()):
+		if \
+				name.getType() != types.STR \
+				or name.getValue() == '' \
+				or not args.isEquivalent(args.factory.makeNilList()):
 			self.fp.write('(')
 			self.visit(args, inside_list = True)
 			self.fp.write(')')
@@ -70,7 +74,7 @@ class TextWriter(Visitor):
 			self.fp.write('*')
 		self.fp.write(str(term.getName()))
 		pattern = term.getPattern()
-		if pattern.getType() != WILDCARD:
+		if pattern.getType() != types.WILDCARD:
 			self.fp.write('=')
 			self.visit(pattern)
 		

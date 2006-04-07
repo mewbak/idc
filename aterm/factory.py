@@ -13,15 +13,15 @@ except ImportError:
 
 import antlr
 
-import aterm.exceptions
-import aterm.terms
+from aterm import exceptions
+from aterm import terms
 
 
 class Factory:
 	'''An Factory is responsible for make new Terms, either by parsing 
 	from string or stream, or via one the of the "make" methods.'''
 
-	# TODO: maximal sharing
+	# TODO: implement maximal sharing
 
 	MAX_PARSE_CACHE_LEN = 512
 	
@@ -30,45 +30,46 @@ class Factory:
 
 	def makeInt(self, value, annotations = None):
 		'''Creates a new integer literal term'''
-		return aterm.terms.Integer(self, value, annotations)
+		return terms.Integer(self, value, annotations)
 	
 	def makeReal(self, value, annotations = None):
 		'''Creates a new real literal term'''
-		return aterm.terms.Real(self, value, annotations)
+		return terms.Real(self, value, annotations)
 
 	def makeStr(self, value, annotations = None):
 		'''Creates a new string literal term'''
-		return aterm.terms.String(self, value, annotations)
+		return terms.String(self, value, annotations)
 
 	def makeVar(self, name, pattern, annotations = None):
 		'''Creates a new variable term'''
-		return aterm.terms.Variable(self, name, pattern, annotations)
+		return terms.Variable(self, name, pattern, annotations)
 
 	def makeWildcard(self, annotations = None):
 		'''Creates a new wildcard term'''
-		return aterm.terms.Wildcard(self, annotations)
+		return terms.Wildcard(self, annotations)
 
 	def makeNilList(self, annotations = None):
 		'''Creates a new empty list term'''
-		return aterm.terms.NilList(self, annotations)
+		return terms.NilList(self, annotations)
 
 	def makeConsList(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''
-		return aterm.terms.ConsList(self, head, tail, annotations)
+		return terms.ConsList(self, head, tail, annotations)
 
 	def makeList(self, seq, annotations = None):
-		res = self.makeNilList()
-		for i in range(len(seq) - 1, -1, -1):
-			res = self.makeConsList(seq[i], res)
+		'''Creates a new list from a sequence.'''
+		accum = self.makeNilList()
+		for i in xrange(len(seq) - 1, -1, -1):
+			accum = self.makeConsList(seq[i], accum)
 		if annotations is not None:
-			res = res.setAnnotations(annotations)
-		return res
+			accum = accum.setAnnotations(annotations)
+		return accum
 	
-	# TODO: add a makeTuple method?
+	# TODO: add a makeTuple method
 	
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new appplication term'''
-		return aterm.terms.Application(self, name, args, annotations)
+		return terms.Application(self, name, args, annotations)
 
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
@@ -81,8 +82,8 @@ class Factory:
 			parser = Parser(lexer, factory = self)
 			return parser.term()
 		except antlr.ANTLRException, ex:
-			# FIXME: this is not working
-			raise aterm.exceptions.ParseException(str(ex))
+			# FIXME: parsing exceptions are not being catch properly
+			raise exceptions.ParseException(str(ex))
 	
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
@@ -108,7 +109,7 @@ class Factory:
 		
 		try:
 			_pattern._match(other, args, kargs)
-		except aterm.exceptions.PatternMismatchException:
+		except exceptions.PatternMismatchException:
 			return False
 		
 		return True
@@ -133,9 +134,9 @@ class Factory:
 		return _pattern._make(_args, _kargs)
 		
 	def _castArg(self, name, value):
-		if isinstance(value, aterm.terms.Term):
+		if isinstance(value, terms.Term):
 			return value
-		elif isinstance(value, aterm.terms.Term):
+		elif isinstance(value, terms.Term):
 			return self.makeInt(value)
 		elif isinstance(value, int):
 			return self.makeInt(value)
@@ -146,6 +147,6 @@ class Factory:
 		elif isinstance(value, list):
 			return self.makeList(value)
 		else:
-			raise TypeError, "argument %s is neither a term, a literal, or a list: %r" % (name, value)
+			raise TypeError("argument %s is neither a term, a literal, or a list: %r" % (name, value))
 
 

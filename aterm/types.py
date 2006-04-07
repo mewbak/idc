@@ -1,4 +1,4 @@
-"""Term type constants."""
+"""Term types constants."""
 
 
 INT = 1

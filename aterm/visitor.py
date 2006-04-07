@@ -1,17 +1,13 @@
 '''Term visiting.'''
 
 
-import terms
-
-
 class Visitor:
+	'''Base class for term visitors.'''
 	
 	def __init__(self):
 		pass
 	
 	def visit(self, term, *args, **kargs):
-		if not isinstance(term, terms.Term):
-			raise TypeError, 'not a term: %r' % term
 		return term.accept(self, *args, **kargs)
 
 	def visitTerm(self, term, *args, **kargs):
