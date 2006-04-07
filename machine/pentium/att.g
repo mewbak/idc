@@ -2,8 +2,8 @@ header {
 import sys
 }
 
-header "asmParser.__main__" {
-    from asmLexer import Lexer
+header "att_parser.__main__" {
+    from att_lexer import Lexer
     from aterm import Factory
     
     factory = Factory()
@@ -34,7 +34,7 @@ header "asmParser.__main__" {
         pass
 }
 
-header "asmParser.__init__" {
+header "att_parser.__init__" {
     self.factory = kwargs["factory"]
 }
 
@@ -42,7 +42,7 @@ options {
     language  = "Python";
 }
 
-class asmLexer extends Lexer;
+class att_lexer extends Lexer;
 options {
 	k = 2;
 }
@@ -157,7 +157,7 @@ SL_COMMENT
 // 		{$setType(Token.SKIP);}
 // 	;
 
-class asmParser extends Parser;
+class att_parser extends Parser;
 options {
 	buildAST=true; // TODO: remove -- only used for debugging
 	k = 3;

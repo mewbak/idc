@@ -6,7 +6,7 @@ do
 	echo
 	
 	echo "** Lexing **"
-	if ! python sslLexer.py < $FILE > /dev/null 
+	if ! python utils/sslc/lexer.py < $FILE > /dev/null 
 	then 
 		echo 
 		continue
@@ -14,7 +14,7 @@ do
 	echo 
 
 	echo "** Parsing **"
-	if ! python sslParser.py < $FILE > /dev/null
+	if ! python util/sslc/parser.py < $FILE > /dev/null
 	then 
 		echo 
 		continue
@@ -22,7 +22,7 @@ do
 	echo 
 
 	echo "** Preprocessing **"
-	if ! python sslPreprocessor.py < $FILE
+	if ! python util/sslc/preprocessor.py < $FILE
 	then 
 		echo 
 		continue

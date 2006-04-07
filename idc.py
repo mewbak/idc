@@ -16,7 +16,6 @@ import os.path
 
 
 import aterm
-import asm
 import ir
 import box
 
@@ -123,8 +122,11 @@ class MainApp(GladeApp):
 		
 		if path is not None:
 			# TODO: catch exceptions here
-			term = asm.load(self.factory, file(path, 'rt'))
-			term = asm.translate(term)
+			from machine.pentium import Pentium
+			machine = Pentium()
+
+			term = machine.load(self.factory, file(path, 'rt'))
+			term = machine.translate(term)
 			self.term = term
 			
 			self.update_textview()

@@ -49,7 +49,7 @@ bin/antlr.$(ARCH): $(ANTLR_JAR) bin
 
 # Aterm walker generation
 
-all: $(patsubst %.w,%.py,$(wildcard *.w))
+all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 	
 %.py: %.w util/wc/wc.py util/wc/lexer.py util/wc/parser.py util/wc/compiler.py
 	$(PYTHON) util/wc/wc.py -o $@ $<
@@ -133,7 +133,7 @@ dist: all doc
 # Clean the generated files
 
 clean:
-	@$(RM) .deps.mak
+	@$(RM) .deps.mak $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 
 .PHONY: clean
 

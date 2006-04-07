@@ -3,28 +3,6 @@
 # TODO: redesign this module in order to cope with more than one machine
 
 header {
-from asmLexer import Lexer
-from asmParser import Parser
-
-
-def load(factory, fp):
-	'''Load an assembly file into a low-level IR aterm.'''
-	
-	lexer = Lexer(fp)
-	parser = Parser(lexer, factory = factory)
-	term = parser.start()
-	return term
-
-
-def translate(term):
-	'''Translate the "Asm" terms into the higher-level IR equivalent 
-	constructs by means of the SSL.'''
-	
-	walker = Translate(term.factory)
-
-	term = walker.module(term)
-	
-	return term
 
 from ssl.pentium import insn_table
 
@@ -47,7 +25,7 @@ opcode_table = {
 }
 
 
-class Translate:
+class Translator:
 
 {
 	tmp_no = 0
@@ -89,20 +67,3 @@ class Translate:
 		| _ 
 			-> [_]
 		;
-	
-
-
-header {
-
-if __name__ == '__main__':
-	import sys
-	from aterm import Factory
-	factory = Factory()
-	term = load(factory, file(sys.argv[1]))
-	term = translate(term)
-	from ir import PrettyPrinter
-	import box
-	printer = PrettyPrinter(factory)
-	boxes = printer.module(term)
-	print box.box2text(boxes)
-}
