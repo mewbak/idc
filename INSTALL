@@ -18,7 +18,14 @@ INSTALLATION INSTRUCTIONS
 
 4. To run all the tests, do:
 
-     make test
+     make tests
 
+5. To see the assembly translation do:
+
+     python translate.py examples/ex*.s
+
+5. To play around with the GUI do:
+
+     python idc.py
 
 That's all that can be done at the present.
