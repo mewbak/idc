@@ -81,17 +81,19 @@ ASSIGN: '=';
 
 class parser extends Parser;
 
-start returns [res]
-	: t=aterm EOF { res = t }
+options {
+	defaultErrorHandler = false;
+}
+
+all returns [res]
+	: res=aterm EOF
 	;
 
 aterm returns [res]
-	: term=term 
-		( ( LCURLY ) => LCURLY anno=aterms RCURLY
-			{ res = term.setAnnotation(anno) }
- 		|
-			{ res = term }
-		)
+	: res=term 
+		( options { greedy = true; }: LCURLY anno=aterms RCURLY
+			{ res = res.setAnnotation(anno) }
+		)?
 	;
 
 term returns [res]
@@ -136,11 +138,11 @@ aterms returns [res]
 		{ res = self.factory.makeNilList() }
 	|
 		head=aterm 
-        ( COMMA tail=aterms 
-        |
-            { tail = self.factory.makeNilList() }
-        )
-        { res = self.factory.makeConsList(head, tail) }
+		( COMMA tail=aterms 
+		|
+			{ tail = self.factory.makeNilList() }
+		)
+		{ res = self.factory.makeConsList(head, tail) }
 	|
 		STAR
 			{ res = self.factory.makeWildcard() }

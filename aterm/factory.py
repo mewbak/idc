@@ -77,13 +77,12 @@ class Factory:
 		from aterm.lexer import Lexer
 		from aterm.parser import Parser
 
-		try:
+		if 1:#try:
 			lexer = Lexer(fp)
 			parser = Parser(lexer, factory = self)
-			return parser.term()
-		except antlr.ANTLRException, ex:
-			# FIXME: parsing exceptions are not being catch properly
-			raise exceptions.ParseException(str(ex))
+			return parser.aterm()
+		#except antlr.ANTLRException, ex:
+		#	raise exceptions.ParseException(str(ex))
 	
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
