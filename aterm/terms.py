@@ -222,91 +222,6 @@ class String(Literal):
 		return visitor.visitStr(self, *args, **kargs)
 
 
-class Wildcard(Term):
-	'''Wildcard term.'''
-
-	def getType(self):
-		return types.WILDCARD
-	
-	def getSymbol(self):
-		return '_'
-	
-	def isConstant(self):
-		return False
-	
-	def _isEquivalent(self, other):
-		return other.getType() == types.WILDCARD
-	
-	def _isEqual(self, other):
-		return self._isEquivalent(other)
-	
-	def _match(self, other, args, kargs):
-		args.append(other)
-		return other
-
-	def _make(self, args, kargs):
-		try:
-			return args.pop(0)
-		except IndexError:
-			raise TypeError('insufficient number of arguments')
-
-	def accept(self, visitor, *args, **kargs):
-		return visitor.visitWildcard(self, *args, **kargs)
-
-
-class Variable(Term):
-	'''Variable term.'''
-	
-	def __init__(self, factory, name, pattern, annotations = None):
-		Term.__init__(self, factory, annotations)
-		self.name = name
-		self.pattern = pattern
-	
-	def getType(self):
-		return types.VAR
-	
-	def getName(self):
-		return self.name
-
-	def getPattern(self):
-		return self.pattern
-
-	def getSymbol(self):
-		return self.getName()
-
-	def _isEquivalent(self, other):
-		return self.getType() == other.getType() and self.name == other.name and self.pattern.isEquivalent(other.pattern)
-
-	def _isEqual(self, other):
-		return self.getType() == other.getType() and self.name == other.name and self.pattern.isEqual(other.pattern)
-	
-	def isConstant(self):
-		return self.pattern.isConstant()
-	
-	def _match(self, other, args, kargs):
-		name = self.getName()
-		try:
-			value = kargs[name]
-			if not kargs[name].isEquivalent(other):
-				raise exceptions.PatternMismatchException
-			return other
-		except KeyError:
-			result = self.pattern._match(other, [], kargs)
-			kargs[name] = result
-			return result
-
-	def _make(self, args, kargs):
-		name = self.getName()
-		if name in kargs:
-			# TODO: do something with the pattern here?
-			return kargs[name]
-		else:
-			raise ValueError('undefined term variable %s' % name)
-
-	def accept(self, visitor, *args, **kargs):
-		return visitor.visitVar(self, *args, **kargs)
-
-
 class List(Term):
 	'''List term.'''
 
@@ -507,3 +422,89 @@ class Application(Term):
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitAppl(self, *args, **kargs)
+
+
+class Wildcard(Term):
+	'''Wildcard term.'''
+
+	def getType(self):
+		return types.WILDCARD
+	
+	def getSymbol(self):
+		return '_'
+	
+	def isConstant(self):
+		return False
+	
+	def _isEquivalent(self, other):
+		return other.getType() == types.WILDCARD
+	
+	def _isEqual(self, other):
+		return self._isEquivalent(other)
+	
+	def _match(self, other, args, kargs):
+		args.append(other)
+		return other
+
+	def _make(self, args, kargs):
+		try:
+			return args.pop(0)
+		except IndexError:
+			raise TypeError('insufficient number of arguments')
+
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitWildcard(self, *args, **kargs)
+
+
+class Variable(Term):
+	'''Variable term.'''
+	
+	def __init__(self, factory, name, pattern, annotations = None):
+		Term.__init__(self, factory, annotations)
+		self.name = name
+		self.pattern = pattern
+	
+	def getType(self):
+		return types.VAR
+	
+	def getName(self):
+		return self.name
+
+	def getPattern(self):
+		return self.pattern
+
+	def getSymbol(self):
+		return self.getName()
+
+	def _isEquivalent(self, other):
+		return self.getType() == other.getType() and self.name == other.name and self.pattern.isEquivalent(other.pattern)
+
+	def _isEqual(self, other):
+		return self.getType() == other.getType() and self.name == other.name and self.pattern.isEqual(other.pattern)
+	
+	def isConstant(self):
+		return self.pattern.isConstant()
+	
+	def _match(self, other, args, kargs):
+		name = self.getName()
+		try:
+			value = kargs[name]
+			if not kargs[name].isEquivalent(other):
+				raise exceptions.PatternMismatchException
+			return other
+		except KeyError:
+			result = self.pattern._match(other, [], kargs)
+			kargs[name] = result
+			return result
+
+	def _make(self, args, kargs):
+		name = self.getName()
+		if name in kargs:
+			# TODO: do something with the pattern here?
+			return kargs[name]
+		else:
+			raise ValueError('undefined term variable %s' % name)
+
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitVar(self, *args, **kargs)
+
