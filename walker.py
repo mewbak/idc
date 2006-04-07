@@ -116,9 +116,30 @@ class Walker:
 
 		if target.isEmpty():
 			return target
-
+		
 		return self.factory.makeConsList(
 				func(target.getHead(), *args), 
 				self._map(target.getTail(), func, *args, **kargs)
 			)
+
+	def _cat(self, *args):
+		'''Concatenates several lists.'''
 		
+		if len(args) == 0:
+			return self.factory.makeNilList()
+		if len(args) == 1:
+			self._list(args[0])
+			return args[0]
+		return self._cat2(args[0], self._cat(*args[1:]))
+	
+	def _cat2(self, x, y):
+		'''Concatenates two lists.'''
+		self._list(x)
+		if x.isEmpty():
+			self._list(y)
+			return y
+		return self.factory.makeConsList(
+				x.getHead(), 
+				self._cat(x.getTail(), y)
+			)
+

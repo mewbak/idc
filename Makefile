@@ -70,17 +70,9 @@ tests: \
 test_aterm: tests/test_aterm.py aterm/lexer.py aterm/parser.py
 	$(PYTHON) $< -v
 
-examples:
-	$(MAKE) -C $@
-
-.PHONY: examples
-	
-test_asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
-	$(SHELL) $<
-
-test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
+test_walker: tests/test_walker.py
 	$(PYTHON) $< -v
-	
+
 test_wc: tests/test_wc.py
 	$(PYTHON) $< -v
 
@@ -90,6 +82,17 @@ test_box: tests/test_box.py box.py
 test_ir: tests/test_ir.py ir.py
 	$(PYTHON) $< -v
 
+test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
+	$(PYTHON) $< -v
+
+examples:
+	$(MAKE) -C $@
+
+.PHONY: examples
+	
+test_asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
+	$(SHELL) $<
+	
 .PHONY: tests
 
 
@@ -101,7 +104,8 @@ doc: box.py
 		--css blue \
 		aterm \
 		walker.py \
-		box.py
+		box.py \
+		ir.py
 
 .PHONY: doc
 
