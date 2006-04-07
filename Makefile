@@ -61,36 +61,35 @@ all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 
 # Unit, component, and integration testing
 
-test: \
+tests: \
 	test_aterm \
-	test_asm \
-	test_ssl \
-	test_wc
+	test_wc \
+	test_box \
+	test_ir
 
-test_aterm: test_aterm.py aterm/lexer.py aterm/parser.py
+test_aterm: tests/test_aterm.py aterm/lexer.py aterm/parser.py
 
 examples:
 	$(MAKE) -C $@
 
 .PHONY: examples
 	
-test_asm: test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
-
-test_ssl: test_ssl.sh sslLexer.py sslParser.py sslPreprocessor.py
-	
-test_wc: test_wc.py
-
-test_box: test_box.py box.py
-
-test_ir: test_ir.py ir.py
-
-test_%: test_%.py
-	$(PYTHON) $< -v
-
-test_%: test_%.sh
+test_asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
 	$(SHELL) $<
 
-.PHONY: test
+test_ssl: tests/test_ssl.sh sslLexer.py sslParser.py sslPreprocessor.py
+	$(SHELL) $<
+	
+test_wc: tests/test_wc.py
+	$(PYTHON) $< -v
+
+test_box: tests/test_box.py box.py
+	$(PYTHON) $< -v
+
+test_ir: tests/test_ir.py ir.py
+	$(PYTHON) $< -v
+
+.PHONY: tests
 
 
 # Generate reference documentation
