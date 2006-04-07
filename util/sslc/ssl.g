@@ -26,7 +26,7 @@ class SemanticException(antlr.SemanticException):
 
 }
 
-header "sslParser.__main__" {
+header "parser.__main__" {
     from sslLexer import Lexer
 
     lexer = Lexer()
@@ -36,7 +36,7 @@ header "sslParser.__main__" {
     print ast
 }
 
-header "sslPreprocessor.__main__" {
+header "preprocessor.__main__" {
     from sslLexer import Lexer
     from sslParser import Parser
 
@@ -55,7 +55,7 @@ header "sslPreprocessor.__main__" {
         print "%s(%s) %s" % (name, ','.join(params), body.toStringList())
 }
 
-header "sslPreprocessor.__init__" {
+header "preprocessor.__init__" {
     self.constants = {}
     self.tables = {}
     self.functions = {}
@@ -68,7 +68,8 @@ options {
 }
 
 
-class sslLexer extends Lexer;
+class lexer extends Lexer;
+
 options {
 	k = 4;
 	testLiterals=true;
@@ -240,7 +241,8 @@ FNEG: "~f";
 LNOT: "~L";
 
 
-class sslParser extends Parser;
+class parser extends Parser;
+
 options {
 	buildAST = true;
 	k = 3;
@@ -515,7 +517,8 @@ fast_entry: NAME INDEX^ NAME;
 
 // SSL AST preprocessor that replaces references to constants, tables, and
 // functions by their actual values.
-class sslPreprocessor extends TreeParser;
+class preprocessor extends TreeParser;
+
 options {
 	buildAST = true;
 }

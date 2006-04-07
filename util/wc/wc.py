@@ -4,9 +4,9 @@ import sys
 import optparse
 import os.path
 
-from wgenLexer import Lexer
-from wgenParser import Parser
-from wgenWalker import Walker
+from lexer import Lexer
+from parser import Parser
+from compiler import Walker
 
 
 def wc(fpin, fpout, debug = False):

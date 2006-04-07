@@ -4,11 +4,11 @@
  * ATerm syntaxes.
  */
 
-header "wgenParser.__init__" {
+header "parser.__init__" {
     self.debug = kwargs.get("debug", False)
 }
 
-header "wgenWalker.__init__" {
+header "compiler.__init__" {
     self.fp = args[0]
     self.debug = kwargs.get("debug", False)
 }
@@ -18,7 +18,7 @@ options {
 }
 
 
-class wgenLexer extends Lexer;
+class lexer extends Lexer;
 
 options {
 	k = 2;
@@ -176,7 +176,7 @@ NESTED_ACTION
     ;
 
 
-class wgenParser extends Parser;
+class parser extends Parser;
 
 options {
 	k=2;
@@ -347,7 +347,7 @@ id
 	;
 
 
-class wgenWalker extends TreeParser;
+class compiler extends TreeParser;
 
 {
     _indent = 0

@@ -20,7 +20,7 @@ foreach $ARG (@ARGV) {
 			push @targets, "$ARGDIR$1.py";
 		}
 		if (/\bimportVocab\s*=\s*(\w+)\s*;/) {
-			push @depends, "$1TokenTypes.txt";
+			push @depends, "$ARGDIR$1TokenTypes.txt";
 		}
 		if (/\bexportVocab\s*=\s*(\w+)\s*;/) {
 			$target = "$ARGDIR$1TokenTypes.txt";

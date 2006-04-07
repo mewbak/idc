@@ -140,33 +140,33 @@ aterm_sources = Flatten([
 
 # See http://www.scons.org/cgi-sys/cgiwrap/scons/moin.cgi/UsingCodeGenerators
 
-wgen_sources = Flatten([
-	'wgen.py', 
-	env.Antlr(source = 'wgen.g'), 
+wc_sources = Flatten([
+	'wc.py', 
+	env.Antlr(source = 'wc.g'), 
 	#aterm_sources,
 ])
 
-wgen_cmd = 'python wgen.py -o $TARGET $SOURCE'
+wc_cmd = 'python wc.py -o $TARGET $SOURCE'
 
-def wgen_emitter(target, source, env):
-    env.Depends(target, wgen_sources)
+def wc_emitter(target, source, env):
+    env.Depends(target, wc_sources)
     return target, source
 
-wgen_bld = Builder(
-	action = wgen_cmd,
+wc_bld = Builder(
+	action = wc_cmd,
 	src_suffix = '.w',
-	emitter = wgen_emitter,
+	emitter = wc_emitter,
 	suffix = '.py', 
 )
 
-env['BUILDERS']['WGen'] = wgen_bld
+env['BUILDERS']['WC'] = wc_bld
 
 
-#env.WGen(source = 'asm.w')
-#env.WGen(source = 'box.w')
-#env.WGen(source = 'ir.w')
+#env.WC(source = 'asm.w')
+#env.WC(source = 'box.w')
+#env.WC(source = 'ir.w')
 for source in Glob('*.w'):
-	env.WGen(source = source)
+	env.WC(source = source)
 
 
 
@@ -204,8 +204,8 @@ env.SSL('ssl/pentium.ssl')
 #   http://www.scons.org/cgi-sys/cgiwrap/scons/moin.cgi/UnitTests
 #   http://spacepants.org/blog/scons-unit-test
 
-test = env.Alias('test', env.Command('test_aterm', ['test_wgen.py', aterm_sources], 'python test_aterm.py'))
-test = env.Alias('test', env.Command('test_wgen', ['test_wgen.py', wgen_sources], 'python test_wgen.py'))
+test = env.Alias('test', env.Command('test_aterm', ['test_wc.py', aterm_sources], 'python test_aterm.py'))
+test = env.Alias('test', env.Command('test_wc', ['test_wc.py', wc_sources], 'python test_wc.py'))
 test = env.Alias('test', env.Command('test_ir', ['test_ir.py'], 'python test_ir.py'))
 test = env.Alias('test', env.Command('test_box', ['test_box.py'], 'python test_box.py'))
 

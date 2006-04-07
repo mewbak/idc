@@ -4,6 +4,8 @@
 # Configuration variables
 
 PYTHON = python
+export PYTHONPATH = .
+
 JAVA = java
 ANTLR_JAR = /usr/share/java/antlr.jar
 
@@ -17,6 +19,8 @@ ANTLR = $(JAVA) -cp $(ANTLR_JAR) antlr.Tool
 endif
 
 
+VPATH=.:ssl
+
 # Main targets
 
 default: all
@@ -28,9 +32,6 @@ all:
 
 # ANTLR parser generation
 
-%Lexer.py %Parser.py %Walker.py: %.g
-	$(ANTLR) $<
-	@touch $@
 
 
 # Compile ANTLR into native-code using gcj
@@ -50,8 +51,12 @@ bin/antlr.$(ARCH): $(ANTLR_JAR) bin
 
 all: $(patsubst %.w,%.py,$(wildcard *.w))
 	
-%.py: %.w wgen.py wgenLexer.py wgenParser.py wgenWalker.py
-	$(PYTHON) wgen.py -o $@ $<
+%.py: %.w util/wc/wc.py util/wc/lexer.py util/wc/parser.py util/wc/compiler.py
+	$(PYTHON) util/wc/wc.py -o $@ $<
+
+
+%.py: %.ssl util/sslc/sslc.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py util/sslc/compiler.py
+	$(PYTHON) util/sslc/sslc.py -o $@ $<
 
 
 # Unit, component, and integration testing
@@ -60,7 +65,7 @@ test: \
 	test_aterm \
 	test_asm \
 	test_ssl \
-	test_wgen
+	test_wc
 
 test_aterm: test_aterm.py aterm/lexer.py aterm/parser.py
 
@@ -73,7 +78,7 @@ test_asm: test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
 
 test_ssl: test_ssl.sh sslLexer.py sslParser.py sslPreprocessor.py
 	
-test_wgen: test_wgen.py
+test_wc: test_wc.py
 
 test_box: test_box.py box.py
 
@@ -105,8 +110,8 @@ doc: box.py
 
 deps: .deps.mak
 
-.deps.mak: Makefile makedeps.pl $(shell find -iname '*.g')
-	find -iname '*.g' | xargs perl makedeps.pl > $@
+.deps.mak: Makefile util/makedeps.pl $(shell find -iname '*.g')
+	find -iname '*.g' | xargs perl util/makedeps.pl > $@
 
 .PHONY: deps
 
