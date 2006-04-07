@@ -68,6 +68,7 @@ tests: \
 	test_ir
 
 test_aterm: tests/test_aterm.py aterm/lexer.py aterm/parser.py
+	$(PYTHON) $< -v
 
 examples:
 	$(MAKE) -C $@
@@ -77,8 +78,8 @@ examples:
 test_asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
 	$(SHELL) $<
 
-test_ssl: tests/test_ssl.sh sslLexer.py sslParser.py sslPreprocessor.py
-	$(SHELL) $<
+test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
+	$(PYTHON) $< -v
 	
 test_wc: tests/test_wc.py
 	$(PYTHON) $< -v

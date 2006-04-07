@@ -16,8 +16,11 @@ from compiler import Walker as Compiler
 
 def sslc(fpin, fpout, debug = False):
 	lexer = Lexer(fpin)
+	lexer.setFilename(fpin.name)
 
 	parser = Parser(lexer)
+	parser.setFilename(fpin.name)
+
 	parser.start()
 	ast = parser.getAST()
 
