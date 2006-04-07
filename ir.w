@@ -345,7 +345,12 @@ class PrettyPrinter:
 		| GtEq(type) -> ">="
 		;
 
+	
 	prec
+		"""Operator precendence."""
+		
+		# See http://www.difranco.net/cop2220/op-prec.htm
+		
 		: False 
 			{ $$ = 0 }		
 		| True 
