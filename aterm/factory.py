@@ -123,20 +123,21 @@ class Factory:
 		i = 0
 		_args = []
 		for i in range(len(args)):
-			_args.append(self._castArg(str(i), args[i]))
+			_args.append(self.coerce(args[i], str(i)))
 			i += 1
 		
 		_kargs = {}
 		for name, value in kargs.iteritems():
-			_kargs[name] = self._castArg("'" + name + "'", value)
+			_kargs[name] = self.coerce(value, "'" + name + "'")
 
 		return _pattern._make(_args, _kargs)
 		
-	def _castArg(self, name, value):
+	def coerce(self, value, name = None):
+		'''Coerce an object to a term. Value must be an int, a float, a string, 
+		a sequence of terms, or a term.'''
+		
 		if isinstance(value, terms.Term):
 			return value
-		elif isinstance(value, terms.Term):
-			return self.makeInt(value)
 		elif isinstance(value, int):
 			return self.makeInt(value)
 		elif isinstance(value, float):
@@ -145,7 +146,13 @@ class Factory:
 			return self.makeStr(value)
 		elif isinstance(value, list):
 			return self.makeList(value)
+		elif isinstance(value, tuple):
+			return self.makeList(value)
 		else:
-			raise TypeError("argument %s is neither a term, a literal, or a list: %r" % (name, value))
-
+			msg = "argument"
+			if not name is None:
+				msg += " " + name
+			msg += " is neither a term, a literal, or a list: "
+			msg += repr(value)
+			raise TypeError(msg)
 
