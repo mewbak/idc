@@ -28,4 +28,7 @@ INSTALLATION INSTRUCTIONS
 
      python idc.py
 
+   You will need pygtk for that. At the moment it does nothing more than open
+   and display a file.
+
 That's all that can be done at the present.
