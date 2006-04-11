@@ -18,14 +18,22 @@ stmt
 	| Label(string name)
 	| Branch(expr label)
 	| Block(stmt*)
+	| Break
+	| Continue
 	| Nil
+	| Asm(string opcode, expr* operands) 
 
 type
-	= Integer(int size, sign)
-	| Float(size)
-	| Char(size)
-	| String(size)
-	| Pointer(size)
+	= Void
+	| Bool
+	| Int(int size, sign)
+	| Float(int size)
+	| Char(int size)
+	| Pointer(type)
+	| Func(type, type*)
+	| Array(type)
+	| Compound(type*)
+	| Union(type*)
 	
 sign
 	= Signed
@@ -43,7 +51,6 @@ expr
 	| Call(expr func, expr* params)
 	| Addr(expr)
 	| Reference(expr)
-	| Register(name)
 
 
 unaryOp
@@ -54,19 +61,16 @@ unaryOp
 binaryOp
 	= And
 	| Or
-	
 	| BitAnd(int size)
 	| BitOr(int size)
 	| BitXor(int size)
 	| LShift(int size)
 	| RShift(int size)
-	
 	| Plus(type)
 	| Minus(type)
 	| Mult(type)
 	| Div(type)
 	| Mod(type)
-	
 	| Eq(type)
 	| NotEq(type)
 	| Lt(type)
