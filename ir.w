@@ -189,11 +189,12 @@ class PrettyPrinter:
 	convert
 		: :module
 		| :stmt
+		| :expr
 		;
 	
 	module
 		: Module(stmts) 
-			-> V(:stmt*(stmts))
+			-> V([I(V(:stmt*(stmts)))])
 		;
 
 	stmt
@@ -221,7 +222,7 @@ class PrettyPrinter:
 		| Ret(type, value)
 			-> :semi(H([:kw("return"), " ", :expr(value)]))
 		| Label(name:_str)
-			-> H([name,":"])
+			-> D(H([name,":"]))
 		| Branch(label)
 			-> :semi(H([:kw("goto"), " ", :expr(label)]))
 		| Block(stmts)

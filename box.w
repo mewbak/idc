@@ -62,6 +62,11 @@ class Box2Text:
 				sys.stderr.write("warning: indent outside vbox: %r\n" % $<)
 				self.write_box($b)
 			}
+		| D(b)
+			{
+				sys.stderr.write("warning: dedent outside vbox: %r\n" % $<)
+				self.write_box($b)
+			}
 		| s:_str
 			{
 				self.write($s.getValue())
@@ -75,6 +80,12 @@ class Box2Text:
 				self.indent()
 				self.write_vbox($b)
 				self.dedent()
+			}
+		| D(b)
+			{
+				self.dedent()
+				self.write_vbox($b)
+				self.indent()
 			}
 		| V(bl:_list)
 			{
