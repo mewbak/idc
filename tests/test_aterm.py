@@ -309,6 +309,12 @@ class TestCase(unittest.TestCase):
 			result = self.factory.make(patternStr, *args, **kargs)
 			self.failUnlessEqual(result, expectedResult)
 
+	def testHash(self):
+		for terms1Str in self.identityTestCases:
+				for term1Str in terms1Str:
+					term1 = self.factory.parse(term1Str)
+					hash = term1.getHash()
+					self.failUnless(isinstance(hash, int))
 
 if __name__ == '__main__':
 	unittest.main()

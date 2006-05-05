@@ -41,6 +41,20 @@ class Term:
 		'''Gets the type of this term.'''
 		raise NotImplementedError
 
+	def getHash(self):
+		'''Generate a hash value for this term.'''
+		if self.__annotations is None:
+			return self._getHash()
+		else:
+			return hash(self._getHash(), self.getAnnotations().getHash())
+
+	def _getHash(self):
+		raise NotImplementedError
+	
+	def __hash__(self):
+		'''Shorthand for getHash().'''
+		return self.getHash()
+		
 	def isConstant(self):
 		'''Whether this term is types, as opposed to have variables or wildcards.'''
 		raise NotImplementedError
@@ -98,7 +112,7 @@ class Term:
 			return self.__annotations
 
 	def __getattr__(self, name):
-		'''Provide attributes 'type' and 'annotations', 	shorthand  for 
+		'''Provide attributes 'type' and 'annotations', shorthand  for 
 		getType() and getAnnotations() methods respectively.'''
 		if name == 'type':
 			return self.getType()
@@ -160,6 +174,9 @@ class Literal(Term):
 	def __init__(self, factory, value, annotations = None):
 		Term.__init__(self, factory, annotations)
 		self.value = value
+
+	def _getHash(self):
+		return hash(self.value)
 
 	def getValue(self):
 		return self.value
@@ -264,6 +281,9 @@ class NilList(List):
 	def __init__(self, factory, annotations = None):
 		List.__init__(self, factory, annotations)
 
+	def _getHash(self):
+		return hash(())
+
 	def isEmpty(self):
 		return True
 	
@@ -318,6 +338,9 @@ class ConsList(List):
 				raise TypeError("tail is not a list, variable, or wildcard term: %r" % tail)
 			self.tail = tail
 	
+	def _getHash(self):
+		return hash((self.head.getHash(), self.tail.getHash()))
+
 	def isEmpty(self):
 		return False
 	
@@ -388,6 +411,9 @@ class Application(Term):
 	def getType(self):
 		return types.APPL
 
+	def _getHash(self):
+		return hash((self.name.getHash(), self.args.getHash()))
+
 	def getName(self):
 		return self.name
 	
@@ -430,6 +456,9 @@ class Wildcard(Term):
 	def getType(self):
 		return types.WILDCARD
 	
+	def _getHash(self):
+		return hash(None)
+		
 	def getSymbol(self):
 		return '_'
 	
@@ -467,6 +496,9 @@ class Variable(Term):
 	def getType(self):
 		return types.VAR
 	
+	def _getHash(self):
+		return hash((self.name, self.pattern))
+
 	def getName(self):
 		return self.name
 
