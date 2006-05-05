@@ -30,7 +30,7 @@ class Term:
 	'''Base class for all terms.'''
 
 	def __init__(self, factory, annotations = None):
-		self.factory = factory		
+		self.factory = factory
 		self.__annotations = annotations
 		
 	def getFactory(self):
@@ -88,21 +88,53 @@ class Term:
 	def _match(self, other, args, kargs):
 		raise exceptions.PatternMismatchException
 
-	# FIXME: annotations are not fully impletemented
-	
 	def getAnnotation(self, label):
 		'''Gets an annotation associated with label'''
-		raise NotImplementedError
+		if not self.__annotations is None:
+			annotations = self.__annotations
+			while not annotations.isEmpty():
+				if label.isEquivalent(annotations.getHead()):
+					return annotations.getTail().getHead()				
+				annotations = annotations.getTail().getTail()
+		raise ValueError("undefined annotation '%r'" % label)
 	
 	def setAnnotation(self, label, annotation):
 		'''Returns a new version of this term with the 
 		annotation associated with this label added or updated.'''
-		raise NotImplementedError
+		return self.setAnnotations(self._setAnnotation(label, annotation, self.getAnnotations()))
 
+	def _setAnnotation(self, label, annotation, annotations):
+		if annotations.isEmpty():
+			return self.factory.makeConsList(label, self.factory.makeConsList(annotation, annotations))
+			
+		_label = annotations.getHead()
+		annotations = annotations.getTail()
+		_annotation = annotations.getHead()
+		annotations = annotations.getTail()
+		
+		if label.isEquivalent(_label):
+			return self.factory.makeConsList(label, self.factory.makeConsList(annotation, annotations))
+		else:
+			return self.factory.makeConsList(_label, self.factory.makeConsList(_annotation, self._setAnnotation(label, annotation, annotations)))
+				
 	def removeAnnotation(self, label):
 		'''Returns a new version of this term with the 
 		annotation associated with this label removed.'''
-		raise NotImplementedError
+		return self.setAnnotations(self._removeAnnotation(label, self.getAnnotations()))
+		
+	def _removeAnnotation(self, label, annotations):
+		if annotations.isEmpty():
+			return annotations
+			
+		_label = annotations.getHead()
+		annotations = annotations.getTail()
+		_annotation = annotations.getHead()
+		annotations = annotations.getTail()
+		
+		if label.isEquivalent(_label):
+			return annotations
+		else:
+			return self.factory.makeConsList(_label, self.factory.makeConsList(_annotation, self._removeAnnotation(label, annotations)))
 
 	def getAnnotations(self):
 		'''Returns the annotation list.'''
@@ -110,6 +142,9 @@ class Term:
 			return self.factory.makeNilList()
 		else:
 			return self.__annotations
+
+	def setAnnotations(self, annotations):
+		raise NotImplementedError
 
 	def __getattr__(self, name):
 		'''Provide attributes 'type' and 'annotations', shorthand  for 
@@ -481,6 +516,9 @@ class Wildcard(Term):
 		except IndexError:
 			raise TypeError('insufficient number of arguments')
 
+	def setAnnotations(self, annotations):
+		return self.factory.makeWildcard(annotations)
+
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitWildcard(self, *args, **kargs)
 
@@ -536,6 +574,9 @@ class Variable(Term):
 			return kargs[name]
 		else:
 			raise ValueError('undefined term variable %s' % name)
+
+	def setAnnotations(self, annotations):
+		return self.factory.makeVar(self.name, self.pattern, annotations)
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitVar(self, *args, **kargs)

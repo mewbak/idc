@@ -162,6 +162,20 @@ class TestCase(unittest.TestCase):
 							result = term1.match(term2)
 							self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 						
+						if expectedResult:
+							term2 = term2.setAnnotation(self.factory.parse("A"), self.factory.parse("1"))
+							
+							result = term1.isEquivalent(term2)
+							self.failUnlessEqual(result, True, msg = '%s <=> %s = %r (!= %r)' % (term1Str, term2Str, result, True))
+	
+							result = term1.isEqual(term2)
+							self.failUnlessEqual(result, False, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, False))
+	
+							if term1.isConstant() and term2.isConstant():
+								result = term1.match(term2)
+								self.failUnlessEqual(result, True, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, True))
+							
+						
 	def testWrite(self):
 		for terms1Str in self.identityTestCases:
 				for term1Str in terms1Str:
@@ -315,6 +329,35 @@ class TestCase(unittest.TestCase):
 					term1 = self.factory.parse(term1Str)
 					hash = term1.getHash()
 					self.failUnless(isinstance(hash, int))
+
+	def testAnnotations(self):
+		factory = self.factory
+	
+		for terms1Str in self.identityTestCases:
+			for term1Str in terms1Str:
+				term1 = self.factory.parse(term1Str)
+				
+				term = term1
+				self.failUnlessEqual(term.getAnnotations(), factory.parse("[]"))
+				
+				term = term.setAnnotation(factory.parse("A"), factory.parse("1"))
+				self.failUnlessEqual(term.getAnnotations(), factory.parse("[A,1]"))
+				
+				term = term.setAnnotation(factory.parse("B"), factory.parse("2"))
+				self.failUnlessEqual(term.getAnnotation(factory.parse("A")), factory.parse("1"))
+				self.failUnlessEqual(term.getAnnotation(factory.parse("B")), factory.parse("2"))
+		
+				term = term.setAnnotation(factory.parse("A"), factory.parse("3"))
+				self.failUnlessEqual(term.getAnnotation(factory.parse("A")), factory.parse("3"))
+				self.failUnlessEqual(term.getAnnotation(factory.parse("B")), factory.parse("2"))
+		
+				try:
+					term.getAnnotation(factory.parse("C"))
+					self.fail()
+				except ValueError:
+					pass
+		
+				self.failUnless(term.isEquivalent(term1))
 
 if __name__ == '__main__':
 	unittest.main()
