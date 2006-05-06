@@ -82,6 +82,9 @@ test_box: tests/test_box.py box.py
 test_ir: tests/test_ir.py ir.py
 	$(PYTHON) $< -v
 
+test_path: tests/test_path.py path.py
+	$(PYTHON) $< -v
+
 test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
 	$(PYTHON) $< -v
 

@@ -92,7 +92,7 @@ all returns [res]
 aterm returns [res]
 	: res=term 
 		( options { greedy = true; }: LCURLY anno=aterms RCURLY
-			{ res = res.setAnnotation(anno) }
+			{ res = res.setAnnotations(anno) }
 		)?
 	;
 

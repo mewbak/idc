@@ -359,5 +359,6 @@ class TestCase(unittest.TestCase):
 		
 				self.failUnless(term.isEquivalent(term1))
 
+
 if __name__ == '__main__':
 	unittest.main()
