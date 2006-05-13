@@ -16,6 +16,8 @@ import aterm
 import ir
 import box
 
+import inspector
+
 
 class MainApp(glade.GladeApp):
 
@@ -24,6 +26,8 @@ class MainApp(glade.GladeApp):
 		
 		self.factory = aterm.Factory()
 		self.term = self.factory.parse("Module([])")
+		
+		self.inspector = inspector.InspectorWindow(self.term)
 
 	def on_open_activate(self, event):
 		path = self.open(
@@ -46,6 +50,7 @@ class MainApp(glade.GladeApp):
 			self.term = term
 			
 			self.update_textview()
+			self.inspector.set_term(term)
 
 	def update_textview(self):
 		boxes = ir.prettyPrint(self.term)
