@@ -63,9 +63,11 @@ all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 
 tests: \
 	test_aterm \
+	test_walker \
 	test_wc \
 	test_box \
-	test_ir
+	test_ir \
+	test_path
 
 test_aterm: tests/test_aterm.py aterm/lexer.py aterm/parser.py
 	$(PYTHON) $< -v
