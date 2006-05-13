@@ -1,4 +1,6 @@
 
+import pango
+
 import box
 
 
@@ -14,27 +16,34 @@ class TextBufferFormatter(box.Formatter):
 		
 		self.buffer.set_text("", 0)
 		self.iter = self.buffer.get_iter_at_offset(0)
-		self.tag = self.buffer.create_tag()
+		
+		self.types = {}
+		self.types['operator'] = self.buffer.create_tag(None, 
+			foreground = 'black'
+		)
+		self.types['keyword'] = self.buffer.create_tag(None, 
+			foreground = 'black', 
+			weight=pango.WEIGHT_BOLD
+		)
+		self.types['literal'] = self.buffer.create_tag(None, 
+			foreground = 'dark blue', 
+			#foreground = 'green',
+			#style=pango.STYLE_ITALIC,
+		)
+		self.types['symbol'] = self.buffer.create_tag(None,
+			foreground = 'dark blue', 
+			style=pango.STYLE_ITALIC,
+		)
+		self.default_tag = self.buffer.create_tag(None)
+		self.highlight_tag = self.default_tag
 		
 	def write(self, s):
-		self.buffer.insert_with_tags(self.iter, s, self.tag)
+		self.buffer.insert_with_tags(self.iter, s, self.highlight_tag)
 
-	types = {
-		'operator': 'red',
-		'keyword': 'blue',
-		'symbol': 'black',
-		'literal': 'green',
-	}
-	
 	def handle_tag_start(self, name, value):
 		if name == 'type':
-			try:
-				color = self.types[value]
-			except KeyError:
-				color = 'black'
-			self.tag = self.buffer.create_tag(None, foreground=color)
+			self.highlight_tag = self.types.get(value, self.default_tag)
 
 	def handle_tag_end(self, name):
 		if name == 'type':
-			color = 'black'
-			self.tag = self.buffer.create_tag(None, foreground=color)
+			self.highlight_tag = self.default_tag
