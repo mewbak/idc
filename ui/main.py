@@ -17,6 +17,7 @@ import ir
 import box
 
 import inspector
+import textbuffer
 
 
 class MainApp(glade.GladeApp):
@@ -54,13 +55,10 @@ class MainApp(glade.GladeApp):
 
 	def update_textview(self):
 		boxes = ir.prettyPrint(self.term)
-		text = box.box2text(boxes)
-
-		# See http://www.pygtk.org/pygtk2tutorial/sec-TextViews.html	
-		textbuffer = self.textview.get_buffer()
-		textbuffer.set_text(text)
-		
-		# FIXME: use tags and/or other source view widgets
+		buffer = self.textview.get_buffer()
+		formatter = textbuffer.TextBufferFormatter(buffer)
+		writer = box.Writer(boxes.factory, formatter)
+		writer.write_box(boxes)
 
 	def on_quit_activate(self, event):
 		self.quit()
