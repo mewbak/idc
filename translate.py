@@ -12,7 +12,7 @@ from machine.pentium import Pentium
 def pretty_print(term):
 	printer = PrettyPrinter(term.factory)
 	boxes = printer.module(term)
-	print box.box2text(boxes)
+	print box.box2text(boxes, box.AnsiTextFormatter)
 
 
 def translate(filename):

@@ -49,7 +49,7 @@ class Formatter:
 		''''''
 		pass
 
-	def handle_tag_end(self, name):
+	def handle_tag_end(self, name, value):
 		pass
 
 
@@ -62,6 +62,34 @@ class TextFormatter(Formatter):
 	
 	def write(self, s):
 		self.fp.write(s)
+
+
+class AnsiTextFormatter(TextFormatter):
+	'''Formatter for plain-text files which outputs ANSI escape codes. See 
+	http://en.wikipedia.org/wiki/ANSI_escape_code for more information 
+	concerning ANSI escape codes.
+	'''
+
+	csi = '\33['
+	
+	types = {
+		'operator': '31m', # red
+		'keyword': '34m', # blue
+		'symbol': '1m', # bold
+		'literal': '32m', # green
+	}
+	
+	def handle_tag_start(self, name, value):
+		if name == 'type':
+			try:
+				code = self.types[value] 
+			except KeyError:
+				code = '0m'
+			self.write(self.csi + code)
+
+	def handle_tag_end(self, name):
+		if name == 'type':
+			self.write(self.csi + '0m')
 
 }
 
@@ -102,8 +130,9 @@ class Writer:
 			}
 		| T(n:_str, v:_str, b) # tag
 			{
-				self.formatter.handle_start_tag(
+				self.formatter.handle_tag_start($n.getValue(), $v.getValue())
 				self.write_box($b)
+				self.formatter.handle_tag_end($n.getValue())
 			}
 		| :_fatal("bad box")
 		;
@@ -137,11 +166,11 @@ class Writer:
 
 
 header {
-def box2text(boxes):
+def box2text(boxes, formatterClass = TextFormatter):
 	'''Convert box terms into a string.'''
 
 	fp = StringIO()
-	formatter = TextFormatter(fp)
+	formatter = formatterClass(fp)
 	writer = Writer(boxes.factory, formatter)
 	writer.write_box(boxes)
 	return fp.getvalue()

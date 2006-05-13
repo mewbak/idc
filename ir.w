@@ -232,7 +232,7 @@ class PrettyPrinter:
 		| Continue
 			-> :semi(:kw("continue"))
 		| Asm(opcode, operands) 
-			-> :semi(H([:kw("asm"),"(", :commas([:repr(opcode), *:expr*(operands)]), ")"]))
+			-> :semi(H([:kw("asm"),"(", :commas([:lit(opcode), *:expr*(operands)]), ")"]))
 		| :_fatal("bad statement term")
 		;
 	
@@ -289,15 +289,15 @@ class PrettyPrinter:
 		| True 
 			-> "TRUE"
 		| Lit(type, value:_lit)
-			-> :repr(value)
+			-> :lit(value)
 		| Sym(name:_str)
-			-> name
+			-> :sym(name)
 		| Cast(type, expr)
 			-> H(["(", :type(type), ")", " ", :exprP(_,expr)])
 		| Unary(op, expr)
-			-> H([:unaryOp(op), :exprP(_,expr)])
+			-> H([:op(:unaryOp(op)), :exprP(_,expr)])
 		| Binary(op, lexpr, rexpr)
-			-> H([:exprP(_,lexpr), " ", :binaryOp(op), " ", :exprP(_,rexpr)])
+			-> H([:exprP(_,lexpr), " ", :op(:binaryOp(op)), " ", :exprP(_,rexpr)])
 		| Cond(cond, texpr, fexpr)
 			-> H([:exprP(_,cond), " ", "?", " ", :exprP(_,texpr), " ", ":", " ", :exprP(_,fexpr)])
 		| Call(addr, args)
@@ -452,11 +452,19 @@ class PrettyPrinter:
 		;
 	
 	kw
-		: s:_str
+		: s:_str -> T("type", "keyword", s)
 		;
 		
 	op
-		: s:_str
+		: s:_str -> T("type", "operator", s)
+		;
+
+	sym
+		: s:_str -> T("type", "symbol", s)
+		;
+				
+	lit
+		: l:_lit -> T("type", "literal", :repr(l))
 		;
 
 	repr
