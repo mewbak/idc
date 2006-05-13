@@ -29,6 +29,7 @@ tokens {
 	HEADER = "header";
 	CLASS = "class";
 	TRANSF_MAP;
+	TRANSF_ADDR;
 	INT;
 	REAL;
 }
@@ -294,6 +295,7 @@ term[matching]
 		( transf_args | 
 		{
             if not matching:
+            	// FIXME: support transformation addresses
                 #t.setType(TRANSF_ADDR)
 		}
 		)
