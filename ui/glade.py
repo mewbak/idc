@@ -59,7 +59,7 @@ class GladeApp(GladeWindow):
 
 		gtk.main_quit()
 				
-	def open(self, title = None, parent = None, filters = None, folder = None):
+	def show_open(self, title = None, parent = None, filters = None, folder = None):
 		"""Display a file open dialog."""
 
 		# See http://www.pygtk.org/pygtk2tutorial/sec-FileChoosers.html

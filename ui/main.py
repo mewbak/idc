@@ -31,7 +31,7 @@ class MainApp(glade.GladeApp):
 		self.inspector = inspector.InspectorWindow(self.term)
 
 	def on_open_activate(self, event):
-		path = self.open(
+		path = self.show_open(
 				None, 
 				self.widget, 
 				[
@@ -42,16 +42,19 @@ class MainApp(glade.GladeApp):
 		)
 		
 		if path is not None:
-			# TODO: catch exceptions here
-			from machine.pentium import Pentium
-			machine = Pentium()
+			self.open(path)
+	
+	def open(self, path):
+		# TODO: catch exceptions here
+		from machine.pentium import Pentium
+		machine = Pentium()
 
-			term = machine.load(self.factory, file(path, 'rt'))
-			term = machine.translate(term)
-			self.term = term
-			
-			self.update_textview()
-			self.inspector.set_term(term)
+		term = machine.load(self.factory, file(path, 'rt'))
+		term = machine.translate(term)
+		self.term = term
+		
+		self.update_textview()
+		self.inspector.set_term(term)
 
 	def update_textview(self):
 		boxes = ir.prettyPrint(self.term)
