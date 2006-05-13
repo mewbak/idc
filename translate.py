@@ -6,6 +6,7 @@ import sys
 from aterm import Factory
 from ir import PrettyPrinter
 import box
+import path
 from machine.pentium import Pentium
 
 
@@ -33,6 +34,7 @@ def translate(filename):
 	
 	print '** Translated IR **'	
 	term = machine.translate(term)
+	term = path.Annotator(term.factory).anno(term)
 	pretty_print(term)
 	print
 	

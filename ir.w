@@ -193,11 +193,19 @@ class PrettyPrinter:
 		;
 	
 	module
+		: _ -> :path(:module_(_), _)
+		;
+
+	module_
 		: Module(stmts) 
 			-> V([I(V(:stmt*(stmts)))])
 		;
 
 	stmt
+		: _ -> :path(:stmt_(_), _)
+		;
+	
+	stmt_
 		: VarDef(type, name, value)
 		| FuncDef(type, name, args)
 		| Assign(type, dst, src)
@@ -237,12 +245,16 @@ class PrettyPrinter:
 		;
 	
 	block
+		: _ -> :path(:block_(_), _)
+		;
+		
+	block_
 		: Block(stmts) 
 			-> V(["{",I(V(:stmt*(stmts))),"}"])
 		| stmt 
 			-> V([I(:stmt(stmt))])
 		;
-		
+	
 	semi
 		: stmt -> H([stmt, ";"])
 		;
@@ -252,6 +264,10 @@ class PrettyPrinter:
 		;
 
 	type
+		: _ -> :path(:type_(_), _)
+		;
+	
+	type_
 		: Int(size, sign)
 			-> H([:sign(sign), " ", :integerSize(size)])
 		| Float(32)
@@ -284,6 +300,10 @@ class PrettyPrinter:
 		;
 		
 	expr
+		: _ -> :path(:expr_(_), _)
+		;
+	
+	expr_
 		: False 
 			-> "FALSE"
 		| True 
@@ -450,6 +470,17 @@ class PrettyPrinter:
 		: [] -> []
 		| [h, *t] -> [p, h, *:prefix(t, p)]
 		;
+
+	path(t)
+		: _
+			{
+				try:
+					p = str($t.getAnnotation(self.factory.parse('Path')))
+					$$ = self.factory.make('T("path",_,_)', p, $<)
+				except ValueError:
+					$$ = $<				
+			}
+		;
 	
 	kw
 		: s:_str -> T("type", "keyword", s)
@@ -466,6 +497,7 @@ class PrettyPrinter:
 	lit
 		: l:_lit -> T("type", "literal", :repr(l))
 		;
+
 
 	repr
 		: s:_int

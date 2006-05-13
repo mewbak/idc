@@ -49,7 +49,7 @@ class Formatter:
 		''''''
 		pass
 
-	def handle_tag_end(self, name, value):
+	def handle_tag_end(self, name):
 		pass
 
 
