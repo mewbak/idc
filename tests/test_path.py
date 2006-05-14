@@ -11,7 +11,6 @@ class TestCase(unittest.TestCase):
 	
 	def setUp(self):
 		self.factory = aterm.Factory()
-		self.annotator = path.Annotator(self.factory)
 
 	def parseArgs(self, args):
 		return [self.factory.parse(value) for value in args]
@@ -24,8 +23,8 @@ class TestCase(unittest.TestCase):
 	
 	annotatorTestCases = [
 		('1', '1{Path,[]}'),
-		('[1,2]', '[1{Path,[Index(0)]},2{Path,[Index(1)]}]{Path,[]}'),
-		('C(1,2)', 'C(1{Path,[Arg(0)]},2{Path,[Arg(1)]}){Path,[]}'),
+		('[1,2]', '[1{Path,[0]},2{Path,[1]}]{Path,[]}'),
+		('C(1,2)', 'C(1{Path,[0]},2{Path,[1]}){Path,[]}'),
 	]
 	
 	def testAnnotator(self):
@@ -33,7 +32,7 @@ class TestCase(unittest.TestCase):
 			term = self.factory.parse(termStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
-			result = self.annotator.anno(term)
+			result = path.Annotator.annotate(term)
 			
 			self.failUnlessEqual(result, expectedResult)
 			

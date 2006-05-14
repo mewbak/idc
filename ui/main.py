@@ -52,7 +52,7 @@ class MainApp(glade.GladeApp):
 
 		term = machine.load(self.factory, file(filename, 'rt'))
 		term = machine.translate(term)
-		term = path.Annotator(term.factory).anno(term)
+		term = path.Annotator.annotate(term)
 		self.term = term
 		
 		self.update_textview()

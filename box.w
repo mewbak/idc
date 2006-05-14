@@ -74,8 +74,8 @@ class AnsiTextFormatter(TextFormatter):
 	
 	types = {
 		'operator': '31m', # red
-		'keyword': '34m', # blue
-		'symbol': '1m', # bold
+		'keyword': '1m', # bold
+		'symbol': '34m', # blue
 		'literal': '32m', # green
 	}
 	

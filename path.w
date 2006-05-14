@@ -5,6 +5,13 @@
 class Annotator:
 	"""Annotates terms with their path on the aterm tree."""
 
+{
+	def annotate(cls, term):
+		annotator = cls(term.factory)
+		return annotator.anno(term)
+	annotate = classmethod(annotate)
+}
+
 	anno
 		"""Annotate the root term."""
 		: x -> :anno_term(x, [])
@@ -19,8 +26,8 @@ class Annotator:
 	anno_subterms(path)
 		"""Recursively annotates the sub-terms with paths relative to the given path."""
 		: l:_list -> :anno_list(l, path, 0)
-		| f(*a) # f(*:anno_args(path, 0))
-			{ $a = self.anno_args($a, $path, self.factory.makeInt(0)) }
+		| f(*a) # f(*:anno_list(path, 0))
+			{ $a = self.anno_list($a, $path, self.factory.makeInt(0)) }
 			->	f(*a)
 		| _
 		;
@@ -30,18 +37,8 @@ class Annotator:
 		: []
 		| [head, *tail] -> 
 			[
-				:anno_term(head, [Index(index), *path]), 
+				:anno_term(head, [index, *path]), 
 				*:anno_list(tail, path, { self.factory.makeInt($index.getValue() + 1) })
-			]
-		;
-	
-	anno_args(path, index)
-		"""Annotate a application term's argument list."""
-		: []
-		| [head, *tail] -> 
-			[
-				:anno_term(head, [Arg(index), *path]), 
-				*:anno_args(tail, path, { self.factory.makeInt($index.getValue() + 1) })
 			]
 		;
 
