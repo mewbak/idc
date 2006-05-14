@@ -52,12 +52,12 @@ class Walker:
 
 		pass
 
-	def __apply__(self, root):
-		'''Apply this walker transformation to the root aterm.  Since a walker may
-		store context, this method should be called only once in the object's
-		lifetime. May not be implemented for every walkers.'''
-		
-		raise NotImplementedError
+	#def __apply__(self, root):
+	#	'''Apply this walker transformation to the root aterm.  Since a walker may
+	#	store context, this method should be called only once in the object's
+	#	lifetime. May not be implemented for every walkers.'''
+	#	
+	#	raise NotImplementedError
 
 	def _fail(self, target, msg = None, fatal = False):
 		if msg is None:
