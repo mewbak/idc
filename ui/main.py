@@ -12,10 +12,9 @@ locale.setlocale(locale.LC_ALL,'')
 
 import glade
 
-import aterm
 import ir
 import box
-import path
+import model
 
 import inspector
 import textbuffer
@@ -26,10 +25,12 @@ class MainApp(glade.GladeApp):
 	def __init__(self):
 		glade.GladeApp.__init__(self, "./ui/main.glade", "main_window")
 		
-		self.factory = aterm.Factory()
-		self.term = self.factory.parse("Module([])")
+		self.model = model.ProgramModel()
 		
-		self.inspector = inspector.InspectorWindow(self.term)
+		self.model.attach(self)
+		self.update(model)
+		
+		self.inspector = inspector.InspectorWindow(self.model)
 
 	def on_open_activate(self, event):
 		path = self.show_open(
@@ -43,23 +44,14 @@ class MainApp(glade.GladeApp):
 		)
 		
 		if path is not None:
-			self.open(path)
-	
-	def open(self, filename):
-		# TODO: catch exceptions here
-		from machine.pentium import Pentium
-		machine = Pentium()
+			self.model.open_asm(path)
 
-		term = machine.load(self.factory, file(filename, 'rt'))
-		term = machine.translate(term)
-		term = path.Annotator.annotate(term)
-		self.term = term
-		
+	def update(self, subject):
 		self.update_textview()
-		self.inspector.set_term(term)
 
 	def update_textview(self):
-		boxes = ir.prettyPrint(self.term)
+		term = self.model.get_term()
+		boxes = ir.prettyPrint(term)
 		buffer = self.textview.get_buffer()
 		formatter = textbuffer.TextBufferFormatter(buffer)
 		writer = box.Writer(boxes.factory, formatter)

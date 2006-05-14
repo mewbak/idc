@@ -224,7 +224,7 @@ class TermTreeModel(gtk.GenericTreeModel):
 
 class InspectorWindow(glade.GladeWindow):
 
-	def __init__(self, term):
+	def __init__(self, model):
 		glade.GladeWindow.__init__(self, "./ui/inspector.glade", "inspector_window")
 
 		treeview = self.treeview
@@ -241,13 +241,12 @@ class InspectorWindow(glade.GladeWindow):
 		column = gtk.TreeViewColumn("Annotations", renderer, text=2)
 		treeview.append_column(column)
 
-		self.set_term(term)
-
-	def set_term(self, term):
-		self.term = term
+		model.attach(self)
+		self.update(model)
 		
+	def update(self, subject):
+		term = subject.get_term()
 		treeview = self.treeview
-		
 		model = TermTreeModel(term)
 		treeview.set_model(model)
 	
