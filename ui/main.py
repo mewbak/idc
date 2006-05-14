@@ -15,6 +15,7 @@ import glade
 import aterm
 import ir
 import box
+import path
 
 import inspector
 import textbuffer
@@ -44,13 +45,14 @@ class MainApp(glade.GladeApp):
 		if path is not None:
 			self.open(path)
 	
-	def open(self, path):
+	def open(self, filename):
 		# TODO: catch exceptions here
 		from machine.pentium import Pentium
 		machine = Pentium()
 
-		term = machine.load(self.factory, file(path, 'rt'))
+		term = machine.load(self.factory, file(filename, 'rt'))
 		term = machine.translate(term)
+		term = path.Annotator(term.factory).anno(term)
 		self.term = term
 		
 		self.update_textview()
@@ -68,5 +70,40 @@ class MainApp(glade.GladeApp):
 
 	def on_main_window_destroy(self, event):
 		self.quit()
+
+	def on_textview_event_after(self, textview, event):
+		if event.type != gtk.gdk.BUTTON_RELEASE:
+			return False
+		if event.button != 1:
+			return False
+		buffer = textview.get_buffer()
+
+		# we shouldn't follow a link if the user has selected something
+		try:
+			start, end = buffer.get_selection_bounds()
+		except ValueError:
+			# If there is nothing selected, None is return
+			pass
+		else:
+			if start.get_offset() != end.get_offset():
+				return False
+
+		x, y = textview.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, int(event.x), int(event.y))
+		iter = textview.get_iter_at_location(x, y)
+
+		for tag in iter.get_tags():
+			path = tag.get_data('path')
+			if path is not None:
+				print path
+				dialog = gtk.MessageDialog(
+					parent=None, 
+					flags=0, 
+					type=gtk.MESSAGE_INFO, 
+					buttons=gtk.BUTTONS_OK, 
+					message_format=str(path)
+				)
+				dialog.run()
+				dialog.destroy()
+		return False
 
 

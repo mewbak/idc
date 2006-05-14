@@ -34,16 +34,30 @@ class TextBufferFormatter(box.Formatter):
 			foreground = 'dark blue', 
 			style=pango.STYLE_ITALIC,
 		)
-		self.default_tag = self.buffer.create_tag(None)
-		self.highlight_tag = self.default_tag
+		
+		self.default_highlight_tag = self.buffer.create_tag(None)
+		self.highlight_tag_stack = [self.default_highlight_tag]
+		
+		default_path_tag = self.buffer.create_tag(None)
+		self.path_tag_stack = [default_path_tag]
 		
 	def write(self, s):
-		self.buffer.insert_with_tags(self.iter, s, self.highlight_tag)
+		highlight_tag = self.highlight_tag_stack[-1]
+		path_tag = self.path_tag_stack[-1]
+		
+		self.buffer.insert_with_tags(self.iter, s, highlight_tag, path_tag)
 
 	def handle_tag_start(self, name, value):
 		if name == 'type':
-			self.highlight_tag = self.types.get(value, self.default_tag)
+			highlight_tag = self.types.get(value, self.default_highlight_tag)
+			self.highlight_tag_stack.append(highlight_tag)
+		if name == 'path':
+			path_tag = self.buffer.create_tag(None)
+			path_tag.set_data('path', value)
+			self.path_tag_stack.append(path_tag)
 
 	def handle_tag_end(self, name):
 		if name == 'type':
-			self.highlight_tag = self.default_tag
+			self.highlight_tag_stack.pop()
+		if name == 'path':
+			self.path_tag_stack.pop()
