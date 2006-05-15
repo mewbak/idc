@@ -26,12 +26,12 @@ class Subject:
 		"""
 		for observer in self._observers:
 			if modifier != observer:
-				observer.update(self)
+				observer(self)
 
 class Observer:
 	"""Interface for observers. It is not imperative for observers to derive 
 	from this class, provided the interface is implemented.
 	"""
 	
-	def update(self, subject):
+	def __call__(self, subject):
 		raise NotImplementedError

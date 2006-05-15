@@ -133,8 +133,14 @@ class TermTreeModel(gtk.GenericTreeModel):
 		case, the node is the path'''
 		assert path[0] == 0
 		node = self.top
-		for n in path[1:]:
-			node = node.nth_child(n)
+		try: 
+			for n in path[1:]:
+				node = node.nth_child(n)
+		except:
+			print '***'
+			print '*', node.path
+			print '*', path
+			raise
 		return node
 	   
 	def on_get_value(self, node, column):
@@ -241,12 +247,31 @@ class InspectorWindow(glade.GladeWindow):
 		column = gtk.TreeViewColumn("Annotations", renderer, text=2)
 		treeview.append_column(column)
 
-		model.attach(self)
+		model.attach(self.update)
 		self.update(model)
+		model.selection.attach(self.update_selection)
 		
 	def update(self, subject):
 		term = subject.get_term()
 		treeview = self.treeview
 		model = TermTreeModel(term)
 		treeview.set_model(model)
+		treeview.expand_all()
+
+	def update_selection(self, selection):
+		start, end = selection.get_selection()
+		path = start
+		
+		if path is not None:
+			path = [i.getValue() for i in path]
+			path.reverse()
+			path = tuple([0] + path)
+		
+			print path 
+			
+			# FIXME: not working
+			self.treeview.get_selection().select_path(path)
+			self.treeview.scroll_to_cell(path)
+			self.treeview.set_cursor(path)
+			
 	

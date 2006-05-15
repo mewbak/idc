@@ -33,6 +33,11 @@ class ProgramModel(Model):
 		self.factory = aterm.Factory()
 		term = self.factory.parse('Module([])')
 		Model.__init__(self, term)
+		self.selection = Selection()
+		
+	def set_term(self, term):
+		Model.set_term(self, term)
+		self.selection.reset_selection()
 	
 	def new(self):
 		term = self.factory.parse('Module([])')
@@ -68,3 +73,25 @@ class ProgramModel(Model):
 		writer.write_box(boxes)
 
 	# TODO: add a method to apply refactorings here
+	
+
+class Selection(observer.Subject):
+	
+	def __init__(self):
+		observer.Subject.__init__(self)
+		self._start = None
+		self._end = None
+
+	def reset_selection(self):
+		self._start = None
+		self._end = None
+		self.notify()
+		
+	def set_selection(self, start, end):
+		self._start = start
+		self._end = end
+		self.notify()
+		
+	def get_selection(self):
+		return self._start, self._end
+

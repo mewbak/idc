@@ -27,7 +27,7 @@ class MainApp(glade.GladeApp):
 		
 		self.model = model.ProgramModel()
 		
-		self.model.attach(self)
+		self.model.attach(self.update)
 		self.update(model)
 		
 		self.inspector = inspector.InspectorWindow(self.model)
@@ -63,10 +63,11 @@ class MainApp(glade.GladeApp):
 	def on_main_window_destroy(self, event):
 		self.quit()
 
-	def on_textview_event_after(self, textview, event):
-		if event.type != gtk.gdk.BUTTON_RELEASE:
+	def on_textview_event(self, textview, event):
+		#if event.type != gtk.gdk.BUTTON_RELEASE:
+		if event.type != gtk.gdk.BUTTON_PRESS:
 			return False
-		if event.button != 1:
+		if event.button != 3:
 			return False
 		buffer = textview.get_buffer()
 
@@ -78,24 +79,32 @@ class MainApp(glade.GladeApp):
 			pass
 		else:
 			if start.get_offset() != end.get_offset():
-				return False
+				#return False
+				pass
 
 		x, y = textview.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, int(event.x), int(event.y))
 		iter = textview.get_iter_at_location(x, y)
 
+		path = self.get_path_at_iter(iter)
+		if 0: #path is not None:
+			dialog = gtk.MessageDialog(
+				parent=None, 
+				flags=0, 
+				type=gtk.MESSAGE_INFO, 
+				buttons=gtk.BUTTONS_OK, 
+				message_format=str(path)
+			)
+			dialog.run()
+			dialog.destroy()
+		print path
+		self.model.selection.set_selection(path, path)
+		return False
+
+	def get_path_at_iter(self, iter):
 		for tag in iter.get_tags():
 			path = tag.get_data('path')
 			if path is not None:
-				print path
-				dialog = gtk.MessageDialog(
-					parent=None, 
-					flags=0, 
-					type=gtk.MESSAGE_INFO, 
-					buttons=gtk.BUTTONS_OK, 
-					message_format=str(path)
-				)
-				dialog.run()
-				dialog.destroy()
+				path = self.model.factory.parse(path)
+				return path
 		return False
-
 
