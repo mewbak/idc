@@ -6,20 +6,21 @@
 PYTHON = python
 export PYTHONPATH = .
 
+
+# Use the native-compiled version of ANTLR if possible, as it is much faster than
+# Java byte code.
+ifneq ($(shell which cantlr),)
+ANTLR = cantlr
+else
+ifneq ($(shell which runantlr),)
+ANTLR = runantlr
+else
 JAVA = java
 ANTLR_JAR = /usr/share/java/antlr.jar
-
-# Use native code gcj-compiled ANTLR if possible, as it is much faster than
-# Java byte code.
-ARCH = $(shell uname -m)
-ifneq ($(wildcard bin/antlr.$(ARCH)),)
-ANTLR = bin/antlr.$(ARCH)
-else
 ANTLR = $(JAVA) -cp $(ANTLR_JAR) antlr.Tool
 endif
+endif
 
-
-VPATH=.:ssl
 
 # Main targets
 
@@ -32,19 +33,6 @@ all:
 
 # ANTLR parser generation
 
-
-
-# Compile ANTLR into native-code using gcj
-
-bin:
-	mkdir $@
-
-antlr: bin/antlr.$(ARCH)
-
-bin/antlr.$(ARCH): $(ANTLR_JAR) bin
-	gcj -O2 -o $@ --main=antlr.Tool $<
-
-.PHONY: antlr
 
 
 # Aterm walker generation
