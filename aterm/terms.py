@@ -71,22 +71,9 @@ class Term:
 		if isinstance(other, basestring):
 			other = self.factory.parse(other)
 		
-		if args is None:
-			args = []
-		
-		if kargs is None:
-			kargs = {}
-		
-		try:
-			self._match(other, args, kargs)
-		except exceptions.PatternMismatchException:
-			return False
-		
-		return True
+		comparator = comparison.MatchingComparator(args, kargs)
+		return comparator.compare(self, other)
 	
-	def _match(self, other, args, kargs):
-		raise exceptions.PatternMismatchException
-
 	def getAnnotation(self, label):
 		'''Gets an annotation associated with label'''
 		if not self.__annotations is None:
@@ -215,12 +202,6 @@ class Literal(Term):
 
 	def isConstant(self):
 		return True
-	
-	def _match(self, other, args, kargs):
-		if other.isEquivalent(self):
-			return other
-		else:
-			return Term._match(self, other, args, kargs)
 
 		
 class Integer(Literal):
@@ -325,16 +306,6 @@ class NilList(List):
 	def isConstant(self):
 		return True
 	
-	def _match(self, other, args, kargs):
-		if self is other:
-			return other
-		
-		if other.getType() == types.LIST:
-			if other.isEmpty():
-				return other
-				
-		raise exceptions.PatternMismatchException
-
 	def setAnnotations(self, annotations):
 		return self.factory.makeNilList(annotations)
 
@@ -376,18 +347,6 @@ class ConsList(List):
 	def isConstant(self):
 		return self.head.isConstant() and self.tail.isConstant()
 	
-	def _match(self, other, args, kargs):
-		if self is other:
-			return other
-		
-		if other.getType() == types.LIST:
-			if not other.isEmpty():
-				self.head._match(other.head, args, kargs)
-				self.tail._match(other.tail, args, kargs)
-				return other
-		
-		return List._match(self, other, args, kargs)
-
 	def _make(self, args, kargs):
 		return self.factory.makeConsList(self.head._make(args, kargs), self.tail._make(args, kargs), self.annotations)
 	
@@ -432,14 +391,6 @@ class Application(Term):
 	def isConstant(self):
 		return self.name.isConstant() and self.args.isConstant()
 	
-	def _match(self, other, args, kargs):
-		if other.getType() == types.APPL:
-			self.name._match(other.name, args, kargs) 
-			self.args._match(other.args, args, kargs)
-			return other
-		
-		return Term._match(self, other, args, kargs)
-	
 	def _make(self, args, kargs):
 		return self.factory.makeAppl(self.name._make(args, kargs), self.args._make(args, kargs), self.annotations)
 	
@@ -465,10 +416,6 @@ class Wildcard(Term):
 	def isConstant(self):
 		return False
 	
-	def _match(self, other, args, kargs):
-		args.append(other)
-		return other
-
 	def _make(self, args, kargs):
 		try:
 			return args.pop(0)
@@ -508,18 +455,6 @@ class Variable(Term):
 	def isConstant(self):
 		return self.pattern.isConstant()
 	
-	def _match(self, other, args, kargs):
-		name = self.getName()
-		try:
-			value = kargs[name]
-			if not kargs[name].isEquivalent(other):
-				raise exceptions.PatternMismatchException
-			return other
-		except KeyError:
-			result = self.pattern._match(other, [], kargs)
-			kargs[name] = result
-			return result
-
 	def _make(self, args, kargs):
 		name = self.getName()
 		if name in kargs:
