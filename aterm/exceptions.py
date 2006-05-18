@@ -11,11 +11,6 @@ class ParseException(BaseException):
 	pass
 
 	
-class PatternMismatchException(BaseException):
-	"""Term does not match pattern."""	
-	pass
-
-
 class EmptyListException(BaseException):
 	"""Attempt to access beyond the end of the list."""
 	pass

@@ -104,14 +104,7 @@ class Factory:
 		'''Matches the term to a string pattern and a list of arguments. 
 		First the string pattern is parsed into an Term. .'''
 		
-		_pattern = self.parse(pattern)
-		
-		try:
-			_pattern._match(other, args, kargs)
-		except exceptions.PatternMismatchException:
-			return False
-		
-		return True
+		return self.parse(pattern).match(other, args, kargs)
 
 	def make(self, pattern, *args, **kargs):
 		'''Creates a new term from a string pattern and a list of arguments. 
