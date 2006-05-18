@@ -9,40 +9,49 @@ class EquivalenceComparator(visitor.Visitor):
 	'''Comparator for determining structural equivalence.'''
 
 	def __init__(self):
-		pass
+		self.result = True
 	
 	def compare(self, term, other):
 		if term is other:
 			return True
-		
-		if term.getType() != other.getType():
+
+		if not self.result:
 			return False
 		
-		return term.accept(self, other)
+		term.accept(self, other)
+		
+		return self.result
 
 	def visitLit(self, term, other):
-		return term.getType() == other.getType() and term.getValue() == other.getValue()
+		self.result = self.result and \
+			term.getType() == other.getType() \
+			and term.getValue() == other.getValue()
 		
 	def visitWildcard(self, term, other):
-		return types.WILDCARD == other.getType()
+		self.result = self.result and \
+			types.WILDCARD == other.getType()
 
 	def visitVar(self, term, other):
-		return other.getType() == types.VAR and \
+		self.result = self.result and \
+			types.VAR == other.getType() and \
 			term.getName() == other.getName() and \
 			self.compare(term.getPattern(), other.getPattern())
 	
 	def visitNilList(self, term, other):
-		return other.getType() == types.LIST and \
+		self.result = self.result and \
+			types.LIST == other.getType() and \
 			other.isEmpty()
 
 	def visitConsList(self, term, other):
-		return other.getType() == types.LIST and \
+		self.result = self.result and \
+			types.LIST == other.getType() and \
 			not other.isEmpty() and \
 			self.compare(term.getHead(), other.getHead()) and \
 			self.compare(term.getTail(), other.getTail())
 
 	def visitAppl(self, term, other):
-		return other.getType() == types.APPL and \
+		self.result = self.result and \
+			types.APPL == other.getType() and \
 			self.compare(term.getName(), other.getName()) and \
 			self.compare(term.getArgs(), other.getArgs())
 
@@ -51,14 +60,12 @@ class EqualityComparator(EquivalenceComparator):
 	'''Comparator for aterm equality (which includes annotations).'''
 
 	def compare(self, term, other):
-		if term is other:
-			return True
+		EquivalenceComparator.compare(self, term, other)
 		
-		if term.getType() != other.getType():
-			return False
-		
-		return term.accept(self, other) and EquivalenceComparator().compare(term.getAnnotations(), other.getAnnotations())
+		self.result = self.result and \
+			EquivalenceComparator().compare(term.getAnnotations(), other.getAnnotations())
 
+		return self.result
 
 class MatchingComparator(EquivalenceComparator):
 	'''Comparator for performing pattern matching.'''
@@ -77,22 +84,24 @@ class MatchingComparator(EquivalenceComparator):
 			self.kargs = kargs
 		
 	def compare(self, term, other):
-		return term.accept(self, other)
+		if not self.result:
+			return False
+		
+		term.accept(self, other)
+		return self.result
 	
 	def visitWildcard(self, term, other):
 		self.args.append(other)
-		return True
 
 	def visitVar(self, term, other):
 		name = term.getName()
 		try:
 			value = self.kargs[name]
 			if not EquivalenceComparator().compare(self.kargs[name], other):
-				return False
-			return True
+				self.result = False
 		except KeyError:
 			if not MatchingComparator([], self.kargs).compare(term.getPattern(), other):
-				return False
+				self.result = False
 			self.kargs[name] = other
 			return True
 	
