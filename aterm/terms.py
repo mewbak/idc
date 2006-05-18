@@ -241,8 +241,8 @@ class Integer(Literal):
 	def setAnnotations(self, annotations):
 		return self.factory.makeInt(self.value, annotations)
 
-	def accept(self, visitor):
-		return visitor.visitInt(self)
+	def accept(self, visitor, *args, **kargs):
+		return visitor.visitInt(self, *args, **kargs)
 
 
 class Real(Literal):
