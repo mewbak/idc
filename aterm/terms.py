@@ -62,9 +62,20 @@ class Term:
 
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
-		comparator = comparison.Comparator()
+		comparator = comparison.EquivalenceComparator()
+		return comparator.compare(self, other)
+
+	def isEqual(self, other):
+		'''Checks equality of this term against another term.  Note that for two
+		terms to be equal, any annotations they might have must be equal as
+		well.'''
+		comparator = comparison.EqualityComparator()
 		return comparator.compare(self, other)
 		
+	def __eq__(self, other):
+		'''Shorthand for the isEqual method.'''
+		return self.isEqual(other)
+
 	def match(self, other, args = None, kargs = None):
 		'''Matches this term agains a string or term pattern.'''
 		
@@ -149,17 +160,6 @@ class Term:
 			raise TypeError("attempt to modify read-only term attribute '%s'" % name)
 		else:
 			self.__dict__[name] = value
-
-	def isEqual(self, other):
-		'''Checks equality of this term against another term.  Note that for two
-		terms to be equal, any annotations they might have must be equal as
-		well.'''
-		comparator = comparison.EqualityComparator()
-		return comparator.compare(self, other)
-		
-	def __eq__(self, other):
-		'''Shorthand for the isEqual method.'''
-		return self.isEqual(other)
 
 	def make(self, *args, **kargs):
 		'''Create a new term based on this term and a list of arguments.'''

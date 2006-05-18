@@ -1,8 +1,12 @@
+'''Vistors for term comparison.'''
+
+
 from aterm import types
 from aterm import visitor
 
 
-class Comparator(visitor.Visitor):
+class EquivalenceComparator(visitor.Visitor):
+	'''Comparator for determining structural equivalence.'''
 
 	def __init__(self):
 		pass
@@ -43,8 +47,9 @@ class Comparator(visitor.Visitor):
 			self.compare(term.getArgs(), other.getArgs())
 
 
-class EqualityComparator(Comparator):
-	
+class EqualityComparator(EquivalenceComparator):
+	'''Comparator for aterm equality (which includes annotations).'''
+
 	def compare(self, term, other):
 		if term is other:
 			return True
@@ -52,13 +57,14 @@ class EqualityComparator(Comparator):
 		if term.getType() != other.getType():
 			return False
 		
-		return term.accept(self, other) and Comparator().compare(term.getAnnotations(), other.getAnnotations())
+		return term.accept(self, other) and EquivalenceComparator().compare(term.getAnnotations(), other.getAnnotations())
 
 
-class MatchingComparator(Comparator):
+class MatchingComparator(EquivalenceComparator):
+	'''Comparator for performing pattern matching.'''
 
 	def __init__(self, args = None, kargs = None):
-		Comparator.__init__(self)
+		EquivalenceComparator.__init__(self)
 		
 		if args is None:
 			self.args = []
@@ -81,7 +87,7 @@ class MatchingComparator(Comparator):
 		name = term.getName()
 		try:
 			value = self.kargs[name]
-			if not self.kargs[name].isEquivalent(other):
+			if not EquivalenceComparator().compare(self.kargs[name], other):
 				return False
 			return True
 		except KeyError:
