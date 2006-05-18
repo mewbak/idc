@@ -24,6 +24,7 @@ except ImportError:
 from aterm import types
 from aterm import exceptions
 from aterm import text
+from aterm import comparison
 
 
 class Term:
@@ -61,11 +62,9 @@ class Term:
 
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
-		return self is other or self._isEquivalent(other)
+		comparator = comparison.Comparator()
+		return comparator.compare(self, other)
 		
-	def _isEquivalent(self, other):
-		raise NotImplementedError
-	
 	def match(self, other, args = None, kargs = None):
 		'''Matches this term agains a string or term pattern.'''
 		
@@ -168,11 +167,9 @@ class Term:
 		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
-		return self is other or self._isEqual(other) and self.annotations.isEquivalent(other.annotations)
+		comparator = comparison.EqualityComparator()
+		return comparator.compare(self, other)
 		
-	def _isEqual(self, other):
-		raise NotImplementedError
-
 	def __eq__(self, other):
 		'''Shorthand for the isEqual method.'''
 		return self.isEqual(other)
@@ -219,12 +216,6 @@ class Literal(Term):
 	def isConstant(self):
 		return True
 	
-	def _isEquivalent(self, other):
-		return self.getType() == other.getType() and self.value == other.value
-
-	def _isEqual(self, other):
-		return self._isEquivalent(other)
-
 	def _match(self, other, args, kargs):
 		if other.isEquivalent(self):
 			return other
@@ -334,12 +325,6 @@ class NilList(List):
 	def isConstant(self):
 		return True
 	
-	def _isEquivalent(self, other):
-		return other.getType() == types.LIST and other.isEmpty()
-
-	def _isEqual(self, other):
-		return self._isEquivalent(other)
-
 	def _match(self, other, args, kargs):
 		if self is other:
 			return other
@@ -390,20 +375,6 @@ class ConsList(List):
 
 	def isConstant(self):
 		return self.head.isConstant() and self.tail.isConstant()
-	
-	def _isEquivalent(self, other):
-		return (
-			other.getType() == types.LIST and not other.isEmpty() and 
-			other.head.isEquivalent(self.head) and 
-			other.tail.isEquivalent(self.tail)
-		)
-		
-	def _isEqual(self, other):
-		return (
-			other.getType() == types.LIST and not other.isEmpty() and 
-			other.head.isEqual(self.head) and 
-			other.tail.isEqual(self.tail)
-		)
 	
 	def _match(self, other, args, kargs):
 		if self is other:
@@ -461,12 +432,6 @@ class Application(Term):
 	def isConstant(self):
 		return self.name.isConstant() and self.args.isConstant()
 	
-	def _isEquivalent(self, other):
-		return other.getType() == types.APPL and self.name.isEquivalent(other.name) and self.args.isEquivalent(other.args)
-
-	def _isEqual(self, other):
-		return other.getType() == types.APPL and self.name.isEqual(other.name) and self.args.isEqual(other.args)
-		
 	def _match(self, other, args, kargs):
 		if other.getType() == types.APPL:
 			self.name._match(other.name, args, kargs) 
@@ -499,12 +464,6 @@ class Wildcard(Term):
 	
 	def isConstant(self):
 		return False
-	
-	def _isEquivalent(self, other):
-		return other.getType() == types.WILDCARD
-	
-	def _isEqual(self, other):
-		return self._isEquivalent(other)
 	
 	def _match(self, other, args, kargs):
 		args.append(other)
@@ -546,12 +505,6 @@ class Variable(Term):
 	def getSymbol(self):
 		return self.getName()
 
-	def _isEquivalent(self, other):
-		return self.getType() == other.getType() and self.name == other.name and self.pattern.isEquivalent(other.pattern)
-
-	def _isEqual(self, other):
-		return self.getType() == other.getType() and self.name == other.name and self.pattern.isEqual(other.pattern)
-	
 	def isConstant(self):
 		return self.pattern.isConstant()
 	
