@@ -96,9 +96,11 @@ doc: box.py
 	epydoc \
 		--css blue \
 		aterm \
-		walker.py \
-		box.py \
-		ir.py
+		walker \
+		box \
+		ir \
+		path \
+		ui
 
 .PHONY: doc
 
