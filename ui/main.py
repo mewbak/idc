@@ -15,6 +15,7 @@ import glade
 import ir
 import box
 import model
+import refactoring
 
 import inspector
 import textbuffer
@@ -31,6 +32,8 @@ class MainApp(glade.GladeApp):
 		self.update(model)
 		
 		self.inspector = inspector.InspectorWindow(self.model)
+		
+		self.refactoring_factory = refactoring.Factory()
 
 	def on_open_activate(self, event):
 		path = self.show_open(
@@ -98,7 +101,11 @@ class MainApp(glade.GladeApp):
 			dialog.destroy()
 		print path
 		self.model.selection.set_selection(path, path)
-		return False
+		
+		refactorings = self.refactoring_factory.applicables(self.model.get_term(), self.model.selection.get_selection())
+		for refactoring in refactorings:
+			print refactoring.name()
+		return True
 
 	def get_path_at_iter(self, iter):
 		for tag in iter.get_tags():

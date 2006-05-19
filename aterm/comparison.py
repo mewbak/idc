@@ -67,6 +67,7 @@ class EqualityComparator(EquivalenceComparator):
 
 		return self.result
 
+
 class MatchingComparator(EquivalenceComparator):
 	'''Comparator for performing pattern matching.'''
 
