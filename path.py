@@ -8,9 +8,6 @@ import walker
 class Annotator(walker.Walker):
 	"""Annotates terms with their path on the aterm tree."""
 
-	def _setup(self):
-		self.__label = self.factory.parse("Path")
-		
 	def annotate(cls, term):
 		"""Class method which returns an equivalent term with annotated paths."""
 		annotator = cls(term.factory)
@@ -36,7 +33,7 @@ class Annotator(walker.Walker):
 			)
 		else:
 			raise Failure
-		return term.setAnnotation(self.__label, path)
+		return term.setAnnotation(self.factory.parse("Path"), path)
 	
 	def annotate_list(self, term, path, index):
 		"""Annotate a list of terms."""
@@ -55,3 +52,33 @@ class Annotator(walker.Walker):
 				self.annotate_list(term.getTail(), path, index + 1),
 				term.getAnnotations()
 			)
+
+
+class Evaluator(walker.Walker):
+	
+	def evaluate(cls, term, path):
+		"""Class method which evaluates the given term."""
+		return cls(term.factory).evaluate_term(term, path)
+	evaluate = classmethod(evaluate)
+
+	def evaluate_term(self, term, path):
+		"""Recursively evaluates a term with paths relative to the given path."""
+		
+		if path.isEmpty():
+			return term
+		
+		tail = path.getTail()		
+		term = self.evaluate_term(term, tail)
+		
+		head = path.getHead()
+		index = head.getValue()
+		
+		type = term.getType()
+		if type == aterm.LIST:
+			return term[index]
+		elif type == aterm.APPL:
+			return term.getArgs()[index]
+		else:
+			raise Failure
+		return term.setAnnotation(self.factory.parse("Path"), path)
+

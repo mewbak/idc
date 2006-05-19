@@ -39,6 +39,26 @@ class TestCase(unittest.TestCase):
 			self.failUnless(result.isEquivalent(term))
 			self.failUnless(term.isEquivalent(result))
 
+	evaluatorTestCases = [
+		('1', '[]', '1'),
+		('[1,2]', '[]', '[1,2]'),
+		('[1,2]', '[0]', '1'),
+		('[1,2]', '[1]', '2'),
+		('C(1,2)', '[]', 'C(1,2)'),
+		('C(1,2)', '[0]', '1'),
+		('C(1,2)', '[1]', '2'),
+	]
+	
+	def testEvaluator(self):
+		for termStr, pathStr, expectedResultStr in self.evaluatorTestCases:
+			term = self.factory.parse(termStr)
+			_path = self.factory.parse(pathStr)
+			expectedResult = self.factory.parse(expectedResultStr)
+			
+			result = path.Evaluator.evaluate(term, _path)
+			
+			self.failUnlessEqual(result, expectedResult)
+
 
 if __name__ == '__main__':
 	unittest.main()
