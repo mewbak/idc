@@ -46,10 +46,12 @@ class Formatter:
 		self.write('\n')
 	
 	def handle_tag_start(self, name, value):
-		''''''
+		'''Handle the start of a tag. Tags can be used for describing token types, 
+		or the originating term path.'''
 		pass
 
 	def handle_tag_end(self, name):
+		'''Handle the end of a tag.'''
 		pass
 
 
