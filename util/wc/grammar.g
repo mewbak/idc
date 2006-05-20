@@ -626,11 +626,11 @@ post_match_term
 	| #( APPL post_match_term post_match_term )
 	| #( t:TRANSF tgt=post_match_term_transf_target args=build_trnsf_args )
 		{
-            self.writeln("%s = self.%s(%s,%s)" % (tgt, #t.getText(), tgt, args))
+            self.writeln("%s = self.%s(%s, %s)" % (tgt, #t.getText(), tgt, args))
 		}
 	| #( tm:TRANSF_MAP tgt=post_match_term_transf_target args=build_trnsf_args )
 		{
-            self.writeln("%s = self._map(%s,self.%s,%s)" % (tgt, tgt, #tm.getText(), args))
+            self.writeln("%s = self._map(%s, self.%s, %s)" % (tgt, tgt, #tm.getText(), args))
 		}
 	| a:ACTION
 		{
@@ -660,7 +660,7 @@ build_term returns [ret]
 	| c:CONS 
 		{ ret = "_f.makeStr(%r)" % #c.getText() }
 	| v:VAR
-//		{ ret = "_f.makeVar(%r,_f.makeWildcard())" % #v.getText() }
+//		{ ret = "_f.makeVar(%r, _f.makeWildcard())" % #v.getText() }
 		{ ret = "_k[%r]" % #v.getText() }
 	| w:WILDCARD 
 //		{ ret = "_f.makeWildcard()" }
@@ -672,23 +672,23 @@ build_term returns [ret]
 	| #( LIST l=build_term )
 		{ ret = l }
 	| #( APPL c=build_term a=build_term )
-		{ ret = "_f.makeAppl(%s,%s)" % (c, a) }
+		{ ret = "_f.makeAppl(%s, %s)" % (c, a) }
 	| #( t:TRANSF a=build_trnsf_args)
 		{ ret = "self.%s(%s)" % (#t.getText(), a) }
 	| #( tm:TRANSF_MAP ah=build_term at=build_trnsf_args )
-		{ ret = "self._map(%s,self.%s,%s)" % (ah, #tm.getText(), at) }
+		{ ret = "self._map(%s, self.%s, %s)" % (ah, #tm.getText(), at) }
 	| a:ACTION
 		{ ret = #a.getText() }
 	| NIL
 		{ ret = "_f.makeNilList()" }
 	| #( COMMA h=build_term t=build_term )
-		{ ret = "_f.makeConsList(%s,%s)" % (h, t) }
+		{ ret = "_f.makeConsList(%s, %s)" % (h, t) }
 	;
 
 build_trnsf_args returns [ret]
 	:
 		{ ret = "" } { sep = "" }
 	 	( t=build_term
-		{ ret += sep + t } { sep = "," }
+		{ ret += sep + t } { sep = ", " }
 		)*
 	;

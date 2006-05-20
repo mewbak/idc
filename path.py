@@ -20,19 +20,19 @@ class Annotator(walker.Walker):
 	
 	def annotate_term(self, term, path):
 		"""Recursively annotates a term with paths relative to the given path."""
-		type = term.getType()
-		if type in (aterm.INT, aterm.REAL, aterm.STR):
+		type_ = term.getType()
+		if type_ in (aterm.INT, aterm.REAL, aterm.STR):
 			pass
-		elif type == aterm.LIST:
+		elif type_ == aterm.LIST:
 			term = self.annotate_list(term, path, 0)
-		elif type == aterm.APPL:
+		elif type_ == aterm.APPL:
 			term = self.factory.makeAppl(
 				term.getName(),
 				self.annotate_list(term.getArgs(), path, 0),
 				term.getAnnotations()
 			)
 		else:
-			raise Failure
+			raise walker.Failure
 		return term.setAnnotation(self.factory.parse("Path"), path)
 	
 	def annotate_list(self, term, path, index):
@@ -55,6 +55,7 @@ class Annotator(walker.Walker):
 
 
 class Evaluator(walker.Walker):
+	"""Evaluates a path on a term."""
 	
 	def evaluate(cls, term, path):
 		"""Class method which evaluates the given term."""
@@ -73,12 +74,12 @@ class Evaluator(walker.Walker):
 		head = path.getHead()
 		index = head.getValue()
 		
-		type = term.getType()
-		if type == aterm.LIST:
+		type_ = term.getType()
+		if type_ == aterm.LIST:
 			return term[index]
-		elif type == aterm.APPL:
+		elif type_ == aterm.APPL:
 			return term.getArgs()[index]
 		else:
-			raise Failure
+			raise walker.Failure
 		return term.setAnnotation(self.factory.parse("Path"), path)
 

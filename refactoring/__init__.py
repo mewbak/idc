@@ -42,21 +42,17 @@ class Factory:
 		refactorings.
 		"""
 		self.refactorings = {}
-		for dir in __path__:
-			for file in os.listdir(dir):
-				name, ext = os.path.splitext(file)
+		for path in __path__:
+			for name in os.listdir(path):
+				name, ext = os.path.splitext(name)
 				if name != '__init__' and ext == '.py':
-					print 'module:' + name
 					module = __import__(__name__ + '.' + name)
 					module = getattr(module, name)
 					for nam, cls in module.__dict__.iteritems():
-						print 'obj:' + nam
 						try:
 							print issubclass(cls, Refactoring)
 							if issubclass(cls, Refactoring):
-								
 								refactoring = cls()
-								print 'Found:' + refactoring.name()
 								self.refactorings[refactoring.name()] = refactoring
 						except TypeError:
 							pass
