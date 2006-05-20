@@ -4,6 +4,8 @@
 # - http://www.pygtk.org/pygtk2tutorial/
 # - http://www.pygtk.org/pygtk2reference/
 
+import sys
+
 import gtk
 import gtk.glade
 
@@ -27,14 +29,19 @@ class MainApp(glade.GladeApp):
 		glade.GladeApp.__init__(self, "./ui/main.glade", "main_window")
 		
 		self.document = document.Document()
-		
 		self.document.term.attach(self.on_term_update)
 		
 		self.inspector = inspector.InspectorWindow(self.document)
 		self.refactoring_factory = refactoring.Factory()
 		
-		self.document.new()
+		if len(sys.argv) > 1:
+			self.document.open_asm(sys.argv[1])
+		else:
+			self.document.new()
 
+	def on_new_activate(self, event):
+		self.document.new()
+	
 	def on_open_activate(self, event):
 		path = self.show_open(
 				None, 
