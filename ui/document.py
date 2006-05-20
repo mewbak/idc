@@ -8,40 +8,41 @@ import ir
 import path
 
 
-class Model(observer.Subject):
-	"""Data model class. It subclasses the subject class from the observer 
-	pattern, so that it is easy to maintain up-to-date views of the data.
-	"""
+class TermState(observer.State):
+	"""Intermediate representation of the program using aterms."""
+	
+	def set(self, value):
+		value = path.Annotator.annotate(value)
+		observer.State.set(self, value)
+
+
+class SelectionState(observer.State):
+	"""Path tuple describing the current selection."""
 	
 	def __init__(self, term):
-		observer.Subject.__init__(self)
-		self.__term = term
+		observer.State.__init__(self)
+		self.reset()
+		term.attach(self.on_term_update)
 		
-	def get_term(self):
-		return self.__term
-	
-	def set_term(self, term):
-		term = path.Annotator.annotate(term)
-		self.__term = term
-		self.notify()
+	def reset(self):
+		self.set((None, None))
+		
+	def on_term_update(self, program):
+		self.reset()
 
 
-class Document(Model):
+class Document:
 	"""Document data model."""
 	
 	def __init__(self):
 		self.factory = aterm.Factory()
-		term = self.factory.parse('Module([])')
-		Model.__init__(self, term)
-		self.selection = Selection()
+		self.term = TermState()
+		self.selection = SelectionState(self.term)
 		
-	def set_term(self, term):
-		Model.set_term(self, term)
-		self.selection.reset_selection()
-	
 	def new(self):
+		"""New document."""
 		term = self.factory.parse('Module([])')
-		self.set_term(term)
+		self.term.set(term)
 		
 	def open_asm(self, filename):
 		"""Open an assembly file."""
@@ -50,7 +51,7 @@ class Document(Model):
 		machine = Pentium()
 		term = machine.load(self.factory, file(filename, 'rt'))
 		term = machine.translate(term)
-		self.set_term(term)
+		self.term.set(term)
 	
 	def open_ir(self, filename):
 		"""Open a text file with the intermediate representation."""
@@ -60,11 +61,13 @@ class Document(Model):
 
 	def save_ir(self, filename):
 		"""Save a text file with the intermediate representation."""
+		term = self.term.get()
 		fp = file(filename, 'wt')
-		self.term.writeToTextFile(fp)
+		term.writeToTextFile(fp)
 
 	def save_c(self, filename):
-		"""Save the C code."""
+		"""Export C code."""
+		term = self.term.get()
 		fp = file(filename, 'wt')
 		printer = ir.PrettyPrinter(term.factory)
 		boxes = printer.module(term)
@@ -72,26 +75,9 @@ class Document(Model):
 		writer = box.Writer(formatter)
 		writer.write_box(boxes)
 
-	# TODO: add a method to apply refactorings here
-	
-
-class Selection(observer.Subject):
-	
-	def __init__(self):
-		observer.Subject.__init__(self)
-		self._start = None
-		self._end = None
-
-	def reset_selection(self):
-		self._start = None
-		self._end = None
-		self.notify()
-		
-	def set_selection(self, start, end):
-		self._start = start
-		self._end = end
-		self.notify()
-		
-	def get_selection(self):
-		return self._start, self._end
-
+	def apply_refactoring(self, refactoring, args):
+		"""Apply a refactoring."""
+		term = self.term.get()
+		term = refactoring.apply(term, args)
+		self.term.set(term)
+		# TODO: keep an history

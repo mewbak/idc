@@ -247,19 +247,18 @@ class InspectorWindow(glade.GladeWindow):
 		column = gtk.TreeViewColumn("Annotations", renderer, text=2)
 		treeview.append_column(column)
 
-		document.attach(self.update)
-		self.update(document)
-		document.selection.attach(self.update_selection)
+		document.term.attach(self.on_term_update)
+		document.selection.attach(self.on_selection_update)
 		
-	def update(self, subject):
-		term = subject.get_term()
+	def on_term_update(self, term):
+		term = term.get()
 		treeview = self.treeview
 		model = TermTreeModel(term)
 		treeview.set_model(model)
 		treeview.expand_all()
 
-	def update_selection(self, selection):
-		start, end = selection.get_selection()
+	def on_selection_update(self, selection):
+		start, end = selection.get()
 		path = start
 		
 		if path is not None:

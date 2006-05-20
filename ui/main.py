@@ -28,12 +28,12 @@ class MainApp(glade.GladeApp):
 		
 		self.document = document.Document()
 		
-		self.document.attach(self.update)
-		self.update(document)
+		self.document.term.attach(self.on_term_update)
 		
 		self.inspector = inspector.InspectorWindow(self.document)
-		
 		self.refactoring_factory = refactoring.Factory()
+		
+		self.document.new()
 
 	def on_open_activate(self, event):
 		path = self.show_open(
@@ -49,11 +49,8 @@ class MainApp(glade.GladeApp):
 		if path is not None:
 			self.document.open_asm(path)
 
-	def update(self, subject):
-		self.update_textview()
-
-	def update_textview(self):
-		term = self.document.get_term()
+	def on_term_update(self, term):
+		term = term.get()
 		boxes = ir.prettyPrint(term)
 		buffer = self.textview.get_buffer()
 		formatter = textbuffer.TextBufferFormatter(buffer)
@@ -100,12 +97,12 @@ class MainApp(glade.GladeApp):
 			dialog.run()
 			dialog.destroy()
 		print path
-		self.document.selection.set_selection(path, path)
+		self.document.selection.set((path, path))
 		
 		# See menu.py from PyGTK Tutorial
 		
 		popup = gtk.Menu()
-		refactorings = self.refactoring_factory.applicables(self.document.get_term(), self.document.selection.get_selection())
+		refactorings = self.refactoring_factory.applicables(self.document.term.get(), self.document.selection.get())
 		empty = True
 		for refactoring in refactorings:
 			print refactoring.name()
@@ -122,10 +119,14 @@ class MainApp(glade.GladeApp):
 
 	def on_menuitem_activate(self, menu, refactoring):
 		print refactoring.name()
-		term = self.document.get_term()
-		args = refactoring.input(term, self.document.selection.get_selection())
-		term = refactoring.apply(term, args)
-		self.document.set_term(term)
+		
+		# Ask user input
+		args = refactoring.input(
+			self.document.term.get(), 
+			self.document.selection.get()
+		)
+		
+		self.document.apply_refactoring(refactoring, args)
 		
 	def get_path_at_iter(self, iter):
 		for tag in iter.get_tags():
