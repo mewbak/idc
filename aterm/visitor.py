@@ -8,6 +8,7 @@ class Visitor:
 		pass
 	
 	def visit(self, term, *args, **kargs):
+		'''Visit the given term.'''
 		return term.accept(self, *args, **kargs)
 
 	def visitTerm(self, term, *args, **kargs):

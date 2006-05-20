@@ -1,17 +1,21 @@
-'''Textual representation of terms.'''
+'''Visitors for term writing.'''
 
 
 from aterm import types
 from aterm import visitor
 
 
-class TextWriter(visitor.Visitor):
-	'''Writes a term to a text stream.'''
+class Writer(visitor.Visitor):
+	'''Base class for term writers.'''
 	
 	def __init__(self, fp):
 		visitor.Visitor.__init__(self)
 		self.fp = fp
 
+
+class TextWriter(Writer):
+	'''Writes a term to a text stream.'''
+	
 	def writeAnnotations(self, term):
 		annotations = term.getAnnotations()
 		if not annotations.isEmpty():
@@ -84,3 +88,5 @@ class TextWriter(visitor.Visitor):
 		else:
 			self.fp.write('_')
 
+
+# TODO: implement a XML writer

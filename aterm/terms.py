@@ -23,8 +23,8 @@ except ImportError:
 
 from aterm import types
 from aterm import exceptions
-from aterm import text
-from aterm import comparison
+from aterm import comparators
+from aterm import writers
 
 
 class Term:
@@ -62,15 +62,13 @@ class Term:
 
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
-		comparator = comparison.EquivalenceComparator()
-		return comparator.compare(self, other)
+		return comparators.equivalence.compare(self, other)
 
 	def isEqual(self, other):
 		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
-		comparator = comparison.EqualityComparator()
-		return comparator.compare(self, other)
+		return comparators.equality.compare(self, other)
 		
 	def __eq__(self, other):
 		'''Shorthand for the isEqual method.'''
@@ -82,7 +80,7 @@ class Term:
 		if isinstance(other, basestring):
 			other = self.factory.parse(other)
 		
-		comparator = comparison.MatchingComparator(args, kargs)
+		comparator = comparators.Matcher(args, kargs)
 		return comparator.compare(self, other)
 	
 	def getAnnotation(self, label):
@@ -174,7 +172,7 @@ class Term:
 
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
-		writer = text.TextWriter(fp)
+		writer = writers.TextWriter(fp)
 		writer.visit(self)
 
 	def __str__(self):
