@@ -25,6 +25,7 @@ from aterm import types
 from aterm import exceptions
 from aterm import comparators
 from aterm import writers
+from aterm import utils
 
 
 class Term:
@@ -58,7 +59,7 @@ class Term:
 		
 	def isConstant(self):
 		'''Whether this term is types, as opposed to have variables or wildcards.'''
-		raise NotImplementedError
+		return utils.constness.isConstant(self)
 
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
@@ -198,9 +199,6 @@ class Literal(Term):
 	def getValue(self):
 		return self.value
 
-	def isConstant(self):
-		return True
-
 		
 class Integer(Literal):
 	'''Integer literal term.'''
@@ -245,7 +243,7 @@ class String(Literal):
 
 
 class List(Term):
-	'''List term.'''
+	'''Base class for list terms.'''
 
 	def getType(self):
 		return types.LIST
@@ -301,9 +299,6 @@ class Nil(List):
 	def getTail(self):
 		raise exceptions.EmptyListException
 
-	def isConstant(self):
-		return True
-	
 	def setAnnotations(self, annotations):
 		return self.factory.makeNil(annotations)
 
@@ -342,9 +337,6 @@ class Cons(List):
 	def getTail(self):
 		return self.tail
 
-	def isConstant(self):
-		return self.head.isConstant() and self.tail.isConstant()
-	
 	def _make(self, args, kargs):
 		return self.factory.makeCons(self.head._make(args, kargs), self.tail._make(args, kargs), self.annotations)
 	
@@ -386,9 +378,6 @@ class Application(Term):
 	def getArgs(self):
 		return self.args
 	
-	def isConstant(self):
-		return self.name.isConstant() and self.args.isConstant()
-	
 	def _make(self, args, kargs):
 		return self.factory.makeAppl(self.name._make(args, kargs), self.args._make(args, kargs), self.annotations)
 	
@@ -399,7 +388,14 @@ class Application(Term):
 		return visitor.visitAppl(self, *args, **kargs)
 
 
-class Wildcard(Term):
+class Placeholder(Term):
+	'''Base class for placeholder terms.'''
+	
+	def getSymbol(self):
+		raise NotImplementedError
+	
+	
+class Wildcard(Placeholder):
 	'''Wildcard term.'''
 
 	def getType(self):
@@ -410,9 +406,6 @@ class Wildcard(Term):
 		
 	def getSymbol(self):
 		return '_'
-	
-	def isConstant(self):
-		return False
 	
 	def _make(self, args, kargs):
 		try:
@@ -427,7 +420,7 @@ class Wildcard(Term):
 		return visitor.visitWildcard(self, *args, **kargs)
 
 
-class Variable(Term):
+class Variable(Placeholder):
 	'''Variable term.'''
 	
 	def __init__(self, factory, name, pattern, annotations = None):
@@ -450,9 +443,6 @@ class Variable(Term):
 	def getSymbol(self):
 		return self.getName()
 
-	def isConstant(self):
-		return self.pattern.isConstant()
-	
 	def _make(self, args, kargs):
 		name = self.getName()
 		if name in kargs:

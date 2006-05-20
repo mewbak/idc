@@ -25,12 +25,6 @@ class Visitor:
 
 	def visitStr(self, term, *args, **kargs):
 		return self.visitLit(term, *args, **kargs)
-
-	def visitWildcard(self, term, *args, **kargs):
-		return self.visitTerm(term, *args, **kargs)
-
-	def visitVar(self, term, *args, **kargs):
-		return self.visitTerm(term, *args, **kargs)
 	
 	def visitList(self, term, *args, **kargs):
 		return self.visitTerm(term, *args, **kargs)
@@ -44,4 +38,12 @@ class Visitor:
 	def visitAppl(self, term, *args, **kargs):
 		return self.visitTerm(term, *args, **kargs)
 
+	def visitPlaceholder(self,term, *args, **kargs):
+		return self.visitTerm(term, *args, **kargs)
+		
+	def visitWildcard(self, term, *args, **kargs):
+		return self.visitPlaceholder(term, *args, **kargs)
+
+	def visitVar(self, term, *args, **kargs):
+		return self.visitPlaceholder(term, *args, **kargs)
 

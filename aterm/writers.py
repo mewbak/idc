@@ -72,7 +72,13 @@ class TextWriter(Writer):
 			self.visit(args, inside_list = True)
 			self.fp.write(')')
 		self.writeAnnotations(term)
-
+		
+	def visitWildcard(self, term, inside_list = False):
+		if inside_list:
+			self.fp.write('*')
+		else:
+			self.fp.write('_')
+			
 	def visitVar(self, term, inside_list = False):
 		if inside_list:
 			self.fp.write('*')
@@ -81,12 +87,6 @@ class TextWriter(Writer):
 		if pattern.getType() != types.WILDCARD:
 			self.fp.write('=')
 			self.visit(pattern)
-		
-	def visitWildcard(self, term, inside_list = False):
-		if inside_list:
-			self.fp.write('*')
-		else:
-			self.fp.write('_')
 
 
 # TODO: implement a XML writer

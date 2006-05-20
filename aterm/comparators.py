@@ -16,17 +16,7 @@ class Comparator(visitor.Visitor):
 		return \
 			term.getType() == other.getType() and \
 			term.getValue() == other.getValue()
-		
-	def visitWildcard(self, term, other):
-		return \
-			types.WILDCARD == other.getType()
 
-	def visitVar(self, term, other):
-		return \
-			types.VAR == other.getType() and \
-			term.getName() == other.getName() and \
-			self.compare(term.getPattern(), other.getPattern())
-	
 	def visitNil(self, term, other):
 		return \
 			types.LIST == other.getType() and \
@@ -44,6 +34,16 @@ class Comparator(visitor.Visitor):
 			types.APPL == other.getType() and \
 			self.compare(term.getName(), other.getName()) and \
 			self.compare(term.getArgs(), other.getArgs())		
+
+	def visitWildcard(self, term, other):
+		return \
+			types.WILDCARD == other.getType()
+
+	def visitVar(self, term, other):
+		return \
+			types.VAR == other.getType() and \
+			term.getName() == other.getName() and \
+			self.compare(term.getPattern(), other.getPattern())
 	
 
 class Equivalence(Comparator):
