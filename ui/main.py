@@ -102,11 +102,31 @@ class MainApp(glade.GladeApp):
 		print path
 		self.model.selection.set_selection(path, path)
 		
+		# See menu.py from PyGTK Tutorial
+		
+		popup = gtk.Menu()
 		refactorings = self.refactoring_factory.applicables(self.model.get_term(), self.model.selection.get_selection())
+		empty = True
 		for refactoring in refactorings:
 			print refactoring.name()
+			menuitem = gtk.MenuItem(refactoring.name())
+			popup.append(menuitem)
+			menuitem.connect("activate", self.on_menuitem_activate, refactoring)
+			menuitem.show()
+			empty = False
+		
+		if not empty:
+			popup.popup(None, None, None, event.button, event.time)
+		
 		return True
 
+	def on_menuitem_activate(self, menu, refactoring):
+		print refactoring.name()
+		term = self.model.get_term()
+		args = refactoring.input(term, self.model.selection.get_selection())
+		term = refactoring.apply(term, args)
+		self.model.set_term(term)
+		
 	def get_path_at_iter(self, iter):
 		for tag in iter.get_tags():
 			path = tag.get_data('path')

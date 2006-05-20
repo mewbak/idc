@@ -11,7 +11,7 @@ class Visitor:
 		return term.accept(self, *args, **kargs)
 
 	def visitTerm(self, term, *args, **kargs):
-		pass
+		raise NotImplementedError
 
 	def visitLit(self, term, *args, **kargs):
 		return self.visitTerm(term, *args, **kargs)
