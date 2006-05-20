@@ -1,16 +1,16 @@
 """Aterm inspector window."""
 
-import gtk
-import gtk.glade
 
-import glade
+import gtk
+import gobject
+
+from ui import glade
 
 import aterm
 
-import gobject
-
 
 class TermTreeIter:
+	"""Iterator for TermTreeModel."""
 
 	def __init__(self, path, parents, head, tail):
 		self.path = path
@@ -88,19 +88,8 @@ class TermTreeIter:
 			)
 
 
-# to create a new GtkTreeModel from python, you must derive from
-# TreeModel.
 class TermTreeModel(gtk.GenericTreeModel):
-	'''This class represents the model of a tree.  The iterators used
-	to represent positions are converted to python objects when passed
-	to the on_* methods.  This means you can use any python object to
-	represent a node in the tree.  The None object represents a NULL
-	iterator.
-
-	In this tree, we use simple tuples to represent nodes, which also
-	happen to be the tree paths for those nodes.  This model is a tree
-	of depth 3 with 5 nodes at each level of the tree.  The values in
-	the tree are just the string representations of the nodes.'''
+	''''Generic tree model for an aterm.'''
 
 	def __init__(self, term):
 		'''constructor for the model.  Make sure you call
@@ -133,14 +122,8 @@ class TermTreeModel(gtk.GenericTreeModel):
 		case, the node is the path'''
 		assert path[0] == 0
 		node = self.top
-		try: 
-			for n in path[1:]:
-				node = node.nth_child(n)
-		except:
-			print '***'
-			print '*', node.path
-			print '*', path
-			raise
+		for n in path[1:]:
+			node = node.nth_child(n)
 		return node
 	   
 	def on_get_value(self, node, column):
@@ -230,9 +213,11 @@ class TermTreeModel(gtk.GenericTreeModel):
 
 class InspectorWindow(glade.GladeWindow):
 
-	def __init__(self, document):
+	def __init__(self, main_window):
 		glade.GladeWindow.__init__(self, "./ui/inspector.glade", "inspector_window")
 
+		self.main_window = main_window
+		
 		treeview = self.treeview
 
 		renderer = gtk.CellRendererText()
@@ -247,8 +232,14 @@ class InspectorWindow(glade.GladeWindow):
 		column = gtk.TreeViewColumn("Annotations", renderer, text=2)
 		treeview.append_column(column)
 
+		document = self.main_window.document
 		document.term.attach(self.on_term_update)
 		document.selection.attach(self.on_selection_update)
+		
+		if document.term.get() is not None:
+			self.on_term_update(document.term)
+		if document.selection.get() is not None:
+			self.on_selection_update(document.selection)
 		
 	def on_term_update(self, term):
 		term = term.get()
@@ -268,9 +259,18 @@ class InspectorWindow(glade.GladeWindow):
 		
 			print path 
 			
-			# FIXME: not working
-			self.treeview.get_selection().select_path(path)
+			#self.treeview.get_selection().select_path(path)
 			self.treeview.scroll_to_cell(path)
 			self.treeview.set_cursor(path)
-			
+	
+	def on_inspector_window_destroy(self, event):
+		document = self.main_window.document
+
+		document.term.detach(self.on_term_update)
+		document.selection.detach(self.on_selection_update)
+		self.main_window.inspector.set_active(False)
+		self.main_window.inspector_window = None
+
+		# TODO: deactivate
+		
 	

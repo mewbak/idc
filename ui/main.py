@@ -19,8 +19,8 @@ import box
 import document
 import refactoring
 
-import inspector
-import textbuffer
+from ui import inspector
+from ui import textbuffer
 
 
 class MainApp(glade.GladeApp):
@@ -31,13 +31,14 @@ class MainApp(glade.GladeApp):
 		self.document = document.Document()
 		self.document.term.attach(self.on_term_update)
 		
-		self.inspector = inspector.InspectorWindow(self.document)
 		self.refactoring_factory = refactoring.Factory()
 		
 		if len(sys.argv) > 1:
 			self.document.open_asm(sys.argv[1])
 		else:
 			self.document.new()
+
+		self.inspector_window = None
 
 	def on_new_activate(self, event):
 		self.document.new()
@@ -66,6 +67,16 @@ class MainApp(glade.GladeApp):
 
 	def on_quit_activate(self, event):
 		self.quit()
+
+	def on_inspector_toggled(self, menuitem):
+		"""(De)activate the inspector window."""
+		if self.inspector.get_active():
+			assert self.inspector_window is None
+			self.inspector_window = inspector.InspectorWindow(self)
+		else:
+			assert self.inspector_window is not None
+			self.inspector_window.widget.destroy()
+			self.inspector_window = None
 
 	def on_main_window_destroy(self, event):
 		self.quit()

@@ -20,6 +20,7 @@
   <property name="gravity">GDK_GRAVITY_NORTH_EAST</property>
   <property name="focus_on_map">True</property>
   <property name="urgency_hint">False</property>
+  <signal name="destroy" handler="on_inspector_window_destroy" last_modification_time="Fri, 24 Mar 2006 14:09:12 GMT"/>
 
   <child>
     <widget class="GtkScrolledWindow" id="scrolledwindow">

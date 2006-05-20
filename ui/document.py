@@ -65,7 +65,7 @@ class Document:
 		fp = file(filename, 'wt')
 		term.writeToTextFile(fp)
 
-	def save_c(self, filename):
+	def export_c(self, filename):
 		"""Export C code."""
 		term = self.term.get()
 		fp = file(filename, 'wt')
@@ -75,6 +75,8 @@ class Document:
 		writer = box.Writer(formatter)
 		writer.write_box(boxes)
 
+	# TODO: Write a PDF exporter, probably using latex.
+	
 	def apply_refactoring(self, refactoring, args):
 		"""Apply a refactoring."""
 		term = self.term.get()
