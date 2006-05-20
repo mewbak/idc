@@ -16,7 +16,7 @@ class Annotator(walker.Walker):
 
 	def annotate_root(self, term):
 		"""Annotate the root term."""
-		return self.annotate_term(term, self.factory.makeNilList())
+		return self.annotate_term(term, self.factory.makeNil())
 	
 	def annotate_term(self, term, path):
 		"""Recursively annotates a term with paths relative to the given path."""
@@ -41,10 +41,10 @@ class Annotator(walker.Walker):
 		if term.isEmpty():
 			return term
 		else:
-			return self.factory.makeConsList(
+			return self.factory.makeCons(
 				self.annotate_term(
 					term.getHead(), 
-					self.factory.makeConsList(
+					self.factory.makeCons(
 						self.factory.makeInt(index), 
 						path
 					)

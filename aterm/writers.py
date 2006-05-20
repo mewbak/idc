@@ -40,12 +40,12 @@ class TextWriter(Writer):
 		self.fp.write('"' + s + '"')
 		self.writeAnnotations(term)
 	
-	def visitNilList(self, term, inside_list = False):
+	def visitNil(self, term, inside_list = False):
 		if not inside_list:
 			self.fp.write('[]')
 			self.writeAnnotations(term)
 
-	def visitConsList(self, term, inside_list = False):
+	def visitCons(self, term, inside_list = False):
 		if not inside_list:
 			self.fp.write('[')	 
 		head = term.getHead()
@@ -67,7 +67,7 @@ class TextWriter(Writer):
 		if \
 				name.getType() != types.STR \
 				or name.getValue() == '' \
-				or not args.isEquivalent(args.factory.makeNilList()):
+				or not args.isEquivalent(args.factory.makeNil()):
 			self.fp.write('(')
 			self.visit(args, inside_list = True)
 			self.fp.write(')')

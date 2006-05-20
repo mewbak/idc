@@ -40,7 +40,7 @@ class TermTreeIter:
 		elif type == aterm.APPL:
 			return term.getArgs()
 		else:
-			return term.factory.makeNilList()
+			return term.factory.makeNil()
 		
 	def children(self):
 		children = self._children()
@@ -96,7 +96,7 @@ class TermTreeModel(gtk.GenericTreeModel):
 		PyTreeModel.__init__'''
 		gtk.GenericTreeModel.__init__(self)
 		
-		self.top = TermTreeIter((), (), term, term.factory.makeNilList())
+		self.top = TermTreeIter((), (), term, term.factory.makeNil())
 
 	# the implementations for TreeModel methods are prefixed with on_
 	

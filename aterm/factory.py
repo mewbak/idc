@@ -48,19 +48,19 @@ class Factory:
 		'''Creates a new wildcard term'''
 		return terms.Wildcard(self, annotations)
 
-	def makeNilList(self, annotations = None):
+	def makeNil(self, annotations = None):
 		'''Creates a new empty list term'''
-		return terms.NilList(self, annotations)
+		return terms.Nil(self, annotations)
 
-	def makeConsList(self, head, tail = None, annotations = None):
+	def makeCons(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''
-		return terms.ConsList(self, head, tail, annotations)
+		return terms.Cons(self, head, tail, annotations)
 
 	def makeList(self, seq, annotations = None):
 		'''Creates a new list from a sequence.'''
-		accum = self.makeNilList()
+		accum = self.makeNil()
 		for i in xrange(len(seq) - 1, -1, -1):
-			accum = self.makeConsList(seq[i], accum)
+			accum = self.makeCons(seq[i], accum)
 		if annotations is not None:
 			accum = accum.setAnnotations(annotations)
 		return accum

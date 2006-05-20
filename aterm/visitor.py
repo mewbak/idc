@@ -35,10 +35,10 @@ class Visitor:
 	def visitList(self, term, *args, **kargs):
 		return self.visitTerm(term, *args, **kargs)
 
-	def visitNilList(self, term, *args, **kargs):
+	def visitNil(self, term, *args, **kargs):
 		return self.visitList(term, *args, **kargs)
 
-	def visitConsList(self, term, *args, **kargs):
+	def visitCons(self, term, *args, **kargs):
 		return self.visitList(term, *args, **kargs)
 
 	def visitAppl(self, term, *args, **kargs):

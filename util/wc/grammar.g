@@ -680,9 +680,9 @@ build_term returns [ret]
 	| a:ACTION
 		{ ret = #a.getText() }
 	| NIL
-		{ ret = "_f.makeNilList()" }
+		{ ret = "_f.makeNil()" }
 	| #( COMMA h=build_term t=build_term )
-		{ ret = "_f.makeConsList(%s, %s)" % (h, t) }
+		{ ret = "_f.makeCons(%s, %s)" % (h, t) }
 	;
 
 build_trnsf_args returns [ret]

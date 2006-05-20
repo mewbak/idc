@@ -135,14 +135,14 @@ term returns [res]
 
 aterms returns [res]
 	:
-		{ res = self.factory.makeNilList() }
+		{ res = self.factory.makeNil() }
 	|
 		head=aterm 
 		( COMMA tail=aterms 
 		|
-			{ tail = self.factory.makeNilList() }
+			{ tail = self.factory.makeNil() }
 		)
-		{ res = self.factory.makeConsList(head, tail) }
+		{ res = self.factory.makeCons(head, tail) }
 	|
 		STAR
 			{ res = self.factory.makeWildcard() }

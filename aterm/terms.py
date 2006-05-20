@@ -10,8 +10,8 @@ __all__ = [
 	'Wildcard',
 	'Variable',
 	'List',
-	'NilList',
-	'ConsList',
+	'Nil',
+	'Cons',
 	'Application',
 ]
 
@@ -100,7 +100,7 @@ class Term:
 
 	def _setAnnotation(self, label, annotation, annotations):
 		if annotations.isEmpty():
-			return self.factory.makeConsList(label, self.factory.makeConsList(annotation, annotations))
+			return self.factory.makeCons(label, self.factory.makeCons(annotation, annotations))
 			
 		_label = annotations.getHead()
 		annotations = annotations.getTail()
@@ -108,9 +108,9 @@ class Term:
 		annotations = annotations.getTail()
 		
 		if label.isEquivalent(_label):
-			return self.factory.makeConsList(label, self.factory.makeConsList(annotation, annotations))
+			return self.factory.makeCons(label, self.factory.makeCons(annotation, annotations))
 		else:
-			return self.factory.makeConsList(_label, self.factory.makeConsList(_annotation, self._setAnnotation(label, annotation, annotations)))
+			return self.factory.makeCons(_label, self.factory.makeCons(_annotation, self._setAnnotation(label, annotation, annotations)))
 				
 	def removeAnnotation(self, label):
 		'''Returns a new version of this term with the 
@@ -129,12 +129,12 @@ class Term:
 		if label.isEquivalent(_label):
 			return annotations
 		else:
-			return self.factory.makeConsList(_label, self.factory.makeConsList(_annotation, self._removeAnnotation(label, annotations)))
+			return self.factory.makeCons(_label, self.factory.makeCons(_annotation, self._removeAnnotation(label, annotations)))
 
 	def getAnnotations(self):
 		'''Returns the annotation list.'''
 		if self.__annotations is None:
-			return self.factory.makeNilList()
+			return self.factory.makeNil()
 		else:
 			return self.__annotations
 
@@ -274,13 +274,13 @@ class List(Term):
 			return self.getTail().__getitem__(index - 1)
 
 	def insert(self, element):
-		return self.factory.makeConsList(element, self)
+		return self.factory.makeCons(element, self)
 	
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitList(self, *args, **kargs)
 
 
-class NilList(List):
+class Nil(List):
 	'''Empty list term.'''
 	
 	def __init__(self, factory, annotations = None):
@@ -305,13 +305,13 @@ class NilList(List):
 		return True
 	
 	def setAnnotations(self, annotations):
-		return self.factory.makeNilList(annotations)
+		return self.factory.makeNil(annotations)
 
 	def accept(self, visitor, *args, **kargs):
-		return visitor.visitNilList(self, *args, **kargs)
+		return visitor.visitNil(self, *args, **kargs)
 
 
-class ConsList(List):
+class Cons(List):
 	'''Concatenated list term.'''
 	
 	def __init__(self, factory, head, tail = None, annotations = None):
@@ -321,7 +321,7 @@ class ConsList(List):
 			raise TypeError("head is not a term: %r" % head)
 		self.head = head
 		if tail is None:
-			self.tail = self.factory.makeNilList()
+			self.tail = self.factory.makeNil()
 		else:
 			if not isinstance(tail, (List, Variable, Wildcard)):
 				raise TypeError("tail is not a list, variable, or wildcard term: %r" % tail)
@@ -346,13 +346,13 @@ class ConsList(List):
 		return self.head.isConstant() and self.tail.isConstant()
 	
 	def _make(self, args, kargs):
-		return self.factory.makeConsList(self.head._make(args, kargs), self.tail._make(args, kargs), self.annotations)
+		return self.factory.makeCons(self.head._make(args, kargs), self.tail._make(args, kargs), self.annotations)
 	
 	def setAnnotations(self, annotations):
-		return self.factory.makeConsList(self.head, self.tail, annotations)
+		return self.factory.makeCons(self.head, self.tail, annotations)
 
 	def accept(self, visitor, *args, **kargs):
-		return visitor.visitConsList(self, *args, **kargs)
+		return visitor.visitCons(self, *args, **kargs)
 
 
 class Application(Term):
@@ -365,7 +365,7 @@ class Application(Term):
 			raise TypeError("name is not a string, variable, or wildcard term: %r" % name)
 		self.name = name
 		if args is None:
-			self.args = self.factory.makeNilList()
+			self.args = self.factory.makeNil()
 		else:
 			if not isinstance(args, (List, Variable, Wildcard)):
 				raise TypeError("args is not a list term: %r" % args)

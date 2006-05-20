@@ -27,12 +27,12 @@ class Comparator(visitor.Visitor):
 			term.getName() == other.getName() and \
 			self.compare(term.getPattern(), other.getPattern())
 	
-	def visitNilList(self, term, other):
+	def visitNil(self, term, other):
 		return \
 			types.LIST == other.getType() and \
 			other.isEmpty()
 
-	def visitConsList(self, term, other):
+	def visitCons(self, term, other):
 		return \
 			types.LIST == other.getType() and \
 			not other.isEmpty() and \
