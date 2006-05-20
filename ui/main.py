@@ -14,7 +14,7 @@ import glade
 
 import ir
 import box
-import model
+import document
 import refactoring
 
 import inspector
@@ -26,12 +26,12 @@ class MainApp(glade.GladeApp):
 	def __init__(self):
 		glade.GladeApp.__init__(self, "./ui/main.glade", "main_window")
 		
-		self.model = model.ProgramModel()
+		self.document = document.Document()
 		
-		self.model.attach(self.update)
-		self.update(model)
+		self.document.attach(self.update)
+		self.update(document)
 		
-		self.inspector = inspector.InspectorWindow(self.model)
+		self.inspector = inspector.InspectorWindow(self.document)
 		
 		self.refactoring_factory = refactoring.Factory()
 
@@ -47,13 +47,13 @@ class MainApp(glade.GladeApp):
 		)
 		
 		if path is not None:
-			self.model.open_asm(path)
+			self.document.open_asm(path)
 
 	def update(self, subject):
 		self.update_textview()
 
 	def update_textview(self):
-		term = self.model.get_term()
+		term = self.document.get_term()
 		boxes = ir.prettyPrint(term)
 		buffer = self.textview.get_buffer()
 		formatter = textbuffer.TextBufferFormatter(buffer)
@@ -100,12 +100,12 @@ class MainApp(glade.GladeApp):
 			dialog.run()
 			dialog.destroy()
 		print path
-		self.model.selection.set_selection(path, path)
+		self.document.selection.set_selection(path, path)
 		
 		# See menu.py from PyGTK Tutorial
 		
 		popup = gtk.Menu()
-		refactorings = self.refactoring_factory.applicables(self.model.get_term(), self.model.selection.get_selection())
+		refactorings = self.refactoring_factory.applicables(self.document.get_term(), self.document.selection.get_selection())
 		empty = True
 		for refactoring in refactorings:
 			print refactoring.name()
@@ -122,16 +122,16 @@ class MainApp(glade.GladeApp):
 
 	def on_menuitem_activate(self, menu, refactoring):
 		print refactoring.name()
-		term = self.model.get_term()
-		args = refactoring.input(term, self.model.selection.get_selection())
+		term = self.document.get_term()
+		args = refactoring.input(term, self.document.selection.get_selection())
 		term = refactoring.apply(term, args)
-		self.model.set_term(term)
+		self.document.set_term(term)
 		
 	def get_path_at_iter(self, iter):
 		for tag in iter.get_tags():
 			path = tag.get_data('path')
 			if path is not None:
-				path = self.model.factory.parse(path)
+				path = self.document.factory.parse(path)
 				return path
 		return False
 

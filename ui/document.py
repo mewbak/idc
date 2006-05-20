@@ -1,4 +1,4 @@
-"""Data model."""
+"""Document data model."""
 
 
 import observer
@@ -15,19 +15,19 @@ class Model(observer.Subject):
 	
 	def __init__(self, term):
 		observer.Subject.__init__(self)
-		self._term = term
+		self.__term = term
 		
 	def get_term(self):
-		return self._term
+		return self.__term
 	
 	def set_term(self, term):
 		term = path.Annotator.annotate(term)
-		self._term = term
+		self.__term = term
 		self.notify()
 
 
-class ProgramModel(Model):
-	"""Program data model."""
+class Document(Model):
+	"""Document data model."""
 	
 	def __init__(self):
 		self.factory = aterm.Factory()
