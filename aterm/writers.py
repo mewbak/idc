@@ -25,7 +25,7 @@ class _GetSymbol(visitor.Visitor):
 		return term.getName()
 
 
-_getSymbol = _GetSymbol().visit
+_getSymbol = _GetSymbol()
 
 
 class TextWriter(Writer):

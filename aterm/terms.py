@@ -25,7 +25,7 @@ class Term:
 
 	def getHash(self):
 		'''Generate a hash value for this term.'''
-		return utils.Hash().hash(self)
+		return utils.Hash()(self)
 
 	def __hash__(self):
 		'''Shorthand for getHash().'''
@@ -33,17 +33,17 @@ class Term:
 		
 	def isConstant(self):
 		'''Whether this term is types, as opposed to have variables or wildcards.'''
-		return utils.constness.isConstant(self)
+		return utils.isConstant(self)
 
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
-		return comparators.equivalence.compare(self, other)
+		return comparators.isEquivalent(self, other)
 
 	def isEqual(self, other):
 		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
-		return comparators.equality.compare(self, other)
+		return comparators.isEqual(self, other)
 		
 	def __eq__(self, other):
 		'''Shorthand for the isEqual method.'''
@@ -55,8 +55,8 @@ class Term:
 		if isinstance(other, basestring):
 			other = self.factory.parse(other)
 		
-		comparator = comparators.Matcher(args, kargs)
-		return comparator.compare(self, other)
+		compare = comparators.Matcher(args, kargs)
+		return compare(self, other)
 	
 	def getAnnotation(self, label):
 		'''Gets an annotation associated with label'''

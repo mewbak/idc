@@ -7,9 +7,6 @@ from aterm import visitor
 class Constness(visitor.Visitor):
 	'''Visitor for determining if a term is constant.'''
 	
-	def isConstant(self, term):
-		return self.visit(term)
-
 	def visitLit(self, term):
 		return True
 
@@ -18,19 +15,19 @@ class Constness(visitor.Visitor):
 
 	def visitCons(self, term):
 		return \
-			self.isConstant(term.getHead()) and \
-			self.isConstant(term.getTail())
+			self.visit(term.getHead()) and \
+			self.visit(term.getTail())
 
 	def visitAppl(self, term):
 		return \
-			self.isConstant(term.getName()) and \
-			self.isConstant(term.getArgs())		
+			self.visit(term.getName()) and \
+			self.visit(term.getArgs())		
 
 	def visitPlaceholder(self, term):
 		return False
 
 
-constness = Constness()
+isConstant = Constness()
 
 
 class Hash(visitor.Visitor):
@@ -38,9 +35,8 @@ class Hash(visitor.Visitor):
 	
 	# TODO: use a more efficient hash function
 	
-	def hash(self, term):
-		'''Compares two terms.'''
-		value = self.visit(term)
+	def visit(self, term):
+		value = visitor.Visitor.visit(self, term)
 		annotations = term.getAnnotations()
 		if not annotations.isEmpty():
 			return hash((value, self.visit(annotations)))
@@ -55,14 +51,14 @@ class Hash(visitor.Visitor):
 
 	def visitCons(self, term):
 		return hash((
-			self.hash(term.getHead()),
-			self.hash(term.getTail()),
+			self.visit(term.getHead()),
+			self.visit(term.getTail()),
 		))
 
 	def visitAppl(self, term):
 		return hash((
-			self.hash(term.getName()),
-			self.hash(term.getArgs()),
+			self.visit(term.getName()),
+			self.visit(term.getArgs()),
 		))
 
 	def visitWildcard(self, term):
@@ -71,7 +67,7 @@ class Hash(visitor.Visitor):
 	def visitVar(self, term):
 		return hash((
 			term.getName(),
-			self.hash(term.getPattern()),
+			self.visit(term.getPattern()),
 		))
 
 
