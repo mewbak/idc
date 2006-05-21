@@ -16,11 +16,6 @@ __all__ = [
 ]
 
 
-try:
-	from cStringIO import StringIO
-except ImportError:
-	from StringIO import StringIO
-
 from aterm import types
 from aterm import exceptions
 from aterm import comparators
@@ -45,14 +40,8 @@ class Term:
 
 	def getHash(self):
 		'''Generate a hash value for this term.'''
-		if self.__annotations is None:
-			return self._getHash()
-		else:
-			return hash(self._getHash(), self.getAnnotations().getHash())
+		return utils.Hash().hash(self)
 
-	def _getHash(self):
-		raise NotImplementedError
-	
 	def __hash__(self):
 		'''Shorthand for getHash().'''
 		return self.getHash()
@@ -178,6 +167,10 @@ class Term:
 
 	def __str__(self):
 		'''Get the string representation of this term.'''
+		try:
+			from cStringIO import StringIO
+		except ImportError:
+			from StringIO import StringIO
 		fp = StringIO()
 		self.writeToTextFile(fp)
 		return fp.getvalue()
@@ -192,9 +185,6 @@ class Literal(Term):
 	def __init__(self, factory, value, annotations = None):
 		Term.__init__(self, factory, annotations)
 		self.value = value
-
-	def _getHash(self):
-		return hash(self.value)
 
 	def getValue(self):
 		return self.value
@@ -232,9 +222,6 @@ class String(Literal):
 	def getType(self):
 		return types.STR
 
-	def getSymbol(self):
-		return self.getValue()
-
 	def setAnnotations(self, annotations):
 		return self.factory.makeStr(self.value, annotations)
 
@@ -271,9 +258,14 @@ class List(Term):
 		else:
 			return self.getTail().__getitem__(index - 1)
 
+	# TODO: write an __iter__ method
+		
 	def insert(self, element):
 		return self.factory.makeCons(element, self)
 	
+	def append(self, element):
+		raise NotImplementedError
+		
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitList(self, *args, **kargs)
 
@@ -283,9 +275,6 @@ class Nil(List):
 	
 	def __init__(self, factory, annotations = None):
 		List.__init__(self, factory, annotations)
-
-	def _getHash(self):
-		return hash(())
 
 	def isEmpty(self):
 		return True
@@ -299,6 +288,9 @@ class Nil(List):
 	def getTail(self):
 		raise exceptions.EmptyListException
 
+	def append(self, element):
+		return self.factory.makeConst(element, self)
+		
 	def setAnnotations(self, annotations):
 		return self.factory.makeNil(annotations)
 
@@ -322,9 +314,6 @@ class Cons(List):
 				raise TypeError("tail is not a list, variable, or wildcard term: %r" % tail)
 			self.tail = tail
 	
-	def _getHash(self):
-		return hash((self.head.getHash(), self.tail.getHash()))
-
 	def isEmpty(self):
 		return False
 	
@@ -340,6 +329,9 @@ class Cons(List):
 	def _make(self, args, kargs):
 		return self.factory.makeCons(self.head._make(args, kargs), self.tail._make(args, kargs), self.annotations)
 	
+	def append(self, element):
+		return self.factory.makeConst(self.head, self.tail.append(element))
+		
 	def setAnnotations(self, annotations):
 		return self.factory.makeCons(self.head, self.tail, annotations)
 
@@ -366,9 +358,6 @@ class Application(Term):
 	def getType(self):
 		return types.APPL
 
-	def _getHash(self):
-		return hash((self.name.getHash(), self.args.getHash()))
-
 	def getName(self):
 		return self.name
 	
@@ -390,9 +379,7 @@ class Application(Term):
 
 class Placeholder(Term):
 	'''Base class for placeholder terms.'''
-	
-	def getSymbol(self):
-		raise NotImplementedError
+	pass
 	
 	
 class Wildcard(Placeholder):
@@ -400,12 +387,6 @@ class Wildcard(Placeholder):
 
 	def getType(self):
 		return types.WILDCARD
-	
-	def _getHash(self):
-		return hash(None)
-		
-	def getSymbol(self):
-		return '_'
 	
 	def _make(self, args, kargs):
 		try:
@@ -424,24 +405,18 @@ class Variable(Placeholder):
 	'''Variable term.'''
 	
 	def __init__(self, factory, name, pattern, annotations = None):
-		Term.__init__(self, factory, annotations)
+		Placeholder.__init__(self, factory, annotations)
 		self.name = name
 		self.pattern = pattern
 	
 	def getType(self):
 		return types.VAR
 	
-	def _getHash(self):
-		return hash((self.name, self.pattern))
-
 	def getName(self):
 		return self.name
 
 	def getPattern(self):
 		return self.pattern
-
-	def getSymbol(self):
-		return self.getName()
 
 	def _make(self, args, kargs):
 		name = self.getName()

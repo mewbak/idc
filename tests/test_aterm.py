@@ -91,9 +91,9 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(str(_term), termStr)
 	
 	applTestCases = [
-		('C', 'C', 0),
-		('C(1)', 'C', 1),
-		('C(1,2)', 'C', 2),
+		('C', '"C"', 0),
+		('C(1)', '"C"', 1),
+		('C(1,2)', '"C"', 2),
 		('f()', 'f', 0),
 		('f(x)', 'f', 1),
 		('f(x,y)', 'f', 2),
@@ -103,11 +103,12 @@ class TestCase(unittest.TestCase):
 	]
 	
 	def testAppl(self):
-		for termStr, symbol, arity in self.applTestCases:
+		for termStr, nameStr, arity in self.applTestCases:
 			_term = self.factory.parse(termStr)
+			name = self.factory.parse(nameStr)
 			self.failUnless(_term.factory is self.factory)
 			self.failUnlessEqual(_term.getType(), aterm.APPL)
-			self.failUnlessEqual(_term.getName().getSymbol(), symbol)
+			self.failUnlessEqual(_term.getName(), name)
 			self.failUnlessEqual(_term.getArity(), arity)
 			self.failUnlessEqual(str(_term), termStr)
 	

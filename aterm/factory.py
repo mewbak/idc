@@ -6,11 +6,6 @@ __all__ = [
 ]
 
 
-try:
-	from cStringIO import StringIO
-except ImportError:
-	from StringIO import StringIO
-
 import antlr
 
 from aterm import exceptions
@@ -71,18 +66,42 @@ class Factory:
 		'''Creates a new appplication term'''
 		return terms.Application(self, name, args, annotations)
 
+	def coerce(self, value, name = None):
+		'''Coerce an object to a term. Value must be an int, a float, a string, 
+		a sequence of terms, or a term.'''
+		
+		if isinstance(value, terms.Term):
+			return value
+		elif isinstance(value, int):
+			return self.makeInt(value)
+		elif isinstance(value, float):
+			return self.makeReal(value)
+		elif isinstance(value, basestring):
+			return self.makeStr(value)
+		elif isinstance(value, list):
+			return self.makeList(value)
+		elif isinstance(value, tuple):
+			return self.makeList(value)
+		else:
+			msg = "argument"
+			if not name is None:
+				msg += " " + name
+			msg += " is neither a term, a literal, or a list: "
+			msg += repr(value)
+			raise TypeError(msg)
+
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
 		
 		from aterm.lexer import Lexer
 		from aterm.parser import Parser
 
-		if 1:#try:
+		try:
 			lexer = Lexer(fp)
 			parser = Parser(lexer, factory = self)
 			return parser.aterm()
-		#except antlr.ANTLRException, ex:
-		#	raise exceptions.ParseException(str(ex))
+		except antlr.ANTLRException, ex:
+			raise exceptions.ParseException(str(ex))
 	
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
@@ -90,6 +109,11 @@ class Factory:
 		try:
 			return self.parseCache[buf]
 		except KeyError:
+			try:
+				from cStringIO import StringIO
+			except ImportError:
+				from StringIO import StringIO
+
 			fp = StringIO(buf)
 			result = self.readFromTextFile(fp)
 			
@@ -124,28 +148,5 @@ class Factory:
 			_kargs[name] = self.coerce(value, "'" + name + "'")
 
 		return _pattern._make(_args, _kargs)
-		
-	def coerce(self, value, name = None):
-		'''Coerce an object to a term. Value must be an int, a float, a string, 
-		a sequence of terms, or a term.'''
-		
-		if isinstance(value, terms.Term):
-			return value
-		elif isinstance(value, int):
-			return self.makeInt(value)
-		elif isinstance(value, float):
-			return self.makeReal(value)
-		elif isinstance(value, basestring):
-			return self.makeStr(value)
-		elif isinstance(value, list):
-			return self.makeList(value)
-		elif isinstance(value, tuple):
-			return self.makeList(value)
-		else:
-			msg = "argument"
-			if not name is None:
-				msg += " " + name
-			msg += " is neither a term, a literal, or a list: "
-			msg += repr(value)
-			raise TypeError(msg)
+
 

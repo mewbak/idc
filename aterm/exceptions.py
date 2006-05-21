@@ -7,7 +7,7 @@ class BaseException(Exception):
 
 
 class ParseException(BaseException):
-	'''Error parsing terms.'''
+	'''Error parsing textual representation of terms.'''
 	pass
 
 	
@@ -17,6 +17,6 @@ class EmptyListException(BaseException):
 
 
 class PlaceholderException(BaseException):
-	'''Operation invalid for an unbound placeholder term.'''
+	'''Invalid operation for an unbound placeholder term.'''
 	pass
 

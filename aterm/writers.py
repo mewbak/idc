@@ -13,9 +13,24 @@ class Writer(visitor.Visitor):
 		self.fp = fp
 
 
+class _GetSymbol(visitor.Visitor):
+	
+	def visitStr(self, term):
+		return term.getValue()
+
+	def visitWildcard(self, term):
+		return '_'
+	
+	def visitVar(self, term):
+		return term.getName()
+
+
+_getSymbol = _GetSymbol().visit
+
+
 class TextWriter(Writer):
 	'''Writes a term to a text stream.'''
-	
+
 	def writeAnnotations(self, term):
 		annotations = term.getAnnotations()
 		if not annotations.isEmpty():
@@ -61,8 +76,7 @@ class TextWriter(Writer):
 
 	def visitAppl(self, term):
 		name = term.getName()
-		# TODO: verify strings
-		self.fp.write(name.getSymbol())
+		self.fp.write(_getSymbol(name))
 		args = term.getArgs()
 		if \
 				name.getType() != types.STR \
