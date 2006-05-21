@@ -1,21 +1,31 @@
 '''Facilities for building terms.'''
 
 
-__all__ = [
-	'Factory',
-]
-
-
-import antlr
-
 from aterm import exceptions
 from aterm import terms
+
+
+class _Singleton(type):
+	'''Metaclass for the Singleton design pattern. Based on 
+	http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/102187
+	'''
+	
+	def __init__(mcs, name, bases, dic):
+		super(_Singleton, mcs).__init__(name, bases, dic)
+		mcs.__instance = None
+		
+	def __call__(mcs, *args, **kargs):
+		if mcs.__instance is None:
+			mcs.__instance = super(_Singleton, mcs).__call__(*args, **kargs)
+		return mcs.__instance
 
 
 class Factory:
 	'''An Factory is responsible for make new Terms, either by parsing 
 	from string or stream, or via one the of the "make" methods.'''
 
+	__metaclass__ = _Singleton
+	
 	# TODO: implement maximal sharing
 
 	MAX_PARSE_CACHE_LEN = 512
@@ -34,14 +44,6 @@ class Factory:
 	def makeStr(self, value, annotations = None):
 		'''Creates a new string literal term'''
 		return terms.String(self, value, annotations)
-
-	def makeVar(self, name, pattern, annotations = None):
-		'''Creates a new variable term'''
-		return terms.Variable(self, name, pattern, annotations)
-
-	def makeWildcard(self, annotations = None):
-		'''Creates a new wildcard term'''
-		return terms.Wildcard(self, annotations)
 
 	def makeNil(self, annotations = None):
 		'''Creates a new empty list term'''
@@ -65,6 +67,14 @@ class Factory:
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new appplication term'''
 		return terms.Application(self, name, args, annotations)
+
+	def makeWildcard(self, annotations = None):
+		'''Creates a new wildcard term'''
+		return terms.Wildcard(self, annotations)
+
+	def makeVar(self, name, pattern, annotations = None):
+		'''Creates a new variable term'''
+		return terms.Variable(self, name, pattern, annotations)
 
 	def coerce(self, value, name = None):
 		'''Coerce an object to a term. Value must be an int, a float, a string, 
@@ -95,12 +105,13 @@ class Factory:
 		
 		from aterm.lexer import Lexer
 		from aterm.parser import Parser
+		from antlr import ANTLRException
 
 		try:
 			lexer = Lexer(fp)
 			parser = Parser(lexer, factory = self)
 			return parser.aterm()
-		except antlr.ANTLRException, ex:
+		except ANTLRException, ex:
 			raise exceptions.ParseException(str(ex))
 	
 	def parse(self, buf):

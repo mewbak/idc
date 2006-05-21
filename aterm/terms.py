@@ -1,21 +1,6 @@
 '''Term class hierarchy.'''
 
 
-__all__ = [
-	'Term',
-	'Literal',
-	'Integer',
-	'Real',
-	'String',
-	'Wildcard',
-	'Variable',
-	'List',
-	'Nil',
-	'Cons',
-	'Application',
-]
-
-
 from aterm import types
 from aterm import exceptions
 from aterm import comparators
