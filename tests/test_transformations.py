@@ -31,29 +31,22 @@ class TestCase(unittest.TestCase):
 			
 			self.failUnlessEqual(result, expectedResult)
 
-	identTestCases = [
-		('1', '1'),
-		('0.1', '0.1'),
-		('"s"', '"s"'),
-		('[1,2]', '[1,2]'),
-		('C(1,2)', 'C(1,2)'),
-		('_', '_'),
-		('x', 'x'),
+	termsInputs = [
+		'1',
+		'0.1',
+		'"s"',
+		'[1,2]',
+		'C(1,2)',
+		'_',
+		'x',
 	]
+		
+	identTestCases = [(term, term) for term in termsInputs]
+	failTestCases = [(term, 'FAILURE') for term in termsInputs]
 
 	def testIdent(self):
 		self.checkTransf(Ident(), self.identTestCases)
 
-	failTestCases = [
-		('1', 'FAILURE'),
-		('0.1', 'FAILURE'),
-		('"s"', 'FAILURE'),
-		('[1,2]', 'FAILURE]'),
-		('C(1,2)', 'FAILURE'),
-		('_', 'FAILURE'),
-		('x', 'FAILURE'),
-	]	
-	
 	def testFail(self):
 		self.checkTransf(Fail(), self.failTestCases)
 	
@@ -76,6 +69,60 @@ class TestCase(unittest.TestCase):
 		self.checkTransf(And(Ident(), Fail()), self.failTestCases)
 		self.checkTransf(And(Fail(), Ident()), self.failTestCases)
 		self.checkTransf(And(Fail(), Fail()), self.failTestCases)
+
+	listsInputs = [
+		'[]',
+		'[1]',
+		'[1,2]',
+		'[1,2,3]',
+		'[1,2,*]',
+		'[1,2,*x]',
+	]
+
+	listsExxerOutputs = [
+		'[]',
+		'[X(1)]',
+		'[X(1),X(2)]',
+		'[X(1),X(2),X(3)]',
+		'[X(1),X(2),*]',
+		'[X(1),X(2),*x]',
+	]
+	
+	def exxer(self, term):
+		return term.factory.make('X(_)', term)
+	
+	listsNotGreaterThanOneOutputs = [
+		'[]',
+		'[1]',
+		'FAILURE',
+		'FAILURE',
+		'FAILURE',
+		'FAILURE',
+	]
+	
+	def greater_than_one(self, term):
+		if term.getType() == aterm.INT and term.getValue() > 1:
+			return term
+		else:
+			raise Failure
+
+	def testMap(self):
+		self.checkTransf(
+			Map(Ident()), 
+			[(term, term) for term in self.listsInputs],
+		)
+		self.checkTransf(
+			Map(Fail()), 
+			[(term, term == '[]' and '[]' or 'FAILURE') for term in self.listsInputs],
+		)
+		self.checkTransf(
+			Map(self.exxer),
+			zip(self.listsInputs, self.listsExxerOutputs)
+		)
+		self.checkTransf(
+			Map(Not(self.greater_than_one)),
+			zip(self.listsInputs, self.listsNotGreaterThanOneOutputs)
+		)
 
 	# FIXME: write the remaining test cases
 
