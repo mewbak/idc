@@ -8,6 +8,16 @@ import aterm
 from transformations import *
 
 
+def exxer(term):
+	return term.factory.make('X(_)', term)
+
+def greater_than_one(term):
+	if term.getType() == aterm.INT and term.getValue() > 1:
+		return term
+	else:
+		raise Failure
+
+
 class TestCase(unittest.TestCase):
 	
 	def setUp(self):
@@ -30,6 +40,12 @@ class TestCase(unittest.TestCase):
 				result = self.factory.parse("FAILURE")
 			
 			self.failUnlessEqual(result, expectedResult)
+
+	def checkMetaTransf(self, metaTransf, testCases):
+		result = []
+		for inputStr, rest in testCases.iteritems():
+			for operand, expectedResultStr in rest:
+				self.checkTransf(metaTransf(operand), [(inputStr, expectedResultStr)])
 
 	termsInputs = [
 		'1',
@@ -88,9 +104,6 @@ class TestCase(unittest.TestCase):
 		'[X(1),X(2),*x]',
 	]
 	
-	def exxer(self, term):
-		return term.factory.make('X(_)', term)
-	
 	listsNotGreaterThanOneOutputs = [
 		'[]',
 		'[1]',
@@ -100,12 +113,6 @@ class TestCase(unittest.TestCase):
 		'FAILURE',
 	]
 	
-	def greater_than_one(self, term):
-		if term.getType() == aterm.INT and term.getValue() > 1:
-			return term
-		else:
-			raise Failure
-
 	def testMap(self):
 		self.checkTransf(
 			Map(Ident()), 
@@ -116,13 +123,24 @@ class TestCase(unittest.TestCase):
 			[(term, term == '[]' and '[]' or 'FAILURE') for term in self.listsInputs],
 		)
 		self.checkTransf(
-			Map(self.exxer),
+			Map(exxer),
 			zip(self.listsInputs, self.listsExxerOutputs)
 		)
 		self.checkTransf(
-			Map(Not(self.greater_than_one)),
+			Map(Not(greater_than_one)),
 			zip(self.listsInputs, self.listsNotGreaterThanOneOutputs)
 		)
+	
+	bottomUpTestCases = {
+		'A(B(C,D),E(F,G))': [
+			(Ident(), 'A(B(C,D),E(F,G))'),
+			(Fail(), 'FAILURE()'),
+			(Rule('x', 'X(x)'), 'X(A(X(B(X(C),X(D))),X(E(X(F),X(G)))))')
+		]
+	}
+	
+	def testBottomUp(self):
+		self.checkMetaTransf(BottomUp, self.bottomUpTestCases)
 
 	# FIXME: write the remaining test cases
 

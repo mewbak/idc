@@ -4,6 +4,9 @@ http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-0.16/manual/
 '''
 
 
+# pylint: disable-msg=W0142
+
+
 import aterm
 from aterm.visitor import Visitor
 
@@ -44,8 +47,8 @@ class Transformation:
 		return And(other, self)
 
 
-class Wrapper(Transformation):
-	'''Transformation wrapper around a regular function.'''
+class Adaptor(Transformation):
+	'''Transformation adapter for a regular function.'''
 	
 	def __init__(self, func, *args, **kargs):
 		Transformation.__init__(self)
@@ -63,8 +66,6 @@ class Ident(Transformation):
 	def __call__(self, term):
 		return term
 	
-ident = Ident()
-
 
 class Fail(Transformation):
 	'''Failure transformation.'''
@@ -72,10 +73,8 @@ class Fail(Transformation):
 	def __call__(self, term):
 		raise Failure
 
-fail = Fail()
 
-
-class UnaryOp(Transformation):
+class Unary(Transformation):
 	'''Base class for unary operations on transformations.'''
 	
 	def __init__(self, operand):
@@ -83,7 +82,7 @@ class UnaryOp(Transformation):
 		self.operand = operand
 
 
-class Not(UnaryOp):
+class Not(Unary):
 	'''Fail if a transformation applies.'''
 	
 	def __call__(self, term):
@@ -95,7 +94,7 @@ class Not(UnaryOp):
 			raise Failure
 
 
-class Try(UnaryOp):
+class Try(Unary):
 	'''Attempt a transformation, otherwise return the term unmodified.'''
 	
 	def __call__(self, term):
@@ -105,7 +104,7 @@ class Try(UnaryOp):
 			return term
 
 
-class BinaryOp(Transformation):
+class Binary(Transformation):
 	'''Base class for binary operations on transformations.'''
 	
 	def __init__(self, loperand, roperand):
@@ -114,7 +113,7 @@ class BinaryOp(Transformation):
 		self.roperand = roperand
 
 
-class Or(BinaryOp):
+class Or(Binary):
 	'''Attempt the first transformation, transforming the second on failure.'''
 	
 	def __call__(self, term):
@@ -124,7 +123,7 @@ class Or(BinaryOp):
 			return self.roperand(term)
 
 
-class And(BinaryOp):
+class And(Binary):
 	'''Transformation composition.'''
 	
 	def __call__(self, term):
@@ -134,12 +133,12 @@ class And(BinaryOp):
 # TODO: write decorators for transformations
 
 
-class Traverser(Visitor, UnaryOp):
+class Traverser(Visitor, Unary):
 	'''Base class for all term traversers.'''
 
 	def __init__(self, operand):
 		Visitor.__init__(self)
-		UnaryOp.__init__(self, operand)
+		Unary.__init__(self, operand)
 	
 
 class ListTraverser(Traverser):
@@ -162,7 +161,7 @@ class ListTraverser(Traverser):
 
 
 class Map(ListTraverser):
-	'''Applies a operandormation to all elements of a list term.'''
+	'''Applies a transformation to all elements of a list term.'''
 
 	def visitCons(self, term):
 		old_head = term.getHead()
@@ -177,7 +176,7 @@ class Map(ListTraverser):
 
 
 class Fetch(ListTraverser):
-	'''Traverses a list until it finds a element for which the operandormation 
+	'''Traverses a list until it finds a element for which the transformationormation 
 	succeeds and then stops. That element is the only one that is operandormed.
 	'''
 	
@@ -204,7 +203,7 @@ class Fetch(ListTraverser):
 
 
 class Filter(ListTraverser):
-	'''Applies a operandormation to each element of a list, keeping only the 
+	'''Applies a transformation to each element of a list, keeping only the 
 	elements for which it succeeds.
 	'''
 
@@ -226,7 +225,7 @@ class Filter(ListTraverser):
 
 
 class All(Traverser):
-	'''Applies a function to all subterms of a term.'''
+	'''Applies a transformation to all subterms of a term.'''
 
 	def __init__(self, operand):
 		Traverser.__init__(self, operand)
@@ -247,45 +246,61 @@ class All(Traverser):
 			return term
 
 
-class BottomUp(Transformation):
+class Proxy(Unary):
 	
-	def __init__(self, operand):
-		Transformation.__init__(self)
-		self.__call__ = All(self) & operand
+	def __call__(self, term):
+		return self.operand(term)
 
 
-class TopDown(Transformation):
+def BottomUp(operand):
+	result = Proxy(None)
+	result.operand = And(All(result), operand)
+	return result
+
+
+def TopDown(operand):
+	result = Proxy(None)
+	result.operand = And(operand, All(result))
+	return result
+
+
+def InnerMost(operand):
+	result = Proxy(None)
+	result.operand = BottomUp(Try(And(operand, result)))
+	return result
+
+
+# TODO: pre-parse the patterns
+
+
+class Match(Transformation):
 	
-	def __init__(self, operand):
-		Transformation.__init__(self)
-		self.__call__ = operand & All(self)
+	def __init__(self, pattern):
+		self.pattern = pattern
 
-
-class InnerMost(Transformation):
-	
-	def __init__(self, operand):
-		Transformation.__init__(self)
-		self.__call__ = BottumpUp(Try(operand & self))
-
-
-def main():
-	
-	def test(term):
-		return term.factory.make("X(_)", term)
-	
-	def pos(term):
-		if term.getType() == aterm.INT and term.getValue() > 0:
-			return test(term)
+	def __call__(self, term):
+		factory = term.factory
+		if factory.match(self.pattern, term):
+			return term
 		else:
-			raise Failure
-
-	factory = aterm.Factory()
-
-	print Map(test)(factory.make("[1, 2, 3, 4]"))
-	print Filter(pos)(factory.make("[-1, 0, 1, 2]"))
-	print Fetch(pos)(factory.make("[-1, 0, 1, 2]"))
-	print All(test)(factory.make("C(1, 2, 3, 4)"))
+			return Failure		
 
 
-if __name__ == '__main__':
-    main()
+class Rule(Transformation):
+	
+	def __init__(self, matchpat, buildpat):
+		self.match = matchpat
+		self.build = buildpat
+	
+	def __call__(self, term):
+		factory = term.factory
+		args = []
+		kargs = {}
+		if factory.match(self.match, term, args, kargs):
+			return factory.make(self.build, *args, **kargs)
+		else:
+			return Failure
+
+
+# TODO: write a MatchSet, BuildSet, RuleSet
+
