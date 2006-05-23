@@ -1,6 +1,9 @@
 '''Term class hierarchy.'''
 
 
+# pylint: disable-msg=W0142
+
+
 from aterm import types
 from aterm import exceptions
 from aterm import comparators
@@ -221,19 +224,19 @@ class List(Term):
 		return types.LIST
 
 	def isEmpty(self):	
-		return NotImplementedError
+		raise NotImplementedError
 	
 	def getLength(self):
-		return NotImplementedError
+		raise NotImplementedError
 	
 	def __len__(self):
 		return self.getLength()
 
 	def getHead(self):
-		return NotImplementedError
+		raise NotImplementedError
 
 	def getTail(self):
-		return NotImplementedError
+		raise NotImplementedError
 
 	def __getitem__(self, index):
 		if self.isEmpty():
