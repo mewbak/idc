@@ -43,8 +43,9 @@ class TestCase(unittest.TestCase):
 
 	def checkMetaTransf(self, metaTransf, testCases):
 		result = []
-		for inputStr, rest in testCases.iteritems():
-			for operand, expectedResultStr in rest:
+		operands, rest = testCases
+		for inputStr, expectedResultStrs in rest.iteritems():
+			for operand, expectedResultStr in zip(operands, expectedResultStrs):
 				self.checkTransf(metaTransf(operand), [(inputStr, expectedResultStr)])
 
 	termsInputs = [
@@ -130,19 +131,73 @@ class TestCase(unittest.TestCase):
 			Map(Not(greater_than_one)),
 			zip(self.listsInputs, self.listsNotGreaterThanOneOutputs)
 		)
+
+	# TODO: testFetch
+	# TODO: testFilter
 	
-	bottomUpTestCases = {
-		'A(B(C,D),E(F,G))': [
-			(Ident(), 'A(B(C,D),E(F,G))'),
-			(Fail(), 'FAILURE()'),
-			(Rule('x', 'X(x)'), 'X(A(X(B(X(C),X(D))),X(E(X(F),X(G)))))')
-		]
-	}
+	allTestCases = (
+		[Ident(), Fail(), Rule('x', 'X(x)')],
+		{
+			'A()': [
+				'A()', 
+				'A()', 
+				'A()',
+			],
+			'A(B,C)': [
+				'A(B,C))', 
+				'FAILURE', 
+				'A(X(B),X(C))',
+			],
+			'A(B(C,D),E(F,G))': [
+				'A(B(C,D),E(F,G))',
+				'FAILURE', 
+				'A(X(B(C,D)),X(E(F,G)))', 
+			],
+		}
+	)
+	
+	def testAll(self):
+		self.checkMetaTransf(All, self.allTestCases)	
+
+	bottomUpTestCases = (
+		[Ident(), Fail(), Rule('x', 'X(x)')],
+		{
+			'A()': [
+				'A()', 
+				'FAILURE', 
+				'X(A())',
+			],
+			'A(B(C,D),E(F,G))': [
+				'A(B(C,D),E(F,G))', 
+				'FAILURE', 
+				'X(A(X(B(X(C),X(D))),X(E(X(F),X(G)))))',
+			],
+		}
+	)
 	
 	def testBottomUp(self):
 		self.checkMetaTransf(BottomUp, self.bottomUpTestCases)
 
-	# FIXME: write the remaining test cases
+	topDownTestCases = (
+		[Ident(), Fail(), Try(Rule('f(x,y)', 'X(x,y)'))],
+		{
+			'A()': [
+				'A()', 
+				'FAILURE', 
+				'A()',
+			],
+			'A(B(C,D),E(F,G))': [
+				'A(B(C,D),E(F,G))', 
+				'FAILURE', 
+				'X(X(C,D),X(F,G))',
+			],
+		}
+	)
+	
+	def testTopdown(self):
+		self.checkMetaTransf(TopDown, self.topDownTestCases)
+
+	# TODO: testInnerMost
 
 
 if __name__ == '__main__':

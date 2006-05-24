@@ -21,8 +21,8 @@ class Failure(Exception):
 
 class Transformation:
 	'''Base class for transformations. Although convenient, it is not necessary 
-	for every transformation to derive from this class. Generally, a regular function 
-	can be used instead.
+	for every transformation to derive from this class. Generally, a regular
+	function can be used instead.
 	'''
 	
 	def __init__(self):
@@ -176,8 +176,8 @@ class Map(ListTraverser):
 
 
 class Fetch(ListTraverser):
-	'''Traverses a list until it finds a element for which the transformationormation 
-	succeeds and then stops. That element is the only one that is operandormed.
+	'''Traverses a list until it finds a element for which the transformation 
+	succeeds and then stops. That element is the only one that is transformed.
 	'''
 	
 	def visitNil(self, term):
@@ -283,7 +283,7 @@ class Match(Transformation):
 		if factory.match(self.pattern, term):
 			return term
 		else:
-			return Failure		
+			raise Failure		
 
 
 class Rule(Transformation):
@@ -299,7 +299,7 @@ class Rule(Transformation):
 		if factory.match(self.match, term, args, kargs):
 			return factory.make(self.build, *args, **kargs)
 		else:
-			return Failure
+			raise Failure
 
 
 # TODO: write a MatchSet, BuildSet, RuleSet
