@@ -58,6 +58,32 @@ class TestCase(unittest.TestCase):
 			result = path.Evaluator.evaluate(term, _path)
 			
 			self.failUnlessEqual(result, expectedResult)
+	
+	applyTestCases = [
+		('1', '[]', 'X(1)'),
+		('[1,2]', '[]', 'X([1,2])'),
+		('[1,2]', '[0]', '[X(1),2]'),
+		('[1,2]', '[1]', '[1,X(2)]'),
+		('C(1,2)', '[]', 'X(C(1,2))'),
+		('C(1,2)', '[0]', 'C(X(1),2)'),
+		('C(1,2)', '[1]', 'C(1,X(2))'),
+		('A([B,C],[D,E])', '[1,0]', 'A([B,C],[X(D),E])'),
+		('A([B,C],[D,E])', '[0,1]', 'A([B,X(C)],[D,E])'),
+	]	
+	
+	def testApply(self):
+		import transformations
+		
+		for termStr, pathStr, expectedResultStr in self.applyTestCases:
+			term = self.factory.parse(termStr)
+			#_path = self.factory.parse(pathStr)
+			_path = eval(pathStr)
+			expectedResult = self.factory.parse(expectedResultStr)
+			
+			result = path.Apply(_path, transformations.Rule('x', 'X(x)'))(term)
+			
+			self.failUnlessEqual(result, expectedResult)
+
 
 
 if __name__ == '__main__':
