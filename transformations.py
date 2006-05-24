@@ -8,7 +8,7 @@ http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-0.16/manual/
 
 
 import aterm
-from aterm.visitor import Visitor
+import aterm.visitor
 
 
 class Failure(Exception):
@@ -133,18 +133,19 @@ class And(Binary):
 # TODO: write decorators for transformations
 
 
-class Traverser(Visitor, Unary):
+class Traverser(aterm.visitor.IncrementalVisitor, Unary):
 	'''Base class for all term traversers.'''
 
 	def __init__(self, operand):
-		Visitor.__init__(self)
+		aterm.visitor.IncrementalVisitor.__init__(self)
 		Unary.__init__(self, operand)
 	
 
-class ListTraverser(Traverser):
-	'''Base class for list traversers.'''
+class Map(Traverser):
+	'''Applies a transformation to all elements of a list term.'''
 	
-	# TODO: extend to tuples too
+	def visitTerm(self, term):
+		raise TypeError, 'list or tuple expected: %r' % term
 	
 	def visitNil(self, term):
 		return term
@@ -154,28 +155,22 @@ class ListTraverser(Traverser):
 	
 	def visitTail(self, term):
 		return self.visit(term)
+
+	def visitName(self, term):
+		if term.getType() != aterm.STR and term.getValue() != "":
+			return self.visitTerm(term)
+		else:
+			return term
 	
+	def visitArgs(self, term):
+		return self.visit(term)
+		
 	def visitPlaceholder(self, term):
 		# placeholders are kept unmodified
 		return term
 
 
-class Map(ListTraverser):
-	'''Applies a transformation to all elements of a list term.'''
-
-	def visitCons(self, term):
-		old_head = term.getHead()
-		old_tail = term.getTail()
-		new_head = self.visitHead(old_head)
-		new_tail = self.visitTail(old_tail)
-		if new_head is not old_head or new_tail is not old_tail:
-			annos = term.getAnnotations()
-			return term.factory.makeCons(new_head, new_tail, annos)
-		else:
-			return term
-
-
-class Fetch(ListTraverser):
+class Fetch(Map):
 	'''Traverses a list until it finds a element for which the transformation 
 	succeeds and then stops. That element is the only one that is transformed.
 	'''
@@ -202,7 +197,7 @@ class Fetch(ListTraverser):
 			return term
 
 
-class Filter(ListTraverser):
+class Filter(Map):
 	'''Applies a transformation to each element of a list, keeping only the 
 	elements for which it succeeds.
 	'''
@@ -224,26 +219,15 @@ class Filter(ListTraverser):
 			return term
 
 
-class All(Traverser):
+class All(Map):
 	'''Applies a transformation to all subterms of a term.'''
-
-	def __init__(self, operand):
-		Traverser.__init__(self, operand)
-		self.operand_map = Map(operand)
 
 	def visitTerm(self, term):
 		# terms other than applications are kept unmodified
 		return term
 
-	def visitAppl(self, term):
-		old_args = term.getArgs()
-		new_args = self.operand_map(old_args)
-		if new_args is not old_args:
-			name = term.getName()
-			annos = term.getAnnotations()
-			return term.factory.makeAppl(name, new_args, annos)
-		else:
-			return term
+	def visitName(self, term):
+		return term
 
 
 class Proxy(Unary):
