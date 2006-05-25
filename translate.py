@@ -34,7 +34,7 @@ def translate(filename):
 	
 	print '** Translated IR **'	
 	term = machine.translate(term)
-	term = path.Annotator.annotate(term)
+	term = path.Annotator()(term)
 	pretty_print(term)
 	print
 	

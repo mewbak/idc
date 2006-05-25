@@ -1,5 +1,7 @@
 """Document data model."""
 
+# TODO: move this module into a UI-independent package
+
 
 import observer
 
@@ -12,7 +14,7 @@ class TermState(observer.State):
 	"""Intermediate representation of the program using aterms."""
 	
 	def set(self, value):
-		value = path.Annotator.annotate(value)
+		value = path.Annotator()(value)
 		observer.State.set(self, value)
 
 

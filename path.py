@@ -7,53 +7,35 @@ import walker
 import transformations
 
 
-class Annotator(walker.Walker):
-	"""Annotates terms with their path on the aterm tree."""
+class Annotator(aterm.visitor.IncrementalVisitor,object):
+	'''Apply a transformation on a subterm range.'''
 
-	def annotate(cls, term):
-		"""Class method which returns an equivalent term with annotated paths."""
-		annotator = cls(term.factory)
-		return annotator.annotate_root(term)
-	annotate = classmethod(annotate)
+	def __call__(self, term, path = None):
+		if path is None:
+			path = term.factory.makeNil()
+		return self.visit(term, path, 0)
+	
+	def visit(self, term, path, index):
+		term = super(Annotator, self).visit(term, path, index)
+		return term.setAnnotation(term.factory.parse('Path'), path)
+		
+	def visitTerm(self, term, path, index):
+		return term
+	
+	def visitHead(self, term, path, index):
+		path = term.factory.makeCons(term.factory.makeInt(index), path)
+		return self.visit(term, path, 0)
+	
+	def visitTail(self, term, path, index):
+		# no need to annotate tails
+		return super(Annotator, self).visit(term, path, index + 1)
 
-	def annotate_root(self, term):
-		"""Annotate the root term."""
-		return self.annotate_term(term, self.factory.makeNil())
-	
-	def annotate_term(self, term, path):
-		"""Recursively annotates a term with paths relative to the given path."""
-		type_ = term.getType()
-		if type_ in (aterm.INT, aterm.REAL, aterm.STR):
-			pass
-		elif type_ == aterm.LIST:
-			term = self.annotate_list(term, path, 0)
-		elif type_ == aterm.APPL:
-			term = self.factory.makeAppl(
-				term.getName(),
-				self.annotate_list(term.getArgs(), path, 0),
-				term.getAnnotations()
-			)
-		else:
-			raise walker.Failure
-		return term.setAnnotation(self.factory.parse("Path"), path)
-	
-	def annotate_list(self, term, path, index):
-		"""Annotate a list of terms."""
-		self._list(term)
-		if term.isEmpty():
-			return term
-		else:
-			return self.factory.makeCons(
-				self.annotate_term(
-					term.getHead(), 
-					self.factory.makeCons(
-						self.factory.makeInt(index), 
-						path
-					)
-				),
-				self.annotate_list(term.getTail(), path, index + 1),
-				term.getAnnotations()
-			)
+	def visitName(self, term, path, index):
+		return term
+
+	def visitArgs(self, term, path, index):
+		# no need to annotate arg lists
+		return super(Annotator, self).visit(term, path, index)
 
 
 class Evaluator(walker.Walker):
@@ -133,26 +115,31 @@ class PathVisiXtor(aterm.visitor.Visitor):
 		self.visit(term.getArgs())		
 
 
-class Index(aterm.visitor.IncrementalVisitor):
+class Range(aterm.visitor.IncrementalVisitor):
+	'''Apply a transformation on a subterm range.'''
 
-	def __init__(self, operand, index):
+	def __init__(self, operand, start, end):
+		'''Start and end indexes specify the subterms that will be transformed, 
+		inclusively.
+		'''
 		self.operand = operand
-		self.index = index
+		self.start = start
+		self.end = end
 
 	def __call__(self, term):
-		return self.visit(term, index = 0)
+		return self.visit(term, 0)
 	
 	def visitTerm(self, term, index):
 		raise TypeError('not a term list or application: %r' % term)
 	
 	def visitHead(self, term, index):
-		if index == self.index:
+		if self.start <= index <= self.end:
 			return self.operand(term)
 		else:
 			return term
 	
 	def visitTail(self, term, index):
-		if index < self.index:
+		if index < self.end:
 			return self.visit(term, index + 1)
 		else:
 			return term		
@@ -164,12 +151,21 @@ class Index(aterm.visitor.IncrementalVisitor):
 		return self.visit(term, index)
 
 
-def Apply(path, operand):
-	result = operand
-	for i in range(len(path) -1, -1, -1):
-		result = Index(result, path[i])
+def Path(transformation, path):
+	'''Apply a transformation only on the specified path.'''
+	result = transformation
+	for pathitem in path:
+		result = Range(result, pathitem, pathitem)
 	return result
 
 
-
+def SubPathRange(transformation, start, end):
+	'''Apply a transformation on a path range. The tails of the start and end 
+	paths should be equal.'''
+	result = transformation
+	result = Range(result, start[0], end[0])
+	if start[1:] != end[1]:
+		raise ValueError('start and end path tails differ: %r, %r' % start, end)
+	result = Path(result, start)
+	return result
 
