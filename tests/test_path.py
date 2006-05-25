@@ -51,6 +51,10 @@ class TestCase(unittest.TestCase):
 		('C(1,2)', '[]', 'C(1,2)'),
 		('C(1,2)', '[0]', '1'),
 		('C(1,2)', '[1]', '2'),
+		('A([B,C],[D,E])', '[0,0]', 'B'),
+		('A([B,C],[D,E])', '[1,0]', 'C'),
+		('A([B,C],[D,E])', '[0,1]', 'D'),
+		('A([B,C],[D,E])', '[1,1]', 'E'),
 	]
 	
 	def testEvaluator(self):
@@ -59,7 +63,7 @@ class TestCase(unittest.TestCase):
 			_path = self.factory.parse(pathStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
-			result = path.Evaluator.evaluate(term, _path)
+			result = path.Evaluator(_path)(term)
 			
 			self.failUnlessEqual(result, expectedResult)
 	

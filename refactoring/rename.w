@@ -16,7 +16,7 @@ class Rename(refactoring.Refactoring):
 		if start != end:
 			return False
 
-		selected_term = path.Evaluator.evaluate(term, start)
+		selected_term = path.Evaluator(start)(term)
 		args = []
 		kargs = {}
 		if term.factory.match("Sym(name)", selected_term, args, kargs):

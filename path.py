@@ -38,81 +38,37 @@ class Annotator(aterm.visitor.IncrementalVisitor,object):
 		return super(Annotator, self).visit(term, path, index)
 
 
-class Evaluator(walker.Walker):
-	"""Evaluates a path on a term."""
-	
-	def evaluate(cls, term, path):
-		"""Class method which evaluates the given term."""
-		return cls(term.factory).evaluate_term(term, path)
-	evaluate = classmethod(evaluate)
+class Index(aterm.visitor.Visitor):
+	'''Fetch a subterm.'''
 
-	def evaluate_term(self, term, path):
-		"""Recursively evaluates a term with paths relative to the given path."""
-		
-		if path.isEmpty():
-			return term
-		
-		tail = path.getTail()		
-		term = self.evaluate_term(term, tail)
-		
-		head = path.getHead()
-		index = head.getValue()
-		
-		type_ = term.getType()
-		if type_ == aterm.LIST:
-			return term[index]
-		elif type_ == aterm.APPL:
-			return term.getArgs()[index]
-		else:
-			raise walker.Failure
-		return term.setAnnotation(self.factory.parse("Path"), path)
-
-
-class CoVisitor(aterm.visitor.Visitor):
-
-	pass
-
-
-
-class PathVisiXtor(aterm.visitor.Visitor):
-
-	def __init__(self):
-		factory = aterm.factory.Factory()
-		self.path = factory.makeNil()
-		self.index = 0
-		
-	def visitTerm(self, term):
-		self.recurse = True
-	
-	def visitCons(self, term):
-		self.visitTerm(term)
-		if not self.recurse:
-			return False
-		
-		path = self.path
-		index = self.index
-		
-		factory = term.factory
-		
-		self.path = factory.makeCons(factory.makeInt(index), path)
-		self.index = 0
-		self.visit(term.getHead())
-		
-		self.path = path
-		self.index = index + 1
-		self.visit(term.getTail())
-		
-		assert path == self.path.getTail()
-		
-		self.path = path
+	def __init__(self, index):
 		self.index = index
+
+	def __call__(self, term):
+		return self.visit(term, 0)
 	
-	def visitAppl(self, term):
-		self.visitTerm(term)
-		if not self.recurse:
-			return False
+	def visitTerm(self, term, index):
+		raise TypeError('not a term list or application: %r' % term)
+	
+	def visitNil(self, term, index):
+		raise IndexError('index out of range')
 		
-		self.visit(term.getArgs())		
+	def visitCons(self, term, index):
+		if index == self.index:
+			return term.getHead()
+		else:
+			return self.visit(term.getTail(), index + 1)
+
+	def visitAppl(self, term, index):
+		return self.visit(term.getArgs(), index)
+
+
+def Evaluator(path):
+	'''Apply a transformation only on the specified path.'''
+	result = transformations.Ident()
+	for index in path:
+		result = transformations.And(Index(int(index)),result)
+	return result
 
 
 class Range(aterm.visitor.IncrementalVisitor):
@@ -154,12 +110,12 @@ class Range(aterm.visitor.IncrementalVisitor):
 def Path(transformation, path):
 	'''Apply a transformation only on the specified path.'''
 	result = transformation
-	for pathitem in path:
-		result = Range(result, pathitem, pathitem)
+	for index in path:
+		result = Range(result, index, index)
 	return result
 
 
-def SubPathRange(transformation, start, end):
+def PathRange(transformation, start, end):
 	'''Apply a transformation on a path range. The tails of the start and end 
 	paths should be equal.'''
 	result = transformation
