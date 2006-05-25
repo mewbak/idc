@@ -184,6 +184,9 @@ class Integer(Literal):
 	def getType(self):
 		return types.INT
 
+	def __int__(self):
+		return int(self.value)
+	
 	def setAnnotations(self, annotations):
 		return self.factory.makeInt(self.value, annotations)
 
@@ -197,6 +200,9 @@ class Real(Literal):
 	def getType(self):
 		return types.REAL
 
+	def __float__(self):
+		return float(self.value)
+	
 	def setAnnotations(self, annotations):
 		return self.factory.makeReal(self.value, annotations)
 
