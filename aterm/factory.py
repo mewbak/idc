@@ -20,7 +20,7 @@ class _Singleton(type):
 		return mcs.__instance
 
 
-class Factory:
+class Factory(object):
 	'''An Factory is responsible for make new Terms, either by parsing 
 	from string or stream, or via one the of the "make" methods.'''
 

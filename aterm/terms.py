@@ -9,7 +9,7 @@ from aterm import exceptions
 from aterm import _helpers
 
 
-class Term:
+class Term(object):
 	'''Base class for all terms.'''
 
 	def __init__(self, factory, annotations = None):

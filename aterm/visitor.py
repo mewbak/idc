@@ -1,7 +1,7 @@
 '''Term visiting.'''
 
 
-class Visitor:
+class Visitor(object):
 	'''Base class for term visitors.'''
 	
 	def __init__(self):
