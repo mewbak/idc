@@ -25,7 +25,7 @@ class Refactoring:
 		"""Verifies the pre-conditions for applying this refactory are met."""
 		raise NotImplementedError
 
-	def input(self, term):
+	def input(self, term, selection, inputter):
 		"""Ask user input. It should return a list of arguments."""
 		raise NotImplementedError
 	

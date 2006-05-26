@@ -139,9 +139,11 @@ class MainApp(glade.GladeApp):
 		print refactoring.name()
 		
 		# Ask user input
+		import inputter
 		args = refactoring.input(
 			self.document.term.get(), 
-			self.document.selection.get()
+			self.document.selection.get(),
+			inputter.Inputter()
 		)
 		
 		self.document.apply_refactoring(refactoring, args)
