@@ -6,9 +6,7 @@
 
 from aterm import types
 from aterm import exceptions
-from aterm import comparators
-from aterm import writers
-from aterm import utils
+from aterm import _helpers
 
 
 class Term:
@@ -28,7 +26,7 @@ class Term:
 
 	def getHash(self):
 		'''Generate a hash value for this term.'''
-		return utils.Hash()(self)
+		return _helpers.Hash()(self)
 
 	def __hash__(self):
 		'''Shorthand for getHash().'''
@@ -36,17 +34,17 @@ class Term:
 		
 	def isConstant(self):
 		'''Whether this term is types, as opposed to have variables or wildcards.'''
-		return utils.isConstant(self)
+		return _helpers.isConstant(self)
 
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
-		return comparators.isEquivalent(self, other)
+		return _helpers.isEquivalent(self, other)
 
 	def isEqual(self, other):
 		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
-		return comparators.isEqual(self, other)
+		return _helpers.isEqual(self, other)
 		
 	def __eq__(self, other):
 		'''Shorthand for the isEqual method.'''
@@ -58,7 +56,7 @@ class Term:
 		if isinstance(other, basestring):
 			other = self.factory.parse(other)
 		
-		compare = comparators.Matcher(args, kargs)
+		compare = _helpers.PatternComparator(args, kargs)
 		return compare(self, other)
 	
 	def getAnnotation(self, label):
@@ -150,7 +148,7 @@ class Term:
 
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
-		writer = writers.TextWriter(fp)
+		writer = _helpers.TextWriter(fp)
 		writer.visit(self)
 
 	def __str__(self):
