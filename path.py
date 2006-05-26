@@ -38,7 +38,7 @@ class Annotator(aterm.visitor.IncrementalVisitor,object):
 		return super(Annotator, self).visit(term, path, index)
 
 
-class Index(aterm.visitor.Visitor):
+class IndexFetch(aterm.visitor.Visitor):
 	'''Fetch a subterm.'''
 
 	def __init__(self, index):
@@ -63,11 +63,42 @@ class Index(aterm.visitor.Visitor):
 		return self.visit(term.getArgs(), index)
 
 
+class Splitter(aterm.visitor.Visitor):
+	'''Splits a list term in two lists.'''
+
+	def __init__(self, index):
+		'''The argument is the index of the first element of the second list.'''
+		self.index = index
+
+	def __call__(self, term):
+		return self.visit(term, 0)
+	
+	def visitTerm(self, term, index):
+		raise TypeError('not a term list or application: %r' % term)
+	
+	def visitNil(self, term, index):
+		if index == self.index:
+			return term.factory.makeNil(), term
+		else:
+			raise IndexError('index out of range')
+		
+	def visitCons(self, term, index):
+		if index == self.index:
+			return term.factory.makeNil(), term
+		else:
+			head, tail = self.visit(term.getTail(), index + 1)
+			return term.factory.makeCons(term.getHead(), head, term.getAnnotations()), tail
+
+def split(term, index):
+	'''Split a term list in two.'''
+	return Splitter(index)(term)
+
+
 def Evaluator(path):
 	'''Apply a transformation only on the specified path.'''
 	result = transformations.Ident()
 	for index in path:
-		result = transformations.And(Index(int(index)),result)
+		result = transformations.And(IndexFetch(int(index)),result)
 	return result
 
 
@@ -98,13 +129,14 @@ class Range(aterm.visitor.IncrementalVisitor):
 		if index < self.end:
 			return self.visit(term, index + 1)
 		else:
-			return term		
+			return term
 
 	def visitName(self, term, index):
 		return term
 
 	def visitArgs(self, term, index):
 		return self.visit(term, index)
+
 
 
 def Path(transformation, path):
