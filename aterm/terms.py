@@ -121,7 +121,7 @@ class Term(object):
 	#annotations = property(getAnnotations, 'Shorthand for the getAnnotations() method.')
 			
 	def __setattr__(self, name, value):
-		'''Prevent modification of term attributes'''
+		'''Prevent modification of term attributes.'''
 		
 		# TODO: implement this with a metaclass
 		
@@ -131,6 +131,10 @@ class Term(object):
 			object.__setattr__(self, name, value)
 		else:
 			raise AttributeError("attempt to modify read-only term attribute '%s'" % name)		
+
+	def __delattr__(self, name):
+		'''Prevent deletion of term attributes.'''
+		raise AttributeError("attempt to delete read-only term attribute '%s'" % name)		
 
 	def make(self, *args, **kargs):
 		'''Create a new term based on this term and a list of arguments.'''

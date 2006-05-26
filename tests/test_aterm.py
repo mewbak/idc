@@ -34,7 +34,17 @@ class TestCase(unittest.TestCase):
 			except AttributeError:
 				pass
 			else:
-				self.fail('attribute "%s" is mutable' % name)
+				self.fail('attribute "%s" is modifiable' % name)
+				
+			try:
+				delattr(obj, name)
+			except AttributeError:
+				pass
+			except TypeError:
+				pass
+			else:
+				self.fail('attribute "%s" is deletable' % name)
+
 
 	def testInt(self):
 		for termStr in self.intTestCases:
