@@ -258,6 +258,9 @@ class List(Term):
 		return self.factory.makeCons(element, self)
 	
 	def append(self, element):
+		return self.extend(self.factory.makeConst(element, self.factory.makeNil()))
+		
+	def extend(self, element):
 		raise NotImplementedError
 		
 	def accept(self, visitor, *args, **kargs):
@@ -282,8 +285,8 @@ class Nil(List):
 	def getTail(self):
 		raise exceptions.EmptyListException
 
-	def append(self, element):
-		return self.factory.makeConst(element, self)
+	def extend(self, tail):
+		return tail
 		
 	def setAnnotations(self, annotations):
 		return self.factory.makeNil(annotations)
@@ -321,10 +324,18 @@ class Cons(List):
 		return self.tail
 
 	def _make(self, args, kargs):
-		return self.factory.makeCons(self.head._make(args, kargs), self.tail._make(args, kargs), self.annotations)
+		return self.factory.makeCons(
+			self.head._make(args, kargs), 
+			self.tail._make(args, kargs), 
+			self.annotations
+		)
 	
-	def append(self, element):
-		return self.factory.makeConst(self.head, self.tail.append(element))
+	def extend(self, tail):
+		return self.factory.makeCons(
+			self.head, 
+			self.tail.append(tail),
+			self.getAnnotations()
+		)
 		
 	def setAnnotations(self, annotations):
 		return self.factory.makeCons(self.head, self.tail, annotations)
