@@ -12,6 +12,8 @@ from aterm import _helpers
 class Term(object):
 	'''Base class for all terms.'''
 
+	__slots__ = ['factory', '__annotations']
+	
 	def __init__(self, factory, annotations = None):
 		self.factory = factory
 		self.__annotations = annotations
@@ -130,10 +132,14 @@ class Term(object):
 	def __setattr__(self, name, value):
 		'''Prevent modification of term attributes'''
 		
-		if name in self.__dict__ or name in ('type', 'annotations'):
-			raise TypeError("attempt to modify read-only term attribute '%s'" % name)
+		# TODO: implement this with a metaclass
+		
+		try:
+			object.__getattribute__(self, name)
+		except AttributeError:
+			object.__setattr__(self, name, value)
 		else:
-			self.__dict__[name] = value
+			raise TypeError("attempt to modify read-only term attribute '%s'" % name)		
 
 	def make(self, *args, **kargs):
 		'''Create a new term based on this term and a list of arguments.'''
@@ -168,6 +174,8 @@ class Term(object):
 class Literal(Term):
 	'''Base class for literal terms.'''
 
+	__slots__ = ['value']
+	
 	def __init__(self, factory, value, annotations = None):
 		Term.__init__(self, factory, annotations)
 		self.value = value
@@ -179,6 +187,8 @@ class Literal(Term):
 class Integer(Literal):
 	'''Integer literal term.'''
 
+	__slots__ = []
+	
 	def getType(self):
 		return types.INT
 
@@ -194,6 +204,8 @@ class Integer(Literal):
 
 class Real(Literal):
 	'''Real literal term.'''
+	
+	__slots__ = []
 	
 	def getType(self):
 		return types.REAL
@@ -211,6 +223,8 @@ class Real(Literal):
 class String(Literal):
 	'''String literal term.'''
 	
+	__slots__ = []
+	
 	def getType(self):
 		return types.STR
 
@@ -224,6 +238,8 @@ class String(Literal):
 class List(Term):
 	'''Base class for list terms.'''
 
+	__slots__ = []
+	
 	def getType(self):
 		return types.LIST
 
@@ -268,6 +284,8 @@ class List(Term):
 class Nil(List):
 	'''Empty list term.'''
 	
+	__slots__ = []
+	
 	def __init__(self, factory, annotations = None):
 		List.__init__(self, factory, annotations)
 
@@ -295,6 +313,8 @@ class Nil(List):
 
 class Cons(List):
 	'''Concatenated list term.'''
+	
+	__slots__ = ['head', 'tail']
 	
 	def __init__(self, factory, head, tail = None, annotations = None):
 		List.__init__(self, factory, annotations)
@@ -345,6 +365,8 @@ class Cons(List):
 class Application(Term):
 	'''Application term.'''
 
+	__slots__ = ['name', 'args']
+	
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 
@@ -382,12 +404,15 @@ class Application(Term):
 
 class Placeholder(Term):
 	'''Base class for placeholder terms.'''
-	pass
+
+	__slots__ = []
 	
 	
 class Wildcard(Placeholder):
 	'''Wildcard term.'''
 
+	__slots__ = []
+	
 	def getType(self):
 		return types.WILDCARD
 	
@@ -407,6 +432,8 @@ class Wildcard(Placeholder):
 class Variable(Placeholder):
 	'''Variable term.'''
 	
+	__slots__ = ['name', 'pattern']
+
 	def __init__(self, factory, name, pattern, annotations = None):
 		Placeholder.__init__(self, factory, annotations)
 		self.name = name
