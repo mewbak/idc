@@ -27,6 +27,15 @@ class TestCase(unittest.TestCase):
 		'1234567890',
 	]
 	
+	def failIfMutable(self, obj):
+		for name in dir(obj):
+			try:
+				setattr(obj, name, None)
+			except AttributeError:
+				pass
+			else:
+				self.fail('attribute "%s" is mutable' % name)
+
 	def testInt(self):
 		for termStr in self.intTestCases:
 			value = int(termStr)
@@ -35,6 +44,7 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(_term.getType(), aterm.INT)
 			self.failUnlessEqual(_term.getValue(), value)
 			self.failUnlessEqual(str(_term), termStr)
+			self.failIfMutable(_term)
 
 	realTestCases = [
 		'0.0',
@@ -56,6 +66,7 @@ class TestCase(unittest.TestCase):
 			self.failUnless(_term.factory is self.factory)
 			self.failUnlessEqual(_term.getType(), aterm.REAL)
 			self.failUnlessAlmostEqual(_term.getValue(), value)
+			self.failIfMutable(_term)
 
 	strTestCases = [
 		(r'""', ''),
@@ -73,6 +84,7 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(_term.getType(), aterm.STR)
 			self.failUnlessEqual(_term.getValue(), value)
 			self.failUnlessEqual(str(_term), termStr)
+			self.failIfMutable(_term)
 
 	listTestCases = [
 		('[]', 0),
@@ -89,6 +101,7 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(_term.isEmpty(), length == 0)
 			self.failUnlessEqual(_term.getLength(), length)
 			self.failUnlessEqual(str(_term), termStr)
+			self.failIfMutable(_term)
 	
 	applTestCases = [
 		('C', '"C"', 0),
@@ -111,6 +124,7 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(_term.getName(), name)
 			self.failUnlessEqual(_term.getArity(), arity)
 			self.failUnlessEqual(str(_term), termStr)
+			self.failIfMutable(_term)
 	
 	identityTestCases = [
 		# ints

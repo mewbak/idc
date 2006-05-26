@@ -12,20 +12,23 @@ from aterm import _helpers
 class Term(object):
 	'''Base class for all terms.'''
 
-	__slots__ = ['factory', '__annotations']
+	__slots__ = ['factory', 'annotations']
 	
 	def __init__(self, factory, annotations = None):
 		self.factory = factory
-		self.__annotations = annotations
-		
+		if annotations is None:
+			self.annotations = self.factory.makeNil()
+		else:
+			self.annotations = annotations
+	
 	def getFactory(self):
 		'''Retrieves the factory responsible for creating this Term.'''
 		return self.factory
 		
 	def getType(self):
 		'''Gets the type of this term.'''
-		raise NotImplementedError
-
+		return self.type
+	
 	def getHash(self):
 		'''Generate a hash value for this term.'''
 		return _helpers.Hash()(self)
@@ -63,12 +66,11 @@ class Term(object):
 	
 	def getAnnotation(self, label):
 		'''Gets an annotation associated with label'''
-		if not self.__annotations is None:
-			annotations = self.__annotations
-			while not annotations.isEmpty():
-				if label.isEquivalent(annotations.getHead()):
-					return annotations.getTail().getHead()				
-				annotations = annotations.getTail().getTail()
+		annotations = self.annotations
+		while not annotations.isEmpty():
+			if label.isEquivalent(annotations.getHead()):
+				return annotations.getTail().getHead()				
+			annotations = annotations.getTail().getTail()
 		raise ValueError("undefined annotation '%r'" % label)
 	
 	def setAnnotation(self, label, annotation):
@@ -111,23 +113,12 @@ class Term(object):
 
 	def getAnnotations(self):
 		'''Returns the annotation list.'''
-		if self.__annotations is None:
-			return self.factory.makeNil()
-		else:
-			return self.__annotations
+		return self.annotations
 
 	def setAnnotations(self, annotations):
 		raise NotImplementedError
 
-	def __getattr__(self, name):
-		'''Provide attributes 'type' and 'annotations', shorthand  for 
-		getType() and getAnnotations() methods respectively.'''
-		if name == 'type':
-			return self.getType()
-		elif name == 'annotations':
-			return self.getAnnotations()
-		else:
-			raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, name))
+	#annotations = property(getAnnotations, 'Shorthand for the getAnnotations() method.')
 			
 	def __setattr__(self, name, value):
 		'''Prevent modification of term attributes'''
@@ -139,7 +130,7 @@ class Term(object):
 		except AttributeError:
 			object.__setattr__(self, name, value)
 		else:
-			raise TypeError("attempt to modify read-only term attribute '%s'" % name)		
+			raise AttributeError("attempt to modify read-only term attribute '%s'" % name)		
 
 	def make(self, *args, **kargs):
 		'''Create a new term based on this term and a list of arguments.'''
@@ -189,8 +180,7 @@ class Integer(Literal):
 
 	__slots__ = []
 	
-	def getType(self):
-		return types.INT
+	type = types.INT
 
 	def __int__(self):
 		return int(self.value)
@@ -207,9 +197,8 @@ class Real(Literal):
 	
 	__slots__ = []
 	
-	def getType(self):
-		return types.REAL
-
+	type = types.REAL
+	
 	def __float__(self):
 		return float(self.value)
 	
@@ -225,9 +214,8 @@ class String(Literal):
 	
 	__slots__ = []
 	
-	def getType(self):
-		return types.STR
-
+	type = types.STR
+	
 	def setAnnotations(self, annotations):
 		return self.factory.makeStr(self.value, annotations)
 
@@ -240,9 +228,8 @@ class List(Term):
 
 	__slots__ = []
 	
-	def getType(self):
-		return types.LIST
-
+	type = types.LIST
+	
 	def isEmpty(self):	
 		raise NotImplementedError
 	
@@ -287,6 +274,11 @@ class Nil(List):
 	__slots__ = []
 	
 	def __init__(self, factory, annotations = None):
+		# this circular reference must be checked here in order to
+		# avoid a infinite loop
+		if annotations is None:
+			annotations = self
+			
 		List.__init__(self, factory, annotations)
 
 	def isEmpty(self):
@@ -367,6 +359,8 @@ class Application(Term):
 
 	__slots__ = ['name', 'args']
 	
+	type = types.APPL
+	
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 
@@ -380,9 +374,6 @@ class Application(Term):
 				raise TypeError("args is not a list term: %r" % args)
 			self.args = args
 	
-	def getType(self):
-		return types.APPL
-
 	def getName(self):
 		return self.name
 	
@@ -413,8 +404,7 @@ class Wildcard(Placeholder):
 
 	__slots__ = []
 	
-	def getType(self):
-		return types.WILDCARD
+	type = types.WILDCARD
 	
 	def _make(self, args, kargs):
 		try:
@@ -439,8 +429,7 @@ class Variable(Placeholder):
 		self.name = name
 		self.pattern = pattern
 	
-	def getType(self):
-		return types.VAR
+	type = types.VAR
 	
 	def getName(self):
 		return self.name

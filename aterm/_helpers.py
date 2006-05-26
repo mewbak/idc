@@ -14,34 +14,34 @@ class Comparator(visitor.Visitor):
 	
 	def visitLit(self, term, other):
 		return \
-			term.getType() == other.getType() and \
+			term.type == other.type and \
 			term.value == other.value
 
 	def visitNil(self, term, other):
 		return \
-			types.LIST == other.getType() and \
+			types.LIST == other.type and \
 			other.isEmpty()
 
 	def visitCons(self, term, other):
 		return \
-			types.LIST == other.getType() and \
+			types.LIST == other.type and \
 			not other.isEmpty() and \
 			self.visit(term.head, other.head) and \
 			self.visit(term.tail, other.tail)
 
 	def visitAppl(self, term, other):
 		return \
-			types.APPL == other.getType() and \
+			types.APPL == other.type and \
 			self.visit(term.name, other.name) and \
 			self.visit(term.args, other.args)		
 
 	def visitWildcard(self, term, other):
 		return \
-			types.WILDCARD == other.getType()
+			types.WILDCARD == other.type
 
 	def visitVar(self, term, other):
 		return \
-			types.VAR == other.getType() and \
+			types.VAR == other.type and \
 			term.name == other.name and \
 			self.visit(term.pattern, other.pattern)
 	
@@ -68,7 +68,7 @@ class EqualityComparator(EquivalenceComparator):
 	def visit(self, term, other):
 		return \
 			EquivalenceComparator.visit(self, term, other) and \
-			isEquivalent(term.getAnnotations(), other.getAnnotations())
+			isEquivalent(term.annotations, other.annotations)
 
 
 isEqual = EqualityComparator()
@@ -147,7 +147,7 @@ class Hash(visitor.Visitor):
 	
 	def visit(self, term):
 		value = visitor.Visitor.visit(self, term)
-		annotations = term.getAnnotations()
+		annotations = term.annotations
 		if not annotations.isEmpty():
 			return hash((value, self.visit(annotations)))
 		else:
@@ -209,7 +209,7 @@ class TextWriter(Writer):
 	'''Writes a term to a text stream.'''
 
 	def writeAnnotations(self, term):
-		annotations = term.getAnnotations()
+		annotations = term.annotations
 		if not annotations.isEmpty():
 			self.fp.write('{')
 			self.visit(annotations, inside_list = True)
@@ -243,7 +243,7 @@ class TextWriter(Writer):
 		head = term.head
 		self.visit(head)
 		tail = term.tail
-		last = tail.getType() == types.LIST and tail.isEmpty()
+		last = tail.type == types.LIST and tail.isEmpty()
 		if not last:
 			self.fp.write(",")
 			self.visit(tail, inside_list = True)		
@@ -256,7 +256,7 @@ class TextWriter(Writer):
 		self.fp.write(_getSymbol(name))
 		args = term.args
 		if \
-				name.getType() != types.STR \
+				name.type != types.STR \
 				or name.value == '' \
 				or not args.isEquivalent(args.factory.makeNil()):
 			self.fp.write('(')
@@ -275,7 +275,7 @@ class TextWriter(Writer):
 			self.fp.write('*')
 		self.fp.write(str(term.name))
 		pattern = term.pattern
-		if pattern.getType() != types.WILDCARD:
+		if pattern.type != types.WILDCARD:
 			self.fp.write('=')
 			self.visit(pattern)
 
