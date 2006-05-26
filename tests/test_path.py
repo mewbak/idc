@@ -4,6 +4,7 @@
 import unittest
 
 import aterm
+import transformations
 import path
 
 
@@ -31,19 +32,29 @@ class TestCase(unittest.TestCase):
 		('C(C(1),C(2))', 'C(C(1{Path,[0,0]}){Path,[0]},C(2{Path,[0,1]}){Path,[1]}){Path,[]}'),
 	]
 	
-	def testAnnotator(self):
+	def testAnnotate(self):
 		for termStr, expectedResultStr in self.annotatorTestCases:
 			term = self.factory.parse(termStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
-			result = path.Annotator()(term)
+			result = path.annotate(term)
 			
 			self.failUnlessEqual(result, expectedResult)
 			
 			self.failUnless(result.isEquivalent(term))
 			self.failUnless(term.isEquivalent(result))
 
-	evaluatorTestCases = [
+	def checkTransformation(self, metaTransf, testCases):
+		for termStr, pathStr, expectedResultStr in testCases:
+			term = self.factory.parse(termStr)
+			_path = self.factory.parse(pathStr)
+			expectedResult = self.factory.parse(expectedResultStr)
+			
+			result = metaTransf(_path)(term)
+			
+			self.failUnlessEqual(result, expectedResult)
+			
+	fetchTestCases = [
 		('1', '[]', '1'),
 		('[1,2]', '[]', '[1,2]'),
 		('[1,2]', '[0]', '1'),
@@ -56,16 +67,12 @@ class TestCase(unittest.TestCase):
 		('A([B,C],[D,E])', '[0,1]', 'D'),
 		('A([B,C],[D,E])', '[1,1]', 'E'),
 	]
-	
-	def testEvaluator(self):
-		for termStr, pathStr, expectedResultStr in self.evaluatorTestCases:
-			term = self.factory.parse(termStr)
-			_path = self.factory.parse(pathStr)
-			expectedResult = self.factory.parse(expectedResultStr)
-			
-			result = path.Evaluator(_path)(term)
-			
-			self.failUnlessEqual(result, expectedResult)
+
+	def testFetch(self):
+		self.checkTransformation(
+			path.PathFetch, 
+			self.fetchTestCases
+		)
 	
 	pathTestCases = [
 		('1', '[]', 'X(1)'),
@@ -80,17 +87,10 @@ class TestCase(unittest.TestCase):
 	]	
 	
 	def testPath(self):
-		import transformations
-		
-		for termStr, pathStr, expectedResultStr in self.pathTestCases:
-			term = self.factory.parse(termStr)
-			#_path = self.factory.parse(pathStr)
-			_path = eval(pathStr)
-			expectedResult = self.factory.parse(expectedResultStr)
-			
-			result = path.Path(transformations.Rule('x', 'X(x)'), _path)(term)
-			
-			self.failUnlessEqual(result, expectedResult)
+		self.checkTransformation(
+			lambda _path: path.Path(transformations.Rule('x', 'X(x)'), _path),
+			self.pathTestCases
+		)
 
 	splitTestCases = [
 		('[0,1,2,3]', 0, '[]', '[0,1,2,3]'),
@@ -110,6 +110,28 @@ class TestCase(unittest.TestCase):
 			
 			self.failUnlessEqual(head, expectedHead)
 			self.failUnlessEqual(tail, expectedTail)
+
+	rangeTestCases = [
+		('[0,1,2]', 0, 0, '[0,1,2]'),
+		('[0,1,2]', 0, 1, '[X(0),1,2]'),
+		('[0,1,2]', 0, 2, '[X(0),X(1),2]'),
+		('[0,1,2]', 0, 3, '[X(0),X(1),X(2)]'),
+		('[0,1,2]', 1, 1, '[0,1,2]'),
+		('[0,1,2]', 1, 2, '[0,X(1),2]'),
+		('[0,1,2]', 1, 3, '[0,X(1),X(2)]'),
+		('[0,1,2]', 2, 2, '[0,1,2]'),
+		('[0,1,2]', 2, 3, '[0,1,X(2)]'),
+		('[0,1,2]', 3, 3, '[0,1,2]'),
+	]	
+	
+	def testRange(self):
+		for inputStr, start, end, expectedResultStr in self.rangeTestCases:
+			input = self.factory.parse(inputStr)
+			expectedResult = self.factory.parse(expectedResultStr)
+			
+			result = path.Range(transformations.Map(transformations.Rule('x', 'X(x)')), start, end)(input)
+			
+			self.failUnlessEqual(result, expectedResult)
 
 
 if __name__ == '__main__':

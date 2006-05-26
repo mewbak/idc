@@ -1,5 +1,6 @@
-"""Path to sub-terms in an aterm.
-"""
+'''Path to sub-terms in an aterm.
+'''
+
 
 import aterm
 import aterm.visitor
@@ -7,8 +8,8 @@ import walker
 import transformations
 
 
-class Annotator(aterm.visitor.IncrementalVisitor,object):
-	'''Apply a transformation on a subterm range.'''
+class Annotator(aterm.visitor.IncrementalVisitor):
+	'''Annotate the term and sub-terms with their relative path.'''
 
 	def __call__(self, term, path = None):
 		if path is None:
@@ -37,6 +38,8 @@ class Annotator(aterm.visitor.IncrementalVisitor,object):
 		# no need to annotate arg lists
 		return super(Annotator, self).visit(term, path, index)
 
+annotate = Annotator()
+
 
 class IndexFetch(aterm.visitor.Visitor):
 	'''Fetch a subterm.'''
@@ -63,7 +66,64 @@ class IndexFetch(aterm.visitor.Visitor):
 		return self.visit(term.getArgs(), index)
 
 
-class Splitter(aterm.visitor.Visitor):
+def PathFetch(path):
+	'''Transformation which fetchs sub-term with the specified path.'''
+	result = transformations.Ident()
+	for index in path:
+		result = transformations.And(IndexFetch(int(index)),result)
+	return result
+
+
+def fetch(term, path):
+	'''Fetches the sub-term with the specified path.'''
+	return PathFetch(path)(term)
+
+
+class Index(aterm.visitor.IncrementalVisitor, transformations.Transformation):
+
+	def __init__(self, operand, index):
+		aterm.visitor.IncrementalVisitor.__init__(self)
+		transformations.Transformation.__init__(self)
+		self.operand = operand
+		self.index = index
+		
+	def __call__(self, term):
+		return self.visit(term, 0)
+	
+	def visitTerm(self, term, index):
+		raise TypeError('not a term list or application: %r' % term)
+	
+	def visitNil(self, term, index):
+		raise IndexError('index out of range')
+	
+	def visitHead(self, term, index):
+		if index == self.index:
+			return self.operand(term)
+		else:
+			return term
+	
+	def visitTail(self, term, index):
+		if index < self.index:
+			return self.visit(term, index + 1)
+		else:
+			return term
+
+	def visitName(self, term, index):
+		return term
+
+	def visitArgs(self, term, index):
+		return self.visit(term, index)
+
+
+def Path(transformation, path):
+	'''Apply a transformation only on the specified path.'''
+	result = transformation
+	for index in path:
+		result = Index(result, int(index))
+	return result
+
+
+class _Splitter(aterm.visitor.Visitor):
 	'''Splits a list term in two lists.'''
 
 	def __init__(self, index):
@@ -74,7 +134,7 @@ class Splitter(aterm.visitor.Visitor):
 		return self.visit(term, 0)
 	
 	def visitTerm(self, term, index):
-		raise TypeError('not a term list or application: %r' % term)
+		raise TypeError('not a term list: %r' % term)
 	
 	def visitNil(self, term, index):
 		if index == self.index:
@@ -89,20 +149,13 @@ class Splitter(aterm.visitor.Visitor):
 			head, tail = self.visit(term.getTail(), index + 1)
 			return term.factory.makeCons(term.getHead(), head, term.getAnnotations()), tail
 
+
 def split(term, index):
 	'''Split a term list in two.'''
-	return Splitter(index)(term)
+	return _Splitter(index)(term)
 
 
-def Evaluator(path):
-	'''Apply a transformation only on the specified path.'''
-	result = transformations.Ident()
-	for index in path:
-		result = transformations.And(IndexFetch(int(index)),result)
-	return result
-
-
-class Range(aterm.visitor.IncrementalVisitor):
+class Range(transformations.Transformation):
 	'''Apply a transformation on a subterm range.'''
 
 	def __init__(self, operand, start, end):
@@ -110,43 +163,22 @@ class Range(aterm.visitor.IncrementalVisitor):
 		inclusively.
 		'''
 		self.operand = operand
+		if start > end:
+			raise ValueError('start index %r greater than end index %r' % (start, end))
 		self.start = start
 		self.end = end
-
+		
 	def __call__(self, term):
-		return self.visit(term, 0)
-	
-	def visitTerm(self, term, index):
-		raise TypeError('not a term list or application: %r' % term)
-	
-	def visitHead(self, term, index):
-		if self.start <= index <= self.end:
-			return self.operand(term)
+		head, rest = split(term, self.start)
+		old_body, tail = split(rest, self.end - self.start)
+		
+		new_body = self.operand(old_body)
+		if new_body is not old_body:
+			return head.extend(new_body.extend(tail))
 		else:
 			return term
-	
-	def visitTail(self, term, index):
-		if index < self.end:
-			return self.visit(term, index + 1)
-		else:
-			return term
-
-	def visitName(self, term, index):
-		return term
-
-	def visitArgs(self, term, index):
-		return self.visit(term, index)
-
-
-
-def Path(transformation, path):
-	'''Apply a transformation only on the specified path.'''
-	result = transformation
-	for index in path:
-		result = Range(result, index, index)
-	return result
-
-
+			
+		
 def PathRange(transformation, start, end):
 	'''Apply a transformation on a path range. The tails of the start and end 
 	paths should be equal.'''

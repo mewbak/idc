@@ -1,16 +1,15 @@
-'''Base classes for aterm walker construction.
+'''Base classes for term walker construction.
 
-An aterm walker is a class aimed to transform an aterm as it traverses the tree.
+A walker is a class aimed to process/transform a aterm as it traverses the tree.
 
-An aterm walker's interface is very liberal: is up to the caller determine
-which method to call and which arguments to pass, and the return is not
-necessarily an aterm. Nevertheless, it is usually expected that the first
-argument is the target term, and that a Failure exception can be raised if the
-transformation does not succeed.
+An aterm walker's interface is very liberal: is up to the caller determine which
+method to call and which arguments to pass, and the return is not necessarily an
+aterm. Nevertheless, it is usually expected that the first argument is the
+target term, and that a Failure exception can be raised if the transformation is
+not successful.
 
-An aterm walker may store context as it traverses the tree, therefore sucessive
-calls to the same walker method's do not necessarily yield the same results.
-However, it is usually expected that first call after setting up a walker will.
+As a walker may change its context as it traverses the tree, sucessive calls to
+the same walker method's do not necessarily yield the same results.
 '''
 
 
@@ -28,7 +27,7 @@ class Failure(Exception):
 	
 	def __str__(self):
 		if self.msg is None:
-			return Exception.__str(self)
+			return Exception.__str__(self)
 		else:
 			if len(self.args):
 				return self.msg % self.args
@@ -52,7 +51,7 @@ class Walker:
 
 		pass
 
-	#def __apply__(self, root):
+	#def __call__(self, root):
 	#	'''Apply this walker transformation to the root aterm.  Since a walker may
 	#	store context, this method should be called only once in the object's
 	#	lifetime. May not be implemented for every walkers.'''

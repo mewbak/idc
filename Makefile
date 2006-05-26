@@ -51,13 +51,20 @@ all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 
 tests: \
 	test_aterm \
+	test_transformations \
+	test_path \
 	test_walker \
 	test_wc \
 	test_box \
-	test_ir \
-	test_path
+	test_ir
 
 test_aterm: tests/test_aterm.py aterm/lexer.py aterm/parser.py
+	$(PYTHON) $< -v
+
+test_transformations: tests/test_transformations.py
+	$(PYTHON) $< -v
+
+test_path: tests/test_path.py
 	$(PYTHON) $< -v
 
 test_walker: tests/test_walker.py
@@ -70,9 +77,6 @@ test_box: tests/test_box.py box.py
 	$(PYTHON) $< -v
 
 test_ir: tests/test_ir.py ir.py
-	$(PYTHON) $< -v
-
-test_path: tests/test_path.py
 	$(PYTHON) $< -v
 
 test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
@@ -96,10 +100,11 @@ doc: box.py
 	epydoc \
 		--css blue \
 		aterm \
+		transformations \
+		path \
 		walker \
 		box \
 		ir \
-		path \
 		ui
 
 .PHONY: doc

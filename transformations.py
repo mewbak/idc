@@ -1,6 +1,9 @@
-'''Term transformation framework. It is inspired on the Stratego/XT 
-framework. More information available at 
-http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-0.16/manual/
+'''Term transformation framework. 
+
+This framework allows to create complex term transformations from simple blocks.
+
+It is inspired on the Stratego/XT framework. More information about it is
+available at http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-0.16/manual/ .
 '''
 
 
@@ -20,15 +23,20 @@ class Failure(Exception):
 
 
 class Transformation:
-	'''Base class for transformations. Although convenient, it is not necessary 
-	for every transformation to derive from this class. Generally, a regular
-	function can be used instead.
+	'''Base class for transformations. 
+	
+	A transformation takes as input a term and returns the transformed term, or
+	raises a Failure exception if it is not applicable.
+	
+	Albeit convenient, it is not necessary for every transformation to derive from
+	this class. Generally, a regular function can be used instead.
 	'''
 	
 	def __init__(self):
 		pass
 	
 	def __call__(self, term):
+		'''Applies the transformation.'''
 		raise NotImplementedError
 
 	def __not__(self):

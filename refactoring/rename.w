@@ -1,4 +1,4 @@
-"""Refactoring for renaming symbols globally."""
+"""Rename symbols globally."""
 
 header {
 import refactoring

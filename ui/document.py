@@ -14,7 +14,7 @@ class TermState(observer.State):
 	"""Intermediate representation of the program using aterms."""
 	
 	def set(self, value):
-		value = path.Annotator()(value)
+		value = path.annotate(value)
 		observer.State.set(self, value)
 
 
