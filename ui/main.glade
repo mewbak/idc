@@ -20,7 +20,6 @@
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="focus_on_map">True</property>
   <property name="urgency_hint">False</property>
-  <signal name="destroy" handler="on_main_window_destroy" last_modification_time="Fri, 24 Mar 2006 14:09:12 GMT"/>
 
   <child>
     <widget class="GtkVBox" id="vbox1">
@@ -48,7 +47,6 @@
 		      <property name="visible">True</property>
 		      <property name="label">gtk-new</property>
 		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_new_activate" last_modification_time="Fri, 24 Mar 2006 14:35:23 GMT"/>
 		    </widget>
 		  </child>
 
@@ -57,7 +55,6 @@
 		      <property name="visible">True</property>
 		      <property name="label">gtk-open</property>
 		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_open_activate" last_modification_time="Fri, 24 Mar 2006 14:36:57 GMT"/>
 		    </widget>
 		  </child>
 
@@ -66,7 +63,6 @@
 		      <property name="visible">True</property>
 		      <property name="label">gtk-save</property>
 		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_save_activate" last_modification_time="Fri, 24 Mar 2006 14:36:57 GMT"/>
 		    </widget>
 		  </child>
 
@@ -75,7 +71,6 @@
 		      <property name="visible">True</property>
 		      <property name="label">gtk-save-as</property>
 		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_save_as_activate" last_modification_time="Fri, 24 Mar 2006 14:36:57 GMT"/>
 		    </widget>
 		  </child>
 
@@ -90,7 +85,6 @@
 		      <property name="visible">True</property>
 		      <property name="label">gtk-quit</property>
 		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_quit_activate" last_modification_time="Fri, 24 Mar 2006 14:32:04 GMT"/>
 		    </widget>
 		  </child>
 		</widget>
@@ -113,7 +107,6 @@
 		      <property name="label" translatable="yes">Show _Inspector</property>
 		      <property name="use_underline">True</property>
 		      <property name="active">False</property>
-		      <signal name="toggled" handler="on_inspector_toggled" last_modification_time="Sat, 20 May 2006 21:18:10 GMT"/>
 		    </widget>
 		  </child>
 		</widget>
@@ -135,7 +128,6 @@
 		      <property name="visible">True</property>
 		      <property name="label">gtk-about</property>
 		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_about_activate" last_modification_time="Fri, 24 Mar 2006 14:34:06 GMT"/>
 		    </widget>
 		  </child>
 		</widget>
@@ -176,7 +168,6 @@
 	      <property name="right_margin">0</property>
 	      <property name="indent">0</property>
 	      <property name="text" translatable="yes"></property>
-	      <signal name="event" handler="on_textview_event" last_modification_time="Sun, 14 May 2006 10:21:31 GMT"/>
 	    </widget>
 	  </child>
 	</widget>

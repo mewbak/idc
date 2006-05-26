@@ -24,15 +24,43 @@ class GladeWindow:
 		"""Load glade file."""
 
 		self.xml = gtk.glade.XML(filename, windowname, gettext.textdomain())
-
-		#handlers = {}
-		#for name in dir(self.__class__):
-		#	handlers[name] = getattr(self, name)
-		#self.xml.signal_autoconnect(handlers)
-		self.xml.signal_autoconnect(self)
-		
 		self.widget = self.xml.get_widget(windowname)
+		
+		self._signal_autoconnect()
 
+	def _signal_autoconnect(self):
+		'''Auto-connect signals using introspection.'''
+		
+		# this matches the attribute names with the signal handler names given in the
+		# glade file
+		#self.xml.signal_autoconnect(self)
+		
+		# this automatically recognize signal handlers names which look as
+		# "(on_|after_)_widgetname_signalname"
+		on_handler_names = []
+		after_handler_names = []
+		for name in dir(self.__class__):
+			if name.startswith('on_'):
+				on_handler_names.append(name)
+			if name.startswith('after_'):
+				after_handler_names.append(name)
+		
+		for widget in self.xml.get_widget_prefix(""):
+			widget_name = gtk.glade.get_widget_name(widget)
+			
+			prefix = 'on_' + widget_name + '_'
+			for name in on_handler_names:
+				if name.startswith(prefix):
+					signal = name[len(prefix):]
+					widget.connect(signal, getattr(self, name))
+					
+			prefix = 'after_' + widget_name + '_'
+			for name in after_handler_names:
+				if name.startswith(prefix):
+					signal = name[len(prefix):]
+					widget.connect_after(signal, getattr(self, name))
+			
+		
 	def __getattr__(self, name): 
 		"""Allow glade widgets to be acessed as attributes."""
 
@@ -51,14 +79,12 @@ class GladeApp(GladeWindow):
 
 	def main(self):
 		"""Enter main loop."""
-
 		gtk.main()
 
 	def quit(self, *args):
 		"""Quit main loop."""
-
 		gtk.main_quit()
-				
+	
 	def show_open(self, title = None, parent = None, filters = None, folder = None):
 		"""Display a file open dialog."""
 
