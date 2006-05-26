@@ -15,7 +15,7 @@ class Comparator(visitor.Visitor):
 	def visitLit(self, term, other):
 		return \
 			term.getType() == other.getType() and \
-			term.getValue() == other.getValue()
+			term.value == other.value
 
 	def visitNil(self, term, other):
 		return \
@@ -26,14 +26,14 @@ class Comparator(visitor.Visitor):
 		return \
 			types.LIST == other.getType() and \
 			not other.isEmpty() and \
-			self.visit(term.getHead(), other.getHead()) and \
-			self.visit(term.getTail(), other.getTail())
+			self.visit(term.head, other.head) and \
+			self.visit(term.tail, other.tail)
 
 	def visitAppl(self, term, other):
 		return \
 			types.APPL == other.getType() and \
-			self.visit(term.getName(), other.getName()) and \
-			self.visit(term.getArgs(), other.getArgs())		
+			self.visit(term.name, other.name) and \
+			self.visit(term.args, other.args)		
 
 	def visitWildcard(self, term, other):
 		return \
@@ -42,8 +42,8 @@ class Comparator(visitor.Visitor):
 	def visitVar(self, term, other):
 		return \
 			types.VAR == other.getType() and \
-			term.getName() == other.getName() and \
-			self.visit(term.getPattern(), other.getPattern())
+			term.name == other.name and \
+			self.visit(term.pattern, other.pattern)
 	
 
 class EquivalenceComparator(Comparator):
@@ -100,11 +100,11 @@ class PatternComparator(Comparator):
 		return True
 
 	def visitVar(self, term, other):
-		name = term.getName()
+		name = term.name
 		try:
 			value = self.kargs[name]
 		except KeyError:
-			if not PatternComparator([], self.kargs)(term.getPattern(), other):
+			if not PatternComparator([], self.kargs)(term.pattern, other):
 				return False
 			else:
 				self.kargs[name] = other
@@ -125,13 +125,13 @@ class Constness(visitor.Visitor):
 
 	def visitCons(self, term):
 		return \
-			self.visit(term.getHead()) and \
-			self.visit(term.getTail())
+			self.visit(term.head) and \
+			self.visit(term.tail)
 
 	def visitAppl(self, term):
 		return \
-			self.visit(term.getName()) and \
-			self.visit(term.getArgs())		
+			self.visit(term.name) and \
+			self.visit(term.args)		
 
 	def visitPlaceholder(self, term):
 		return False
@@ -154,21 +154,21 @@ class Hash(visitor.Visitor):
 			return value
 
 	def visitLit(self, term):
-		return hash(term.getValue())
+		return hash(term.value)
 
 	def visitNil(self, term):
 		return hash(())
 
 	def visitCons(self, term):
 		return hash((
-			self.visit(term.getHead()),
-			self.visit(term.getTail()),
+			self.visit(term.head),
+			self.visit(term.tail),
 		))
 
 	def visitAppl(self, term):
 		return hash((
-			self.visit(term.getName()),
-			self.visit(term.getArgs()),
+			self.visit(term.name),
+			self.visit(term.args),
 		))
 
 	def visitWildcard(self, term):
@@ -176,8 +176,8 @@ class Hash(visitor.Visitor):
 
 	def visitVar(self, term):
 		return hash((
-			term.getName(),
-			self.visit(term.getPattern()),
+			term.name,
+			self.visit(term.pattern),
 		))
 
 
@@ -193,13 +193,13 @@ class Writer(visitor.Visitor):
 class _GetSymbol(visitor.Visitor):
 	
 	def visitStr(self, term):
-		return term.getValue()
+		return term.value
 
 	def visitWildcard(self, term):
 		return '_'
 	
 	def visitVar(self, term):
-		return term.getName()
+		return term.name
 
 
 _getSymbol = _GetSymbol()
@@ -216,15 +216,15 @@ class TextWriter(Writer):
 			self.fp.write('}')
 
 	def visitInt(self, term):
-		self.fp.write(str(term.getValue()))
+		self.fp.write(str(term.value))
 		self.writeAnnotations(term)
 	
 	def visitReal(self, term):
-		self.fp.write('%g' % term.getValue())
+		self.fp.write('%g' % term.value)
 		self.writeAnnotations(term)
 	
 	def visitStr(self, term):
-		s = str(term.getValue())
+		s = str(term.value)
 		s = s.replace('\"', '\\"')
 		s = s.replace('\t', '\\t')
 		s = s.replace('\r', '\\r')
@@ -240,9 +240,9 @@ class TextWriter(Writer):
 	def visitCons(self, term, inside_list = False):
 		if not inside_list:
 			self.fp.write('[')	 
-		head = term.getHead()
+		head = term.head
 		self.visit(head)
-		tail = term.getTail()
+		tail = term.tail
 		last = tail.getType() == types.LIST and tail.isEmpty()
 		if not last:
 			self.fp.write(",")
@@ -252,12 +252,12 @@ class TextWriter(Writer):
 			self.writeAnnotations(term)
 
 	def visitAppl(self, term):
-		name = term.getName()
+		name = term.name
 		self.fp.write(_getSymbol(name))
-		args = term.getArgs()
+		args = term.args
 		if \
 				name.getType() != types.STR \
-				or name.getValue() == '' \
+				or name.value == '' \
 				or not args.isEquivalent(args.factory.makeNil()):
 			self.fp.write('(')
 			self.visit(args, inside_list = True)
@@ -273,8 +273,8 @@ class TextWriter(Writer):
 	def visitVar(self, term, inside_list = False):
 		if inside_list:
 			self.fp.write('*')
-		self.fp.write(str(term.getName()))
-		pattern = term.getPattern()
+		self.fp.write(str(term.name))
+		pattern = term.pattern
 		if pattern.getType() != types.WILDCARD:
 			self.fp.write('=')
 			self.visit(pattern)
