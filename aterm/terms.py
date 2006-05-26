@@ -10,8 +10,14 @@ from aterm import _helpers
 
 
 class Term(object):
-	'''Base class for all terms.'''
+	'''Base class for all terms.
+	
+	Terms are non-modifiable. Changes are carried out by returning another term
+	instance.
+	'''
 
+	# NOTE: most methods defer the execution to visitors
+	
 	__slots__ = ['factory', 'annotations']
 	
 	def __init__(self, factory, annotations = None):
@@ -21,10 +27,22 @@ class Term(object):
 		else:
 			self.annotations = annotations
 	
-	def getFactory(self):
-		'''Retrieves the factory responsible for creating this Term.'''
-		return self.factory
+	def __setattr__(self, name, value):
+		'''Prevent modification of term attributes.'''
 		
+		# TODO: implement this with a metaclass
+		
+		try:
+			object.__getattribute__(self, name)
+		except AttributeError:
+			object.__setattr__(self, name, value)
+		else:
+			raise AttributeError("attempt to modify read-only term attribute '%s'" % name)		
+
+	def __delattr__(self, name):
+		'''Prevent deletion of term attributes.'''
+		raise AttributeError("attempt to delete read-only term attribute '%s'" % name)		
+
 	def getType(self):
 		'''Gets the type of this term.'''
 		return self.type
@@ -38,7 +56,7 @@ class Term(object):
 		return self.getHash()
 		
 	def isConstant(self):
-		'''Whether this term is types, as opposed to have variables or wildcards.'''
+		'''Whether this term is constant, as opposed to have variables or wildcards.'''
 		return _helpers.isConstant(self)
 
 	def isEquivalent(self, other):
@@ -50,10 +68,8 @@ class Term(object):
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
 		return _helpers.isEqual(self, other)
-		
-	def __eq__(self, other):
-		'''Shorthand for the isEqual method.'''
-		return self.isEqual(other)
+	
+	__eq__ = isEqual
 
 	def match(self, other, args = None, kargs = None):
 		'''Matches this term agains a string or term pattern.'''
@@ -76,7 +92,7 @@ class Term(object):
 	def setAnnotation(self, label, annotation):
 		'''Returns a new version of this term with the 
 		annotation associated with this label added or updated.'''
-		return self.setAnnotations(self._setAnnotation(label, annotation, self.getAnnotations()))
+		return self.setAnnotations(self._setAnnotation(label, annotation, self.annotations))
 
 	def _setAnnotation(self, label, annotation, annotations):
 		if annotations.isEmpty():
@@ -95,7 +111,7 @@ class Term(object):
 	def removeAnnotation(self, label):
 		'''Returns a new version of this term with the 
 		annotation associated with this label removed.'''
-		return self.setAnnotations(self._removeAnnotation(label, self.getAnnotations()))
+		return self.setAnnotations(self._removeAnnotation(label, self.annotations))
 		
 	def _removeAnnotation(self, label, annotations):
 		if annotations.isEmpty():
@@ -116,32 +132,13 @@ class Term(object):
 		return self.annotations
 
 	def setAnnotations(self, annotations):
-		raise NotImplementedError
-
-	#annotations = property(getAnnotations, 'Shorthand for the getAnnotations() method.')
-			
-	def __setattr__(self, name, value):
-		'''Prevent modification of term attributes.'''
-		
-		# TODO: implement this with a metaclass
-		
-		try:
-			object.__getattribute__(self, name)
-		except AttributeError:
-			object.__setattr__(self, name, value)
-		else:
-			raise AttributeError("attempt to modify read-only term attribute '%s'" % name)		
-
-	def __delattr__(self, name):
-		'''Prevent deletion of term attributes.'''
-		raise AttributeError("attempt to delete read-only term attribute '%s'" % name)		
+		'''Modify the annotation list.'''
+		return _helpers.annotate(self, annotations)
 
 	def make(self, *args, **kargs):
 		'''Create a new term based on this term and a list of arguments.'''
-		return self._make(args, kargs)
-
-	def _make(self, args, kargs):
-		return self
+		maker = _helpers.Maker(args, kargs)
+		return maker.visit(self)
 
 	def accept(self, visitor, *args, **kargs):
 		'''Accept a visitor.'''
@@ -186,12 +183,14 @@ class Integer(Literal):
 	
 	type = types.INT
 
+	def __init__(self, factory, value, annotations = None):
+		if not isinstance(value, int):
+			raise TypeError('value is not an integer: %r' % value)
+		Literal.__init__(self, factory, value, annotations)
+
 	def __int__(self):
 		return int(self.value)
 	
-	def setAnnotations(self, annotations):
-		return self.factory.makeInt(self.value, annotations)
-
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitInt(self, *args, **kargs)
 
@@ -203,12 +202,14 @@ class Real(Literal):
 	
 	type = types.REAL
 	
+	def __init__(self, factory, value, annotations = None):
+		if not isinstance(value, float):
+			raise TypeError('value is not an integer: %r' % value)
+		Literal.__init__(self, factory, value, annotations)
+
 	def __float__(self):
 		return float(self.value)
 	
-	def setAnnotations(self, annotations):
-		return self.factory.makeReal(self.value, annotations)
-
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitReal(self, *args, **kargs)
 
@@ -220,8 +221,10 @@ class String(Literal):
 	
 	type = types.STR
 	
-	def setAnnotations(self, annotations):
-		return self.factory.makeStr(self.value, annotations)
+	def __init__(self, factory, value, annotations = None):
+		if not isinstance(value, str):
+			raise TypeError('value is not an integer: %r' % value)
+		Literal.__init__(self, factory, value, annotations)
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitStr(self, *args, **kargs)
@@ -237,6 +240,9 @@ class List(Term):
 	def isEmpty(self):	
 		raise NotImplementedError
 	
+	def __nonzero__(self):
+		return not self.isEmpty()
+
 	def getLength(self):
 		raise NotImplementedError
 	
@@ -250,12 +256,7 @@ class List(Term):
 		raise NotImplementedError
 
 	def __getitem__(self, index):
-		if self.isEmpty():
-			raise IndexError
-		elif index == 0:
-			return self.getHead()
-		else:
-			return self.getTail().__getitem__(index - 1)
+		raise NotImplementedError
 
 	# TODO: write an __iter__ method
 		
@@ -297,12 +298,12 @@ class Nil(List):
 	def getTail(self):
 		raise exceptions.EmptyListException
 
+	def __getitem__(self, index):
+		raise IndexError
+
 	def extend(self, tail):
 		return tail
 		
-	def setAnnotations(self, annotations):
-		return self.factory.makeNil(annotations)
-
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitNil(self, *args, **kargs)
 
@@ -337,23 +338,19 @@ class Cons(List):
 	def getTail(self):
 		return self.tail
 
-	def _make(self, args, kargs):
-		return self.factory.makeCons(
-			self.head._make(args, kargs), 
-			self.tail._make(args, kargs), 
-			self.annotations
-		)
-	
+	def __getitem__(self, index):
+		if index == 0:
+			return self.head
+		else:
+			return self.tail.__getitem__(index - 1)
+
 	def extend(self, tail):
 		return self.factory.makeCons(
 			self.head, 
 			self.tail.append(tail),
-			self.getAnnotations()
+			self.annotations
 		)
 		
-	def setAnnotations(self, annotations):
-		return self.factory.makeCons(self.head, self.tail, annotations)
-
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitCons(self, *args, **kargs)
 
@@ -387,12 +384,6 @@ class Application(Term):
 	def getArgs(self):
 		return self.args
 	
-	def _make(self, args, kargs):
-		return self.factory.makeAppl(self.name._make(args, kargs), self.args._make(args, kargs), self.annotations)
-	
-	def setAnnotations(self, annotations):
-		return self.factory.makeAppl(self.name, self.args, annotations)
-
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitAppl(self, *args, **kargs)
 
@@ -410,15 +401,6 @@ class Wildcard(Placeholder):
 	
 	type = types.WILDCARD
 	
-	def _make(self, args, kargs):
-		try:
-			return args.pop(0)
-		except IndexError:
-			raise TypeError('insufficient number of arguments')
-
-	def setAnnotations(self, annotations):
-		return self.factory.makeWildcard(annotations)
-
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitWildcard(self, *args, **kargs)
 
@@ -428,29 +410,18 @@ class Variable(Placeholder):
 	
 	__slots__ = ['name', 'pattern']
 
+	type = types.VAR
+	
 	def __init__(self, factory, name, pattern, annotations = None):
 		Placeholder.__init__(self, factory, annotations)
 		self.name = name
 		self.pattern = pattern
-	
-	type = types.VAR
 	
 	def getName(self):
 		return self.name
 
 	def getPattern(self):
 		return self.pattern
-
-	def _make(self, args, kargs):
-		name = self.getName()
-		if name in kargs:
-			# TODO: do something with the pattern here?
-			return kargs[name]
-		else:
-			raise ValueError('undefined term variable %s' % name)
-
-	def setAnnotations(self, annotations):
-		return self.factory.makeVar(self.name, self.pattern, annotations)
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitVar(self, *args, **kargs)

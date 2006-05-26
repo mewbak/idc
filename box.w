@@ -212,7 +212,7 @@ header {
 def term2box(term):
 	'''Convert an aterm into its box representation.'''
 
-	boxer = Term2Box(term.getFactory())
+	boxer = Term2Box(term.factory)
 	box = boxer.convert(term)
 	return box
 }

@@ -1,4 +1,4 @@
-'''Visitors used for the implementation of most the term algorithms.
+'''Visitors used for the implementation of most term algorithms.
 
 Some of these visitors store no context, therefore are used effectively as
 singletons.
@@ -57,7 +57,7 @@ class EquivalenceComparator(Comparator):
 			Comparator.visit(self, term, other)
 
 
-isEquivalent = EquivalenceComparator()
+isEquivalent = EquivalenceComparator().visit
 
 
 class EqualityComparator(EquivalenceComparator):
@@ -71,7 +71,7 @@ class EqualityComparator(EquivalenceComparator):
 			isEquivalent(term.annotations, other.annotations)
 
 
-isEqual = EqualityComparator()
+isEqual = EqualityComparator().visit
 
 
 class PatternComparator(Comparator):
@@ -112,6 +112,78 @@ class PatternComparator(Comparator):
 		else:
 			return isEquivalent(value, other)
 
+
+class Annotator(visitor.Visitor):
+	
+	def visit(self, term, annotations):
+		if term.annotations is annotations:
+			return term
+		else:
+			return visitor.Visitor.visit(self, term, annotations)
+		
+	def visitInt(self, term, annotations):
+		return term.factory.makeInt(term.value, annotations)
+
+	def visitReal(self, term, annotations):
+		return term.factory.makeReal(term.value, annotations)
+		
+	def visitStr(self, term, annotations):
+		return term.factory.makeStr(term.value, annotations)
+	
+	def visitNil(self, term, annotations):
+		return term.factory.makeNil(annotations)
+
+	def visitCons(self, term, annotations):
+		return term.factory.makeCons(term.head, term.tail, annotations)
+
+	def visitAppl(self, term, annotations):
+		return term.factory.makeAppl(term.name, term.args, annotations)
+
+	def visitWildcard(self, term, annotations):
+		return term.factory.makeWildcard(annotations)
+		
+	def visitVar(self, term, annotations):
+		return term.factory.makeVar(term.name, term.pattern, annotations)
+
+annotate = Annotator().visit
+
+
+class Maker(visitor.IncrementalVisitor):
+	
+	def __init__(self, args, kargs):
+		self.args = list(args)
+		self.kargs = kargs
+	
+	def visitLit(self, term):
+		return term
+	
+	def visitNil(self, term):
+		return term
+	
+	def visitHead(self, term):
+		return self.visit(term)
+	
+	def visitTail(self, term):
+		return self.visit(term)
+		
+	def visitName(self, term):
+		return self.visit(term)
+	
+	def visitArgs(self, term):
+		return self.visit(term)
+	
+	def visitWildcard(self, term):
+		try:
+			return self.args.pop(0)
+		except IndexError:
+			raise TypeError('insufficient number of arguments')
+			
+	def visitVar(self, term):
+		try:
+			# TODO: do something with the pattern here?
+			return self.kargs[term.name]
+		except KeyError:
+			raise ValueError('undefined term variable %s' % term.name)
 	
 
 class Constness(visitor.Visitor):

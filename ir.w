@@ -513,7 +513,7 @@ header {
 def prettyPrint(term):
 	'''Convert an aterm containg C code into its box representation.'''
 
-	boxer = PrettyPrinter(term.getFactory())
+	boxer = PrettyPrinter(term.factory)
 	box = boxer.convert(term)
 	return box
 

@@ -158,6 +158,6 @@ class Factory(object):
 		for name, value in kargs.iteritems():
 			_kargs[name] = self.coerce(value, "'" + name + "'")
 
-		return _pattern._make(_args, _kargs)
+		return _pattern.make(*_args, **_kargs)
 
 
