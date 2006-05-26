@@ -104,7 +104,7 @@ class PatternComparator(Comparator):
 		try:
 			value = self.kargs[name]
 		except KeyError:
-			if not PatternComparator([], self.kargs)(term.pattern, other):
+			if not PatternComparator([], self.kargs).visit(term.pattern, other):
 				return False
 			else:
 				self.kargs[name] = other
@@ -209,7 +209,7 @@ class Constness(visitor.Visitor):
 		return False
 
 
-isConstant = Constness()
+isConstant = Constness().visit
 
 
 class Hash(visitor.Visitor):
@@ -274,7 +274,7 @@ class _GetSymbol(visitor.Visitor):
 		return term.name
 
 
-_getSymbol = _GetSymbol()
+_getSymbol = _GetSymbol().visit
 
 
 class TextWriter(Writer):

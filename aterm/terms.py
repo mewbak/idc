@@ -49,7 +49,7 @@ class Term(object):
 	
 	def getHash(self):
 		'''Generate a hash value for this term.'''
-		return _helpers.Hash()(self)
+		return _helpers.Hash().visit(self)
 
 	def __hash__(self):
 		'''Shorthand for getHash().'''
@@ -77,8 +77,8 @@ class Term(object):
 		if isinstance(other, basestring):
 			other = self.factory.parse(other)
 		
-		compare = _helpers.PatternComparator(args, kargs)
-		return compare(self, other)
+		comparator = _helpers.PatternComparator(args, kargs)
+		return comparator.visit(self, other)
 	
 	def getAnnotation(self, label):
 		'''Gets an annotation associated with label'''
