@@ -264,7 +264,7 @@ class List(Term):
 		return self.factory.makeCons(element, self)
 	
 	def append(self, element):
-		return self.extend(self.factory.makeConst(element, self.factory.makeNil()))
+		return self.extend(self.factory.makeCons(element, self.factory.makeNil()))
 		
 	def extend(self, element):
 		raise NotImplementedError
@@ -347,7 +347,7 @@ class Cons(List):
 	def extend(self, tail):
 		return self.factory.makeCons(
 			self.head, 
-			self.tail.append(tail),
+			self.tail.extend(tail),
 			self.annotations
 		)
 		
