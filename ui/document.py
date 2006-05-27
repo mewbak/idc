@@ -10,6 +10,8 @@ import ir
 import path
 
 
+# TODO: user more versatile signal notification (a la GObject)
+
 class TermState(observer.State):
 	"""Intermediate representation of the program using aterms."""
 	

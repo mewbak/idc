@@ -117,21 +117,32 @@ class MainApp(glade.GladeApp):
 		print path
 		self.document.selection.set((path, path))
 		
-		# See menu.py from PyGTK Tutorial
+		return False
+
+	def on_textview_populate_popup(self, textview, menu):
 		
 		popup = gtk.Menu()
-		refactorings = self.refactoring_factory.applicables(self.document.term.get(), self.document.selection.get())
-		empty = True
-		for refactoring in refactorings:
-			print refactoring.name()
-			menuitem = gtk.MenuItem(refactoring.name())
-			popup.append(menuitem)
-			menuitem.connect("activate", self.on_menuitem_activate, refactoring)
-			menuitem.show()
-			empty = False
 		
-		if not empty:
-			popup.popup(None, None, None, event.button, event.time)
+		term = self.document.term.get()
+		selection = self.document.selection.get()
+		
+		for refactoring in self.refactoring_factory.refactorings.itervalues():
+			menuitem = gtk.MenuItem(refactoring.name())
+			if refactoring.applicable(term, selection):
+				menuitem.connect("activate", self.on_menuitem_activate, refactoring)
+			else:
+				menuitem.set_state(gtk.STATE_INSENSITIVE)
+			menuitem.show()
+			popup.append(menuitem)
+	
+		menuitem = gtk.MenuItem()
+		menuitem.show()
+		menu.prepend(menuitem)
+
+		menuitem = gtk.MenuItem("Refactor")
+		menuitem.set_submenu(popup)
+		menuitem.show()
+		menu.prepend(menuitem)
 		
 		return True
 
