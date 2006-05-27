@@ -46,22 +46,23 @@ class TestCase(unittest.TestCase):
 			
 			self.failUnlessEqual(result, expectedResult, msg = '%s => %r (!= %s)' % (targetStr, result, expectedResult))
 	
-	catTestCases = [
-		(('[]', '[1,2,3]'), '[1,2,3]'),
-		(('[1,2,3]', '[4,5,6]'), '[1,2,3,4,5,6]'),
-		(('[1,2]', '[3,4]', '[5,6]'), '[1,2,3,4,5,6]'),
-		(('[1,2,3]',), '[1,2,3]'),
-		((), '[]'),
+	catManyTestCases = [
+		('[]', '[]'),
+		('[[1,2,3,4,5,6]]', '[1,2,3,4,5,6]'),
+		('[[1,2,3],[4,5,6]]', '[1,2,3,4,5,6]'),
+		('[[1,2],[3,4],[5,6]]', '[1,2,3,4,5,6]'),
+		('[[1,2,3],[]]', '[1,2,3]'),
+		('[[],[1,2,3]]', '[1,2,3]'),
 	]
 	
-	def testCat(self):
-		for argsStr, expectedResultStr in self.catTestCases:
+	def testCatMany(self):
+		for targetStr, expectedResultStr in self.catManyTestCases:
+			target = self.factory.parse(targetStr)
 			expectedResult = self.factory.parse(expectedResultStr)
-			args = [self.factory.parse(argStr) for argStr in argsStr]
 			
-			result = self.walker._cat(*args)
+			result = self.walker._catMany(target)
 			
-			self.failUnlessEqual(result, expectedResult, msg = '%s => %r (!= %s)' % ('+'.join(argsStr), result, expectedResult))
+			self.failUnlessEqual(result, expectedResult, msg = '%s => %r (!= %s)' % (targetStr, result, expectedResult))
 			
 
 if __name__ == '__main__':
