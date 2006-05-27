@@ -36,7 +36,7 @@ class Rename(refactoring.Refactoring):
 	def apply(self, term, args):
 		factory = term.factory
 		src, dst = args
-		import transformations as transf
+		import transf
 		txn = transf.Rule(
 			factory.make("Sym(_)", src),
 			factory.make("Sym(_)", dst),

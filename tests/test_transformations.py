@@ -5,7 +5,7 @@ import unittest
 
 import aterm
 
-from transformations import *
+from transf import *
 
 
 def exxer(term):

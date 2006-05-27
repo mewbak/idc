@@ -5,7 +5,7 @@
 import aterm
 import aterm.visitor
 import walker
-import transformations
+import transf
 
 
 class Annotator(aterm.visitor.IncrementalVisitor):
@@ -68,9 +68,9 @@ class IndexFetch(aterm.visitor.Visitor):
 
 def PathFetch(path):
 	'''Transformation which fetchs sub-term with the specified path.'''
-	result = transformations.Ident()
+	result = transf.Ident()
 	for index in path:
-		result = transformations.And(IndexFetch(int(index)),result)
+		result = transf.And(IndexFetch(int(index)),result)
 	return result
 
 
@@ -79,11 +79,11 @@ def fetch(term, path):
 	return PathFetch(path)(term)
 
 
-class Index(aterm.visitor.IncrementalVisitor, transformations.Transformation):
+class Index(aterm.visitor.IncrementalVisitor, transf.Transformation):
 
 	def __init__(self, operand, index):
 		aterm.visitor.IncrementalVisitor.__init__(self)
-		transformations.Transformation.__init__(self)
+		transf.Transformation.__init__(self)
 		self.operand = operand
 		self.index = index
 		
@@ -155,7 +155,7 @@ def split(term, index):
 	return _Splitter(index)(term)
 
 
-class Range(transformations.Transformation):
+class Range(transf.Transformation):
 	'''Apply a transformation on a subterm range.'''
 
 	def __init__(self, operand, start, end):

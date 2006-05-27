@@ -17,7 +17,7 @@ import sys
 
 import aterm
 
-from transformations import Failure
+from transf import Failure
 
 
 class Walker:

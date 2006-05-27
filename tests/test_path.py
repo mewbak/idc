@@ -4,7 +4,7 @@
 import unittest
 
 import aterm
-import transformations
+import transf
 import path
 
 
@@ -88,7 +88,7 @@ class TestCase(unittest.TestCase):
 	
 	def testPath(self):
 		self.checkTransformation(
-			lambda _path: path.Path(transformations.Rule('x', 'X(x)'), _path),
+			lambda _path: path.Path(transf.Rule('x', 'X(x)'), _path),
 			self.pathTestCases
 		)
 
@@ -129,7 +129,7 @@ class TestCase(unittest.TestCase):
 			input = self.factory.parse(inputStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
-			result = path.Range(transformations.Map(transformations.Rule('x', 'X(x)')), start, end)(input)
+			result = path.Range(transf.Map(transf.Rule('x', 'X(x)')), start, end)(input)
 			
 			self.failUnlessEqual(result, expectedResult)
 
