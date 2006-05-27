@@ -280,16 +280,22 @@ class Match(Transformation):
 
 class Rule(Transformation):
 	
-	def __init__(self, matchpat, buildpat):
-		self.match = matchpat
-		self.build = buildpat
+	def __init__(self, match_pattern, build_pattern):
+		factory = aterm.Factory()
+		if isinstance(match_pattern, basestring):
+			match_pattern = factory.parse(match_pattern)
+		if isinstance(build_pattern, basestring):
+			build_pattern = factory.parse(build_pattern)
+			
+		self.match_pattern = match_pattern
+		self.build_pattern = build_pattern
 	
 	def __call__(self, term):
 		factory = term.factory
 		args = []
 		kargs = {}
-		if factory.match(self.match, term, args, kargs):
-			return factory.make(self.build, *args, **kargs)
+		if self.match_pattern.match(term, args, kargs):
+			return self.build_pattern.make(*args, **kargs)
 		else:
 			raise Failure
 

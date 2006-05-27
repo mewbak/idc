@@ -82,6 +82,10 @@ test_ir: tests/test_ir.py # ...
 test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
 	$(PYTHON) $< -v
 
+test_refactoryings: $(filter-out $(wildcard refactoring/_*.py),$(wildcard refactoring/*.py))
+# TODO: automate this from a python file
+	$(foreach REFACTORING,$^,$(PYTHON) $(REFACTORING) -v ;)
+
 examples:
 	$(MAKE) -C $@
 

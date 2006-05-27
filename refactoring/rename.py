@@ -1,9 +1,8 @@
 """Rename symbols globally."""
 
-header {
+
 import refactoring
 import path
-import unittest
 
 
 class Rename(refactoring.Refactoring):
@@ -35,23 +34,20 @@ class Rename(refactoring.Refactoring):
 		return args
 
 	def apply(self, term, args):
+		factory = term.factory
 		src, dst = args
-		walker = Renamer(term.factory)
-		return walker.rename(term, src, dst)
+		import transformations as transf
+		txn = transf.Rule(
+			factory.make("Sym(_)", src),
+			factory.make("Sym(_)", dst),
+		)
+		txn = transf.InnerMost(txn)
+		return txn(term)
 
-}
 
-class Renamer:
 
-	rename(src, dst)
-		: Sym(name) { $name.isEquivalent($src) }? -> Sym(dst)
-		| []
-		| [h, *t] -> [:rename(h, src, dst), *:rename*(t, src, dst)]
-		| f(*a) -> f(*:rename*(a, src, dst))
-		| _
-		;
+import unittest
 
-header {
 
 class TestCase(unittest.TestCase):
 	
@@ -78,9 +74,6 @@ class TestCase(unittest.TestCase):
 			
 			self.failUnlessEqual(result, expectedResult)
 
+
 if __name__ == '__main__':
 	unittest.main()
-
-}
-
-# vim:set syntax=python:
