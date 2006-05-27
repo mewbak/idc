@@ -13,28 +13,11 @@ the same walker method's do not necessarily yield the same results.
 '''
 
 
-import aterm
-
 import sys
 
+import aterm
 
-class Failure(Exception):
-	'''Failure to transform a term.'''
-	
-	def __init__(self, msg = None, *args):
-		Exception.__init__(self, *args)
-		self.msg = msg
-	
-	def __str__(self):
-		if self.msg is None:
-			return Exception.__str__(self)
-		else:
-			if len(self.args):
-				return self.msg % self.args
-			else:
-				return self.msg
-
-# TODO: create/use another exception for fatal/assertion errors
+from transformations import Failure
 
 
 class Walker:
@@ -58,18 +41,23 @@ class Walker:
 	#	
 	#	raise NotImplementedError
 
-	def _fail(self, target, msg = None, fatal = False):
+	def _fail(self, target, msg = None):
+		'''Signals a transformation failure, with an optional error message.'''
 		if msg is None:
-			msg = "failed to transform '%r'"
+			msg = 'failed to transform term'
 		else:
-			self._str(msg)
-			msg = msg.getValue().replace('%', '%%') + ": '%r'"
-		if fatal:
-			sys.stderr.write(msg % target + '\n')
+			msg = msg.getValue()
+		msg = '%s: %r' % (msg, target)
 		raise Failure(msg, target)
 	
-	def _fatal(self, target, msg = None):
-		self._fail(target, msg, True)
+	def _assertFail(self, target, msg = None):
+		'''Signals an assertion failure, with an optional error message.'''
+		if msg is None:
+			msg = 'unexpected term'
+		else:
+			msg = msg.getValue()
+		msg = '%s: %r' % (msg, target)
+		raise AssertionError(msg)
 	
 	def _int(self, target):
 		'''Enforce the target is an integer term.'''

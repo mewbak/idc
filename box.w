@@ -136,7 +136,7 @@ class Writer:
 				self.write_box($b)
 				self.formatter.handle_tag_end($n.getValue())
 			}
-		| :_fatal("bad box")
+		| :_assertFail("bad box")
 		;
 
 	write_vbox
@@ -163,7 +163,7 @@ class Writer:
 				self.write_box($b)
 				self.formatter.write_eol()
 			}
-		| :_fatal("bad box")
+		| :_assertFail("bad box")
 		;
 
 

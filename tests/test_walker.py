@@ -17,9 +17,18 @@ class TestCase(unittest.TestCase):
 	def testFail(self):	
 		try:
 			self.walker._fail(self.target)
-			self.fail()
 		except walker.Failure:
 			pass
+		else:
+			self.fail()
+	
+	def testAssertFail(self):	
+		try:
+			self.walker._assertFail(self.target)
+		except AssertionError:
+			pass
+		else:
+			self.fail()
 	
 	mapTestCases = [
 		('[]', lambda x: x.factory.makeInt(x.getValue()*2), [], {}, '[]'),

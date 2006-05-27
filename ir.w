@@ -241,7 +241,7 @@ class PrettyPrinter:
 			-> :semi(:kw("continue"))
 		| Asm(opcode, operands) 
 			-> :semi(H([:kw("asm"),"(", :commas([:lit(opcode), *:expr*(operands)]), ")"]))
-		| :_fatal("bad statement term")
+		| :_assertFail("bad statement term")
 		;
 	
 	block
@@ -282,7 +282,7 @@ class PrettyPrinter:
 			-> H([:type(type), "[", "]"])
 		| Void
 			-> :kw("void")
-		| :_fatal("bad type term")
+		| :_assertFail("bad type term")
 		;
 	
 	# TODO: at some point these names must be derived from architecture specs
@@ -326,7 +326,7 @@ class PrettyPrinter:
 			-> H([:op("*"), :exprP(_,addr)])
 		| Ref(expr)
 			-> H([:op("&"), :exprP(_,expr)])
-		| :_fatal("bad expression term")
+		| :_assertFail("bad expression term")
 		;
 
 	exprP(child)
@@ -394,7 +394,7 @@ class PrettyPrinter:
 			{ $$ = 13 }		
 		| Call(addr, args)
 			{ $$ = 0 }
-		| :_fatal("bad expression term")
+		| :_assertFail("bad expression term")
 		;
 
 	unaryOpPrec
