@@ -32,6 +32,7 @@ foreach $ARG (@ARGV) {
 
 	print join(" ", @targets) . ': ' . join(" ", @depends) . "\n";
 	print "\t\$(ANTLR) -o \$(\@D) \$<\n";
+	print "\t\@touch " . join(" ", @targets) . "\n";
 	print "\n";
 
 	push @all, @targets;
