@@ -76,7 +76,7 @@ test_wc: tests/test_wc.py
 test_box: tests/test_box.py box.py
 	$(PYTHON) $< -v
 
-test_ir: tests/test_ir.py ir.py
+test_ir: tests/test_ir.py # ...
 	$(PYTHON) $< -v
 
 test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
