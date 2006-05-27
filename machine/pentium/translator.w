@@ -38,7 +38,7 @@ class Translator:
 					tmp = self.stmt(astmt)
 					for stmt in tmp:
 						res.append(stmt)
-				$$ = self.factory.make("Module(_)", res)
+				$$ = $!.make("Module(_)", res)
 			}
 		;
 	
@@ -59,9 +59,9 @@ class Translator:
 				for temp in temps:
 					self.tmp_no += 1
 					name = "tmp%d" % self.tmp_no
-					kargs[temp] = self.factory.make("Sym(_)", name)
+					kargs[temp] = $!.make("Sym(_)", name)
 
-				res = self.factory.make(pattern, **kargs)
+				res = $!.make(pattern, **kargs)
 				$$ = res
 			}
 		| _ 

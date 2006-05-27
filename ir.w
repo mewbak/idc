@@ -475,8 +475,8 @@ class PrettyPrinter:
 		: _
 			{
 				try:
-					p = str($t.getAnnotation(self.factory.parse('Path')))
-					$$ = self.factory.make('T("path",_,_)', p, $<)
+					p = str($t.getAnnotation($!.parse('Path')))
+					$$ = $!.make('T("path",_,_)', p, $<)
 				except ValueError:
 					$$ = $<				
 			}
@@ -501,11 +501,11 @@ class PrettyPrinter:
 
 	repr
 		: s:_int
-			{ $$ = self.factory.makeStr(repr($s.getValue())) }
+			{ $$ = $!.makeStr(repr($s.getValue())) }
 		| s:_real 
-			{ $$ = self.factory.makeStr(repr($s.getValue())) }
+			{ $$ = $!.makeStr(repr($s.getValue())) }
 		| s:_str
-			{ $$ = self.factory.makeStr('"' + repr($s.getValue())[1:-1] + '"') }
+			{ $$ = $!.makeStr('"' + repr($s.getValue())[1:-1] + '"') }
 		;
 	
 

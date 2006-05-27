@@ -160,6 +160,8 @@ ACTION_INTERPOLATION
 			{ text = "_n" }
 	    | '<'
 			{ text = "_t" }
+	    | '!'
+			{ text = "_f" }
 		)
 			{ $setText(text) }
 	;
@@ -470,7 +472,7 @@ rule
 			}
         ( docstring )?
 			{
-                self.writeln("_f = self.factory")
+                self.writeln("_f = _t.factory")
                 self.import_args(#args)
             }
 		( action )?

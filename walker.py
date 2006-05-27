@@ -24,16 +24,9 @@ class Walker:
 	'''Aterm walker base class.'''
 
 	def __init__(self, factory):
+		# TODO: eliminate this
 		self.factory = factory
-		self._setup()
 	
-	def _setup(self):
-		'''Called by the constructor method after setting the factory attribute to
-		perform initial setup. It may be used, for example, parse/make aterm
-		patterns.'''
-
-		pass
-
 	#def __call__(self, root):
 	#	'''Apply this walker transformation to the root aterm.  Since a walker may
 	#	store context, this method should be called only once in the object's
@@ -114,7 +107,7 @@ class Walker:
 			raise TypeError('not a list term: %r' % target)
 		if target.isEmpty():
 			return tail
-		return self.factory.makeCons(
+		return target.factory.makeCons(
 				target.getHead(), 
 				self._cat(target.getTail(), tail),
 				target.getAnnotations()

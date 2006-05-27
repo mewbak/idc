@@ -127,7 +127,7 @@ class WalkerTestSuite:
 
 	testProductionAction
 		: Plus(x,y)
-			{ $$ = self.factory.makeInt($x.getValue() + $y.getValue()) }
+			{ $$ = $!.makeInt($x.getValue() + $y.getValue()) }
 		;
 	
 	{

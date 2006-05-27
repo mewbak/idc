@@ -199,7 +199,7 @@ class Term2Box:
 		| [] -> H(["[", "]"], 0)
 		| [h,*t] -> H(["[", "]"], 0)
 		| _
-			{ $$ = self.factory.make("_", repr($<.getValue())) }
+			{ $$ = $!.make("_", repr($<.getValue())) }
 		;
 	
 	convert_list
