@@ -50,7 +50,6 @@ class Factory:
 					module = getattr(module, name)
 					for nam, cls in module.__dict__.iteritems():
 						try:
-							print issubclass(cls, Refactoring)
 							if issubclass(cls, Refactoring):
 								refactoring = cls()
 								self.refactorings[refactoring.name()] = refactoring
@@ -63,7 +62,6 @@ class Factory:
 		selection context.
 		"""
 		for refactoring in self.refactorings.itervalues():
-			print refactoring.name() + "..."
 			if refactoring.applicable(term, selection):
 				yield refactoring
 		raise StopIteration

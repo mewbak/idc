@@ -240,6 +240,8 @@ class InspectorWindow(glade.GladeWindow):
 			self.on_term_update(document.term)
 		if document.selection.get() is not None:
 			self.on_selection_update(document.selection)
+			
+		self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 		
 	def on_term_update(self, term):
 		term = term.get()
@@ -250,18 +252,24 @@ class InspectorWindow(glade.GladeWindow):
 
 	def on_selection_update(self, selection):
 		start, end = selection.get()
-		path = start
 		
+		start = self.get_path(start)
+		end = self.get_path(end)
+		
+		print start, end  
+		if start is not None and end is not None:
+			self.treeview.get_selection().select_range(start, end)
+			self.treeview.scroll_to_cell(start)
+			#self.treeview.set_cursor(start)
+	
+	def get_path(self, path):
 		if path is not None:
-			path = [i.getValue() for i in path]
+			path = [int(i) for i in path]
 			path.reverse()
 			path = tuple([0] + path)
-		
-			print path 
-			
-			#self.treeview.get_selection().select_path(path)
-			self.treeview.scroll_to_cell(path)
-			self.treeview.set_cursor(path)
+			return path
+		else:
+			return None
 	
 	def on_inspector_window_destroy(self, event):
 		document = self.main_window.document

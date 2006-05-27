@@ -82,44 +82,31 @@ class MainApp(glade.GladeApp):
 		self.quit()
 
 	def on_textview_event(self, textview, event):
-		#if event.type != gtk.gdk.BUTTON_RELEASE:
-		if event.type != gtk.gdk.BUTTON_PRESS:
-			return False
-		if event.button != 3:
-			return False
-		buffer = textview.get_buffer()
-
-		# we shouldn't follow a link if the user has selected something
-		try:
-			start, end = buffer.get_selection_bounds()
-		except ValueError:
-			# If there is nothing selected, None is return
-			pass
-		else:
-			if start.get_offset() != end.get_offset():
-				#return False
-				pass
-
-		x, y = textview.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, int(event.x), int(event.y))
-		iter = textview.get_iter_at_location(x, y)
-
-		path = self.get_path_at_iter(iter)
-		if 0: #path is not None:
-			dialog = gtk.MessageDialog(
-				parent=None, 
-				flags=0, 
-				type=gtk.MESSAGE_INFO, 
-				buttons=gtk.BUTTONS_OK, 
-				message_format=str(path)
-			)
-			dialog.run()
-			dialog.destroy()
-		print path
-		self.document.selection.set((path, path))
+		'''Update the selection paths.'''
 		
+		buffer = textview.get_buffer()
+					
+		if \
+				(event.type == gtk.gdk.BUTTON_RELEASE and event.button == 1) or \
+				(event.type == gtk.gdk.BUTTON_PRESS and event.button == 3) :
+			
+			try:
+				start, end = buffer.get_selection_bounds()
+			except ValueError:
+				# If there is nothing selected, None is return
+				x, y = textview.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, int(event.x), int(event.y))
+				iter = textview.get_iter_at_location(x, y)
+				path = self.get_path_at_iter(iter)
+				self.document.selection.set((path, path))
+			else:
+				start = self.get_path_at_iter(start)
+				end = self.get_path_at_iter(end)
+				self.document.selection.set((start, end))
+			
 		return False
 
 	def on_textview_populate_popup(self, textview, menu):
+		'''Populate the textview popup menu.'''
 		
 		popup = gtk.Menu()
 		
