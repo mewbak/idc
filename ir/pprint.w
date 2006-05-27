@@ -31,7 +31,11 @@ class PrettyPrinter:
 	
 	stmt_
 		: VarDef(type, name, value)
-		| FuncDef(type, name, args)
+		| FuncDef(type, name, args, body)
+			-> V([
+				H([:type(type), " ", name, "(", :commas(args), ")"]),
+				:block(body)
+			])
 		| Assign(type, dst, src)
 			-> :semi(H([:expr(dst)," ","="," ",:expr(src)]))
 		| If(cond, ifTrue, NoOp)

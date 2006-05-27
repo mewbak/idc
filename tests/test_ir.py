@@ -53,6 +53,7 @@ class TestCase(unittest.TestCase):
 			('Label("label")', 'label:'),
 			('Asm("ret",[])', 'asm("ret");'),
 			('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);'),
+			('FuncDef(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),
 		],
 		
 		
