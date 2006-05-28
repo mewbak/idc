@@ -264,8 +264,8 @@ class List(Term):
 
 	# TODO: write an __iter__ method
 		
-	def insert(self, element):
-		return self.factory.makeCons(element, self)
+	def insert(self, index, element):
+		raise NotImplementedError
 	
 	def append(self, element):
 		return self.extend(self.factory.makeCons(element, self.factory.makeNil()))
@@ -305,6 +305,12 @@ class Nil(List):
 	def __getitem__(self, index):
 		raise IndexError
 
+	def insert(self, index, element):
+		if not index:
+			return self.factory.makeCons(element, self)
+		else:
+			raise IndexError
+		
 	def extend(self, tail):
 		return tail
 		
@@ -348,6 +354,16 @@ class Cons(List):
 		else:
 			return self.tail.__getitem__(index - 1)
 
+	def insert(self, index, element):
+		if not index:
+			return self.factory.makeCons(element, self)
+		else:
+			return self.factory.makeCons(
+				self.head,
+				self.tail.insert(index - 1, element),
+				self.annotations
+			)
+		
 	def extend(self, tail):
 		return self.factory.makeCons(
 			self.head, 
