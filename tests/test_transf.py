@@ -197,6 +197,17 @@ class TestCase(unittest.TestCase):
 	def testTopdown(self):
 		self.checkMetaTransf(TopDown, self.topDownTestCases)
 
+	spitTestCases = (
+		('[1,2,3]', 'FAILURE'),
+		('[X,1,2,3]', '[[],X,[1,2,3]]'),
+		('[1,X,2,3]', '[[1,],X,[2,3]]'),
+		('[1,2,X,3]', '[[1,2,],X,[3]]'),
+		('[1,2,3,X]', '[[1,2,3],X,[]]'),
+	)
+
+	def testSplit(self):
+		self.checkTransf(Split(Match('X')), self.spitTestCases)
+
 	# TODO: testInnerMost
 
 

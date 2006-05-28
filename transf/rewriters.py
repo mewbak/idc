@@ -15,15 +15,18 @@ from transf.base import *
 
 class Match(Transformation):
 	
-	def __init__(self, pattern):
+	def __init__(self, pattern, **kargs):
 		self.pattern = pattern
+		self.kargs = kargs
 
 	def __call__(self, term):
 		factory = term.factory
-		if factory.match(self.pattern, term):
+		args = []
+		kargs = self.kargs.copy()
+		if factory.match(self.pattern, term, args, kargs):
 			return term
 		else:
-			raise Failure		
+			raise Failure	
 
 
 class Rule(Transformation):
