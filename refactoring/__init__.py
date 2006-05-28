@@ -70,3 +70,28 @@ class Factory:
 		"""Return the refactoring with the specified name."""
 		return self.refactorings[name]
 
+
+import unittest
+
+
+class TestCase(unittest.TestCase):
+	'''Base class for refactoring unittests.'''
+	
+	cls = Refactoring
+	
+	def setUp(self):
+		import aterm
+		self.factory = aterm.Factory()
+		self.refactoring = self.cls()
+	
+	applyTestCases = []
+	
+	def testApply(self):			
+		for termStr, argsStr, expectedResultStr in self.applyTestCases:
+			term = self.factory.parse(termStr)
+			args = self.factory.parse(argsStr)
+			expectedResult = self.factory.parse(expectedResultStr)
+			
+			result = self.refactoring.apply(term, args)
+			
+			self.failUnlessEqual(result, expectedResult)
