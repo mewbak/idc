@@ -37,8 +37,9 @@ def translate(filename):
 	term = path.annotate(term)
 	pretty_print(term)
 	print
-	
+
 	print
+
 
 def main():
 	for arg in sys.argv[1:]:
