@@ -56,7 +56,8 @@ tests: \
 	test_walker \
 	test_wc \
 	test_box \
-	test_ir
+	test_ir \
+	test_refactoring
 
 test_aterm: tests/test_aterm.py aterm/lexer.py aterm/parser.py
 	$(PYTHON) $< -v
@@ -82,9 +83,8 @@ test_ir: tests/test_ir.py all # ...
 test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
 	$(PYTHON) $< -v
 
-test_refactoryings: $(filter-out $(wildcard refactoring/_*.py),$(wildcard refactoring/*.py))
-# TODO: automate this from a python file
-	$(foreach REFACTORING,$^,$(PYTHON) $(REFACTORING) -v ;)
+test_refactoring: tests/test_refactoring.py all # ...
+	$(PYTHON) $< -v
 
 examples:
 	$(MAKE) -C $@
