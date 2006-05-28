@@ -31,10 +31,6 @@ all:
 .PHONY: default all
 
 
-# ANTLR parser generation
-
-
-
 # Aterm walker generation
 
 all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
@@ -42,6 +38,8 @@ all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 %.py: %.w util/wc/wc.py util/wc/lexer.py util/wc/parser.py util/wc/compiler.py
 	$(PYTHON) util/wc/wc.py -o $@ $<
 
+
+# SSL compilation
 
 %.py: %.ssl util/sslc/sslc.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py util/sslc/compiler.py
 	$(PYTHON) util/sslc/sslc.py -o $@ $<
@@ -51,7 +49,7 @@ all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 
 tests: \
 	test_aterm \
-	test_transformations \
+	test_transf \
 	test_path \
 	test_walker \
 	test_wc \
@@ -59,32 +57,10 @@ tests: \
 	test_ir \
 	test_refactoring
 
-test_aterm: tests/test_aterm.py aterm/lexer.py aterm/parser.py
-	$(PYTHON) $< -v
+test_%: all
+	$(PYTHON) tests/test_$*.py -v
 
-test_transformations: tests/test_transformations.py
-	$(PYTHON) $< -v
-
-test_path: tests/test_path.py
-	$(PYTHON) $< -v
-
-test_walker: tests/test_walker.py
-	$(PYTHON) $< -v
-
-test_wc: tests/test_wc.py
-	$(PYTHON) $< -v
-
-test_box: tests/test_box.py box.py
-	$(PYTHON) $< -v
-
-test_ir: tests/test_ir.py all # ...
-	$(PYTHON) $< -v
-
-test_ssl: tests/test_ssl.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py
-	$(PYTHON) $< -v
-
-test_refactoring: tests/test_refactoring.py all # ...
-	$(PYTHON) $< -v
+.PHONY: test_%
 
 examples:
 	$(MAKE) -C $@

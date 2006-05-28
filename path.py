@@ -70,7 +70,7 @@ def PathFetch(path):
 	'''Transformation which fetchs sub-term with the specified path.'''
 	result = transf.Ident()
 	for index in path:
-		result = transf.And(IndexFetch(int(index)),result)
+		result = IndexFetch(int(index)) & result
 	return result
 
 

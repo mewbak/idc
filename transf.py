@@ -43,16 +43,16 @@ class Transformation:
 		return Not(self)
 	
 	def __or__(self, other):
-		return Or(self, other)
+		return Choice(self, other)
 
 	def __ror__(self, other):
-		return Or(other, self)
+		return Choice(other, self)
 
 	def __and__(self, other):
-		return And(self, other)	
+		return Composition(self, other)	
 
 	def __rand__(self, other):
-		return And(other, self)
+		return Composition(other, self)
 
 
 class Adaptor(Transformation):
@@ -112,6 +112,16 @@ class Try(Unary):
 			return term
 
 
+class Where(Unary):
+	'''Succeeds if the transformation succeeds, but returns the original 
+	term.
+	'''
+	
+	def __call__(self, term):
+		self.operand(term)
+		return term
+
+
 class Binary(Transformation):
 	'''Base class for binary operations on transformations.'''
 	
@@ -121,7 +131,7 @@ class Binary(Transformation):
 		self.roperand = roperand
 
 
-class Or(Binary):
+class Choice(Binary):
 	'''Attempt the first transformation, transforming the second on failure.'''
 	
 	def __call__(self, term):
@@ -131,12 +141,19 @@ class Or(Binary):
 			return self.roperand(term)
 
 
-class And(Binary):
+class Composition(Binary):
 	'''Transformation composition.'''
 	
 	def __call__(self, term):
 		return self.roperand(self.loperand(term))
 
+
+def Repeat(operand):
+	'''Applies a transformation until it fails.'''
+	result = Proxy()
+	result.operand = Try(operand & result)
+	return result
+	
 
 # TODO: write decorators for transformations
 
@@ -246,19 +263,19 @@ class Proxy(Unary):
 
 def BottomUp(operand):
 	result = Proxy(None)
-	result.operand = And(All(result), operand)
+	result.operand = All(result) & operand
 	return result
 
 
 def TopDown(operand):
 	result = Proxy(None)
-	result.operand = And(operand, All(result))
+	result.operand = operand & All(result)
 	return result
 
 
 def InnerMost(operand):
 	result = Proxy(None)
-	result.operand = BottomUp(Try(And(operand, result)))
+	result.operand = BottomUp(Try(operand & result))
 	return result
 
 
@@ -280,7 +297,7 @@ class Match(Transformation):
 
 class Rule(Transformation):
 	
-	def __init__(self, match_pattern, build_pattern):
+	def __init__(self, match_pattern, build_pattern, **kargs):
 		factory = aterm.Factory()
 		if isinstance(match_pattern, basestring):
 			match_pattern = factory.parse(match_pattern)
@@ -289,11 +306,12 @@ class Rule(Transformation):
 			
 		self.match_pattern = match_pattern
 		self.build_pattern = build_pattern
+		self.kargs = kargs
 	
 	def __call__(self, term):
 		factory = term.factory
 		args = []
-		kargs = {}
+		kargs = self.kargs.copy()
 		if self.match_pattern.match(term, args, kargs):
 			return self.build_pattern.make(*args, **kargs)
 		else:

@@ -75,17 +75,17 @@ class TestCase(unittest.TestCase):
 		self.checkTransf(Try(Ident()), self.identTestCases)
 		self.checkTransf(Try(Fail()), self.identTestCases)
 
-	def testOr(self):
-		self.checkTransf(Or(Ident(), Ident()), self.identTestCases)
-		self.checkTransf(Or(Ident(), Fail()), self.identTestCases)
-		self.checkTransf(Or(Fail(), Ident()), self.identTestCases)
-		self.checkTransf(Or(Fail(), Fail()), self.failTestCases)
+	def testChoice(self):
+		self.checkTransf(Choice(Ident(), Ident()), self.identTestCases)
+		self.checkTransf(Choice(Ident(), Fail()), self.identTestCases)
+		self.checkTransf(Choice(Fail(), Ident()), self.identTestCases)
+		self.checkTransf(Choice(Fail(), Fail()), self.failTestCases)
 		
-	def testAnd(self):
-		self.checkTransf(And(Ident(), Ident()), self.identTestCases)
-		self.checkTransf(And(Ident(), Fail()), self.failTestCases)
-		self.checkTransf(And(Fail(), Ident()), self.failTestCases)
-		self.checkTransf(And(Fail(), Fail()), self.failTestCases)
+	def testComposition(self):
+		self.checkTransf(Composition(Ident(), Ident()), self.identTestCases)
+		self.checkTransf(Composition(Ident(), Fail()), self.failTestCases)
+		self.checkTransf(Composition(Fail(), Ident()), self.failTestCases)
+		self.checkTransf(Composition(Fail(), Fail()), self.failTestCases)
 
 	listsInputs = [
 		'[]',
