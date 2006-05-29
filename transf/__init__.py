@@ -11,3 +11,6 @@ from transf.term import *
 from transf.combinators import *
 from transf.traversers import *
 from transf.rewriters import *
+
+from transf._factory import Factory as _Factory
+factory = _Factory()

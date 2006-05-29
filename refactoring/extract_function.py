@@ -40,10 +40,7 @@ class ExtractFunction(refactoring.Refactoring):
 			"[Label(name),*rest]",
 			"[FuncDef(Void,name,[],Block(rest))]",
 		)
-		txn = transf.Appl("Module", 
-			transf.List([ExtractBlock(txn,name)])
-		)
-
+		txn = transf.factory.Module(ExtractBlock(txn,name))
 		return txn(term)
 
 
