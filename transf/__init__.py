@@ -7,6 +7,7 @@ available at http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-0.16/manual/ .
 '''
 
 from transf.base import *
+from transf.term import *
 from transf.combinators import *
 from transf.traversers import *
 from transf.rewriters import *

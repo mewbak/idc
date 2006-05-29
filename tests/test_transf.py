@@ -13,15 +13,15 @@ class TestMixin:
 	def setUp(self):
 		self.factory = aterm.Factory()
 
-	def _testTransf(self, transformation, testCases):
+	def _testTransf(self, transf, testCases):
 		for termStr, expectedResultStr in testCases:
 			term = self.factory.parse(termStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
 			try:
-				result = transformation(term)
+				result = transf(term)
 			except Failure:
-				result = self.factory.parse("FAILURE")
+				result = self.factory.parse('FAILURE')
 			
 			self.failUnlessEqual(result, expectedResult)
 
@@ -79,6 +79,63 @@ class TestCombinators(TestMixin, unittest.TestCase):
 		self._testTransf(Composition(Ident(), Fail()), self.failTestCases)
 		self._testTransf(Composition(Fail(), Ident()), self.failTestCases)
 		self._testTransf(Composition(Fail(), Fail()), self.failTestCases)
+
+
+class TestTerm(TestMixin, unittest.TestCase):
+	
+	termInputs = [
+		'0',
+		'1',
+		'2',
+		'0.0',
+		'0.1',
+		'0.2',
+		'""',
+		'"a"',
+		'"b"',
+		'[]',
+		'[1]',
+		'[1,2]',
+		'[1,*]',
+		'[1,*x]',
+		'C',
+		'C(1)',
+		'C(1,*)',
+		'C(1,*a)',
+		'D',
+		'_',
+		'x',
+		'y',
+	]
+	
+	def _testMatchTransf(self, transf, *matchStrs):
+		testCases = []
+		for termStr in self.termInputs:
+			for matchStr in matchStrs:
+				if matchStr == termStr:
+					resultStr = termStr
+				else:
+					resultStr = 'FAILURE'
+				testCases.append((termStr, resultStr))
+		self._testTransf(transf, testCases)
+					
+	def testInt(self):
+		self._testMatchTransf(Int(1), '1')
+
+	def testReal(self):
+		self._testMatchTransf(Real(0.1), '0.1')
+
+	def testStr(self):
+		self._testMatchTransf(Str("a"), '"a"')
+
+	def testNil(self):
+		self._testMatchTransf(Nil(), '[]')
+	
+	def testCons(self):
+		self._testMatchTransf(Cons(Int(1), Nil()), '[1]')
+	
+	def testAppl(self):
+		self._testMatchTransf(Appl(Str("C"), Nil()), 'C')
 
 
 class TestTraversers(TestMixin, unittest.TestCase):
