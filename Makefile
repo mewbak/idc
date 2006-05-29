@@ -80,7 +80,7 @@ doc: box.py
 	epydoc \
 		--css blue \
 		aterm \
-		transformations \
+		transf \
 		path \
 		walker \
 		box \
