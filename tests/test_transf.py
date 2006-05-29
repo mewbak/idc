@@ -8,16 +8,6 @@ import aterm
 from transf import *
 
 
-def exxer(term):
-	return term.factory.make('X(_)', term)
-
-def greater_than_one(term):
-	if term.getType() == aterm.INT and term.getValue() > 1:
-		return term
-	else:
-		raise Failure
-
-
 class TestCase(unittest.TestCase):
 	
 	def setUp(self):
@@ -124,11 +114,11 @@ class TestCase(unittest.TestCase):
 			[(term, term == '[]' and '[]' or 'FAILURE') for term in self.listsInputs],
 		)
 		self.checkTransf(
-			Map(exxer),
+			Map(Rule('x', 'X(x)')),
 			zip(self.listsInputs, self.listsExxerOutputs)
 		)
 		self.checkTransf(
-			Map(Not(greater_than_one)),
+			Map(Match('1')),
 			zip(self.listsInputs, self.listsNotGreaterThanOneOutputs)
 		)
 
