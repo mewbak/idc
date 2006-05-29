@@ -8,18 +8,12 @@ import aterm
 from transf import *
 
 
-class TestCase(unittest.TestCase):
+class TestMixin:
 	
 	def setUp(self):
 		self.factory = aterm.Factory()
 
-	annotatorTestCases = [
-		('1', '1{Path,[]}'),
-		('[1,2]', '[1{Path,[0]},2{Path,[1]}]{Path,[]}'),
-		('C(1,2)', 'C(1{Path,[0]},2{Path,[1]}){Path,[]}'),
-	]
-	
-	def checkTransf(self, transformation, testCases):
+	def _testTransf(self, transformation, testCases):
 		for termStr, expectedResultStr in testCases:
 			term = self.factory.parse(termStr)
 			expectedResult = self.factory.parse(expectedResultStr)
@@ -31,13 +25,22 @@ class TestCase(unittest.TestCase):
 			
 			self.failUnlessEqual(result, expectedResult)
 
-	def checkMetaTransf(self, metaTransf, testCases):
+	def _testMetaTransf(self, metaTransf, testCases):
 		result = []
 		operands, rest = testCases
-		for inputStr, expectedResultStrs in rest.iteritems():
+		for termStr, expectedResultStrs in rest.iteritems():
 			for operand, expectedResultStr in zip(operands, expectedResultStrs):
-				self.checkTransf(metaTransf(operand), [(inputStr, expectedResultStr)])
+				self._testTransf(metaTransf(operand), [(termStr, expectedResultStr)])
 
+
+class TestCombinators(TestMixin, unittest.TestCase):
+	
+	annotatorTestCases = [
+		('1', '1{Path,[]}'),
+		('[1,2]', '[1{Path,[0]},2{Path,[1]}]{Path,[]}'),
+		('C(1,2)', 'C(1{Path,[0]},2{Path,[1]}){Path,[]}'),
+	]
+	
 	termsInputs = [
 		'1',
 		'0.1',
@@ -52,75 +55,47 @@ class TestCase(unittest.TestCase):
 	failTestCases = [(term, 'FAILURE') for term in termsInputs]
 
 	def testIdent(self):
-		self.checkTransf(Ident(), self.identTestCases)
+		self._testTransf(Ident(), self.identTestCases)
 
 	def testFail(self):
-		self.checkTransf(Fail(), self.failTestCases)
+		self._testTransf(Fail(), self.failTestCases)
 	
 	def testNot(self):
-		self.checkTransf(Not(Ident()), self.failTestCases)
-		self.checkTransf(Not(Fail()), self.identTestCases)
+		self._testTransf(Not(Ident()), self.failTestCases)
+		self._testTransf(Not(Fail()), self.identTestCases)
 	
 	def testTry(self):
-		self.checkTransf(Try(Ident()), self.identTestCases)
-		self.checkTransf(Try(Fail()), self.identTestCases)
+		self._testTransf(Try(Ident()), self.identTestCases)
+		self._testTransf(Try(Fail()), self.identTestCases)
 
 	def testChoice(self):
-		self.checkTransf(Choice(Ident(), Ident()), self.identTestCases)
-		self.checkTransf(Choice(Ident(), Fail()), self.identTestCases)
-		self.checkTransf(Choice(Fail(), Ident()), self.identTestCases)
-		self.checkTransf(Choice(Fail(), Fail()), self.failTestCases)
+		self._testTransf(Choice(Ident(), Ident()), self.identTestCases)
+		self._testTransf(Choice(Ident(), Fail()), self.identTestCases)
+		self._testTransf(Choice(Fail(), Ident()), self.identTestCases)
+		self._testTransf(Choice(Fail(), Fail()), self.failTestCases)
 		
 	def testComposition(self):
-		self.checkTransf(Composition(Ident(), Ident()), self.identTestCases)
-		self.checkTransf(Composition(Ident(), Fail()), self.failTestCases)
-		self.checkTransf(Composition(Fail(), Ident()), self.failTestCases)
-		self.checkTransf(Composition(Fail(), Fail()), self.failTestCases)
+		self._testTransf(Composition(Ident(), Ident()), self.identTestCases)
+		self._testTransf(Composition(Ident(), Fail()), self.failTestCases)
+		self._testTransf(Composition(Fail(), Ident()), self.failTestCases)
+		self._testTransf(Composition(Fail(), Fail()), self.failTestCases)
 
-	listsInputs = [
-		'[]',
-		'[1]',
-		'[1,2]',
-		'[1,2,3]',
-		'[1,2,*]',
-		'[1,2,*x]',
-	]
 
-	listsExxerOutputs = [
-		'[]',
-		'[X(1)]',
-		'[X(1),X(2)]',
-		'[X(1),X(2),X(3)]',
-		'[X(1),X(2),*]',
-		'[X(1),X(2),*x]',
-	]
-	
-	listsNotGreaterThanOneOutputs = [
-		'[]',
-		'[1]',
-		'FAILURE',
-		'FAILURE',
-		'FAILURE',
-		'FAILURE',
-	]
-	
+class TestTraversers(TestMixin, unittest.TestCase):
+
+	mapTestCases = (
+		[Ident(), Fail(), Rule('x', 'X(x)'), Match('1')],
+		{
+			'[]': ['[]', '[]', '[]', '[]'],
+			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
+			'[1,2]': ['[1,2]', 'FAILURE', '[X(1),X(2)]', 'FAILURE'],
+			'[1,*]': ['[1,*]', 'FAILURE', '[X(1),*]', '[1,*]'],
+			'[1,*x]': ['[1,*x]', 'FAILURE', '[X(1),*x]', '[1,*x]'],
+		}
+	)
+		
 	def testMap(self):
-		self.checkTransf(
-			Map(Ident()), 
-			[(term, term) for term in self.listsInputs],
-		)
-		self.checkTransf(
-			Map(Fail()), 
-			[(term, term == '[]' and '[]' or 'FAILURE') for term in self.listsInputs],
-		)
-		self.checkTransf(
-			Map(Rule('x', 'X(x)')),
-			zip(self.listsInputs, self.listsExxerOutputs)
-		)
-		self.checkTransf(
-			Map(Match('1')),
-			zip(self.listsInputs, self.listsNotGreaterThanOneOutputs)
-		)
+		self._testMetaTransf(Map, self.mapTestCases)
 
 	# TODO: testFetch
 	# TODO: testFilter
@@ -147,7 +122,7 @@ class TestCase(unittest.TestCase):
 	)
 	
 	def testAll(self):
-		self.checkMetaTransf(All, self.allTestCases)	
+		self._testMetaTransf(All, self.allTestCases)	
 
 	bottomUpTestCases = (
 		[Ident(), Fail(), Rule('x', 'X(x)')],
@@ -166,7 +141,7 @@ class TestCase(unittest.TestCase):
 	)
 	
 	def testBottomUp(self):
-		self.checkMetaTransf(BottomUp, self.bottomUpTestCases)
+		self._testMetaTransf(BottomUp, self.bottomUpTestCases)
 
 	topDownTestCases = (
 		[Ident(), Fail(), Try(Rule('f(x,y)', 'X(x,y)'))],
@@ -185,7 +160,7 @@ class TestCase(unittest.TestCase):
 	)
 	
 	def testTopdown(self):
-		self.checkMetaTransf(TopDown, self.topDownTestCases)
+		self._testMetaTransf(TopDown, self.topDownTestCases)
 
 	spitTestCases = (
 		('[1,2,3]', 'FAILURE'),
@@ -196,7 +171,7 @@ class TestCase(unittest.TestCase):
 	)
 
 	def testSplit(self):
-		self.checkTransf(Split(Match('X')), self.spitTestCases)
+		self._testTransf(Split(Match('X')), self.spitTestCases)
 
 	# TODO: testInnerMost
 
