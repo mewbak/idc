@@ -1,5 +1,7 @@
 '''Transformations for term (de)construction.'''
 
+__docformat__ = "epytext"
+
 import aterm.types
 import aterm.visitor
 
@@ -20,18 +22,22 @@ class _Lit(Transformation):
 
 
 def Int(value):
+	'''Transformation which matches an integer term with the given value.'''
 	return _Lit(aterm.types.INT, value)
 	
 
 def Real(value):
+	'''Transformation which matches a real term with the given value.'''
 	return _Lit(aterm.types.REAL, value)
 
 
 def Str(value):
+	'''Transformation which matches a string term with the given value.'''
 	return _Lit(aterm.types.STR, value)
 	
 
 class Nil(Transformation):
+	'''Transformation which matches an empty list term.'''
 
 	def __call__(self, term):
 		if term.type != aterm.types.LIST or not term.isEmpty():
@@ -40,8 +46,11 @@ class Nil(Transformation):
 
 
 class Cons(Transformation):
+	'''Transformation which matches a list construction term.'''
 	
 	def __init__(self, head, tail):
+		'''Takes as argument the transformations to be applied to the list 
+		head and tail.'''
 		self.head_transf = head
 		self.tail_transf = tail
 		
@@ -62,21 +71,25 @@ class Cons(Transformation):
 			return term
 
 
-def _List(args_iter, tail):
+def _List(elms_iter, tail):
 	try:
-		arg = args_iter.next()
+		elm = elms_iter.next()
 	except StopIteration:
 		return tail
 	else:
-		return Cons(arg, _List(args_iter, tail))
+		return Cons(elm, _List(elms_iter, tail))
 
 
-def List(args, tail = None):
+def List(elms, tail = None):
+	'''Transformation which matches a term list. 
+	
+	@param elms: sequence of transformations to be applied to the elements
+	@param tail: option transformation to be applied to the list tail; defaults 
+	to matching the empty list
+	'''
 	if tail is None:
-		transf = Nil()
-	else:
-		transf = tail
-	return _List(iter(args), tail)
+		tail = Nil()
+	return _List(iter(elms), tail)
 	
 
 class Appl(Transformation):
@@ -106,5 +119,4 @@ class Appl(Transformation):
 		else:
 			return term
 		
-
 	

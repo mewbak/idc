@@ -134,6 +134,9 @@ class TestTerm(TestMixin, unittest.TestCase):
 	def testCons(self):
 		self._testMatchTransf(Cons(Int(1), Nil()), '[1]')
 	
+	def testList(self):
+		self._testMatchTransf(List([Int(1),Int(2)]), '[1,2]')
+	
 	def testAppl(self):
 		self._testMatchTransf(Appl(Str("C"), Nil()), 'C')
 
