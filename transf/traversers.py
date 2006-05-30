@@ -5,7 +5,6 @@
 
 
 import aterm
-import aterm.visitor
 
 from transf.base import *
 from transf.combinators import *
@@ -63,39 +62,3 @@ def InnerMost(operand):
 	innermost = Proxy()
 	innermost.subject = BottomUp(Try(operand & innermost))
 	return innermost
-
-
-class _Splitter(aterm.visitor.Visitor):
-	'''Splits a list term in two lists.'''
-
-	def __init__(self, operand):
-		'''The argument is the index of the first element of the second list.'''
-		self.operand = operand
-
-	def visitTerm(self, term):
-		raise TypeError('not a term list: %r' % term)
-	
-	def visitNil(self, term):
-		raise Failure
-		
-	def visitCons(self, term):
-		try:
-			head = self.operand(term.head)
-		except Failure:
-			head, body, tail = self.visit(term.tail)
-			return head.insert(0, term.head), body, tail
-		else:
-			return term.factory.makeNil(), term.head, term.tail
-
-
-class Split(Transformation):
-	'''Splits a list term in two lists.'''
-
-	def __init__(self, operand):
-		'''The argument is the index of the first element of the second list.'''
-		self.splitter = _Splitter(operand)
-
-	def __call__(self, term):
-		return term.factory.makeList(self.splitter.visit(term))
-
-
