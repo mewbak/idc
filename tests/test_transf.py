@@ -111,12 +111,11 @@ class TestTerm(TestMixin, unittest.TestCase):
 	def _testMatchTransf(self, transf, *matchStrs):
 		testCases = []
 		for termStr in self.termInputs:
-			for matchStr in matchStrs:
-				if matchStr == termStr:
-					resultStr = termStr
-				else:
-					resultStr = 'FAILURE'
-				testCases.append((termStr, resultStr))
+			if termStr in matchStrs:
+				resultStr = termStr
+			else:
+				resultStr = 'FAILURE'
+			testCases.append((termStr, resultStr))
 		self._testTransf(transf, testCases)
 					
 	def testInt(self):
@@ -149,8 +148,8 @@ class TestTraversers(TestMixin, unittest.TestCase):
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
 			'[1,2]': ['[1,2]', 'FAILURE', '[X(1),X(2)]', 'FAILURE'],
-			'[1,*]': ['[1,*]', 'FAILURE', '[X(1),*]', '[1,*]'],
-			'[1,*x]': ['[1,*x]', 'FAILURE', '[X(1),*x]', '[1,*x]'],
+			#'[1,*]': ['[1,*]', 'FAILURE', '[X(1),*]', '[1,*]'],
+			#'[1,*x]': ['[1,*x]', 'FAILURE', '[X(1),*x]', '[1,*x]'],
 		}
 	)
 		
@@ -158,7 +157,19 @@ class TestTraversers(TestMixin, unittest.TestCase):
 		self._testMetaTransf(Map, self.mapTestCases)
 
 	# TODO: testFetch
-	# TODO: testFilter
+
+	filterTestCases = (
+		[Ident(), Fail(), Rule('x', 'X(x)'), Match('2')],
+		{
+			'[]': ['[]', '[]', '[]', '[]'],
+			'[1]': ['[1]', '[]', '[X(1)]', '[]'],
+			'[1,2]': ['[1,2]', '[]', '[X(1),X(2)]', '[2]'],
+			'[1,2,3]': ['[1,2,3]', '[]', '[X(1),X(2),X(3)]', '[2]'],
+		}
+	)
+		
+	def testFilter(self):
+		self._testMetaTransf(Filter, self.filterTestCases)
 	
 	allTestCases = (
 		[Ident(), Fail(), Rule('x', 'X(x)')],
