@@ -242,6 +242,8 @@ class TestTraversers(TestMixin, unittest.TestCase):
 	)
 
 	def testSplit(self):
+		# FIXME: move this away from here
+		from ir.transfs import Split
 		self._testTransf(Split(Match('X')), self.spitTestCases)
 
 	# TODO: testInnerMost

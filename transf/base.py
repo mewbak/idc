@@ -31,7 +31,13 @@ class Transformation(object):
 	def __init__(self):
 		pass
 	
-	def __call__(self, term):
+	def __call__(self, term, context = None):
+		'''Applies the transformation.'''
+		if context is None:
+			context = {}
+		return self.apply(term, context)
+
+	def apply(self, term, context):
 		'''Applies the transformation.'''
 		raise NotImplementedError
 
@@ -51,6 +57,19 @@ class Transformation(object):
 		return _Composition(other, self)
 
 
+class Scope(Transformation):
+	'''Introduces a new variable scope before the transformation.'''
+	
+	def __init__(self, transf, **kargs):
+		Transformation.__init__(self)
+		self.transf = transf
+		self.kargs = kargs
+		
+	def apply(self, term, context):
+		context = self.kargs.copy()
+		return self.transf(term, context)
+
+
 class Adaptor(Transformation):
 	'''Transformation adapter for a regular function.'''
 	
@@ -60,7 +79,7 @@ class Adaptor(Transformation):
 		self.args = args
 		self.kargs = kargs
 
-	def __call__(self, term):
+	def apply(self, term, context):
 		return self.func(term, *self.args, **self.kargs)
 
 
@@ -75,10 +94,10 @@ class Proxy(Transformation):
 		Transformation.__init__(self)
 		self.subject = subject
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		if self.subject is None:
 			raise ValueError('subject transformation not specified')
-		return self.subject(term)
+		return self.subject(term, context)
 
 
 from transf.combinators import Not as _Not

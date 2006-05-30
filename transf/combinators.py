@@ -13,14 +13,14 @@ from transf.base import *
 class Ident(Transformation):
 	'''Identity transformation.'''
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		return term
 	
 
 class Fail(Transformation):
 	'''Failure transformation.'''
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		raise Failure
 
 
@@ -53,9 +53,9 @@ class Ternary(Transformation):
 class Not(Unary):
 	'''Fail if a transformation applies.'''
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		try:
-			self.operand(term)
+			self.operand(term, context)
 		except Failure:
 			return term
 		else:
@@ -65,9 +65,9 @@ class Not(Unary):
 class Try(Unary):
 	'''Attempt a transformation, otherwise return the term unmodified.'''
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		try:
-			return self.operand(term)
+			return self.operand(term, context)
 		except Failure:
 			return term
 
@@ -77,37 +77,37 @@ class Where(Unary):
 	term.
 	'''
 	
-	def __call__(self, term):
-		self.operand(term)
+	def apply(self, term, context):
+		self.operand(term, context)
 		return term
 
 
 class Composition(Binary):
 	'''Transformation composition.'''
 	
-	def __call__(self, term):
-		return self.roperand(self.loperand(term))
+	def apply(self, term, context):
+		return self.roperand(self.loperand(term, context), context)
 
 
 class Choice(Binary):
 	'''Attempt the first transformation, transforming the second on failure.'''
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		try:
-			return self.loperand(term)
+			return self.loperand(term, context)
 		except Failure:
-			return self.roperand(term)
+			return self.roperand(term, context)
 
 
 class GuardedChoice(Ternary):
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		try:
-			result = self.operand1(term)
+			result = self.operand1(term, context)
 		except Failure:
-			return self.operand3(term)
+			return self.operand3(term, context)
 		else:
-			return self.operand2(result)
+			return self.operand2(result, context)
 
 
 def IfThenElse(cond, true, false):

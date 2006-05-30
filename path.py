@@ -41,13 +41,15 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 annotate = Annotator()
 
 
-class IndexFetch(aterm.visitor.Visitor):
+class IndexFetch(transf.Transformation, aterm.visitor.Visitor):
 	'''Fetch a subterm.'''
 
 	def __init__(self, index):
+		transf.Transformation.__init__(self)
+		aterm.visitor.Visitor.__init__(self)
 		self.index = index
 
-	def __call__(self, term):
+	def apply(self, term, context):
 		return self.visit(term, 0)
 	
 	def visitTerm(self, term, index):
@@ -79,40 +81,40 @@ def fetch(term, path):
 	return PathFetch(path)(term)
 
 
-class Index(aterm.visitor.IncrementalVisitor, transf.Transformation):
+class Index(transf.Transformation, aterm.visitor.IncrementalVisitor):
 
 	def __init__(self, operand, index):
-		aterm.visitor.IncrementalVisitor.__init__(self)
 		transf.Transformation.__init__(self)
+		aterm.visitor.IncrementalVisitor.__init__(self)
 		self.operand = operand
 		self.index = index
 		
-	def __call__(self, term):
-		return self.visit(term, 0)
+	def apply(self, term, context):
+		return self.visit(term, context, 0)
 	
-	def visitTerm(self, term, index):
+	def visitTerm(self, term, context, index):
 		raise TypeError('not a term list or application: %r' % term)
 	
-	def visitNil(self, term, index):
+	def visitNil(self, term, context, index):
 		raise IndexError('index out of range')
 	
-	def visitHead(self, term, index):
+	def visitHead(self, term, context, index):
 		if index == self.index:
-			return self.operand(term)
+			return self.operand(term, context)
 		else:
 			return term
 	
-	def visitTail(self, term, index):
+	def visitTail(self, term, context, index):
 		if index < self.index:
-			return self.visit(term, index + 1)
+			return self.visit(term, context, index + 1)
 		else:
 			return term
 
-	def visitName(self, term, index):
+	def visitName(self, term, context, index):
 		return term
 
-	def visitArgs(self, term, index):
-		return self.visit(term, index)
+	def visitArgs(self, term, context, index):
+		return self.visit(term, context, index)
 
 
 def Path(transformation, path):
@@ -168,11 +170,11 @@ class Range(transf.Transformation):
 		self.start = start
 		self.end = end
 		
-	def __call__(self, term):
+	def apply(self, term, context):
 		head, rest = split(term, self.start)
 		old_body, tail = split(rest, self.end - self.start)
 		
-		new_body = self.operand(old_body)
+		new_body = self.operand(old_body, context)
 		if new_body is not old_body:
 			return head.extend(new_body.extend(tail))
 		else:

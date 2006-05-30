@@ -37,11 +37,11 @@ class All(Unary):
 		self.list_transf = Map(operand)
 		self.appl_transf = Appl(Ident(), self.list_transf)
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		if term.type == aterm.types.APPL:
-			return self.appl_transf(term)
+			return self.appl_transf(term, context)
 		elif term.type == aterm.types.LIST:
-			return self.list_transf(term)
+			return self.list_transf(term, context)
 		else:
 			return term
 

@@ -5,52 +5,44 @@
 
 
 import aterm
-import aterm.visitor
 
 from transf.base import *
+from transf.combinators import *
 
 
-# TODO: pre-parse the patterns
-
-
-class Match(Transformation):
+class _Pattern(Transformation):
 	
-	def __init__(self, pattern, **kargs):
-		self.pattern = pattern
-		self.kargs = kargs
-
-	def __call__(self, term):
-		factory = term.factory
-		args = []
-		kargs = self.kargs.copy()
-		if factory.match(self.pattern, term, args, kargs):
-			return term
+	_factory = aterm.Factory()
+	
+	def __init__(self, pattern):
+		if isinstance(pattern, basestring):
+			self.pattern = self._factory.parse(pattern)
 		else:
-			raise Failure	
-
-
-class Rule(Transformation):
+			self.pattern = pattern
 	
-	def __init__(self, match_pattern, build_pattern, **kargs):
-		factory = aterm.Factory()
-		if isinstance(match_pattern, basestring):
-			match_pattern = factory.parse(match_pattern)
-		if isinstance(build_pattern, basestring):
-			build_pattern = factory.parse(build_pattern)
-			
-		self.match_pattern = match_pattern
-		self.build_pattern = build_pattern
-		self.kargs = kargs
+
+class Match(_Pattern):
 	
-	def __call__(self, term):
-		factory = term.factory
-		args = []
-		kargs = self.kargs.copy()
-		if self.match_pattern.match(term, args, kargs):
-			return self.build_pattern.make(*args, **kargs)
+	def apply(self, term, context):
+		if self.pattern.match(term, [], context):
+			return term
 		else:
 			raise Failure
 
 
-# TODO: write a MatchSet, BuildSet, RuleSet
+class Build(_Pattern):
+	
+	def apply(self, term, context):
+		return self.pattern.make(term, **context)
+		
+
+def Rule(match_pattern, build_pattern, **kargs):	
+	return Scope(Match(match_pattern) & Build(build_pattern), **kargs)
+
+
+def RuleSet(patterns, **kargs):
+	rules = Fail()
+	for match_pattern, build_pattern in patterns:
+		rules = rules | Rule(match_pattern, build_pattern, **kargs)
+	return rules
 

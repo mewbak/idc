@@ -3,6 +3,7 @@ import aterm.visitor
 
 from transf import *
 
+from transf import factory as _f
 
 def Tail(operand):
 	tail = Proxy()
@@ -49,10 +50,12 @@ class SplitBlock(Transformation):
 	def __init__(self, name):
 		self.name = name
 		self.split_head = Split(
-			Match("Label(name)", name=name)
+			Scope(Match("Label(name)"), name=name)
 		)
 		self.split_tail = Split(
 			Match("Ret(*)")
+			# FIXME: not working?
+			#_f.Ret()
 		)
 
 	def __call__(self, term):

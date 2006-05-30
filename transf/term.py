@@ -14,7 +14,7 @@ class Type(Transformation):
 		Transformation.__init__(self)
 		self.type = type
 
-	def __call__(self, term):
+	def apply(self, term, context):
 		if term.type != self.type:
 			raise Failure
 		return term		
@@ -27,7 +27,7 @@ class _Lit(Transformation):
 		self.type = type
 		self.value = value
 
-	def __call__(self, term):
+	def apply(self, term, context):
 		if term.type != self.type or term.value != self.value:
 			raise Failure
 		return term
@@ -51,7 +51,7 @@ def Str(value):
 class Nil(Transformation):
 	'''Transformation which matches an empty list term.'''
 
-	def __call__(self, term):
+	def apply(self, term, context):
 		if term.type != aterm.types.LIST or not term.isEmpty():
 			raise Failure
 		return term
@@ -66,7 +66,7 @@ class Cons(Transformation):
 		self.head_transf = head
 		self.tail_transf = tail
 		
-	def __call__(self, term):
+	def apply(self, term, context):
 		if term.type != aterm.types.LIST or term.isEmpty():
 			raise Failure
 		old_head = term.head
@@ -86,7 +86,7 @@ class Cons(Transformation):
 class ConsFilter(Cons):
 	'''Transformation which matches a list construction term.'''
 	
-	def __call__(self, term):
+	def apply(self, term, context):
 		if term.type != aterm.types.LIST or term.isEmpty():
 			raise Failure
 		old_head = term.head
@@ -137,7 +137,7 @@ class Appl(Transformation):
 			self.name_transf = name
 		self.args_transf = args
 		
-	def __call__(self, term):
+	def apply(self, term, context):
 		if term.type != aterm.types.APPL:
 			raise Failure
 		
