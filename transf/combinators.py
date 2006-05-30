@@ -32,6 +32,24 @@ class Unary(Transformation):
 		self.operand = operand
 
 
+class Binary(Transformation):
+	'''Base class for binary operations on transformations.'''
+	
+	def __init__(self, loperand, roperand):
+		Transformation.__init__(self)
+		self.loperand = loperand
+		self.roperand = roperand
+
+
+class Ternary(Transformation):
+	
+	def __init__(self, operand1, operand2, operand3):
+		Transformation.__init__(self)
+		self.operand1 = operand1
+		self.operand2 = operand2
+		self.operand3 = operand3
+	
+
 class Not(Unary):
 	'''Fail if a transformation applies.'''
 	
@@ -64,13 +82,11 @@ class Where(Unary):
 		return term
 
 
-class Binary(Transformation):
-	'''Base class for binary operations on transformations.'''
+class Composition(Binary):
+	'''Transformation composition.'''
 	
-	def __init__(self, loperand, roperand):
-		Transformation.__init__(self)
-		self.loperand = loperand
-		self.roperand = roperand
+	def __call__(self, term):
+		return self.roperand(self.loperand(term))
 
 
 class Choice(Binary):
@@ -83,11 +99,19 @@ class Choice(Binary):
 			return self.roperand(term)
 
 
-class Composition(Binary):
-	'''Transformation composition.'''
+class GuardedChoice(Ternary):
 	
 	def __call__(self, term):
-		return self.roperand(self.loperand(term))
+		try:
+			result = self.operand1(term)
+		except Failure:
+			return self.operand3(term)
+		else:
+			return self.operand2(result)
+
+
+def IfThenElse(cond, true, false):
+	return GuardedChoice(Where(cond), true, false)
 
 
 def Repeat(operand):

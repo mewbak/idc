@@ -9,103 +9,42 @@ import aterm.visitor
 
 from transf.base import *
 from transf.combinators import *
+from transf.term import *
 
 
-class Traverser(aterm.visitor.IncrementalVisitor, Unary):
-	'''Base class for all term traversers.'''
-
-	def __init__(self, operand):
-		aterm.visitor.IncrementalVisitor.__init__(self)
-		Unary.__init__(self, operand)
-	
-
-class Map(Traverser):
-	'''Applies a transformation to all elements of a list term.'''
-	
-	def visitTerm(self, term):
-		raise TypeError, 'list or tuple expected: %r' % term
-	
-	def visitNil(self, term):
-		return term
-
-	def visitHead(self, term):
-		return self.operand(term)
-	
-	def visitTail(self, term):
-		return self.visit(term)
-
-	def visitName(self, term):
-		if term.getType() != aterm.STR and term.getValue() != "":
-			return self.visitTerm(term)
-		else:
-			return term
-	
-	def visitArgs(self, term):
-		return self.visit(term)
-		
-	def visitPlaceholder(self, term):
-		# placeholders are kept unmodified
-		return term
+def Map(operand):
+	map = Proxy()
+	map.subject = Nil() | Cons(operand, map)
+	return map
 
 
-class Fetch(Map):
-	'''Traverses a list until it finds a element for which the transformation 
-	succeeds and then stops. That element is the only one that is transformed.
-	'''
-	
-	def visitNil(self, term):
-		raise Failure('fetch reached the end of the list')
-	
-	def visitCons(self, term):
-		old_head = term.getHead()
-		old_tail = term.getTail()
-		
-		try:
-			new_head = self.visitHead(old_head)
-		except Failure:
-			new_head = old_head
-			new_tail = self.visitTail(old_tail)
-		else:
-			new_tail = old_tail
-			
-		if new_head is not old_head or new_tail is not old_tail:
-			annos = term.getAnnotations()
-			return term.factory.makeCons(new_head, new_tail, annos)
-		else:
-			return term
+def Fetch(operand):
+	fetch = Proxy()
+	fetch.subject = Cons(operand, Ident()) | Cons(Ident(), fetch)
+	return fetch
 
 
-class Filter(Map):
-	'''Applies a transformation to each element of a list, keeping only the 
-	elements for which it succeeds.
-	'''
-
-	def visitCons(self, term):
-		old_head = term.getHead()
-		old_tail = term.getTail()
-		new_tail = self.visitTail(old_tail)
-		
-		try:
-			new_head = self.visitHead(old_head)
-		except Failure:
-			return new_tail
-			
-		if new_head is not old_head or new_tail is not old_tail:
-			annos = term.getAnnotations()
-			return term.factory.makeCons(new_head, new_tail, annos)
-		else:
-			return term
+def Filter(operand):
+	filter = Proxy()
+	filter.subject = Nil() | ConsFilter(operand, filter)
+	return filter
 
 
-class All(Map):
+class All(Unary):
 	'''Applies a transformation to all subterms of a term.'''
-
-	def visitTerm(self, term):
-		# terms other than applications are kept unmodified
-		return term
-
-	def visitName(self, term):
-		return term
+	
+	def __init__(self, operand):
+		Unary.__init__(self, operand)
+		self.list_transf = Map(operand)
+		self.appl_transf = Appl(Ident(), self.list_transf)
+	
+	def __call__(self, term):
+		if term.type == aterm.types.APPL:
+			return self.appl_transf(term)
+		elif term.type == aterm.types.LIST:
+			return self.list_transf(term)
+		else:
+			return term
 
 
 def BottomUp(operand):

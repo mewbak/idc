@@ -8,6 +8,18 @@ import aterm.visitor
 from transf.base import *
 
 
+class Type(Transformation):
+	
+	def __init__(self, type):
+		Transformation.__init__(self)
+		self.type = type
+
+	def __call__(self, term):
+		if term.type != self.type:
+			raise Failure
+		return term		
+
+
 class _Lit(Transformation):
 
 	def __init__(self, type, value):
@@ -69,6 +81,30 @@ class Cons(Transformation):
 			)
 		else:
 			return term
+
+
+class ConsFilter(Cons):
+	'''Transformation which matches a list construction term.'''
+	
+	def __call__(self, term):
+		if term.type != aterm.types.LIST or term.isEmpty():
+			raise Failure
+		old_head = term.head
+		old_tail = term.tail
+		new_tail = self.tail_transf(old_tail)
+		try:
+			new_head = self.head_transf(old_head)
+		except Failure:
+			return new_tail
+		else:
+			if new_head is not old_head or new_tail is not old_tail:
+				return term.factory.makeCons(
+					new_head,
+					new_tail,
+					term.annotations
+				)
+			else:
+				return term
 
 
 def _List(elms_iter, tail):
