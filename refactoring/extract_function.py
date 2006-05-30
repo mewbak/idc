@@ -4,6 +4,8 @@
 import refactoring
 import path
 import transf
+from transf import *
+from ir.transfs import *
 
 
 class ExtractFunction(refactoring.Refactoring):
@@ -41,44 +43,8 @@ class ExtractFunction(refactoring.Refactoring):
 			"[FuncDef(Void,name,[],Block(rest))]",
 		)
 		txn = transf.factory.Module(ExtractBlock(txn,name))
+		# TODO: Handle seperate blocks
 		return txn(term)
-
-
-# TODO: Handle seperate blocks
-
-
-class SplitBlock(transf.Transformation):
-
-	def __init__(self, name):
-		self.name = name
-		self.split_head = transf.Split(
-			transf.Match("Label(name)", name=name)
-		)
-		self.split_tail = transf.Split(
-			transf.Match("Ret(*)")
-		)
-
-	def __call__(self, term):
-		head, first, rest = self.split_head(term)
-		body, last, tail = self.split_tail(rest)
-		
-		return term.factory.makeList([
-			head,
-			body.append(last).insert(0, first),
-			tail
-		])
-
-
-class ExtractBlock(transf.Transformation):
-	
-	def __init__(self, operand, name):
-		self.split_block = SplitBlock(name)
-		self.operand = operand
-		
-	def __call__(self, term):
-		head, body, tail = self.split_block(term)
-		body = self.operand(body)
-		return head.extend(body.extend(tail))
 
 
 class TestCase(refactoring.TestCase):
