@@ -52,11 +52,12 @@ WS
 		{ $setType(SKIP); }
 	;
 
+// TODO: handle comments terminated by EOF
 COMMENT
     : 
 		"#" 
 		( ~('\n'|'\r') )*
-		EOL
+		( EOL )
 			{ $setType(SKIP); }
 	;
 
