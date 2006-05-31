@@ -32,6 +32,7 @@ class Factory(object):
 	
 	def __init__(self):
 		self.parseCache = {}
+		self.__nil = terms.Nil(self)
 
 	def makeInt(self, value, annotations = None):
 		'''Creates a new integer literal term'''
@@ -47,7 +48,10 @@ class Factory(object):
 
 	def makeNil(self, annotations = None):
 		'''Creates a new empty list term'''
-		return terms.Nil(self, annotations)
+		if annotations is None or self.__nil:
+			return self.__nil
+		else:
+			return terms.Nil(self, annotations)
 
 	def makeCons(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''
