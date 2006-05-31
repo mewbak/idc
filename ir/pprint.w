@@ -151,9 +151,9 @@ class PrettyPrinter:
 		| Call(addr, args)
 			-> H([:exprP(_,addr), "(", :commas(:expr*(args)), ")"])
 		| Addr(addr)
-			-> H([:op("*"), :exprP(_,addr)])
+			-> H([:op("&"), :exprP(_,addr)])
 		| Ref(expr)
-			-> H([:op("&"), :exprP(_,expr)])
+			-> H([:op("*"), :exprP(_,expr)])
 		| :_assertFail("bad expression term")
 		;
 
