@@ -22,8 +22,8 @@ class TestCase(unittest.TestCase):
 		return res
 	
 	box2TextTestCases = [
-		('"a"', 'a'),
-		('H(["a","b"])', 'ab'),
+		('"a"', 'a\n'),
+		('H(["a","b"])', 'ab\n'),
 		('V(["a","b"])', 'a\nb\n'),
 		('V(["a",I("b"),"c"])', 'a\n\tb\nc\n'),
 	]

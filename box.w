@@ -35,11 +35,11 @@ class Formatter:
 	def dedent(self):
 		'''Decrease the indentation level.'''
 		self.indent_level -= 1
-		assert self.indent_level >= 0
 
 	def write_indent(self):
 		'''Write the indentation characters.'''
-		self.write('\t'*self.indent_level)
+		if self.indent_level > 0:
+			self.write('\t'*self.indent_level)
 	
 	def write_eol(self):
 		'''Write the end-of-line character.'''
