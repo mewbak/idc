@@ -105,7 +105,45 @@ class Writer:
 		self.formatter = formatter
 	}
 	
-	write_box
+	{
+	def write_box(self, b):
+		return self.write_vbox(b)
+	}
+	
+	write_vbox
+		: I(b) # indent
+			{
+				self.formatter.indent()
+				self.write_vbox($b)
+				self.formatter.dedent()
+			}
+		| D(b) # dedent
+			{
+				self.formatter.dedent()
+				self.write_vbox($b)
+				self.formatter.indent()
+			}
+		| T(n:_str, v:_str, b) # tag
+			{
+				self.formatter.handle_tag_start($n.getValue(), $v.getValue())
+				self.write_vbox($b)
+				self.formatter.handle_tag_end($n.getValue())
+			}
+		| V(bl) # vertical stack
+			{
+				for b in $bl:					
+					self.write_vbox(b) 
+			}
+		| b
+			{
+				self.formatter.write_indent()
+				self.write_hbox($b)
+				self.formatter.write_eol()
+			}
+		| :_assertFail("bad box")
+		;
+
+	write_hbox
 		: s:_str # string literal
 			{
 				self.formatter.write($s.getValue())
@@ -113,58 +151,33 @@ class Writer:
 		| H(bl:_list) # horizontal stack
 			{
 				for b in $bl:
-					self.write_box(b) 
+					self.write_hbox(b) 
 			}
-		| V(bl:_list) # vertical stack
+		| V(bl) # vertical stack
 			{
-				for b in $bl:
-					self.write_vbox(b) 
+				sys.stderr.write("warning: vbox inside hbox: %r\n" % $<)
+				for b in $bl:					
+					self.write_hbox(b) 
 			}
 		| I(b) # indent
 			{
-				sys.stderr.write("warning: indent outside vbox: %r\n" % $<)
-				self.write_box($b)
+				sys.stderr.write("warning: indent inside hbox: %r\n" % $<)
+				self.write_hbox($b)
 			}
 		| D(b) # dedent
 			{
-				sys.stderr.write("warning: dedent outside vbox: %r\n" % $<)
-				self.write_box($b)
+				sys.stderr.write("warning: dedent inside hbox: %r\n" % $<)
+				self.write_hbox($b)
 			}
 		| T(n:_str, v:_str, b) # tag
 			{
 				self.formatter.handle_tag_start($n.getValue(), $v.getValue())
-				self.write_box($b)
+				self.write_hbox($b)
 				self.formatter.handle_tag_end($n.getValue())
 			}
 		| :_assertFail("bad box")
 		;
 
-	write_vbox
-		: I(b)
-			{
-				self.formatter.indent()
-				self.write_vbox($b)
-				self.formatter.dedent()
-			}
-		| D(b)
-			{
-				self.formatter.dedent()
-				self.write_vbox($b)
-				self.formatter.indent()
-			}
-		| V(bl:_list)
-			{
-				for b in $bl:
-					self.write_vbox(b) 
-			}
-		| b
-			{
-				self.formatter.write_indent()
-				self.write_box($b)
-				self.formatter.write_eol()
-			}
-		| :_assertFail("bad box")
-		;
 
 
 header {
