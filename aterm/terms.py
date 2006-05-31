@@ -27,17 +27,18 @@ class Term(object):
 		else:
 			self.annotations = annotations
 	
-	def __setattr__(self, name, value):
-		'''Prevent modification of term attributes.'''
-		
-		# TODO: implement this with a metaclass
-		
-		try:
-			object.__getattribute__(self, name)
-		except AttributeError:
-			object.__setattr__(self, name, value)
-		else:
-			raise AttributeError("attempt to modify read-only term attribute '%s'" % name)		
+	if __debug__:
+		def __setattr__(self, name, value):
+			'''Prevent modification of term attributes.'''
+			
+			# TODO: implement this with a metaclass
+			
+			try:
+				object.__getattribute__(self, name)
+			except AttributeError:
+				object.__setattr__(self, name, value)
+			else:
+				raise AttributeError("attempt to modify read-only term attribute '%s'" % name)		
 
 	def __delattr__(self, name):
 		'''Prevent deletion of term attributes.'''
@@ -262,7 +263,12 @@ class List(Term):
 	def __getitem__(self, index):
 		raise NotImplementedError
 
-	# TODO: write an __iter__ method
+	def __iter__(self):
+		term = self
+		while not term.isEmpty():
+			yield term.head
+			term = term.tail
+		raise StopIteration
 		
 	def insert(self, index, element):
 		raise NotImplementedError
