@@ -1,0 +1,44 @@
+"""Rename symbols globally."""
+
+
+import refactoring
+import transf
+
+
+class Rename(refactoring.Refactoring):
+
+	def name(self):
+		return "Simplify"
+	
+	def applicable(self, term, selection):
+		return True
+
+	def input(self, term, selection, inputter):
+		return term.factory.makeNil()
+
+	def apply(self, term, args):
+		factory = term.factory
+		rules = [
+			('Assign(type,dst,Cond(cond,src,dst)))',
+				'If(cond, Assign(type,dst,src),NoOp)'),
+			('Assign(type,dst,Cond(cond,src,dst)))',
+				'If(Not(cond), Assign(type,dst,src),NoOp)'),	
+			('Assign(_,Sym("pc"),addr)', 
+				'Branch(addr)'),
+		]
+		txn = transf.RuleSet(rules)
+		#txn = transf.Repeat(txn)
+		txn = transf.InnerMost(txn)
+		return txn(term)
+
+
+class TestCase(refactoring.TestCase):
+
+	cls = Rename
+		
+	applyTestCases = [
+			('Assign(Blob(32),Sym("pc"),Sym("label"))', '[]',
+				'Branch(Sym("label"))'),		
+			('Assign(Blob(32),Sym("pc"),Cond(Sym("flag"),Sym("label"),Sym("pc")))', '[]',
+				'If(Sym("flag"),Branch(Sym("label")),NoOp)'),		
+	]
