@@ -250,7 +250,7 @@ memory returns [ret]
             elif disp is None:
                 addr = base
             else:
-                addr = self.factory.make("Binary(Plus(Int(32,Signed),_,_)", base, disp)
+                addr = self.factory.make("Binary(Plus(Int(32,Signed)),_,_)", base, disp)
             ret = self.factory.make("Ref(_)", addr)
 		}
 	;
@@ -265,13 +265,13 @@ memory_base returns [ret]
 		{
             if not index is None and scale != 1:
                 scale = self.factory.make("Lit(Int(32,Signed),_))", scale)
-                index = self.factory.make("Binary(Plus(Int(32,Signed),_,_)", index, scale)
+                index = self.factory.make("Binary(Plus(Int(32,Signed)),_,_)", index, scale)
             if base is None:
                 ret = index
             elif index is None:
                 ret = base
             else:
-                ret = self.factory.make("Binary(Plus(Int(32,Signed),_,_)", base, index)
+                ret = self.factory.make("Binary(Plus(Int(32,Signed)),_,_)", base, index)
 		}
 	;
 
