@@ -72,12 +72,16 @@ opTable = {
     MINUS_FQ: "Minus(Float)",
 }
 
-builtinTable = {
+builtinOpTable = {
     LITERAL_rlc: "rlc",
     LITERAL_rrc: "rrc",
     LITERAL_rl: "rl",
     LITERAL_rr: "rr",
     LITERAL_pow: "pow",
+}
+
+builtinTable = {
+	"addr": "Addr(_)",
 }
 
 }
@@ -259,7 +263,13 @@ expr returns [res]
 	| #( QUEST c=expr t=expr f=expr )
 		{ res = self.factory.make("Cond(_,_,_)", c, t, f) }
 	| #( BUILTIN b:NAME args=expr_list )
-		{ res = self.factory.make("Call(Sym(_),_)", #b.getText(), args) }
+		{
+            builtin = #b.getText()
+            if builtin in builtinTable:
+                res = self.factory.make(builtinTable[builtin], *args)
+            else:
+                res = self.factory.make("Call(Sym(_),_)", builtin, args)
+        }
 	| #( LCURLY e=expr n=num )
 		{ res = self.factory.make("Cast(Int(size,Unsigned),expr)", expr=e, size=n) }
 	| #( S_E e=expr )
@@ -279,7 +289,7 @@ expr returns [res]
                 else:
                     raise SemanticException(#t, "bad number of args %i" % len(args))
             else:
-                op = builtinTable[typ]
+                op = builtinOpTable[typ]
                 res = self.factory.make("Call(Sym(_),_)", op, args)
         }
     ;
