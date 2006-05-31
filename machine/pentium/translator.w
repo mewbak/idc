@@ -7,16 +7,13 @@ header {
 from ssl.pentium import insn_table
 
 opcode_table = {
-	"andl": "AND.RMOD",
 	"orl": "OR.RMOD",
 	"xorl": "XOR.RMOD",
-	"addl": "ADD.RMOD",
-	"subl": "SUB.RMOD",
+	"leal": "LEA.OD",
 	"imull": "IMUL.OD",
 	"idivb": "IDIV",
 	"idivw": "IDIV.AX",
 	"idivl": "IDIV.EAX",
-	"movl": "MOV.RMOD",
 	"pushl": "PUSH.OD",
 	"popl": "POP.OD",
 	"leave": "LEAVE",
@@ -47,8 +44,13 @@ class Translator:
 			-> [Ret(Void, Sym(" "))]
 		| Asm(opcode:_str, operands:_list)
 			{
+				op = $opcode.getValue()
 				try:
-					params, temps, pattern = insn_table[opcode_table[$opcode.getValue()]]
+					op = opcode_table[op]
+				except KeyError:
+					op = op.upper()
+				try:
+					params, temps, pattern = insn_table[op]
 				except KeyError:
 					return [$<]
 

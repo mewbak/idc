@@ -297,92 +297,36 @@ SETFFLAGS(op1, op2)  {
             *1* %C2 := 0 # [ (op1 > op2) ? 1 : 0]
 };
 
-OP1 := { "+", "-" };
-ARIT := { "ADD", "SUB" };
 
-ARIT[IDX]^"IAL" i8 
-            *8* tmpb := %al
-            *8* %al := %al OP1[IDX] i8;
-ADD.IAL   i8 ADDFLAGS8(tmpb, i8, %al);
-SUB.IAL   i8 SUBFLAGS8(tmpb, i8, %al);
+ADDB dst, src
+            *8* tmp1 := dst
+            *8* dst := dst - src
+            ADDFLAGS8(tmp1, src, dst);
 
-ARIT[IDX]^"IAX" i16 
-            *16* tmph := %ax
-            *16* %ax := %ax OP1[IDX] i16;
-ADD.IAX   i16 ADDFLAGS16(tmph, i16, %ax);
-SUB.IAX   i16 SUBFLAGS16(tmph, i16, %ax);
+ADDW dst, src
+            *16* tmp1 := dst
+            *16* dst := dst - src
+            ADDFLAGS16(tmp1, src, dst);
 
-ARIT[IDX]^"IEAX" i32 
-            *32* tmp1 := %eax
-            *32* %eax := %eax OP1[IDX] i32;
-ADD.IEAX   i32 ADDFLAGS32(tmp1, i32, %eax);
-SUB.IEAX   i32 SUBFLAGS32(tmp1, i32, %eax);
+ADDL dst, src
+            *32* tmp1 := dst
+            *32* dst := dst - src
+            ADDFLAGS32(tmp1, src, dst);
 
-ARIT[IDX]^"ID" modrm, i32 
-            *32* tmp1 := modrm
-            *32* modrm := modrm OP1[IDX] i32;
-ADD.ID   modrm, i32 ADDFLAGS32(tmp1, i32, modrm);
-SUB.ID   modrm, i32 SUBFLAGS32(tmp1, i32, modrm);
+SUBB dst, src
+            *8* tmp1 := dst
+            *8* dst := dst - src
+            SUBFLAGS8(tmp1, src, dst);
 
-ARIT[IDX]^"IW" modrm, i16 
-            *16* tmph := modrm
-            *16* modrm := modrm OP1[IDX] i16;
-ADD.IW   modrm, i16 ADDFLAGS16(tmph, i16, modrm);
-SUB.IW   modrm, i16 SUBFLAGS16(tmph, i16, modrm);
+SUBW dst, src
+            *16* tmp1 := dst
+            *16* dst := dst - src
+            SUBFLAGS16(tmp1, src, dst);
 
-ARIT[IDX]^"IB" modrm, i8 
-            *8* tmpb := modrm
-            *8* modrm := modrm OP1[IDX] i8;
-ADD.IB   modrm, i8 ADDFLAGS8(tmpb, i8, modrm);
-SUB.IB   modrm, i8 SUBFLAGS8(tmpb, i8, modrm);
-
-ARIT[IDX]^"IOWB" modrm, i8 
-            *16* tmph := modrm
-            *16* modrm := modrm OP1[IDX] i8;
-ADD.IOWB   modrm, i8 ADDFLAGS16(tmph, i8, modrm);
-SUB.IOWB   modrm, i8 SUBFLAGS16(tmph, i8, modrm);
-
-ARIT[IDX]^"IODB" modrm, i8 
-            *32* tmp1 := modrm
-            *32* modrm := modrm OP1[IDX] i8;
-ADD.IODB   modrm, i8 ADDFLAGS32(tmp1, i8, modrm);
-SUB.IODB   modrm, i8 SUBFLAGS32(tmp1, i8, modrm);
-
-ARIT[IDX]^"MRB" modrm, reg8 
-            *8* tmpb := modrm
-            *8* modrm := tmp1 OP1[IDX] reg8;
-ADD.MRB   modrm, reg8 ADDFLAGS8(tmpb, reg8, modrm);
-SUB.MRB   modrm, reg8 SUBFLAGS8(tmpb, reg8, modrm);
-
-ARIT[IDX]^"MROW" modrm, reg16 
-            *16* tmph := modrm
-            *16* modrm := tmp1 OP1[IDX] reg16;
-ADD.MROW   modrm, reg16 ADDFLAGS16(tmph, reg16, modrm);
-SUB.MROW   modrm, reg16 SUBFLAGS16(tmph, reg16, modrm);
-
-ARIT[IDX]^"MROD" modrm, reg32 
-            *32* tmp1 := modrm
-            *32* modrm := modrm OP1[IDX] reg32;
-ADD.MROD   modrm, reg32 ADDFLAGS32(tmp1, reg32, modrm);
-SUB.MROD   modrm, reg32 SUBFLAGS32(tmp1, reg32, modrm);
-
-ARIT[IDX]^"RMB" reg8, modrm 
-            *8* tmpb := reg8
-            *8* reg8 := reg8 OP1[IDX] modrm{8};
-ADD.RMB   reg8, modrm ADDFLAGS8(tmpb, modrm{8}, reg8);
-SUB.RMB   reg8, modrm SUBFLAGS8(tmpb, modrm{8}, reg8);
-
-ARIT[IDX]^"RMOW" reg16, modrm 
-            *16* tmph := reg16
-            *16* reg16 := reg16 OP1[IDX] modrm{16};
-ADD.RMOW   reg16, modrm ADDFLAGS16(tmph, modrm{16}, reg16);
-SUB.RMOW   reg16, modrm SUBFLAGS16(tmph, modrm{16}, reg16);
-
-ARIT[IDX]^"RMOD" reg32, modrm 
-            *32* tmp1 := reg32
-            *32* reg32 := reg32 OP1[IDX] modrm;
-ADD.RMOD   reg32, modrm ADDFLAGS32(tmp1, modrm, reg32);
-SUB.RMOD   reg32, modrm SUBFLAGS32(tmp1, modrm, reg32);
+SUBL dst, src
+            *32* tmp1 := dst
+            *32* dst := dst - src
+            SUBFLAGS32(tmp1, src, dst);
 
 BSWAP       reg32
             *32* tmp1 := zfill(8, 32, reg32@[31:24])
@@ -391,120 +335,32 @@ BSWAP       reg32
             *32* tmp4 := reg32 & 0xFF
             *32* reg32 := (tmp4 << 24) + (tmp3 << 16) + (tmp2 << 8) + tmp1;
 
-CMP.IAL   i8 
-            *8* tmpb := %al - i8
-            SUBFLAGS8(%al, i8, tmpb);
+CMPB   dst, src 
+            *8* tmp1 := dst - src
+            SUBFLAGS32(dst, src, tmp1);
 
-CMP.IAX   i16 
-            *16* tmph := %ax - i16
-            SUBFLAGS16(%ax, i16, tmph);
+CMPW   dst, src 
+            *16* tmp1 := dst - src
+            SUBFLAGS16(dst, src, tmp1);
 
-CMP.IEAX   i32 
-            *32* tmp1 := %eax - i32
-            SUBFLAGS32(%eax, i32, tmp1);
-
-CMP.ID   modrm, i32 
-            *32* tmp1 := modrm{32} - i32
-            SUBFLAGS32(modrm, i32, tmp1);
-
-CMP.IW   modrm, i16 
-            *16* tmph := modrm{16} - i16
-            SUBFLAGS16(modrm{16}, i16, tmph);
-
-CMP.IB   modrm, i8 
-            *8* tmpb := modrm{8} - i8
-            SUBFLAGS8(modrm{8}, i8, tmpb);
-
-CMP.MRB   modrm, reg8 
-            *8* tmpb := modrm{8} - reg8
-            SUBFLAGS8(modrm{8}, reg8, tmpb);
-
-CMP.RMB   reg8, modrm 
-            *8* tmpb := reg8 - modrm{8}
-            SUBFLAGS8(reg8, modrm{8}, tmpb);
-
-CMP.IODB   modrm, i8 
-            *32* tmp1 := modrm{32} - i8
-            SUBFLAGS32(modrm{32}, i8, tmp1);
-
-CMP.IOWB   modrm, i8 
-            *16* tmph := modrm{16} - i8
-            SUBFLAGS16(modrm{16}, i8, tmph);
-
-CMP.MROW   modrm, reg16 
-            *16* tmph := modrm{16} - reg16
-            SUBFLAGS16(modrm{16}, reg16, tmph);
-
-CMP.MROD   modrm, reg32 
-            *32* tmp1 := modrm{32} - reg32
-            SUBFLAGS32(modrm{32}, reg32, tmp1);
-
-CMP.RMOW   reg16, modrm 
-            *16* tmph := reg16 - modrm{16}
-            SUBFLAGS16(reg16, modrm{16}, tmph);
-
-CMP.RMOD   reg32, modrm 
-            *32* tmp1 := reg32 - modrm{32}
-            SUBFLAGS32(reg32, modrm{32}, tmp1);
+CMPL   dst, src 
+            *32* tmp1 := dst - src
+            SUBFLAGS32(dst, src, tmp1);
 
 OP1 := { "&", "|", "^" };
 LOG := { "AND", "OR", "XOR" };
 
-LOG[IDX]^"IAL" i8 
-            *8* %al := %al OP1[IDX] i8
-            LOGICALFLAGS8(%al);
+LOG[IDX]"B" dst, src 
+            *8* dst := dst OP1[IDX] src
+            LOGICALFLAGS8(dst);
 
-LOG[IDX]^"IAX" i16 
-            *16* %ax := %ax OP1[IDX] i16
-            LOGICALFLAGS16(%ax);
+LOG[IDX]"W" dst, src 
+            *16* dst := dst OP1[IDX] src
+            LOGICALFLAGS16(dst);
 
-LOG[IDX]^"IEAX" i32 
-            *32* %eax := %eax OP1[IDX] i32
-            LOGICALFLAGS32(%eax);
-
-LOG[IDX]^"ID" modrm, i32 
-            *32* modrm := modrm{32} OP1[IDX] i32
-            LOGICALFLAGS32(modrm);
-
-LOG[IDX]^"IW" modrm, i16 
-            *16* modrm := modrm{16} OP1[IDX] i16
-            LOGICALFLAGS16(modrm);
-
-LOG[IDX]^"IB" modrm, i8 
-            *8* modrm := modrm{8} OP1[IDX] i8
-            LOGICALFLAGS8(modrm);
-
-LOG[IDX]^"IOWB" modrm, i8 
-            *16* modrm := modrm OP1[IDX] sgnex(8, 16, i8)
-            LOGICALFLAGS16(modrm);
-
-LOG[IDX]^"IODB" modrm, i8 
-            *32* modrm := modrm OP1[IDX] sgnex(8, 32, i8)
-            LOGICALFLAGS32(modrm);
-
-LOG[IDX]^"MRB" modrm, reg8 
-            *8* modrm := modrm{8} OP1[IDX] reg8
-            LOGICALFLAGS8(modrm);
-
-LOG[IDX]^"MROW" modrm, reg16 
-            *16* modrm := modrm{16} OP1[IDX] reg16
-            LOGICALFLAGS16(modrm);
-
-LOG[IDX]^"MROD" modrm, reg32 
-            *32* modrm := modrm{32} OP1[IDX] reg32
-            LOGICALFLAGS32(modrm);
-
-LOG[IDX]^"RMB" reg8, modrm 
-            *8* reg8 := reg8 OP1[IDX] modrm{8}
-            LOGICALFLAGS8(reg8);
-
-LOG[IDX]^"RMOW" reg16, modrm 
-            *16* reg16 := reg16 OP1[IDX] modrm{16}
-            LOGICALFLAGS16(reg16);
-
-LOG[IDX]^"RMOD" reg32, modrm 
-            *32* reg32 := reg32 OP1[IDX] modrm{32}
-            LOGICALFLAGS32(reg32);
+LOG[IDX]"L" dst, src 
+            *32* dst := dst OP1[IDX] src
+            LOGICALFLAGS32(dst);
 
 OP2 := { "+", "-" };
 ARITH_C := { "ADC", "SBB" };
@@ -683,35 +539,23 @@ CDQ
 OP4 := { "-", "+" };
 DEC_INC := { "DEC", "INC" };
 
-DEC_INC[IDX].EB modrm 
-            *8* tmpb := modrm{8}
-            *8* modrm := modrm{8} OP4[IDX] 1;
-DEC.EB   modrm SUBFLAGS8(tmpb, 1, modrm{8});
-INC.EB   modrm ADDFLAGS8(tmpb, 1, modrm{8});
+DEC_INC[IDX]"B" dst 
+            *8* tmpb := dst
+            *8* dst := dst OP4[IDX] 1;
+DECB   dst SUBFLAGS8(tmpb, 1, dst);
+INCB   dst ADDFLAGS8(tmpb, 1, dst);
 
-DEC_INC[IDX].EVOW modrm 
-            *16* tmph := modrm{16}
-            *16* modrm := modrm{16} OP4[IDX] 1;
-DEC.EVOW   modrm SUBFLAGS16(tmph, 1, modrm{16});
-INC.EVOW   modrm ADDFLAGS16(tmph, 1, modrm{16});
+DEC_INC[IDX]"W" dst 
+            *16* tmpb := dst
+            *16* dst := dst OP4[IDX] 1;
+DECW   dst SUBFLAGS16(tmpb, 1, dst);
+INCW   dst ADDFLAGS16(tmpb, 1, dst);
 
-DEC_INC[IDX].EVOD modrm 
-            *32* tmp1 := modrm
-            *32* modrm := modrm OP4[IDX] 1;
-DEC.EVOD   modrm SUBFLAGS32(tmp1, 1, modrm);
-INC.EVOD   modrm ADDFLAGS32(tmp1, 1, modrm);
-
-DEC_INC[IDX].OW reg16 
-            *16* tmph := reg16
-            *16* reg16 := reg16 OP4[IDX] 1;
-DEC.OW   reg16 SUBFLAGS16(tmph, 1, reg16);
-INC.OW   reg16 ADDFLAGS16(tmph, 1, reg16);
-
-DEC_INC[IDX].OD reg32 
-            *32* tmp1 := reg32
-            *32* reg32 := reg32 OP4[IDX] 1;
-DEC.OD   reg32 SUBFLAGS32(tmp1, 1, reg32);
-INC.OD   reg32 ADDFLAGS32(tmp1, 1, reg32);
+DEC_INC[IDX]"L" dst 
+            *32* tmpb := dst
+            *32* dst := dst OP4[IDX] 1;
+DECL   dst SUBFLAGS32(tmpb, 1, dst);
+INCL   dst ADDFLAGS32(tmpb, 1, dst);
 
 DIV.AL   modrm 
             *16* tmph := %ax
@@ -811,56 +655,16 @@ COND1 := { "~%CF & ~%ZF", "~%CF & ~%ZF", "~%CF", "~%CF", "%CF",
             "~(%NF ^ %OF)", "~(%NF ^ %OF)", "%NF ^ %OF", "%NF ^ %OF",
             "(%NF ^ %OF) | %ZF", "(%NF ^ %ZF) | %ZF", "~%CF", "~%ZF",
             "~%ZF", "~%OF", "~%PF", "~%PF", "~%NF", "%OF", "%PF", "%PF", "%NF" };
-JMP32S := { "JVA", "JVNBE", "JVAE", "JVNB", "JVB", "JVNAE", "JVBE",
-            "JVNA", "JVC", "JVCXZ", "JVE", "JVZ", "JVG", "JVNLE", "JVGE",
-            "JVNL", "JVL", "JVNGE", "JVLE", "JVNG", "JVNC", "JVNE", "JVNZ",
-            "JVNO", "JVNP", "JVPO", "JVNS", "JVO", "JVP", "JVPE", "JVS" };
+JMPS := { "JA", "JNBE", "JAE", "JNB", "JB", "JNAE", "JBE",
+            "JNA", "JC", "JCXZ", "JE", "JZ", "JG", "JNLE", "JGE",
+            "JNL", "JL", "JNGE", "JLE", "JNG", "JNC", "JNE", "JNZ",
+            "JNO", "JNP", "JPO", "JNS", "JO", "JP", "JPE", "JS" };
 
-JMP32S[IDX]   reloc32 
-            *32* %pc := [(COND1[IDX] = 1)?%pc + 6 + reloc32:%pc];
+JMPS[IDX]   addr 
+            *32* %pc := [(COND1[IDX] = 1)?addr:%pc];
 
-COND2 := { "~%CF & ~%ZF", "~%CF & ~%ZF", "~%CF", "~%CF", "%CF",
-           "%CF", "%CF | %ZF", "%CF | %ZF", "%CF", "~%cx", "%ZF",
-           "%ZF", "~(%NF ^ %OF) & ~%ZF", "~(%NF ^ %OF) & ~%ZF", "~(%NF ^ %OF)",
-           "~(%NF ^ %OF)", "%NF ^ %OF", "%NF ^ %OF", "(%NF ^ %OF) | %ZF",
-           "(%NF ^ %ZF) | %ZF", "~%CF", "~%ZF", "~%ZF", "~%OF", "~%PF",
-           "~%PF", "~%NF", "%OF", "%PF", "%PF", "%NF" };
-JMP16S := { "JWA", "JWNBE", "JWAE", "JWNB", "JWB", "JWNAE", "JWBE",
-            "JWNA", "JWC", "JWCXZ", "JWE", "JWZ", "JWG", "JWNLE", "JWGE",
-            "JWNL", "JWL", "JWNGE", "JWLE", "JWNG", "JWNC", "JWNE", "JWNZ",
-            "JWNO", "JWNP", "JWPO", "JWNS", "JWO", "JWP", "JWPE", "JWS" };
-
-JMP16S[IDX]   reloc16 
-            *32* %pc := [(COND2[IDX] = 1)?%pc + 4 + reloc16:%pc];
-
-COND3 := { "~%CF & ~%ZF", "~%CF & ~%ZF", "~%CF", "~%CF", "%CF",
-           "%CF", "%CF | %ZF", "%CF | %ZF", "%CF", "~%cx", "%ZF",
-           "%ZF", "~(%NF ^ %OF) & ~%ZF", "~(%NF ^ %OF) & ~%ZF", "~(%NF ^ %OF)",
-           "~(%NF ^ %OF)", "%NF ^ %OF", "%NF ^ %OF", "(%NF ^ %OF) | %ZF",
-           "(%NF ^ %ZF) | %ZF", "~%CF", "~%ZF", "~%ZF", "~%OF", "~%PF",
-           "~%PF", "~%NF", "%OF", "%PF", "%PF", "%NF" };
-JMP8S := { "JBA", "JBNBE", "JBAE", "JBNB", "JBB", "JBNAE", "JBBE", "JBNA",
-           "JBC", "JBCXZ", "JBE", "JBZ", "JBG", "JBNLE", "JBGE", "JBNL",
-           "JBL", "JBNGE", "JBLE", "JBNG", "JBNC", "JBNE", "JBNZ", "JBNO",
-           "JBNP", "JBPO", "JBNS", "JBO", "JBP", "JBPE", "JBS" };
-
-JMP8S[IDX]   reloc8 
-            *32* %pc := [(COND3[IDX] = 1)?%pc + 2 + reloc8:%pc];
-
-JMP.JB   reloc8 
-            *32* %pc := %pc + 2 + reloc8;
-
-JMP.JVOW   reloc16 
-            *32* %pc := %pc + 3 + reloc16;
-
-JMP.JVOD   reloc32 
-            *32* %pc := %pc + 5 + reloc32;
-
-JMP.EVOW   modrm 
-            *16* %pc := modrm;
-
-JMP.EVOD   modrm 
-            *32* %pc := modrm;
+JMP   addr 
+            *32* %pc := addr;
 
 LEA.OD   reg32, mem 
             *32* reg32 := addr(mem);
@@ -877,63 +681,18 @@ COND4 := { "%ecx ~= 0", "%ecx ~= 0 & %ZF", "%ecx ~= 0 & %ZF",
            "%ecx ~= 0 & ~%ZF", "%ecx ~= 0 & ~%ZF" };
 LOOPS := { "LOOP", "LOOPE", "LOOPZ", "LOOPNE", "LOOPNZ" };
 
-LOOPS[IDX]   reloc 
+LOOPS[IDX]   addr 
             *32* %ecx := %ecx - 1
-            *32* %pc := [COND4[IDX]?%pc + reloc:%pc];
+            *32* %pc := [COND4[IDX]?addr:%pc];
 
-MOV.EB.IB   modrm, i8 
-            *8* modrm := i8;
+MOVB   dst, src 
+            *8* dst := src;
 
-MOV.EW.IVOW   modrm, i16 
-            *16* modrm := i16;
+MOVW   dst, src 
+            *16* dst := src;
 
-MOV.ED.IVOD   modrm, i32 
-            *32* modrm := i32;
-
-MOV.IB   reg8, i8 
-            *8* reg8 := i8;
-
-MOV.IW   reg16, i16 
-            *16* reg16 := i16;
-
-MOV.ID   reg32, i32 
-            *32* reg32 := i32;
-
-MOV.MRB   modrm, reg8 
-            *8* modrm := reg8;
-
-MOV.MROW   modrm, reg16 
-            *16* modrm := reg16;
-
-MOV.MROD   modrm, reg32 
-            *32* modrm := reg32;
-
-MOV.OB.AL   off 
-            *8* m[off] := %al;
-
-MOV.OV.EAXOW   off 
-            *16* m[off] := %ax;
-
-MOV.OV.EAXOD   off 
-            *32* m[off] := %eax;
-
-MOV.AL.OB   off 
-            *8* %al := m[off]{8};
-
-MOV.EAX.OVOW   off 
-            *16* %ax := m[off]{16};
-
-MOV.EAX.OVOD   off 
-            *32* %eax := m[off]{32};
-
-MOV.RMB   reg8, modrm 
-            *8* reg8 := modrm{8};
-
-MOV.RMOW   reg16, modrm 
-            *16* reg16 := modrm{16};
-
-MOV.RMOD   reg32, modrm 
-            *32* reg32 := modrm{32};
+MOVL   dst, src 
+            *32* dst := src;
 
 MOVSX.GV.EBOW   reg16, modrm 
             *16* reg16 := sgnex(8, 16, modrm{8});

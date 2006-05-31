@@ -560,7 +560,8 @@ part
 
                 if n in self.instructions:
                     old_ip, old_rtl = self.instructions[n]
-                    assert ip == old_ip
+                    if ip != old_ip:
+                    	raise SemanticException(#ib, "parameter list of '%s' changed" % n)
                     if rtl.getFirstChild():
                         old_rtl.addChild(rtl.getFirstChild())
                 else:
