@@ -39,7 +39,7 @@ class TestCase(unittest.TestCase):
 	term2BoxTestCases = [
 	]
 	
-	def testTerm2Box(self):
+	def _testTerm2Box(self):
 		for inputStr, expectedOutput in self.term2BoxTestCases:
 			input = self.factory.parse(inputStr)
 		

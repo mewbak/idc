@@ -17,10 +17,9 @@ class Rename(refactoring.Refactoring):
 			return False
 
 		selected_term = path.fetch(term, start)
-		args = []
-		kargs = {}
-		if selected_term.rmatch("Sym(name)", args, kargs):
-			return kargs['name']
+		mo = selected_term.rmatch("Sym(name)")
+		if mo:
+			return mo.kargs['name']
 		else:
 			return None
 

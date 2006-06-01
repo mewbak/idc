@@ -47,4 +47,11 @@ def main():
 
 
 if __name__ == '__main__':
-		main()
+	import hotshot
+	filename = "pythongrind.prof"
+	prof = hotshot.Profile(filename, lineevents=0)
+	prof.runcall(main)
+	prof.close()
+
+	#main()
+

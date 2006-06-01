@@ -139,11 +139,11 @@ class Factory(object):
 			
 			return result
 
-	def match(self, pattern, other, args = None, kargs = None):
+	def match(self, pattern, other):
 		'''Matches the term to a string pattern and a list of arguments. 
 		First the string pattern is parsed into an Term. .'''
 		
-		return self.parse(pattern).match(other, args, kargs)
+		return self.parse(pattern).match(other)
 
 	def make(self, pattern, *args, **kargs):
 		'''Creates a new term from a string pattern and a list of arguments. 

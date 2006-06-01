@@ -544,10 +544,13 @@ predicate
 	        }
 	| pattern=t:stringify_term
 	        {
-                self.writeln("if not _f.match(%r, _t, _, _k):" % pattern)
+                self.writeln("_m = _f.match(%r, _t)" % pattern)
+                self.writeln("if not _m:")
                 self.indent()
                 self.writeln("raise Failure")
                 self.dedent()
+                self.writeln("_ = _m.args")
+                self.writeln("_k.update(_m.kargs)")
                 if not self.is_static_term(#t):
                     self.argn = 0
                     self.post_match_term(#t)

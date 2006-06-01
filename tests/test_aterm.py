@@ -184,7 +184,7 @@ class TestCase(unittest.TestCase):
 						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))						
 
 						if term1.isConstant() and term2.isConstant():
-							result = term1.match(term2)
+							result = bool(term1.match(term2))
 							self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 						
 						if expectedResult:
@@ -197,7 +197,7 @@ class TestCase(unittest.TestCase):
 							self.failUnlessEqual(result, False, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, False))
 	
 							if term1.isConstant() and term2.isConstant():
-								result = term1.match(term2)
+								result = bool(term1.match(term2))
 								self.failUnlessEqual(result, True, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, True))
 							
 						
@@ -280,13 +280,13 @@ class TestCase(unittest.TestCase):
 			expectedArgs = self.parseArgs(expectedArgsStr)
 			expectedKargs = self.parseKargs(expectedKargsStr)
 			
-			args = []
-			kargs = {}
-			result = pattern.match(term, args, kargs)
+			match = pattern.match(term)
+			result = bool(match)
 			
 			self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, result, expectedResult))
-			self.failUnlessEqual(args, expectedArgs, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, args, expectedArgs))
-			self.failUnlessEqual(kargs, expectedKargs, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, kargs, expectedKargs))
+			if match:
+				self.failUnlessEqual(match.args, expectedArgs, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, match.args, expectedArgs))
+				self.failUnlessEqual(match.kargs, expectedKargs, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, match.kargs, expectedKargs))
 
 	makeTestCases = [
 		# constants terms

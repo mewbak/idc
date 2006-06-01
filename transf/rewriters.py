@@ -24,10 +24,20 @@ class _Pattern(Transformation):
 class Match(_Pattern):
 	
 	def apply(self, term, context):
-		if self.pattern.match(term, [], context):
-			return term
-		else:
+		match = self.pattern.match(term)
+		if not match:
 			raise Failure
+
+		for name, value in match.kargs.iteritems():
+			try:
+				prev_value = context[name]
+			except KeyError:
+				context[name] = value
+			else:
+				if not value.isEquivalent(prev_value):
+					raise Failure
+
+		return term
 
 
 class Build(_Pattern):

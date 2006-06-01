@@ -38,8 +38,12 @@ all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 %.py: %.w util/wc/wc.py util/wc/lexer.py util/wc/parser.py util/wc/compiler.py
 	$(PYTHON) util/wc/wc.py -o $@ $<
 
+tests/test_wc.py: tests/test_wc.w
+
 
 # SSL compilation
+
+all: ssl/pentium.py
 
 %.py: %.ssl util/sslc/sslc.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py util/sslc/compiler.py
 	$(PYTHON) util/sslc/sslc.py -o $@ $<
@@ -48,26 +52,26 @@ all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
 # Unit, component, and integration testing
 
 tests: \
-	test_aterm \
-	test_transf \
-	test_path \
-	test_walker \
-	test_wc \
-	test_box \
-	test_ir \
-	test_refactoring
+	test-aterm \
+	test-transf \
+	test-path \
+	test-walker \
+	test-wc \
+	test-box \
+	test-ir \
+	test-refactoring
 
-test_%: all
+test-%: all
 	$(PYTHON) tests/test_$*.py -v
 
-.PHONY: test_%
+.PHONY: test-%
 
 examples:
 	$(MAKE) -C $@
 
 .PHONY: examples
 	
-test_asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
+test_asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py examples
 	$(SHELL) $<
 	
 .PHONY: tests
@@ -75,7 +79,7 @@ test_asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py box.py examples
 
 # Generate reference documentation
 
-doc: box.py
+doc: all
 	rm -rf html
 	epydoc \
 		--css blue \

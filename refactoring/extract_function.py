@@ -19,13 +19,11 @@ class ExtractFunction(refactoring.Refactoring):
 			return False
 
 		selected_term = path.fetch(term, start)
-		args = []
-		kargs = {}
-		if selected_term.rmatch("Label(name)", args, kargs):
-			return kargs['name']
+		mo = selected_term.rmatch("Label(name)")
+		if mo:
+			return mo.kargs['name']
 		else:
 			return None
-
 	def applicable(self, term, selection):
 		return self.get_original_name(term, selection) is not None
 

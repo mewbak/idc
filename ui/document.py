@@ -77,7 +77,7 @@ class Document:
 		boxes = printer.module(term)
 		formatter = box.TextFormatter(fp)
 		writer = box.Writer(formatter)
-		writer.write_box(boxes)
+		writer.write(boxes)
 
 	# TODO: Write a PDF exporter, probably using latex.
 	

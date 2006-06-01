@@ -1,4 +1,4 @@
-"""Rename symbols globally."""
+"""Perform global simplifications."""
 
 
 import refactoring

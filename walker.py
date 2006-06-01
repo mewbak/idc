@@ -34,6 +34,22 @@ class Walker:
 	#	
 	#	raise NotImplementedError
 
+	def _match(self, term, pattern):
+		match = term.rmatch(pattern)
+		if match:
+			caller = sys._getframe(1)
+			caller.f_locals.update(match.kargs)
+			return True
+		else:
+			return False
+	
+	def _dispatch(self, term, prefix):
+		assert term.type == aterm.types.APPL
+		assert term.name.type == aterm.types.STR
+		name = prefix + term.name.value
+		args = term.args
+		return getattr(self, name)(*args)
+	
 	def _fail(self, target, msg = None):
 		'''Signals a transformation failure, with an optional error message.'''
 		if msg is None:

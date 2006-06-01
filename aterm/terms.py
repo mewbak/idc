@@ -9,6 +9,15 @@ from aterm import exceptions
 from aterm import _helpers
 
 
+class Match(object):
+	'''Match object.'''
+	
+	def __init__(self):
+		self.args = []
+		self.kargs = {}
+
+
+
 class Term(object):
 	'''Base class for all terms.
 	
@@ -72,18 +81,22 @@ class Term(object):
 	
 	__eq__ = isEqual
 
-	def match(self, other, args = None, kargs = None):
+	def match(self, other):
 		'''Matches this term pattern against a string or term.'''
 		if isinstance(other, basestring):
 			other = self.factory.parse(other)
-		comparator = _helpers.PatternComparator(args, kargs)
-		return comparator.visit(self, other)
+		match = Match()
+		comparator = _helpers.PatternComparator(match.args, match.kargs)
+		if comparator.visit(self, other):
+			return match
+		else:
+			return None
 	
-	def rmatch(self, other, args = None, kargs = None):
+	def rmatch(self, other):
 		'''Matches this term against a string or term pattern.'''
 		if isinstance(other, basestring):
 			other = self.factory.parse(other)
-		return other.match(self, args, kargs)
+		return other.match(self)
 
 	def getAnnotation(self, label):
 		'''Gets an annotation associated with label'''

@@ -63,7 +63,7 @@ class MainApp(glade.GladeApp):
 		buffer = self.textview.get_buffer()
 		formatter = textbuffer.TextBufferFormatter(buffer)
 		writer = box.Writer(boxes.factory, formatter)
-		writer.write_box(boxes)
+		writer.write(boxes)
 
 	def on_quit_activate(self, event):
 		self.quit()
