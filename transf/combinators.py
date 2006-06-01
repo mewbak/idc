@@ -1,12 +1,6 @@
 '''Transformation combinators.'''
 
 
-# pylint: disable-msg=W0142
-
-
-import aterm
-import aterm.visitor
-
 from transf.base import *
 
 

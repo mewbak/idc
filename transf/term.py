@@ -2,6 +2,7 @@
 
 __docformat__ = "epytext"
 
+
 import aterm.types
 import aterm.visitor
 

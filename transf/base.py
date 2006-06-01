@@ -1,13 +1,6 @@
 '''Base transformation classes.'''
 
 
-# pylint: disable-msg=W0142
-
-
-import aterm
-import aterm.visitor
-
-
 class Failure(Exception):
 	'''Transformation failed to apply.'''
 

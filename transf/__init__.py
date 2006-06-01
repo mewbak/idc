@@ -14,3 +14,12 @@ from transf.rewriters import *
 
 from transf._factory import Factory as _Factory
 factory = _Factory()
+
+__all__ = [name for name in dir() if not name.startswith("_") and name not in (
+	"aterm",
+	"base", 
+	"term", 
+	"combinators",
+	"traversers",
+	"rewriters",
+)]

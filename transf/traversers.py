@@ -1,9 +1,6 @@
 '''Term traversing transformations.'''
 
 
-# pylint: disable-msg=W0142
-
-
 import aterm
 
 from transf.base import *
