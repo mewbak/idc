@@ -70,44 +70,44 @@ class Walker:
 	
 	def _int(self, target):
 		'''Enforce the target is an integer term.'''
-		if target.getType() != aterm.INT:
+		if target.getType() != aterm.types.INT:
 			raise Failure("not an integer term", target)
 		return target
 	
 	def _real(self, target):
 		'''Enforce the target is a real term.'''
-		if target.getType() != aterm.REAL:
+		if target.getType() != aterm.types.REAL:
 			raise Failure("not a real term", target)
 		return target
 	
 	def _str(self, target):
 		'''Enforce the target is a string term.'''
-		if target.getType() != aterm.STR:
+		if target.getType() != aterm.types.STR:
 			raise Failure("not a string term", target)
 		return target
 	
 	def _lit(self, target):
 		'''Enforce the target to be a literal term.'''
-		if not target.getType() in (aterm.INT, aterm.REAL, aterm.STR):
+		if not target.getType() in (aterm.types.INT, aterm.types.REAL, aterm.types.STR):
 			raise Failure("not a literal term", target)
 		return target
 	
 	def _list(self, target):
 		'''Enforce the target is a list term.'''
-		if target.getType() != aterm.LIST:
+		if target.getType() != aterm.types.LIST:
 			raise Failure("not a list term", target)
 		return target
 	
 	def _appl(self, target):
 		'''Enforce the target is an application term.'''
-		if target.getType() != aterm.APPL:
+		if target.getType() != aterm.types.APPL:
 			raise Failure("not an application term", target)
 		return target
 	
 	def _map(self, target, func, *args, **kargs):
 		'''Applies the given function to every element in the target. The target must be
 		a list, and the result will also be a list.'''
-		if target.getType() != aterm.LIST:
+		if target.getType() != aterm.types.LIST:
 			raise TypeError('not a list term: %r' % target)
 		if target.isEmpty():
 			return target
@@ -119,7 +119,7 @@ class Walker:
 
 	def _cat(self, target, tail):
 		'''Concatenates two lists.'''
-		if target.getType() != aterm.LIST:
+		if target.getType() != aterm.types.LIST:
 			raise TypeError('not a list term: %r' % target)
 		if target.isEmpty():
 			return tail
@@ -131,7 +131,7 @@ class Walker:
 
 	def _catMany(self, target):
 		'''Concatenates several lists.'''
-		if target.getType() != aterm.LIST:
+		if target.getType() != aterm.types.LIST:
 			raise TypeError('not a list term: %r' % target)
 		if target.isEmpty():
 			return target		

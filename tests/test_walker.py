@@ -3,14 +3,14 @@
 
 import unittest
 
-import aterm
+import aterm.factory
 import walker
 
 
 class TestCase(unittest.TestCase):
 	
 	def setUp(self):
-		self.factory = aterm.Factory()
+		self.factory = aterm.factory.Factory()
 		self.walker = walker.Walker(self.factory)
 		self.target = self.factory.parse("Test")
 

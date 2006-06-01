@@ -1,7 +1,7 @@
 '''Term rewriting transformations.'''
 
 
-import aterm
+import aterm.factory
 
 from transf.base import *
 from transf.combinators import *
@@ -9,7 +9,7 @@ from transf.combinators import *
 
 class _Pattern(Transformation):
 	
-	_factory = aterm.Factory()
+	_factory = aterm.factory.Factory()
 	
 	def __init__(self, pattern):
 		if isinstance(pattern, basestring):

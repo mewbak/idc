@@ -2,7 +2,7 @@
 '''
 
 
-import aterm
+import aterm.terms
 import walker
 
 
@@ -23,7 +23,7 @@ class Expr:
 	def _cast(self, other):
 		if isinstance(other, Expr):
 			return other
-		if isinstance(other, aterm.Term):
+		if isinstance(other, aterm.terms.Term):
 			return Expr(other)
 		if isinstance(other, int):
 			return self._make("Lit(Int(size,sign),value)",

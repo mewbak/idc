@@ -3,7 +3,8 @@
 header {
 import unittest
 
-import aterm
+import aterm.factory
+import aterm.types
 import walker
 }
 
@@ -109,7 +110,7 @@ class WalkerTestSuite:
 
 	testPredicateAction
 		: x 
-			{ $x.getType() == aterm.INT and $x.getValue() > 0 }?
+			{ $x.getType() == aterm.types.INT and $x.getValue() > 0 }?
 		;
 	
 	{
@@ -203,7 +204,7 @@ class WalkerTestCase(unittest.TestCase):
 		self.testDataName = testDataName
 	
 	def setUp(self):
-		self.factory = aterm.Factory()
+		self.factory = aterm.factory.Factory()
 		self.walker = self.walkerClass(self.factory)
 
 	def runTest(self):

@@ -3,7 +3,7 @@
 
 import unittest
 
-import aterm
+import aterm.factory
 import box
 import ir
 
@@ -11,7 +11,7 @@ import ir
 class TestCase(unittest.TestCase):
 	
 	def setUp(self):
-		self.factory = aterm.Factory()
+		self.factory = aterm.factory.Factory()
 
 	def parseArgs(self, args):
 		return [self.factory.parse(value) for value in args]

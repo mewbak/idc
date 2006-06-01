@@ -3,13 +3,14 @@
 
 import unittest
 
-import aterm
+import aterm.factory
+import aterm.types
 
 
 class TestCase(unittest.TestCase):
 	
 	def setUp(self):
-		self.factory = aterm.Factory()
+		self.factory = aterm.factory.Factory()
 
 	def parseArgs(self, args):
 		return [self.factory.parse(value) for value in args]
@@ -51,7 +52,7 @@ class TestCase(unittest.TestCase):
 			value = int(termStr)
 			_term = self.factory.parse(termStr)
 			self.failUnless(_term.factory is self.factory)
-			self.failUnlessEqual(_term.getType(), aterm.INT)
+			self.failUnlessEqual(_term.getType(), aterm.types.INT)
 			self.failUnlessEqual(_term.getValue(), value)
 			self.failUnlessEqual(str(_term), termStr)
 			self.failIfMutable(_term)
@@ -74,7 +75,7 @@ class TestCase(unittest.TestCase):
 			value = float(termStr)
 			_term = self.factory.parse(termStr)
 			self.failUnless(_term.factory is self.factory)
-			self.failUnlessEqual(_term.getType(), aterm.REAL)
+			self.failUnlessEqual(_term.getType(), aterm.types.REAL)
 			self.failUnlessAlmostEqual(_term.getValue(), value)
 			self.failIfMutable(_term)
 
@@ -91,7 +92,7 @@ class TestCase(unittest.TestCase):
 		for termStr, value in self.strTestCases:
 			_term = self.factory.parse(termStr)
 			self.failUnless(_term.factory is self.factory)
-			self.failUnlessEqual(_term.getType(), aterm.STR)
+			self.failUnlessEqual(_term.getType(), aterm.types.STR)
 			self.failUnlessEqual(_term.getValue(), value)
 			self.failUnlessEqual(str(_term), termStr)
 			self.failIfMutable(_term)
@@ -107,7 +108,7 @@ class TestCase(unittest.TestCase):
 		for termStr, length in self.listTestCases:
 			_term = self.factory.parse(termStr)
 			self.failUnless(_term.factory is self.factory)
-			self.failUnlessEqual(_term.getType(), aterm.LIST)
+			self.failUnlessEqual(_term.getType(), aterm.types.LIST)
 			self.failUnlessEqual(_term.isEmpty(), length == 0)
 			self.failUnlessEqual(_term.getLength(), length)
 			self.failUnlessEqual(str(_term), termStr)
@@ -130,7 +131,7 @@ class TestCase(unittest.TestCase):
 			_term = self.factory.parse(termStr)
 			name = self.factory.parse(nameStr)
 			self.failUnless(_term.factory is self.factory)
-			self.failUnlessEqual(_term.getType(), aterm.APPL)
+			self.failUnlessEqual(_term.getType(), aterm.types.APPL)
 			self.failUnlessEqual(_term.getName(), name)
 			self.failUnlessEqual(_term.getArity(), arity)
 			self.failUnlessEqual(str(_term), termStr)

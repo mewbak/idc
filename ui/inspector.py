@@ -6,7 +6,7 @@ import gobject
 
 from ui import glade
 
-import aterm
+import aterm.types
 
 
 class TermTreeIter:
@@ -35,9 +35,9 @@ class TermTreeIter:
 	def _children(self):
 		term = self.head
 		type = term.getType()
-		if type == aterm.LIST:
+		if type == aterm.types.LIST:
 			return term
-		elif type == aterm.APPL:
+		elif type == aterm.types.APPL:
 			return term.getArgs()
 		else:
 			return term.factory.makeNil()
@@ -133,34 +133,34 @@ class TermTreeModel(gtk.GenericTreeModel):
 		type = term.getType()
 
 		if column == 0:			
-			if type == aterm.INT:
+			if type == aterm.types.INT:
 				return str(term.getValue())
-			elif type == aterm.REAL:
+			elif type == aterm.types.REAL:
 				return str(term.getValue())
-			elif type == aterm.STR:
+			elif type == aterm.types.STR:
 				return repr(term.getValue())
-			elif type == aterm.LIST:
+			elif type == aterm.types.LIST:
 				return '[...]'
-			elif type == aterm.APPL:
+			elif type == aterm.types.APPL:
 				return term.getName().getValue()
-			elif type == aterm.WILDCARD:
+			elif type == aterm.types.WILDCARD:
 				return '_'
-			elif type == aterm.VAR:
+			elif type == aterm.types.VAR:
 				return term.getName()
 			else:
 				return '?'
 		elif column == 1:
-			if type == aterm.INT:
+			if type == aterm.types.INT:
 				return 'INT'
-			elif type == aterm.REAL:
+			elif type == aterm.types.REAL:
 				return 'REAL'
-			elif type == aterm.STR:
+			elif type == aterm.types.STR:
 				return 'STR'
-			elif type == aterm.LIST:
+			elif type == aterm.types.LIST:
 				return 'LIST'
-			elif type == aterm.APPL:
+			elif type == aterm.types.APPL:
 				return 'APPL'
-			elif type == aterm.WILDCARD:
+			elif type == aterm.types.WILDCARD:
 				return 'WILDCARD'
 			else:
 				return 'VAR'

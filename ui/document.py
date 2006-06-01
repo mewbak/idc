@@ -5,7 +5,7 @@
 
 import observer
 
-import aterm
+import aterm.factory
 import ir
 import path
 import box
@@ -40,7 +40,7 @@ class Document:
 	"""Document data model."""
 	
 	def __init__(self):
-		self.factory = aterm.Factory()
+		self.factory = aterm.factory.Factory()
 		self.term = TermState()
 		self.selection = SelectionState(self.term)
 		

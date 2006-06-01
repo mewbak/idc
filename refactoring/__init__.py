@@ -3,6 +3,9 @@
 
 import os
 
+import aterm.factory
+import unittest
+
 
 class BaseException(Exception):
 	"""Base class for refactoring-related exceptions."""
@@ -71,7 +74,6 @@ class Factory:
 		return self.refactorings[name]
 
 
-import unittest
 
 
 class TestCase(unittest.TestCase):
@@ -80,8 +82,7 @@ class TestCase(unittest.TestCase):
 	cls = Refactoring
 	
 	def setUp(self):
-		import aterm
-		self.factory = aterm.Factory()
+		self.factory = aterm.factory.Factory()
 		self.refactoring = self.cls()
 	
 	applyTestCases = []

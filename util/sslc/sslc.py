@@ -5,7 +5,7 @@ import sys
 import optparse
 import os.path
 
-import aterm
+import aterm.factory
 import ir
 
 from lexer import Lexer
@@ -34,7 +34,7 @@ def sslc(fpin, fpout, debug = False):
 		sys.stderr.write("\n")
 		sys.stderr.write("*** AST end ***\n")
 
-	factory = aterm.Factory()
+	factory = aterm.factory.Factory()
 
 	compiler = Compiler(factory, fpout, debug = debug)
 	compiler.start(ast)

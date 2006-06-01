@@ -3,7 +3,7 @@
 
 import unittest
 
-import aterm
+import aterm.factory
 
 from transf import *
 
@@ -11,7 +11,7 @@ from transf import *
 class TestMixin:
 	
 	def setUp(self):
-		self.factory = aterm.Factory()
+		self.factory = aterm.factory.Factory()
 
 	def _testTransf(self, transf, testCases):
 		for termStr, expectedResultStr in testCases:
