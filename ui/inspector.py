@@ -214,7 +214,7 @@ class TermTreeModel(gtk.GenericTreeModel):
 class InspectorWindow(glade.GladeWindow):
 
 	def __init__(self, main_window):
-		glade.GladeWindow.__init__(self, "./ui/inspector.glade", "inspector_window")
+		glade.GladeWindow.__init__(self, "inspector.glade", "inspector_window")
 
 		self.main_window = main_window
 		

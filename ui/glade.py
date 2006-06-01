@@ -23,6 +23,8 @@ class GladeWindow:
 	def __init__(self, filename, windowname):
 		"""Load glade file."""
 
+		filename = os.path.join(os.path.dirname(__file__), filename)
+	
 		self.xml = gtk.glade.XML(filename, windowname, gettext.textdomain())
 		self.widget = self.xml.get_widget(windowname)
 		
@@ -52,13 +54,19 @@ class GladeWindow:
 			for name in on_handler_names:
 				if name.startswith(prefix):
 					signal = name[len(prefix):]
-					widget.connect(signal, getattr(self, name))
+					try:
+						widget.connect(signal, getattr(self, name))
+					except TypeError:
+						pass
 					
 			prefix = 'after_' + widget_name + '_'
 			for name in after_handler_names:
 				if name.startswith(prefix):
 					signal = name[len(prefix):]
-					widget.connect_after(signal, getattr(self, name))
+					try:
+						widget.connect_after(signal, getattr(self, name))
+					except TypeError:
+						pass
 			
 		
 	def __getattr__(self, name): 
@@ -85,7 +93,7 @@ class GladeApp(GladeWindow):
 		"""Quit main loop."""
 		gtk.main_quit()
 	
-	def show_open(self, title = None, parent = None, filters = None, folder = None):
+	def run_open_dialog(self, title = None, parent = None, filters = None, folder = None):
 		"""Display a file open dialog."""
 
 		# See http://www.pygtk.org/pygtk2tutorial/sec-FileChoosers.html
@@ -94,6 +102,39 @@ class GladeApp(GladeWindow):
 				title,
 				parent,
 				gtk.FILE_CHOOSER_ACTION_OPEN,
+				(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK),
+		)
+		dialog.set_default_response(gtk.RESPONSE_OK)
+
+		if filters is not None:
+			for name, patterns in filters:
+				filter = gtk.FileFilter()
+				filter.set_name(name)
+				for pattern in patterns:
+					filter.add_pattern(pattern)
+				dialog.add_filter(filter)
+
+		if folder is not None:
+				dialog.set_current_folder(os.path.abspath(folder))
+
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			path = dialog.get_filename()
+		else:
+			path = None
+
+		dialog.destroy()
+		return path
+
+	def run_saveas_dialog(self, title = None, parent = None, filters = None, folder = None):
+		"""Display a file save as dialog."""
+
+		# TODO: include a combo box with file types
+
+		dialog = gtk.FileChooserDialog(
+				title,
+				parent,
+				gtk.FILE_CHOOSER_ACTION_SAVE,
 				(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK),
 		)
 		dialog.set_default_response(gtk.RESPONSE_OK)

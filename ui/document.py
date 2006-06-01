@@ -8,6 +8,7 @@ import observer
 import aterm
 import ir
 import path
+import box
 
 
 # TODO: user more versatile signal notification (a la GObject)
@@ -61,7 +62,7 @@ class Document:
 		"""Open a text file with the intermediate representation."""
 		fp = file(filename, 'rt')
 		term = self.factory.readFromTextFile(fp)
-		self.set_term(term)
+		self.term.set(term)
 
 	def save_ir(self, filename):
 		"""Save a text file with the intermediate representation."""

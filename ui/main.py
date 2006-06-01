@@ -21,12 +21,13 @@ import refactoring
 
 from ui import inspector
 from ui import textbuffer
+from ui import inputter
 
 
 class MainApp(glade.GladeApp):
 
 	def __init__(self):
-		glade.GladeApp.__init__(self, "./ui/main.glade", "main_window")
+		glade.GladeApp.__init__(self, "main.glade", "main_window")
 		
 		self.document = document.Document()
 		self.document.term.attach(self.on_term_update)
@@ -44,18 +45,44 @@ class MainApp(glade.GladeApp):
 		self.document.new()
 	
 	def on_open_activate(self, event):
-		path = self.show_open(
+		path = self.run_open_dialog(
 				None, 
 				self.widget, 
 				[
-					('Assembly Files', ['*.s']),
+					('Assembly Files', ['*.s', '*.asm']),
+					('Decompilation Projects', ['*.idc']),
 					('All Files', ['*']),
 				], 
 				'./examples',
 		)
 		
 		if path is not None:
-			self.document.open_asm(path)
+			if path.endswith('.s'):
+				self.document.open_asm(path)
+			if path.endswith('.idc'):
+				self.document.open_ir(path)
+
+	def on_save_activate(self, event):
+		# FIXME: implement this
+		pass
+	
+	def on_saveas_activate(self, event):
+		path = self.run_saveas_dialog(
+				None, 
+				self.widget, 
+				[
+					('Decompilation Project', ['*.idc']),
+					('C Source File', ['*.c']),
+					('All Files', ['*']),
+				], 
+				'./examples',
+		)
+		
+		if path is not None:
+			if path.endswith('.idc'):
+				self.document.save_ir(path)
+			if path.endswith('.c'):
+				self.document.export_c(path)
 
 	def on_term_update(self, term):
 		term = term.get()
@@ -137,7 +164,6 @@ class MainApp(glade.GladeApp):
 		print refactoring.name()
 		
 		# Ask user input
-		import inputter
 		args = refactoring.input(
 			self.document.term.get(), 
 			self.document.selection.get(),

@@ -67,7 +67,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="save_as">
+		    <widget class="GtkImageMenuItem" id="saveas">
 		      <property name="visible">True</property>
 		      <property name="label">gtk-save-as</property>
 		      <property name="use_stock">True</property>
