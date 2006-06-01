@@ -15,6 +15,8 @@ $(error An Intel x86 or AMD 64 machine is required.)
  endif
 endif
 
+CFLAGS += -fomit-frame-pointer -fno-builtin -fno-hosted -foptimize-register-move -mregparm=3
+
 AS = as
 ASFLAGS = 
 
