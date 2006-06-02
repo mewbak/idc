@@ -277,12 +277,8 @@ class List(Term):
 		raise NotImplementedError
 
 	def __iter__(self):
-		term = self
-		while not term.isEmpty():
-			yield term.head
-			term = term.tail
-		raise StopIteration
-		
+		raise NotImplementedError
+
 	def insert(self, index, element):
 		raise NotImplementedError
 	
@@ -324,6 +320,10 @@ class Nil(List):
 	def __getitem__(self, index):
 		raise IndexError
 
+	def __iter__(self):
+		raise StopIteration
+		yield None
+		
 	def insert(self, index, element):
 		if not index:
 			return self.factory.makeCons(element, self)
@@ -373,6 +373,13 @@ class Cons(List):
 		else:
 			return self.tail.__getitem__(index - 1)
 
+	def __iter__(self):
+		term = self
+		while term:
+			yield term.head
+			term = term.tail
+		raise StopIteration
+		
 	def insert(self, index, element):
 		if not index:
 			return self.factory.makeCons(element, self)
