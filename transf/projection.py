@@ -1,6 +1,7 @@
 '''Transformations for term projection.'''
 
 
+from transf import exception
 from transf import base
 
 
@@ -13,7 +14,7 @@ class Head(base.Transformation):
 		try:
 			return term.head
 		except AttributeError:
-			raise base.Failure("not a list construction term", term)
+			raise exception.Failure("not a list construction term", term)
 
 
 class Tail(base.Transformation):
@@ -22,7 +23,7 @@ class Tail(base.Transformation):
 		try:
 			return term.tail
 		except AttributeError:
-			raise base.Failure("not a list construction term", term)
+			raise exception.Failure("not a list construction term", term)
 
 
 def First():
@@ -59,7 +60,7 @@ class Name(base.Transformation):
 		try:
 			return term.name
 		except AttributeError:
-			raise base.Failure("not an application term", term)
+			raise exception.Failure("not an application term", term)
 
 
 class Args(base.Transformation):
@@ -68,5 +69,5 @@ class Args(base.Transformation):
 		try:
 			return term.args
 		except AttributeError:
-			raise base.Failure("not an application term", term)
+			raise exception.Failure("not an application term", term)
 
