@@ -1,16 +1,17 @@
 '''Helper transformation factory for short-cutting code.'''
 
 
-from transf.term import Str, List, Appl
+from transf import matching
+from transf import traversal
 
 
 class ApplFactory(object):
 
 	def __init__(self, name):
-		self.name = Str(name)
+		self.name = matching.MatchStr(name)
 	
 	def __call__(self, *args):
-		return Appl(self.name, List(args))
+		return traversal.TraverseAppl(self.name, traversal.TraverseList(args))
 		
 
 class Factory(object):

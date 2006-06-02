@@ -27,7 +27,7 @@ class Transformation(object):
 
 	def apply(self, term, context):
 		'''Applies the transformation.'''
-		raise NotImplementedError
+		raise NotImplementedError(self)
 
 	def __not__(self):
 		return _Not(self)

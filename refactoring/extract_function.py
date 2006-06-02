@@ -24,6 +24,7 @@ class ExtractFunction(refactoring.Refactoring):
 			return mo.kargs['name']
 		else:
 			return None
+		
 	def applicable(self, term, selection):
 		return self.get_original_name(term, selection) is not None
 

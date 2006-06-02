@@ -36,6 +36,7 @@ class Binary(Transformation):
 
 
 class Ternary(Transformation):
+	'''Base class for ternary operations on transformations.'''
 	
 	def __init__(self, operand1, operand2, operand3):
 		Transformation.__init__(self)

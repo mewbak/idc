@@ -18,17 +18,17 @@ class _Splitter(aterm.visitor.Visitor):
 		'''The argument is the index of the first element of the second list.'''
 		self.operand = operand
 
-	def visitTerm(self, term):
+	def visitTerm(self, term, context):
 		raise TypeError('not a term list: %r' % term)
 	
-	def visitNil(self, term):
+	def visitNil(self, term, context):
 		raise Failure
 		
-	def visitCons(self, term):
+	def visitCons(self, term, context):
 		try:
-			head = self.operand(term.head)
+			head = self.operand(term.head, context)
 		except Failure:
-			head, body, tail = self.visit(term.tail)
+			head, body, tail = self.visit(term.tail, context)
 			return head.insert(0, term.head), body, tail
 		else:
 			return term.factory.makeNil(), term.head, term.tail
@@ -41,8 +41,8 @@ class Split(Transformation):
 		'''The argument is the index of the first element of the second list.'''
 		self.splitter = _Splitter(operand)
 
-	def __call__(self, term):
-		return term.factory.makeList(self.splitter.visit(term))
+	def apply(self, term, context):
+		return term.factory.makeList(self.splitter.visit(term, context))
 
 
 class SplitBlock(Transformation):
@@ -58,9 +58,9 @@ class SplitBlock(Transformation):
 			#_f.Ret()
 		)
 
-	def __call__(self, term):
-		head, first, rest = self.split_head(term)
-		body, last, tail = self.split_tail(rest)
+	def apply(self, term, context):
+		head, first, rest = self.split_head.apply(term, context)
+		body, last, tail = self.split_tail.apply(rest, context)
 		
 		return term.factory.makeList([
 			head,
@@ -75,8 +75,8 @@ class ExtractBlock(Transformation):
 		self.split_block = SplitBlock(name)
 		self.operand = operand
 		
-	def __call__(self, term):
-		head, body, tail = self.split_block(term)
-		body = self.operand(body)
+	def apply(self, term, context):
+		head, body, tail = self.split_block.apply(term, context)
+		body = self.operand(body, context)
 		return head.extend(body.extend(tail))
 

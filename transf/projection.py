@@ -1,4 +1,4 @@
-'''Transformations for term projection.'''
+'''Term projecting transformations.'''
 
 
 from transf import exception

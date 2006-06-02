@@ -119,25 +119,25 @@ class TestTerm(TestMixin, unittest.TestCase):
 		self._testTransf(transf, testCases)
 					
 	def testInt(self):
-		self._testMatchTransf(Int(1), '1')
+		self._testMatchTransf(MatchInt(1), '1')
 
 	def testReal(self):
-		self._testMatchTransf(Real(0.1), '0.1')
+		self._testMatchTransf(MatchReal(0.1), '0.1')
 
 	def testStr(self):
-		self._testMatchTransf(Str("a"), '"a"')
+		self._testMatchTransf(MatchStr("a"), '"a"')
 
 	def testNil(self):
-		self._testMatchTransf(Nil(), '[]')
+		self._testMatchTransf(MatchNil(), '[]')
 	
 	def testCons(self):
-		self._testMatchTransf(Cons(Int(1), Nil()), '[1]')
+		self._testMatchTransf(TraverseCons(MatchInt(1),MatchNil()), '[1]')
 	
 	def testList(self):
-		self._testMatchTransf(List([Int(1),Int(2)]), '[1,2]')
+		self._testMatchTransf(TraverseList([MatchInt(1),MatchInt(2)]), '[1,2]')
 	
 	def testAppl(self):
-		self._testMatchTransf(Appl(Str("C"), Nil()), 'C')
+		self._testMatchTransf(TraverseAppl(MatchStr("C"),MatchNil()), 'C')
 
 
 class TestTraversers(TestMixin, unittest.TestCase):
@@ -247,6 +247,26 @@ class TestTraversers(TestMixin, unittest.TestCase):
 		self._testTransf(Split(Match('X')), self.spitTestCases)
 
 	# TODO: testInnerMost
+
+
+class TestUnifiers(TestMixin, unittest.TestCase):
+
+	foldrTestCases = (
+		('[1,2,3]', '6'),
+	)
+	
+	def testFoldr(self):
+		self._testTransf(Foldr(BuildInt(0),Add(First(), Second())), self.foldrTestCases)
+	
+
+class TestArith(TestMixin, unittest.TestCase):
+
+	addTestCases = (
+		('[1,2]', '3'),
+	)
+
+	def testAdd(self):
+		self._testTransf(Add(First(),Second()), self.addTestCases)
 
 
 if __name__ == '__main__':
