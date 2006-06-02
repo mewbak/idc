@@ -14,20 +14,21 @@ class _Is(base.Transformation):
 		self.type = type
 
 	def apply(self, term, context):
-		if term.type == self.type:
+		if term.type != self.type:
 			raise exception.Failure
 		return term
+
 
 def IsInt():
 	return _Is(aterm.types.INT)
 
 
 def IsReal():
-	return _Is(aterm.types.INT)
+	return _Is(aterm.types.REAL)
 
 
 def IsStr():
-	return _Is(aterm.types.INT)
+	return _Is(aterm.types.STR)
 
 
 def IsList():

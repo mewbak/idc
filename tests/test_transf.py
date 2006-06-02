@@ -256,7 +256,26 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	)
 	
 	def testFoldr(self):
-		self._testTransf(Foldr(BuildInt(0),Add(First(), Second())), self.foldrTestCases)
+		self._testTransf(Foldr(BuildInt(0),Add(First(),Second())), self.foldrTestCases)
+
+	crushTestCases = (
+		('[1,2]', '[1,[2,[]]]'),
+		('C(1,2)', '[1,[2,[]]]'),
+	)
+	
+	def testCrush(self):
+		self._testTransf(Crush(Ident(),Ident(), Ident()), self.crushTestCases)
+
+	collectAllTestCases = (
+		('1', '[1]'),
+		('[1,2]', '[1,2]'),
+		('C(1,2)', '[1,2]'),
+		('[[1,2],C(3,4)]', '[1,2,3,4]'),
+		('C([1,2],C(3,4))', '[1,2,3,4]'),
+	)
+	
+	def testCollectAll(self):
+		self._testTransf(CollectAll(IsInt()), self.collectAllTestCases)
 	
 
 class TestArith(TestMixin, unittest.TestCase):
@@ -270,4 +289,13 @@ class TestArith(TestMixin, unittest.TestCase):
 
 
 if __name__ == '__main__':
-	unittest.main()
+	if __debug__:
+		unittest.main()
+	else:
+		import hotshot
+		filename = "transf.prof"
+		prof = hotshot.Profile(filename, lineevents=0)
+		prof.runcall(unittest.main)
+		prof.close()
+
+		

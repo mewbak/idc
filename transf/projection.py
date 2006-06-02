@@ -1,6 +1,8 @@
 '''Term projecting transformations.'''
 
 
+import aterm.types
+
 from transf import exception
 from transf import base
 
@@ -71,3 +73,12 @@ class Args(base.Transformation):
 		except AttributeError:
 			raise exception.Failure("not an application term", term)
 
+
+class SubTerms(base.Transformation):
+	
+	def apply(self, term, context):
+		if term.type == aterm.types.APPL:
+			return term.args
+		if term.type == aterm.types.LIST:
+			return term
+		return term.factory.makeNil()
