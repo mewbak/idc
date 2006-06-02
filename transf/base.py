@@ -1,12 +1,7 @@
 '''Base transformation classes.'''
 
 
-class Failure(Exception):
-	'''Transformation failed to apply.'''
-
-	# TODO: keep a reference to the failure provoking term
-	
-	pass
+from transf.exception import Failure
 
 
 class Transformation(object):
