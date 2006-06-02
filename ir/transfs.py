@@ -5,11 +5,6 @@ from transf import *
 
 from transf import factory as _f
 
-def Tail(operand):
-	tail = Proxy()
-	tail.subject = operand | Cons(Ident(), tail)
-	return tail
-
 
 class _Splitter(aterm.visitor.Visitor):
 	'''Splits a list term in two lists.'''

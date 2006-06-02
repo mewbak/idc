@@ -3,8 +3,8 @@
 
 import aterm.types
 
-from transf import base
 from transf import exception
+from transf import base
 
 
 class _Is(base.Transformation):
