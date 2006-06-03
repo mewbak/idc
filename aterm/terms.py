@@ -241,7 +241,7 @@ class String(Literal):
 	
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, str):
-			raise TypeError('value is not an integer: %r' % value)
+			raise TypeError('value is not an str: %r' % value)
 		Literal.__init__(self, factory, value, annotations)
 
 	def accept(self, visitor, *args, **kargs):

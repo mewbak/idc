@@ -1,14 +1,14 @@
 '''Base transformation classes.'''
 
 
-from transf.exception import Failure
+from transf import exception
 
 
 class Transformation(object):
 	'''Base class for transformations. 
 	
 	A transformation takes as input a term and returns the transformed term, or
-	raises a Failure exception if it is not applicable.
+	raises a failure exception if it is not applicable.
 	
 	Albeit convenient, it is not necessary for every transformation to derive from
 	this class. Generally, a regular function can be used instead.
@@ -30,19 +30,24 @@ class Transformation(object):
 		raise NotImplementedError(self)
 
 	def __invert__(self):
-		return _Not(self)
+		from transf import combinators
+		return Not(self)
 	
 	def __or__(self, other):
-		return _Choice(self, other)
+		from transf import combinators
+		return combinators.Choice(self, other)
 
 	def __ror__(self, other):
-		return _Choice(other, self)
+		from transf import combinators
+		return combinators.Choice(other, self)
 
 	def __and__(self, other):
-		return _Composition(self, other)	
+		from transf import combinators
+		return combinators.Composition(self, other)	
 
 	def __rand__(self, other):
-		return _Composition(other, self)
+		from transf import combinators
+		return combinators.Composition(other, self)
 
 
 class Scope(Transformation):
@@ -54,6 +59,13 @@ class Scope(Transformation):
 		self.kargs = kargs
 		
 	def apply(self, term, context):
+		new_context = {}
+		for name, transf in self.kargs.iteritems():
+			try:
+				new_context[name] = transf.apply(term, context)
+			except AttributeError: # term
+				new_context = transf
+			
 		context = self.kargs.copy()
 		return self.transf(term, context)
 
@@ -88,6 +100,4 @@ class Proxy(Transformation):
 		return self.subject(term, context)
 
 
-from transf.combinators import Not as _Not
-from transf.combinators import Choice as _Choice
-from transf.combinators import Composition as _Composition
+

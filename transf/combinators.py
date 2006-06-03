@@ -1,45 +1,46 @@
 '''Transformation combinators.'''
 
 
-from transf.base import *
+from transf import exception
+from transf import base
 
 
-class Ident(Transformation):
+class Ident(base.Transformation):
 	'''Identity transformation.'''
 	
 	def apply(self, term, context):
 		return term
 	
 
-class Fail(Transformation):
+class Fail(base.Transformation):
 	'''Failure transformation.'''
 	
 	def apply(self, term, context):
-		raise Failure
+		raise exception.Failure
 
 
-class Unary(Transformation):
+class Unary(base.Transformation):
 	'''Base class for unary operations on transformations.'''
 	
 	def __init__(self, operand):
-		Transformation.__init__(self)
+		base.Transformation.__init__(self)
 		self.operand = operand
 
 
-class Binary(Transformation):
+class Binary(base.Transformation):
 	'''Base class for binary operations on transformations.'''
 	
 	def __init__(self, loperand, roperand):
-		Transformation.__init__(self)
+		base.Transformation.__init__(self)
 		self.loperand = loperand
 		self.roperand = roperand
 
 
-class Ternary(Transformation):
+class Ternary(base.Transformation):
 	'''Base class for ternary operations on transformations.'''
 	
 	def __init__(self, operand1, operand2, operand3):
-		Transformation.__init__(self)
+		base.Transformation.__init__(self)
 		self.operand1 = operand1
 		self.operand2 = operand2
 		self.operand3 = operand3
@@ -51,10 +52,10 @@ class Not(Unary):
 	def apply(self, term, context):
 		try:
 			self.operand(term, context)
-		except Failure:
+		except exception.Failure:
 			return term
 		else:
-			raise Failure
+			raise exception.Failure
 
 
 class Try(Unary):
@@ -63,7 +64,7 @@ class Try(Unary):
 	def apply(self, term, context):
 		try:
 			return self.operand(term, context)
-		except Failure:
+		except exception.Failure:
 			return term
 
 
@@ -90,7 +91,7 @@ class Choice(Binary):
 	def apply(self, term, context):
 		try:
 			return self.loperand(term, context)
-		except Failure:
+		except exception.Failure:
 			return self.roperand(term, context)
 
 
@@ -99,7 +100,7 @@ class GuardedChoice(Ternary):
 	def apply(self, term, context):
 		try:
 			result = self.operand1(term, context)
-		except Failure:
+		except exception.Failure:
 			return self.operand3(term, context)
 		else:
 			return self.operand2(result, context)

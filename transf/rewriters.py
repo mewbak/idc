@@ -3,11 +3,12 @@
 
 import aterm.factory
 
-from transf.base import *
-from transf.combinators import *
+from transf import exception
+from transf import base
+from transf import combinators
 
 
-class _Pattern(Transformation):
+class _Pattern(base.Transformation):
 	
 	_factory = aterm.factory.Factory()
 	
@@ -23,7 +24,7 @@ class Match(_Pattern):
 	def apply(self, term, context):
 		match = self.pattern.match(term)
 		if not match:
-			raise Failure
+			raise exception.Failure
 
 		for name, value in match.kargs.iteritems():
 			try:
@@ -32,7 +33,7 @@ class Match(_Pattern):
 				context[name] = value
 			else:
 				if not value.isEquivalent(prev_value):
-					raise Failure
+					raise exception.Failure
 
 		return term
 
@@ -44,11 +45,11 @@ class Build(_Pattern):
 		
 
 def Rule(match_pattern, build_pattern, **kargs):	
-	return Scope(Match(match_pattern) & Build(build_pattern), **kargs)
+	return base.Scope(Match(match_pattern) & Build(build_pattern), **kargs)
 
 
 def RuleSet(patterns, **kargs):
-	rules = Fail()
+	rules = combinators.Fail()
 	for match_pattern, build_pattern in patterns:
 		rules = rules | Rule(match_pattern, build_pattern, **kargs)
 	return rules
