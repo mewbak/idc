@@ -83,7 +83,7 @@ class BuildAppl(base.Transformation):
 	def apply(self, term, context):
 		name = self.name.apply(term, context)
 		args = self.args.apply(term, context)
-		return term.factory.makeCons(name, args)
+		return term.factory.makeAppl(name, args)
 
 
 class BuildVar(base.Transformation):

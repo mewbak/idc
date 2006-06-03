@@ -87,8 +87,8 @@ class MatchCons(base.Transformation):
 		
 	def apply(self, term, context):
 		try:
-			self.head.apply(term.head)
-			self.tail.apply(term.tail)
+			self.head.apply(term.head, context)
+			self.tail.apply(term.tail, context)
 		except AttributeError:
 			raise exception.Failure
 		else:	
@@ -123,8 +123,8 @@ class MatchAppl(base.Transformation):
 		
 	def apply(self, term, context):
 		try:
-			self.name.apply(term.name)
-			self.args.apply(term.args)
+			self.name.apply(term.name, context)
+			self.args.apply(term.args, context)
 		except AttributeError:
 			raise exception.Failure
 		else:	

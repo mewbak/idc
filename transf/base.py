@@ -29,7 +29,7 @@ class Transformation(object):
 		'''Applies the transformation.'''
 		raise NotImplementedError(self)
 
-	def __not__(self):
+	def __invert__(self):
 		return _Not(self)
 	
 	def __or__(self, other):
