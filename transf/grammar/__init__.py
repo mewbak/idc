@@ -1,6 +1,9 @@
 '''Term parsing.'''
 
 
+import sys
+
+
 def Parse(buf):
 	"""Parse a string."""
 	
@@ -20,15 +23,19 @@ def Parse(buf):
 	parser.grammar()
 	ast = parser.getAST()
 	sys.stderr.write(ast.toStringTree() + '\n')
-	walker = Walker()
+	
+	# use caller namespace
+	caller = sys._getframe(1)
+	walker = Walker(globals=caller.f_globals, locals=caller.f_locals)
 	txn = walker.transf(ast)
 	
 	return txn
 
 
 if __name__ == '__main__':
-	import sys
 	sys.stdout = sys.stderr
+	import transf.combinators
+	from transf.combinators import Ident as MyIdent
 	testCases = [
 		'id',
 		'fail',
@@ -61,7 +68,8 @@ if __name__ == '__main__':
 		'?C(<id>,<fail>)',
 		'!C(<id>,<fail>)',
 		'Ident()',
-		'{x,y:id}',
+		'MyIdent()',
+		'transf.combinators.Ident()'
 	]
 	for input in testCases:
 		sys.stderr.write(input + '\n')
