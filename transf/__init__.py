@@ -27,6 +27,8 @@ from transf.strings import *
 
 from transf.debug import *
 
+from transf.grammar import *
+
 
 import transf._factory as _factory
 factory = _factory.Factory()
