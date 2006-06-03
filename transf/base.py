@@ -51,28 +51,6 @@ class Transformation(object):
 		return combinators.Composition(other, self)
 
 
-class Scope(Transformation):
-	'''Introduces a new variable scope before the transformation.'''
-	
-	def __init__(self, transf, locals=None, **kargs):
-		Transformation.__init__(self)
-		self.transf = transf
-		self.locals = locals
-		self.kargs = kargs
-		
-	def apply(self, term, context):
-		new_context = _context.Context(parent=context, locals=self.locals)
-		
-		for name, transf in self.kargs.iteritems():
-			try:
-				new_context[name] = transf.apply(term, context)
-			except AttributeError: # term
-				new_context = transf
-			
-		#context = self.kargs.copy()
-		return self.transf(term, new_context)
-
-
 class Adaptor(Transformation):
 	'''Transformation adapter for a regular function.'''
 	

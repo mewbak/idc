@@ -7,6 +7,7 @@ import aterm.visitor
 from transf import exception
 from transf import base
 from transf import combinators
+from transf import scope
 
 
 _factory = aterm.factory.Factory()
@@ -27,7 +28,7 @@ class Match(_Pattern):
 	def apply(self, term, context):
 		match = self.pattern.match(term)
 		if not match:
-			raise exception.Failure
+			raise exception.Failure('pattern mismatch', self.pattern, term)
 
 		for name, value in match.kargs.iteritems():
 			try:
@@ -91,7 +92,7 @@ def Rule(match_pattern, build_pattern, locals = None):
 		print locals
 		print
 		
-	return base.Scope(Match(match_pattern) & Build(build_pattern), locals)
+	return scope.Scope(Match(match_pattern) & Build(build_pattern), locals)
 
 
 def RuleSet(patterns, locals = None):

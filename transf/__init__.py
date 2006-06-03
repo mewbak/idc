@@ -9,6 +9,7 @@ available at http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-0.16/manual/ .
 
 from transf.exception import *
 from transf.base import *
+from transf.scope import *
 
 from transf.combinators import *
 from transf.projection import *
@@ -23,6 +24,8 @@ from transf.annotation import *
 from transf.arith import *
 from transf.lists import *
 from transf.strings import *
+
+from transf.debug import *
 
 
 import transf._factory as _factory
