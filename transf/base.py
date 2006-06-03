@@ -1,5 +1,6 @@
 '''Base transformation classes.'''
 
+import aterm.terms
 
 from transf import exception
 from transf import context as _context
@@ -49,6 +50,20 @@ class Transformation(object):
 	def __rand__(self, other):
 		from transf import combinators
 		return combinators.Composition(other, self)
+	
+	def __repr__(self):
+		name = self.__class__.__name__
+		attrs = {}
+		for objname in dir(self):
+			obj = getattr(self, objname)
+			if isinstance(obj, (Transformation, aterm.terms.Term)):
+				try:
+					objrepr = repr(obj)
+				except:
+					objrepr = "<error>"
+				attrs[objname] = objrepr
+		return name + '(' + ', '.join(["%s=%s" % attr for attr in attrs.iteritems()]) + ')'
+			
 
 
 class Adaptor(Transformation):
