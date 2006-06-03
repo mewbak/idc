@@ -2,6 +2,7 @@
 
 
 from transf import exception
+from transf import context as _context
 
 
 class Transformation(object):
@@ -22,7 +23,7 @@ class Transformation(object):
 	def __call__(self, term, context = None):
 		'''Applies the transformation.'''
 		if context is None:
-			context = {}
+			context = _context.Context()
 		return self.apply(term, context)
 
 	def apply(self, term, context):
@@ -31,7 +32,7 @@ class Transformation(object):
 
 	def __invert__(self):
 		from transf import combinators
-		return Not(self)
+		return combinators.Not(self)
 	
 	def __or__(self, other):
 		from transf import combinators
@@ -53,21 +54,23 @@ class Transformation(object):
 class Scope(Transformation):
 	'''Introduces a new variable scope before the transformation.'''
 	
-	def __init__(self, transf, **kargs):
+	def __init__(self, transf, locals=None, **kargs):
 		Transformation.__init__(self)
 		self.transf = transf
+		self.locals = locals
 		self.kargs = kargs
 		
 	def apply(self, term, context):
-		new_context = {}
+		new_context = _context.Context(parent=context, locals=self.locals)
+		
 		for name, transf in self.kargs.iteritems():
 			try:
 				new_context[name] = transf.apply(term, context)
 			except AttributeError: # term
 				new_context = transf
 			
-		context = self.kargs.copy()
-		return self.transf(term, context)
+		#context = self.kargs.copy()
+		return self.transf(term, new_context)
 
 
 class Adaptor(Transformation):

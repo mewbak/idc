@@ -2,19 +2,22 @@
 
 
 import aterm.factory
+import aterm.visitor
 
 from transf import exception
 from transf import base
 from transf import combinators
 
 
+_factory = aterm.factory.Factory()
+
+
 class _Pattern(base.Transformation):
 	
-	_factory = aterm.factory.Factory()
 	
 	def __init__(self, pattern):
 		if isinstance(pattern, basestring):
-			self.pattern = self._factory.parse(pattern)
+			self.pattern = _factory.parse(pattern)
 		else:
 			self.pattern = pattern
 	
@@ -33,6 +36,10 @@ class Match(_Pattern):
 				context[name] = value
 			else:
 				if not value.isEquivalent(prev_value):
+					print
+					print 
+					print name +':', value, prev_value
+					print
 					raise exception.Failure
 
 		return term
@@ -41,16 +48,55 @@ class Match(_Pattern):
 class Build(_Pattern):
 	
 	def apply(self, term, context):
-		return self.pattern.make(term, **context)
+		# FIXME: avoid the dict copy
+		return self.pattern.make(term, **dict(context))
 		
 
-def Rule(match_pattern, build_pattern, **kargs):	
-	return base.Scope(Match(match_pattern) & Build(build_pattern), **kargs)
+class _VarCollector(aterm.visitor.Visitor):
+	
+	def __init__(self):
+		aterm.visitor.Visitor.__init__(self)
+		self.vars = []
+	
+	def visitLit(self, term, *args, **kargs):
+		pass
+		
+	def visitNil(self, term, *args, **kargs):
+		pass
+
+	def visitCons(self, term, *args, **kargs):
+		self.visit(term.head)
+		self.visit(term.tail)
+
+	def visitAppl(self, term, *args, **kargs):
+		self.visit(term.name)
+		self.visit(term.args)
+
+	def visitWildcard(self, term, *args, **kargs):
+		pass
+
+	def visitVar(self, term, *args, **kargs):
+		self.vars.append(term.name)
 
 
-def RuleSet(patterns, **kargs):
+def Rule(match_pattern, build_pattern, locals = None):
+	
+	if locals is None:
+		print match_pattern
+		if isinstance(match_pattern, basestring):
+			match_pattern = _factory.parse(match_pattern)
+		varcollector = _VarCollector()
+		varcollector.visit(match_pattern)
+		locals = varcollector.vars
+		print locals
+		print
+		
+	return base.Scope(Match(match_pattern) & Build(build_pattern), locals)
+
+
+def RuleSet(patterns, locals = None):
 	rules = combinators.Fail()
 	for match_pattern, build_pattern in patterns:
-		rules = rules | Rule(match_pattern, build_pattern, **kargs)
+		rules = rules | Rule(match_pattern, build_pattern, locals)
 	return rules
 
