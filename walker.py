@@ -43,12 +43,19 @@ class Walker:
 		else:
 			return False
 	
-	def _dispatch(self, term, prefix):
-		assert term.type == aterm.types.APPL
-		assert term.name.type == aterm.types.STR
-		name = prefix + term.name.value
+	def _dispatchAppl(self, term, methodPrefix, **kargs):
+		if term.type != aterm.types.APPL:
+			raise ValueError('not an application term', term)
+		name = term.name
+		if name.type != aterm.types.STR:
+			raise ValueError('name not a string term', name)
+		methodName = methodPrefix + name.value
+		try:
+			method = getattr(self, methodName)
+		except AttributeError:
+			raise ValueError('unexpected name', name)
 		args = term.args
-		return getattr(self, name)(*args)
+		return method(*args, **kargs)
 	
 	def _fail(self, target, msg = None):
 		'''Signals a transformation failure, with an optional error message.'''

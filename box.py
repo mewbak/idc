@@ -96,87 +96,59 @@ class AnsiTextFormatter(TextFormatter):
 class Writer(walker.Walker):
 	'''Writes boxes trhough a formatter.'''
 
+	NONE, VERT, HORIZ = range(3)
+	
 	def __init__(self, factory, formatter):
 		walker.Walker.__init__(self, factory)
 		self.formatter = formatter
 	
-	def write(self, b):
-		self.writeVert(b)
-	
-	def writeVert(self, b):
-		if b.type == aterm.types.APPL:
-			self._dispatch(b, "writeVert")
-		elif b.type == aterm.types.STR:
-			self.writeVertS(b)
+	def write(self, box, mode = NONE):
+		if box.type == aterm.types.APPL:
+			self._dispatchAppl(box, "write", mode = mode)
+		elif box.type == aterm.types.STR:
+			self.writeS(box, mode)
 		else:
 			assert False
 	
-	def writeVertV(self, bl):
-		for b in bl:
-			self.writeVert(b)
-	
-	def writeVertI(self, b):
-		self.formatter.indent()
-		self.writeVert(b)
-		self.formatter.dedent()
-	
-	def writeVertD(self, b):
-		self.formatter.dedent()
-		self.writeVert(b)
-		self.formatter.indent()
-	
-	def writeVertT(self, n, v, b):
-		assert n.type == aterm.types.STR
-		assert v.type == aterm.types.STR
-		self.formatter.handle_tag_start(n.value, v.value)
-		self.writeVert(b)
-		self.formatter.handle_tag_end(n.value)
-
-	def writeVertH(self, bl):
-		self.formatter.write_indent()
-		for b in bl:
-			self.writeHoriz(b)
-		self.formatter.write_eol()
-	
-	def writeVertS(self, s):
-		self.formatter.write_indent()
-		self.formatter.write(s.value)
-		self.formatter.write_eol()
-
-	def writeHoriz(self, b):
-		if b.type == aterm.types.STR:
-			self.writeHorizS(b)
-		elif b.type == aterm.types.APPL:
-			self._dispatch(b, "writeHoriz")
+	def writeV(self, boxes, mode):
+		if mode == self.HORIZ:
+			sys.stderr.write("warning: vbox inside hbox: %r\n" % boxes)
 		else:
-			assert False
+			mode = self.VERT
+		for box in boxes:
+			self.write(box, mode)
 	
-	def writeHorizV(self, bl):
-		sys.stderr.write("warning: vbox inside hbox: %r\n" % bl)
-		for b in bl:
-			self.writeHoriz(b)
+	def writeI(self, box, mode):
+		self.formatter.indent()
+		self.write(box, mode)
+		self.formatter.dedent()
 	
-	def writeHorizI(self, b):
-		sys.stderr.write("warning: indent inside hbox: %r\n" % b)
-		self.writeHoriz(b)
+	def writeD(self, box, mode):
+		self.formatter.dedent()
+		self.write(box, mode)
+		self.formatter.indent()
 	
-	def writeHorizD(self, b):
-		sys.stderr.write("warning: dedent inside hbox: %r\n" % b)
-		self.writeHoriz(b)
-	
-	def writeHorizT(self, n, v, b):
+	def writeT(self, n, v, box, mode):
 		assert n.type == aterm.types.STR
 		assert v.type == aterm.types.STR
 		self.formatter.handle_tag_start(n.value, v.value)
-		self.writeHoriz(b)
+		self.write(box, mode)
 		self.formatter.handle_tag_end(n.value)
 
-	def writeHorizH(self, bl):
-		for b in bl:
-			self.writeHoriz(b)
+	def writeH(self, boxes, mode):
+		if mode == self.VERT:
+			self.formatter.write_indent()
+		for box in boxes:
+			self.write(box, mode = self.HORIZ)
+		if mode == self.VERT:
+			self.formatter.write_eol()
 	
-	def writeHorizS(self, s):
+	def writeS(self, s, mode):
+		if mode == self.VERT:
+			self.formatter.write_indent()
 		self.formatter.write(s.value)
+		if mode == self.VERT:
+			self.formatter.write_eol()
 
 
 def box2text(boxes, formatterClass = TextFormatter):
