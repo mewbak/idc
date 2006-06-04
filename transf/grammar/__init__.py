@@ -100,6 +100,7 @@ if __name__ == '__main__':
 		'where(!"," => sep)',
 		'where( !"," => sep ); id',
 		'{ sep : where( !"," => sep ); id }',
+		'~C(1, <id>)',
 	]
 	for input in testCases:
 		sys.stderr.write(input + '\n')

@@ -160,7 +160,7 @@ VERT: '|';
 
 RSLASH: '\\';
 
-NOT_OP: '~';
+TILDE: '~';
 
 AT: '@';
 
@@ -194,6 +194,7 @@ transf_atom
 	| FAIL
 	| QUEST^ term
 	| BANG^ term
+	| TILDE^ term
 	| id ( LPAREN! transf_list ( VERT term_arg_list )? RPAREN! )?
 			{ ## = #(#[CALL,"CALL"], ##) }
 	| LCURLY!
@@ -371,6 +372,8 @@ transf returns [ret]
 		{ ret = m }
 	| #( BANG b=build_term )
 		{ ret = b }
+	| #( TILDE t=traverse_term )
+		{ ret = t }
 	| #( SEMI l=transf r=transf )
 		{ ret = transf.combinators.Composition(l, r) }
 	| #( PLUS l=transf r=transf )
@@ -434,7 +437,7 @@ match_term returns [ret]
 		{ ret = transf.matching.MatchAppl(n, a) }
 	| w:WILDCARD 
 		{ ret = transf.combinators.Ident() }
-	| #( v:VAR 
+	| #( v:VAR // TODO: handle sub-patterns
 		{ ret = transf.matching.MatchVar(#v.getText()) }
 		( p=match_term
 			{ ret = transf.combinators.composition(p, ret) }
@@ -485,5 +488,14 @@ build_term returns [ret]
 		{ ret = transf.building.BuildVar(#v.getText()) }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
+	;
+
+traverse_term returns [ret]
+	: #( CONS h=traverse_term t=traverse_term )
+		{ ret = transf.traversal.TraverseCons(h, t) }
+	| #( APPL n=traverse_term a=traverse_term )
+		{ ret = transf.traversal.TraverseAppl(n, a) }
+	| o:.
+		{ ret = self.match_term(#o) }
 	;
 

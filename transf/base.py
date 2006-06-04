@@ -1,9 +1,13 @@
 '''Base transformation classes.'''
 
 import aterm.terms
+import aterm.factory
 
 from transf import exception
 from transf import context as _context
+
+
+_factory = aterm.factory.Factory()
 
 
 class Transformation(object):
@@ -23,6 +27,8 @@ class Transformation(object):
 	
 	def __call__(self, term, context = None):
 		'''Applies the transformation.'''
+		if isinstance(term, basestring):
+			term = _factory.parse(term)
 		if context is None:
 			context = _context.Context()
 		return self.apply(term, context)
@@ -76,7 +82,7 @@ class Adaptor(Transformation):
 		self.kargs = kargs
 
 	def apply(self, term, context):
-		return self.func(term, *self.args, **self.kargs)
+		return self.func(term, context, *self.args, **self.kargs)
 
 
 class Proxy(Transformation):
