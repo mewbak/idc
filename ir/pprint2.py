@@ -53,36 +53,11 @@ def TraverseModule(moduler, stmtt):
 	''') & moduler
 	return modulet
 	
-
-
-op = ParseTransf('''
-	!T("type", "operator", <id>)
-''')
-
-kw = ParseTransf('''
-	!T("type", "keyword", <id>)
-''')
-
-reprz = Adaptor(
-	lambda term, context: term.factory.makeStr(repr(term.value))
-)
-
-lit = ParseTransf('''
-	!T("type", "literal", <reprz>)
-''')
-
-sym = ParseTransf('''
-	!T("type", "symbol", <id>)
-''')
-
-join = ParseTransf('''
-	( ~[] + ~[_, *<foldr(?[], ![sep, <First()>, *<Second()>])>] );
-	!H( <id> )
-''')
-
-commas = ParseTransf('''
-	{ sep : where( !", " => sep ); join }
-''')
+from box import op
+from box import kw
+from box import lit
+from box import sym
+from box import commas
 
 sign = ParseRule('''
 	Signed -> <<kw> "signed">

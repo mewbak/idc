@@ -2,15 +2,11 @@
 
 import aterm
 import transf
-
-from ir import pprint2
+import box
 
 from transf import *
 
-
-#		self.fp.write('digraph cfg {\n')
-#		self.fp.write('}\n')
-	
+from ir import pprint2
 
 
 matchStmtName \
@@ -27,21 +23,6 @@ matchStmtName \
 	| MatchStr('Continue') \
 	| MatchStr('NoOp') \
 	| MatchStr('Ret')
-
-
-matchFlowedStmtName \
-	= MatchStr('VarDef') \
-	| MatchStr('FuncDef') \
-	| MatchStr('Assign') \
-	| MatchStr('If') \
-	| MatchStr('While') \
-	| MatchStr('Ret)') \
-	| MatchStr('Label') \
-	| MatchStr('Branch') \
-	| MatchStr('Block') \
-	| MatchStr('Break') \
-	| MatchStr('Continue') \
-	| MatchStr('NoOp')
 
 
 class Counter(Transformation):
@@ -121,8 +102,6 @@ moduleEdges \
 makeNodeId \
 	= GetAnnotation(Build('Id')) & ToStr()
 
-import box
-
 box2text = Adaptor(
 		lambda term, context: term.factory.makeStr(box.box2text(term))
 )
@@ -193,7 +172,11 @@ if __name__ == '__main__':
 		term = makeDot(term)
 		print term
 
-		print box.box2text(term)
+		dotcode = box.box2text(term)
+		print dotcode
+		
+		import os
+		os.system("echo '%s' | dot -Tps | ggv - &" % dotcode)
 
 		#term = markStmts.apply(term, {})
 

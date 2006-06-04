@@ -3,7 +3,7 @@
 
 import sys
 
-from aterm import Factory
+import aterm.factory 
 from ir import PrettyPrinter
 import box
 import path
@@ -20,7 +20,7 @@ def translate(filename):
 	print '* %s *' % filename
 	print
 	
-	factory = Factory()
+	factory = aterm.factory.Factory()
 	machine = Pentium()
 	
 	print '** Assembly **'	

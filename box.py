@@ -13,8 +13,9 @@ try:
 except ImportError:
 	from StringIO import StringIO
 
-import aterm
+import aterm.types
 import walker
+import transf
 
 
 class Formatter:
@@ -108,7 +109,7 @@ class Writer(walker.Walker):
 		elif box.type == aterm.types.STR:
 			self.writeS(box, mode)
 		else:
-			assert False
+			raise ValueError('bad box', box)
 	
 	def writeV(self, boxes, mode):
 		if mode == self.HORIZ:
@@ -161,39 +162,72 @@ def box2text(boxes, formatterClass = TextFormatter):
 	return fp.getvalue()
 
 
-#class Term2Box:
-#
-#	# XXX: incomplete
-#
-#	depth
-#		: f(*a)
-#			{ return 1 + self.depth($a) }
-#		| []
-#			{ return 0 }
-#		| [h,*t]
-#			{ return max(self.depth($h), self.depth($t)) }
-#		| _
-#			{ return 0 }
-#		;
-#		
-#	convert
-#		: f(*a) -> H([f, "(", :convert_list(a), ")"], 0)
-#		| [] -> H(["[", "]"], 0)
-#		| [h,*t] -> H(["[", "]"], 0)
-#		| _
-#			{ $$ = $!.make("_", repr($<.getValue())) }
-#		;
-#	
-#	convert_list
-#		: [] -> []
-#		| [h, *t] -> [:convert(h), *:convert_list(t)]
-#		;
-	
-	
-#def term2box(term):
-#	'''Convert an aterm into its box representation.'''
-#
-#	boxer = Term2Box(term.factory)
-#	box = boxer.convert(term)
-#	return box
+def Tag(name, value, operand = None):
+	if operand is None:
+		operand = transf.combinators.Ident()
+	return transf.building.BuildAppl(
+		'T',
+		 [
+			transf.building.BuildStr(name),
+			transf.building.BuildStr(value),
+			operand,
+		]
+	)
 
+op = Tag('type', 'operator')
+kw = Tag('type', 'keyword')
+const = Tag('type', 'constant')
+string = Tag('type', 'string')
+sym = Tag('type', 'symbol')
+
+
+def escape(term, context):
+	s = str(term.value)
+	s = s.replace('\"', '\\"')
+	s = s.replace('\t', '\\t')
+	s = s.replace('\r', '\\r')
+	s = s.replace('\n', '\\n')
+	s = '"' + s + '"'
+	return term.factory.makeStr(s)
+escape = transf.base.Adaptor(escape)
+
+
+def lit(term, context):
+	if term.type == aterm.types.INT:
+		term = term.factory.makeStr(str(term.value))
+		return const.apply(term, context)
+	if term.type == aterm.types.REAL:
+		term = term.factory.makeStr(str(term.value))
+		return const.apply(term, context)
+	if term.type == aterm.types.STR:
+		term = escape.apply(term, context)
+		return string.apply(term, context)
+lit = transf.base.Adaptor(lit)
+
+
+def Prefix(sep):
+	prefix = transf.base.Proxy()
+	prefix.subject \
+		= transf.matching.MatchNil() \
+		| transf.building.BuildCons(
+			sep,
+			transf.building.BuildCons(
+				transf.projection.Head(),
+				transf.projection.Tail() & prefix
+			)
+		)
+	return prefix
+
+def Join(sep):
+	return \
+		transf.matching.MatchNil() \
+		| transf.traversal.TraverseCons(
+			transf.combinators.Ident(),
+			Prefix(sep)
+		)
+	
+commas \
+	= transf.building.BuildAppl(
+		'H', 
+		[Join(transf.building.BuildStr(', '))]
+	)
