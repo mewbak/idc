@@ -3,26 +3,45 @@
 
 import sys
 
+try:
+	import cStringIO as StringIO
+except ImportError:
+	import StringIO
 
-def Parse(buf):
-	"""Parse a string."""
-	
-	try:
-		from cStringIO import StringIO
-	except ImportError:
-		from StringIO import StringIO
-	
-	fp = StringIO(buf)
-	
-	from transf.grammar.lexer import Lexer
-	from transf.grammar.parser import Parser
-	from transf.grammar.compiler import Walker
+from transf.grammar.lexer import Lexer
+from transf.grammar.parser import Parser
+from transf.grammar.compiler import Walker
 
+
+def ParseTransf(buf):
+	"""Parse a transformation from a string."""
+	
+	fp = StringIO.StringIO(buf)
+	
 	lexer = Lexer(fp)
 	parser = Parser(lexer)
-	parser.grammar()
+	parser.transf()
 	ast = parser.getAST()
-	sys.stderr.write(ast.toStringTree() + '\n')
+	#sys.stderr.write(ast.toStringTree() + '\n')
+	
+	# use caller namespace
+	caller = sys._getframe(1)
+	walker = Walker(globals=caller.f_globals, locals=caller.f_locals)
+	txn = walker.transf(ast)
+	
+	return txn
+
+
+def ParseRule(buf):
+	"""Parse a transformation rule from a string."""
+	
+	fp = StringIO.StringIO(buf)
+	
+	lexer = Lexer(fp)
+	parser = Parser(lexer)
+	parser.rule_def()
+	ast = parser.getAST()
+	#sys.stderr.write(ast.toStringTree() + '\n')
 	
 	# use caller namespace
 	caller = sys._getframe(1)
@@ -33,6 +52,7 @@ def Parse(buf):
 
 
 if __name__ == '__main__':
+	# TODO: move these to a test case
 	sys.stdout = sys.stderr
 	import transf.combinators
 	from transf.combinators import Ident as MyIdent
@@ -69,10 +89,12 @@ if __name__ == '__main__':
 		'!C(<id>,<fail>)',
 		'Ident()',
 		'MyIdent()',
-		'transf.combinators.Ident()'
+		'transf.combinators.Ident()',
+		'( C(x,y) -> D(y,x) )',
+		'{ C(x,y) -> D(y,x) }',
 	]
 	for input in testCases:
 		sys.stderr.write(input + '\n')
-		output = repr(Parse(input))
+		output = repr(ParseTransf(input))
 		sys.stderr.write('\t' + output + '\n')
 	

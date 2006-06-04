@@ -160,7 +160,7 @@ tokens {
 	CALL;
 	RULE;
 	SCOPE;
-	LAMBDA_RULE;
+	ANON;
 	TRANSF;
 }
 
@@ -173,18 +173,22 @@ transf_atom
 	| FAIL
 	| QUEST^ term
 	| BANG^ term
-	| ID LPAREN! transf_list ( VERT term_arg_list )? RPAREN!
+	| id LPAREN! transf_list ( VERT term_arg_list )? RPAREN!
 		{ ## = #(#[CALL,"CALL"], ##) }
-	| LCURLY! id_list COLON transf RCURLY!
-		{ ## = #(#[SCOPE,"SCOPE"], ##) }
-	| LPAREN! transf RPAREN!
-/* TODO: handle non-anonymous rules
-	| LPAREN! rule RPAREN!
-		{ ## = #(#[RULE,"RULE"], ##) }
-*/
-	| RSLASH! rule RSLASH!
-		{ ## = #(#[LAMBDA_RULE,"LAMBDA_RULE"], ##) }
-	| 
+	| LCURLY!
+		( ( scope ) => scope 
+		| rule
+			{ ## = #(#[ANON,"ANON"], ##) }
+		) RCURLY!
+	| LPAREN!
+		( ( rule ) => rule 
+		| transf
+		) RPAREN!
+	;
+
+id
+	: ID
+	| w:WHERE { #w.setType(ID) }
 	;
 
 transf_composition
@@ -211,13 +215,21 @@ term_arg_list
 	: ( term ( COMMA! term )* )?
 	;
 
+scope
+	: id_list COLON transf
+		{ ## = #(#[SCOPE,"SCOPE"], ##) }
+	;
+
 rule
-	: term INTO term ( WHERE transf )?
+	: term INTO! term ( WHERE transf )?
 		{ ## = #(#[RULE,"RULE"], ##) }
 	;
 
 rule_def
-	: rule ( VERT^ rule )*
+	: rule 
+		( VERT! rule_def 
+			{ ## = #(#[PLUS,"PLUS"], ##) }
+		)?
 	;
 
 /*
@@ -241,10 +253,7 @@ term
 	| term_args
 		{ ## = #(#[APPL,"APPL"], #[CONS,""], ##) }
 	| i:ID 
-		{
-            inicial = #i.getText()[0]
-        }
-        ( { inicial.isupper() }?
+        ( { #i.getText()[0].isupper() }?
         	{ #i.setType(STR) } 
         	term_opt_args 
 			{ ## = #(#[APPL,"APPL"], ##) }
@@ -357,24 +366,23 @@ transf returns [ret]
 		t=transf 
 	  )
 		{ ret = transf.scope.Scope(t, vars) }
-	;
-
-rule returns [ret]
-	: #( RULE m=match_term b=build_term )
-		{ ret = transf.combinators.Composition(m, b) }
-	| #( LAMBDA_RULE m=p:match_term b=build_term )
+	| #( RULE m=match_term b=build_term
+		( WHERE w=transf 
+			{ ret = transf.combinators.Composition(transf.combinators.Where(w), b) }
+		|
+			{ ret = b }
+		)
+			{ ret = transf.combinators.Composition(m, ret) }
+	  )
+	| #( ANON ret=t:transf )
 		{
             vars = []
-            self.collect_term_vars(#p, vars)
-            ret = transf.combinators.Composition(m, b)
+            print #t.toStringTree()
+            self.collect_transf_vars(#t, vars)
             ret = transf.scope.Scope(ret, vars)
         }
-	| #( VERT l=rule r=rule )
-		{ ret = transf.combinators.Choice(l, r) }
 	;
-
-
-
+	
 match_term returns [ret]
 	: i:INT 
 		{ ret = transf.matching.MatchInt(int(#i.getText())) }
@@ -398,6 +406,11 @@ match_term returns [ret]
 	  )
 	| #( TRANSF txn=transf )
 		{ ret = txn }
+	;
+
+collect_transf_vars[vars]
+	: #( RULE collect_term_vars[vars] )
+	| .
 	;
 
 collect_term_vars[vars]
