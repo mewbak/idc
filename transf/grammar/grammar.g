@@ -131,6 +131,8 @@ PLUS: '+';
 
 INTO: "->";
 
+APPLY_MATCH: "=>";
+
 SEMI: ';';
 
 CARET: '^';
@@ -162,6 +164,7 @@ tokens {
 	SCOPE;
 	ANON;
 	TRANSF;
+	BUILD_APPLY;
 }
 
 grammar
@@ -177,13 +180,14 @@ transf_atom
 		{ ## = #(#[CALL,"CALL"], ##) }
 	| LCURLY!
 		( ( scope ) => scope 
-		| rule
-			{ ## = #(#[ANON,"ANON"], ##) }
+		| anon_rule
 		) RCURLY!
 	| LPAREN!
 		( ( rule ) => rule 
 		| transf
 		) RPAREN!
+	| LANGLE! transf RANGLE! term
+		{ ## = #(#[BUILD_APPLY,"BUILD_APPLY"], ##) }
 	;
 
 id
@@ -191,8 +195,12 @@ id
 	| w:WHERE { #w.setType(ID) }
 	;
 
+transf_application
+	: transf_atom ( APPLY_MATCH^ term )*
+	;
+
 transf_composition
-	: transf_atom ( SEMI^ transf_atom )*
+	: transf_application ( SEMI^ transf_application )*
 	;
 
 transf_choice
@@ -225,8 +233,13 @@ rule
 		{ ## = #(#[RULE,"RULE"], ##) }
 	;
 
+anon_rule
+	: rule
+		{ ## = #(#[ANON,"ANON"], ##) }
+	;
+
 rule_def
-	: rule 
+	: anon_rule 
 		( VERT! rule_def 
 			{ ## = #(#[PLUS,"PLUS"], ##) }
 		)?
@@ -374,13 +387,16 @@ transf returns [ret]
 		)
 			{ ret = transf.combinators.Composition(m, ret) }
 	  )
-	| #( ANON ret=t:transf )
+	| #( ANON ret=at:transf )
 		{
             vars = []
-            print #t.toStringTree()
-            self.collect_transf_vars(#t, vars)
+            self.collect_transf_vars(#at, vars)
             ret = transf.scope.Scope(ret, vars)
         }
+	| #( APPLY_MATCH t=transf m=match_term )
+		{ ret = transf.combinators.Composition(t, m) }
+	| #( BUILD_APPLY t=transf b=build_term )
+		{ ret = transf.combinators.Composition(b, t) }
 	;
 	
 match_term returns [ret]
