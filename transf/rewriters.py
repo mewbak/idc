@@ -17,6 +17,7 @@ class _Pattern(base.Transformation):
 	
 	
 	def __init__(self, pattern):
+		base.Transformation.__init__(self)
 		if isinstance(pattern, basestring):
 			self.pattern = _factory.parse(pattern)
 		else:
@@ -37,10 +38,6 @@ class Match(_Pattern):
 				context[name] = value
 			else:
 				if not value.isEquivalent(prev_value):
-					print
-					print 
-					print name +':', value, prev_value
-					print
 					raise exception.Failure
 
 		return term
@@ -83,14 +80,11 @@ class _VarCollector(aterm.visitor.Visitor):
 def Rule(match_pattern, build_pattern, locals = None):
 	
 	if locals is None:
-		print match_pattern
 		if isinstance(match_pattern, basestring):
 			match_pattern = _factory.parse(match_pattern)
 		varcollector = _VarCollector()
 		varcollector.visit(match_pattern)
 		locals = varcollector.vars
-		print locals
-		print
 		
 	return scope.Scope(Match(match_pattern) & Build(build_pattern), locals)
 

@@ -45,7 +45,7 @@ class SplitBlock(Transformation):
 	def __init__(self, name):
 		self.name = name
 		self.split_head = Split(
-			Scope(Match("Label(name)"), name=name)
+			MatchAppl("Label", [Match(name)])
 		)
 		self.split_tail = Split(
 			Match("Ret(*)")
