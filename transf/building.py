@@ -1,6 +1,7 @@
 '''Term building transformations.'''
 
 
+import aterm.factory
 import aterm.types
 
 from transf import base
@@ -10,35 +11,37 @@ from transf import exception
 # TODO: handle annotations
 
 
-class _BuildLit(base.Transformation):
+_factory = aterm.factory.Factory()
 
-	def __init__(self, value):
+
+class BuildTerm(base.Transformation):
+
+	def __init__(self, term):
 		base.Transformation.__init__(self)
-		self.value = value
-
-
-class BuildInt(_BuildLit):
+		self.term = term
 	
 	def apply(self, term, context):
-		return term.factory.makeInt(self.value)
+		return self.term
 
 
-class BuildReal(_BuildLit):
-	
-	def apply(self, term, context):
-		return term.factory.makeReal(self.value)
+def BuildInt(value):
+	term = _factory.makeInt(value)
+	return BuildTerm(term)
 
 
-class BuildStr(_BuildLit):
-	
-	def apply(self, term, context):
-		return term.factory.makeStr(self.value)
+def BuildReal(value):
+	term = _factory.makeReal(value)
+	return BuildTerm(term)
 
 
-class BuildNil(base.Transformation):
-	
-	def apply(self, term, context):
-		return term.factory.makeNil()
+def BuildStr(value):
+	term = _factory.makeStr(value)
+	return BuildTerm(term)
+
+
+def BuildNil():
+	term = _factory.makeNil()
+	return BuildTerm(term)
 
 
 class BuildCons(base.Transformation):
@@ -63,8 +66,10 @@ def _BuildList(elms_iter, tail):
 		return BuildCons(elm, _BuildList(elms_iter, tail))
 
 
-def BuildList(elms):
-	return _BuildList(iter(elms), BuildNil())
+def BuildList(elms, tail = None):
+	if tail is None:
+		tail = BuildNil()
+	return _BuildList(iter(elms), tail)
 	
 
 class BuildAppl(base.Transformation):

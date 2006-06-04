@@ -7,7 +7,7 @@ from transf import exception
 from transf import base
 
 
-class _Is(base.Transformation):
+class IsType(base.Transformation):
 
 	def __init__(self, type):
 		base.Transformation.__init__(self)
@@ -20,23 +20,23 @@ class _Is(base.Transformation):
 
 
 def IsInt():
-	return _Is(aterm.types.INT)
+	return IsType(aterm.types.INT)
 
 
 def IsReal():
-	return _Is(aterm.types.REAL)
+	return IsType(aterm.types.REAL)
 
 
 def IsStr():
-	return _Is(aterm.types.STR)
+	return IsType(aterm.types.STR)
 
 
 def IsList():
-	return _Is(aterm.types.LIST)
+	return IsType(aterm.types.LIST)
 
 
 def IsAppl():
-	return _Is(aterm.types.APPL)
+	return IsType(aterm.types.APPL)
 
 
 class _MatchLit(base.Transformation):
@@ -104,8 +104,10 @@ def _MatchList(elms_iter, tail):
 		return MatchCons(elm, _MatchList(elms_iter, tail))
 
 
-def MatchList(elms):
-	return _MatchList(iter(elms), MatchNil())
+def MatchList(elms, tail = None):
+	if tail is None:
+		tail = MatchNil()
+	return _MatchList(iter(elms), tail)
 	
 
 class MatchAppl(base.Transformation):
