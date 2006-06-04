@@ -92,9 +92,14 @@ if __name__ == '__main__':
 		'transf.combinators.Ident()',
 		'( C(x,y) -> D(y,x) )',
 		'{ C(x,y) -> D(y,x) }',
+		'{x, y: id }',
 		'<id> 123',
 		'id => 123',
 		'<id> 1 => 123',
+		'!"," => sep',
+		'where(!"," => sep)',
+		'where( !"," => sep ); id',
+		'{ sep : where( !"," => sep ); id }',
 	]
 	for input in testCases:
 		sys.stderr.write(input + '\n')

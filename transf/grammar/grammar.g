@@ -5,7 +5,24 @@
 
 
 header {
+    import antlr
     import transf
+
+
+    class SemanticException(antlr.SemanticException):
+
+        def __init__(self, node, msg):
+            antlr.SemanticException.__init__(self)
+            self.node = node
+            self.msg = msg
+
+        def __str__(self):
+            line = self.node.getLine()
+            col  = self.node.getColumn()
+            text = self.node.getText()
+            return "line %s:%s: \"%s\": %s" % (line, col, text, self.msg)
+
+        __repr__ = __str__
 }
 
 header "compiler.__init__" {
@@ -153,6 +170,7 @@ class parser extends Parser;
 options {
 	k=3;
 	buildAST = true;
+	defaultErrorHandler = false;
 }
 
 tokens {
@@ -176,10 +194,11 @@ transf_atom
 	| FAIL
 	| QUEST^ term
 	| BANG^ term
-	| id LPAREN! transf_list ( VERT term_arg_list )? RPAREN!
-		{ ## = #(#[CALL,"CALL"], ##) }
+	| id ( LPAREN! transf_list ( VERT term_arg_list )? RPAREN! )?
+			{ ## = #(#[CALL,"CALL"], ##) }
 	| LCURLY!
-		( ( scope ) => scope 
+		( ( id_list COLON ) => id_list COLON transf
+			{ ## = #(#[SCOPE,"SCOPE"], ##) } 
 		| anon_rule
 		) RCURLY!
 	| LPAREN!
@@ -221,11 +240,6 @@ transf_list
 
 term_arg_list
 	: ( term ( COMMA! term )* )?
-	;
-
-scope
-	: id_list COLON transf
-		{ ## = #(#[SCOPE,"SCOPE"], ##) }
 	;
 
 rule
@@ -326,6 +340,13 @@ class compiler extends TreeParser;
     def bind_transf_name(self, name):
         // TODO: handle caller global and local namespaces
     
+        // lookup in the builtins module
+        from transf.grammar.builtins import builtins
+        try:
+            return builtins[name]
+        except KeyError:
+            pass
+        
         // lookup in the caller namespace
         try:
             return eval(name, self.globals, self.locals)
@@ -336,13 +357,6 @@ class compiler extends TreeParser;
         try:
             return getattr(transf, name)
         except AttributeError:
-            pass
-        
-        // lookup in the builtins module
-        from transf.grammar.builtins import builtins
-        try:
-            return builtins[name]
-        except KeyError:
             pass
         
         return None
@@ -367,9 +381,15 @@ transf returns [ret]
 		// TODO: handle term args
 		{
             name = #i.getText()
-            // TODO: better error handling
             txn = self.bind_transf_name(name)
-            ret = txn(*args) 
+            if txn is None:
+                ret = None
+                raise SemanticException(#i, "could not find %s" % name)
+            if isinstance(txn, transf.base.Transformation):
+                // TODO: check args
+                ret = txn
+            else:
+                ret = txn(*args) 
         }
 	  )
 	| #( SCOPE
