@@ -298,16 +298,6 @@ id_list
 	;
 
 
-{
-    builtin_table = {
-        "all": transf.traversal.All,
-        //"one": transf.traversal.One,
-        //"some": transf.traversal.Some,
-        "not": transf.combinators.Not,
-        "where": transf.combinators.Where,
-    }
-}
-
 class compiler extends TreeParser;
 
 {
@@ -326,9 +316,10 @@ class compiler extends TreeParser;
         except AttributeError:
             pass
         
-        // lookup in the builtin table
+        // lookup in the builtins module
+        from transf.grammar.builtins import builtins
         try:
-            return builtin_table[name]
+            return builtins[name]
         except KeyError:
             pass
         
