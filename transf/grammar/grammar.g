@@ -399,9 +399,12 @@ transf returns [ret]
 		{ vars = [] } 
 		( v:ID { vars.append(#v.getText()) } )*
 		COLON
-		t=transf 
+		ret=transf 
 	  )
-		{ ret = transf.scope.Scope(t, vars) }
+		{
+            if vars:
+                ret = transf.scope.Scope(ret, vars)
+        }
 	| #( RULE m=match_term b=build_term
 		( WHERE w=transf 
 			{ ret = transf.combinators.Composition(transf.combinators.Where(w), b) }
@@ -414,7 +417,8 @@ transf returns [ret]
 		{
             vars = []
             self.collect_transf_vars(#at, vars)
-            ret = transf.scope.Scope(ret, vars)
+            if vars:
+                ret = transf.scope.Scope(ret, vars)
         }
 	| #( APPLY_MATCH t=transf m=match_term )
 		{ ret = transf.combinators.Composition(t, m) }

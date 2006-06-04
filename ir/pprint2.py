@@ -8,30 +8,25 @@ from transf import *
 def TraverseType(typer):
 	typet = Proxy()
 	typet.subject = ParseTransf('''
-		~Int(_,_) +
-		~Float(_) +
-		~Char(size) +
 		~Pointer(_, <typet>) +
 		~Array(<typet>) +
-		~Void
+		id
 	''') & typer
 	return typet
 
 
-def TraverseExpr(exprr, typet, op):
+def TraverseExpr(exprr, typet, opr):
 	exprt = Proxy()
 	exprt.subject = ParseTransf('''
-		~False +
-		~True +
 		~Lit(<typet>, _) +
-		~Sym(<id>) +
 		~Cast(<typet>, <exprt>) +
-		~Unary(<op>, <exprt>) +
-		~Binary(<op>, <exprt>, <exprt>) +
+		~Unary(<opr>, <exprt>) +
+		~Binary(<opr>, <exprt>, <exprt>) +
 		~Cond(<exprt>, <exprt>, <exprt>) +
 		~Call(<exprt>, <map(exprt)>) +
 		~Addr(<exprt>) +
-		~Ref(<exprt>)
+		~Ref(<exprt>) +
+		id
 	''') & exprr
 	return exprt
 
@@ -41,15 +36,13 @@ def TraverseStmt(stmtr, exprt, typet):
 	stmtt.subject = ParseTransf('''
 		~Assign(<typet>, <exprt>, <exprt>) +
 		~Asm(_, <map(exprt)>) +
-		~Label(_) +
 		~Block(<map(stmtt)>) +
 		~FuncDef(<typet>, _, _, <stmtt>) +
 		~If(<exprt>, <stmtt>, <stmtt>) +
 		~While(<exprt>, <stmtt>) +
 		~Ret(<type>, <exprt>) +
-		~Branch(label) +
-		~Break +
-		~Continue
+		~Branch(<exprt>) +
+		id
 	''') & stmtr
 	return stmtt
 
@@ -73,8 +66,6 @@ kw = ParseTransf('''
 reprz = Adaptor(
 	lambda term, context: term.factory.makeStr(repr(term.value))
 )
-
-print reprz("1")
 
 lit = ParseTransf('''
 	!T("type", "literal", <reprz>)
@@ -121,9 +112,11 @@ typer = ParseRule('''
 		-> H([ type, "[", "]" ])
 |	Void
 		-> <<kw> "void">
+|	Blob(size)
+		-> H([ "blob", <<ToStr> size> ])
 ''')
 
-op = ParseRule('''
+opr = ParseRule('''
 	Not -> "!"
 |	BitNot(size) -> "~"
 |	Neg(type) -> "-"
@@ -201,7 +194,7 @@ moduler = ParseRule('''
 
 type = TraverseType(typer)
 
-expr = TraverseExpr(exprr, type, op)
+expr = TraverseExpr(exprr, type, opr)
 
 stmt = TraverseStmt(stmtr, expr, type)
 
@@ -218,6 +211,8 @@ if __name__ == '__main__':
 	
 	exprTestCases = [
 		('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Sym("x"))', '1 + x\n'),
+		('Sym("eax"{Path,[0,1,1,0]}){Path,[1,1,0]}', ''),
+		('Lit(Int(32{Path,[0,0,2,1,0]},Signed{Path,[1,0,2,1,0]}){Path,[0,2,1,0]},1234{Path,[1,2,1,0]}){Path,[2,1,0]}){Path,[1,0],Id,2}', '')
 	]
 	
 	for inputStr, output in exprTestCases:
@@ -236,6 +231,8 @@ if __name__ == '__main__':
 		('Asm("ret",[])', 'asm("ret");\n'),
 		('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);\n'),
 		('FuncDef(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),	
+		('Assign(Void,Sym("eax"{Path,[0,1,1,0]}){Path,[1,1,0]},Lit(Int(32{Path,[0,0,2,1,0]},Signed{Path,[1,0,2,1,0]}){Path,[0,2,1,0]},1234{Path,[1,2,1,0]}){Path,[2,1,0]}){Path,[1,0],Id,2}',''),
+		('Assign(Blob(32{Path,[0,0,1,0]}){Path,[0,1,0]},Sym("eax"{Path,[0,1,1,0]}){Path,[1,1,0]},Lit(Int(32{Path,[0,0,2,1,0]},Signed{Path,[1,0,2,1,0]}){Path,[0,2,1,0]},1234{Path,[1,2,1,0]}){Path,[2,1,0]}){Path,[1,0],Id,2}',''),
 	]
 	
 	for inputStr, output in stmtTestCases:

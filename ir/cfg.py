@@ -2,31 +2,14 @@
 
 import aterm
 import transf
-import walker
+
+from ir import pprint2
 
 from transf import *
 
 
-class Grapher(walker.Walker):
-
-	def __init__(self, factory, fp):
-		walker.Walker.__init__(self, factory)
-		self.fp = fp
-		self.nodes = {}
-
-	def graph(self, term):
-		self.fp.write('digraph cfg {\n')
-		self.collect()
-		self.write_nodes()
-		self.write_edges()
-		self.fp.write('}\n')
-
-	def collect_nodes(self, term):
-		if self._match('Module(stmts)'):
-			for stmt in stmts:
-				collect_nodes(stmt)
-		elif self._match(''):
-			pass
+#		self.fp.write('digraph cfg {\n')
+#		self.fp.write('}\n')
 	
 
 
@@ -61,7 +44,6 @@ matchFlowedStmtName \
 	| MatchStr('NoOp')
 
 
-
 class Counter(Transformation):
 
 	def __init__(self):
@@ -72,6 +54,9 @@ class Counter(Transformation):
 		self.last += 1
 		return term.factory.makeInt(self.last)
 
+	def reset(self):
+		self.last = 0
+
 
 def AnnotateId():
 	return SetAnnotation(Build('Id'), Counter())
@@ -81,19 +66,9 @@ matchLabel = MatchAppl(MatchStr('Label'), Ident())
 
 matchStmt = MatchAppl(matchStmtName, Ident())
 
-matchNode = MatchAppl(matchStmtName & ~MatchStr('NoOp'), Ident())
-
-collectNodes = CollectAll(matchNode)
+collectStmts = CollectAll(matchStmt)
 
 markStmts = TopDown(Try(matchStmt & AnnotateId()))
-
-nodeId \
-	= GetAnnotation(Build('Id')) & ToStr()
-
-nodeLabel \
-	= Name()
-
-node = BuildAppl("Node", (nodeId, nodeLabel))
 
 
 
@@ -103,37 +78,38 @@ cont = BuildVar("cont")
 brek = BuildVar("brek")
 retn = BuildVar("retn")
 
+
 def Edge(src, dst):
-	return BuildAppl("Edge", BuildList((src & nodeId, dst & nodeId)))
+	return BuildList((src, dst))
 
-stmtsEdges = Proxy()
 
-stmtEdges \
-	=	Dump() & With(
-			Match("Assign(*)") & BuildList((Edge(this,next),)) |
-			Match("Label(*)") & BuildList((Edge(this,next),)) |
-			Match("NoOp(*)") & BuildList((Edge(this,next),)) |
-			Match("Ret(*)") & BuildList((Edge(this,next),)),
-			this=Ident()
-		)
+stmtsFlow = Proxy()
 
-stmtsEdges.subject \
+stmtFlow = ParseRule('''
+	Assign(*) -> [[<id>,next]] |
+	Label(*) -> [[<id>,next]] |
+	NoOp(*) -> [[<id>,next]] |
+	Ret(*) -> [[<id>,next]]
+''')
+
+stmtsFlow.subject \
 	= Scope(
 			MatchNil() \
 				& BuildNil() \
 			| MatchCons(MatchVar("head"), MatchVar("tail") & (Head() | BuildVar("next")) & MatchVar("following")) \
-				& Concat(With(BuildVar("head") & stmtEdges, next=BuildVar("following")), BuildVar("tail") & stmtsEdges)
+				& Concat(With(BuildVar("head") & stmtFlow, next=BuildVar("following")), BuildVar("tail") & stmtsFlow)
 		, ['head', 'tail', 'following'])
+
 
 endOfModule = Build("NoStmt") & AnnotateId()
 
 moduleEdges \
 	= Match("Module(stmts)") \
-		& With(BuildVar("stmts") & stmtsEdges, next=endOfModule, cont=endOfModule, brek=endOfModule, retn=endOfModule)
+		& With(BuildVar("stmts") & stmtsFlow, next=endOfModule, cont=endOfModule, brek=endOfModule, retn=endOfModule)
 
 	#| MatchStr('Branch(label)') & BuildList((Edge(this,FindLabel(label)))) \
-		#| Match("If(*,true,false)") & Concat(Concat(Build("[Edge(this,next)]", Build("[this, true, next]") & stmtsEdges), Build("[this, false, next]") & stmtsEdges)
-		#| Match("While(*,block)") & Concat(Build("[Edge(this,next)]", Build("[this, next]") & stmtsEdges))
+		#| Match("If(*,true,false)") & Concat(Concat(Build("[Edge(this,next)]", Build("[this, true, next]") & stmtsFlow), Build("[this, false, next]") & stmtsFlow)
+		#| Match("While(*,block)") & Concat(Build("[Edge(this,next)]", Build("[this, next]") & stmtsFlow))
 	#| MatchStr('While') \
 	#| MatchStr('Label') \
 	#| MatchStr('Block') \
@@ -141,8 +117,68 @@ moduleEdges \
 	#| MatchStr('Continue') \
 	#| MatchStr('Ret')
 
-edges = moduleEdges
 
+makeNodeId \
+	= GetAnnotation(Build('Id')) & ToStr()
+
+import box
+
+box2text = Adaptor(
+		lambda term, context: term.factory.makeStr(box.box2text(term))
+)
+
+makeNodeLabel = ParseTransf('''
+		?Assign(*); pprint2.stmt; box2text +
+		?Label(*); pprint2.stmt; box2text +
+		?Ret(*); pprint2.stmt; box2text +
+		?NoOp(*); !"" +
+		! "..."
+''')
+
+makeNode = BuildAppl("Node", (makeNodeId, makeNodeLabel))
+makeNodes = Map(makeNode)
+
+
+makeEdge = ParseRule('''
+	[src, dst] -> Edge(<<makeNodeId> src>, <<makeNodeId> dst>)
+''')
+makeEdges = Map(makeEdge)
+
+collectFlows = moduleEdges
+
+makeGraph = ParseTransf('''
+		markStmts;
+		!Graph(<collectStmts; makeNodes>, <collectFlows; makeEdges>)
+''')
+
+
+def escapes(s):
+	s = s.replace('\"', '\\"')
+	s = s.replace('\t', '\\t')
+	s = s.replace('\r', '\\r')
+	s = s.replace('\n', '\\n')
+	return '"' + s + '"'
+
+escape = Adaptor(
+		lambda term, context: term.factory.makeStr(escapes(term.value))
+)
+
+makeDot = ParseRule(r'''
+		Graph(nodes, edges)
+			-> V([
+				H([ "digraph", " ", "{" ]),
+				V( nodes ),
+				V( edges ),
+				H([ "}" ])
+			])
+|		Node(nid, label) 
+			-> H([ nid, "[", "label", "=", <<escape> label>, "]" ])
+|		Edge(src, dst) 
+			-> H([ src, "->", dst ])
+|		_ -> <id>
+''')
+
+makeDot = BottomUp(makeDot)
 
 if __name__ == '__main__':
 	import aterm.factory
@@ -150,8 +186,16 @@ if __name__ == '__main__':
 	factory = aterm.factory.Factory()
 	for arg in sys.argv[1:]:
 		term = factory.readFromTextFile(file(arg, 'rt'))
-		term = markStmts.apply(term, {})
-		#transf = CollectAll(matchLabel) & Map(node)
-		transf = edges
-		print transf.apply(term, {})
 
+		term = makeGraph(term)
+		print term
+		
+		term = makeDot(term)
+		print term
+
+		print box.box2text(term)
+
+		#term = markStmts.apply(term, {})
+
+		#print ( collectStmts & makeNodes )(term)
+		#print ( collectFlows & makeEdges )(term)
