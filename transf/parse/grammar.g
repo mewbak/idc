@@ -496,9 +496,9 @@ build_term returns [ret]
 
 traverse_term returns [ret]
 	: #( CONS h=traverse_term t=traverse_term )
-		{ ret = transf.traverse.TraverseCons(h, t) }
+		{ ret = transf.traverse.Cons(h, t) }
 	| #( APPL n=traverse_term a=traverse_term )
-		{ ret = transf.traverse.TraverseAppl(n, a) }
+		{ ret = transf.traverse.Appl(n, a) }
 	| o:.
 		{ ret = self.match_term(#o) }
 	;

@@ -42,7 +42,7 @@ class TestMixin:
 				self._testTransf(metaTransf(operand), [(termStr, expectedResultStr)])
 
 
-class TestCombinators(TestMixin, unittest.TestCase):
+class TestCombine(TestMixin, unittest.TestCase):
 	
 	annotatorTestCases = [
 		('1', '1{Path,[]}'),
@@ -90,7 +90,7 @@ class TestCombinators(TestMixin, unittest.TestCase):
 		self._testTransf(Composition(fail, fail), self.failTestCases)
 
 
-class TestTerm(TestMixin, unittest.TestCase):
+class TestMatch(TestMixin, unittest.TestCase):
 	
 	termInputs = [
 		'0',
@@ -140,16 +140,22 @@ class TestTerm(TestMixin, unittest.TestCase):
 		self._testMatchTransf(match.nil, '[]')
 	
 	def testCons(self):
-		self._testMatchTransf(TraverseCons(match.Int(1),match.nil), '[1]')
+		self._testMatchTransf(match.Cons(match.Int(1),match.nil), '[1]')
 	
 	def testList(self):
-		self._testMatchTransf(TraverseList([match.Int(1),match.Int(2)]), '[1,2]')
+		self._testMatchTransf(match.List([match.Int(1),match.Int(2)]), '[1,2]')
+		self._testMatchTransf(match._[()], '[]')
+		self._testMatchTransf(match._[1], '[1]')
+		self._testMatchTransf(match._[1,2], '[1,2]')
 	
 	def testAppl(self):
-		self._testMatchTransf(TraverseAppl(match.Str("C"),match.nil), 'C')
+		self._testMatchTransf(match.Appl(match.Str("C"),match.nil), 'C')
+		self._testMatchTransf(match._.C(), 'C')
+		self._testMatchTransf(match._.C(1), 'C(1)')
+		self._testMatchTransf(match._.C(1,2), 'C(1,2)')
 
 
-class TestTraversers(TestMixin, unittest.TestCase):
+class TestTraverse(TestMixin, unittest.TestCase):
 
 	mapTestCases = (
 		[ident, fail, Rule('x', 'X(x)'), match.Pattern('1')],
@@ -258,7 +264,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 	# TODO: testInnerMost
 
 
-class TestUnifiers(TestMixin, unittest.TestCase):
+class TestUnify(TestMixin, unittest.TestCase):
 
 	foldrTestCases = (
 		('[1,2,3]', '6'),
@@ -266,10 +272,7 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	
 	def testFoldr(self):
 		self._testTransf(
-			Foldr(
-				build.Int(0),
-				Add(project.first,project.second)
-			), 
+			Foldr(build.Int(0), Add(project.first, project.second)),
 			self.foldrTestCases
 		)
 

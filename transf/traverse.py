@@ -7,9 +7,10 @@ from transf import exception
 from transf import base
 from transf import combine
 from transf import match
+from transf import _helper
 
 
-class TraverseCons(base.Transformation):
+class Cons(base.Transformation):
 	
 	def __init__(self, head, tail):
 		'''Takes as argument the transformations to be applied to the list 
@@ -36,7 +37,7 @@ class TraverseCons(base.Transformation):
 			return term
 
 
-class FilterCons(TraverseCons):
+class FilterCons(Cons):
 	
 	def apply(self, term, context):
 		try:
@@ -61,17 +62,17 @@ class FilterCons(TraverseCons):
 			return term
 
 
-def _TraverseList(elms_iter, tail):
+def _List(elms_iter, tail):
 	try:
 		elm = elms_iter.next()
 	except StopIteration:
 		return tail
 	else:
-		return TraverseCons(elm, _TraverseList(elms_iter, tail))
+		return Cons(elm, _List(elms_iter, tail))
 
 
-def TraverseList(elms, tail = None):
-	'''Transformation which matches a term list. 
+def List(elms, tail = None):
+	'''Transformation which traverses a term list. 
 	
 	@param elms: sequence of transformations to be applied to the elements
 	@param tail: option transformation to be applied to the list tail; defaults 
@@ -79,10 +80,10 @@ def TraverseList(elms, tail = None):
 	'''
 	if tail is None:
 		tail = match.nil
-	return _TraverseList(iter(elms), tail)
+	return _List(iter(elms), tail)
 	
 
-class TraverseAppl(base.Transformation):
+class Appl(base.Transformation):
 	'''Traverse a term application.'''
 
 	def __init__(self, name, args):
@@ -92,7 +93,7 @@ class TraverseAppl(base.Transformation):
 		else:
 			self.name = name
 		if isinstance(args, (tuple, list)):
-			self.args = TraverseList(args)
+			self.args = List(args)
 		else:
 			self.args = args
 				
@@ -116,16 +117,18 @@ class TraverseAppl(base.Transformation):
 			return term
 
 
+_ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, match.Var, match.Pattern)
+
 
 def Map(operand):
 	map = base.Proxy()
-	map.subject = match.nil | TraverseCons(operand, map)
+	map.subject = match.nil | Cons(operand, map)
 	return map
 
 
 def Fetch(operand):
 	fetch = base.Proxy()
-	fetch.subject = TraverseCons(operand, base.ident) | TraverseCons(base.ident, fetch)
+	fetch.subject = Cons(operand, base.ident) | Cons(base.ident, fetch)
 	return fetch
 
 
@@ -141,7 +144,7 @@ class All(combine.Unary):
 	def __init__(self, operand):
 		combine.Unary.__init__(self, operand)
 		self.list_transf = Map(operand)
-		self.appl_transf = TraverseAppl(base.ident, self.list_transf)
+		self.appl_transf = Appl(base.ident, self.list_transf)
 	
 	def apply(self, term, context):
 		if term.type == aterm.types.APPL:

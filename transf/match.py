@@ -6,6 +6,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
+from transf import _helper
 
 
 _factory = aterm.factory.Factory()
@@ -168,7 +169,6 @@ class Var(base.Transformation):
 
 class Pattern(base.Transformation):
 	
-	
 	def __init__(self, pattern):
 		base.Transformation.__init__(self)
 		if isinstance(pattern, basestring):
@@ -192,3 +192,5 @@ class Pattern(base.Transformation):
 
 		return term
 
+
+_ = _helper.Factory(Int, Real, Str, List, Appl, Var, Pattern)

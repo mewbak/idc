@@ -40,7 +40,7 @@ class Rename(refactoring.Refactoring):
 		factory = term.factory
 		src, dst = args
 		
-		txn = transf.traverse.TraverseAppl(
+		txn = transf.traverse.Appl(
 			'Sym',
 			[transf.match.Pattern(src) & transf.build.Pattern(dst)]
 		)

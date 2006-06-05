@@ -29,8 +29,6 @@ from transf import debug
 
 from transf import parse
 
-import transf._factory as _factory
-factory = _factory.Factory()
 
 
 

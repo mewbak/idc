@@ -6,6 +6,7 @@ import aterm.types
 
 from transf import base
 from transf import exception
+from transf import _helper
 
 
 _factory = aterm.factory.Factory()
@@ -115,3 +116,6 @@ class Pattern(base.Transformation):
 	def apply(self, term, context):
 		# FIXME: avoid the dict copy
 		return self.pattern.make(term, **dict(context))
+
+
+_ = _helper.Factory(Int, Real, Str, List, Appl, Var, Pattern)

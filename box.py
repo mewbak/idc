@@ -221,7 +221,7 @@ def Prefix(sep):
 def Join(sep):
 	return \
 		transf.match.nil \
-		| transf.traverse.TraverseCons(
+		| transf.traverse.Cons(
 			transf.base.ident,
 			Prefix(sep)
 		)
