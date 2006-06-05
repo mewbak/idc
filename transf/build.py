@@ -11,7 +11,7 @@ from transf import exception
 _factory = aterm.factory.Factory()
 
 
-class BuildTerm(base.Transformation):
+class Term(base.Transformation):
 
 	def __init__(self, term):
 		base.Transformation.__init__(self)
@@ -21,27 +21,27 @@ class BuildTerm(base.Transformation):
 		return self.term
 
 
-def BuildInt(value):
+def Int(value):
 	term = _factory.makeInt(value)
-	return BuildTerm(term)
+	return Term(term)
 
 
-def BuildReal(value):
+def Real(value):
 	term = _factory.makeReal(value)
-	return BuildTerm(term)
+	return Term(term)
 
 
-def BuildStr(value):
+def Str(value):
 	term = _factory.makeStr(value)
-	return BuildTerm(term)
+	return Term(term)
 
 
-def BuildNil():
+def Nil():
 	term = _factory.makeNil()
-	return BuildTerm(term)
+	return Term(term)
 
 
-class BuildCons(base.Transformation):
+class Cons(base.Transformation):
 	
 	def __init__(self, head, tail):
 		base.Transformation.__init__(self)
@@ -54,31 +54,31 @@ class BuildCons(base.Transformation):
 		return term.factory.makeCons(head, tail)
 
 
-def _BuildList(elms_iter, tail):
+def _List(elms_iter, tail):
 	try:
 		elm = elms_iter.next()
 	except StopIteration:
 		return tail
 	else:
-		return BuildCons(elm, _BuildList(elms_iter, tail))
+		return Cons(elm, _List(elms_iter, tail))
 
 
-def BuildList(elms, tail = None):
+def List(elms, tail = None):
 	if tail is None:
-		tail = BuildNil()
-	return _BuildList(iter(elms), tail)
+		tail = Nil()
+	return _List(iter(elms), tail)
 	
 
-class BuildAppl(base.Transformation):
+class Appl(base.Transformation):
 	
 	def __init__(self, name, args):
 		base.Transformation.__init__(self)
 		if isinstance(name, basestring):
-			self.name = BuildStr(name)
+			self.name = Str(name)
 		else:
 			self.name = name
 		if isinstance(args, (tuple, list)):
-			self.args = BuildList(args)
+			self.args = List(args)
 		else:
 			self.args = args
 		
@@ -88,7 +88,7 @@ class BuildAppl(base.Transformation):
 		return term.factory.makeAppl(name, args)
 
 
-class BuildVar(base.Transformation):
+class Var(base.Transformation):
 	
 	def __init__(self, name):
 		base.Transformation.__init__(self)
@@ -101,7 +101,7 @@ class BuildVar(base.Transformation):
 			raise exception.Failure('undefined variable', self.name)
 
 
-class BuildPattern(base.Transformation):
+class Pattern(base.Transformation):
 
 	def __init__(self, pattern):
 		base.Transformation.__init__(self)

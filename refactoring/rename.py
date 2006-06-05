@@ -42,7 +42,7 @@ class Rename(refactoring.Refactoring):
 		
 		txn = transf.traverse.TraverseAppl(
 			'Sym',
-			[transf.match.MatchPattern(src) & transf.build.BuildPattern(dst)]
+			[transf.match.Pattern(src) & transf.build.Pattern(dst)]
 		)
 		txn = transf.traverse.InnerMost(txn)
 		return txn(term)

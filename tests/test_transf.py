@@ -11,8 +11,6 @@ from transf.exception import *
 from transf.base import *
 from transf.combine import *
 from transf.project import *
-from transf.match import *
-from transf.build import *
 from transf.rewrite import *
 from transf.traverse import *
 from transf.unify import *
@@ -131,31 +129,31 @@ class TestTerm(TestMixin, unittest.TestCase):
 		self._testTransf(transf, testCases)
 					
 	def testInt(self):
-		self._testMatchTransf(match.MatchInt(1), '1')
+		self._testMatchTransf(match.Int(1), '1')
 
 	def testReal(self):
-		self._testMatchTransf(match.MatchReal(0.1), '0.1')
+		self._testMatchTransf(match.Real(0.1), '0.1')
 
 	def testStr(self):
-		self._testMatchTransf(match.MatchStr("a"), '"a"')
+		self._testMatchTransf(match.Str("a"), '"a"')
 
 	def testNil(self):
-		self._testMatchTransf(match.MatchNil(), '[]')
+		self._testMatchTransf(match.Nil(), '[]')
 	
 	def testCons(self):
-		self._testMatchTransf(TraverseCons(match.MatchInt(1),match.MatchNil()), '[1]')
+		self._testMatchTransf(TraverseCons(match.Int(1),match.Nil()), '[1]')
 	
 	def testList(self):
-		self._testMatchTransf(TraverseList([match.MatchInt(1),match.MatchInt(2)]), '[1,2]')
+		self._testMatchTransf(TraverseList([match.Int(1),match.Int(2)]), '[1,2]')
 	
 	def testAppl(self):
-		self._testMatchTransf(TraverseAppl(match.MatchStr("C"),match.MatchNil()), 'C')
+		self._testMatchTransf(TraverseAppl(match.Str("C"),match.Nil()), 'C')
 
 
 class TestTraversers(TestMixin, unittest.TestCase):
 
 	mapTestCases = (
-		[Ident(), Fail(), Rule('x', 'X(x)'), MatchPattern('1')],
+		[Ident(), Fail(), Rule('x', 'X(x)'), match.Pattern('1')],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
@@ -171,7 +169,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 	# TODO: testFetch
 
 	filterTestCases = (
-		[Ident(), Fail(), Rule('x', 'X(x)'), MatchPattern('2')],
+		[Ident(), Fail(), Rule('x', 'X(x)'), match.Pattern('2')],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', '[]', '[X(1)]', '[]'],
@@ -256,7 +254,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 	def testSplit(self):
 		# FIXME: move this away from here
 		from ir.transfs import Split
-		self._testTransf(Split(MatchPattern('X')), self.spitTestCases)
+		self._testTransf(Split(match.Pattern('X')), self.spitTestCases)
 
 	# TODO: testInnerMost
 
@@ -268,7 +266,7 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	)
 	
 	def testFoldr(self):
-		self._testTransf(Foldr(build.BuildInt(0),Add(First(),Second())), self.foldrTestCases)
+		self._testTransf(Foldr(build.Int(0),Add(First(),Second())), self.foldrTestCases)
 
 	crushTestCases = (
 		('[1,2]', '[1,[2,[]]]'),
@@ -287,7 +285,7 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	)
 	
 	def testCollectAll(self):
-		self._testTransf(CollectAll(match.IsInt()), self.collectAllTestCases)
+		self._testTransf(CollectAll(match.AnInt()), self.collectAllTestCases)
 	
 
 class TestArith(TestMixin, unittest.TestCase):

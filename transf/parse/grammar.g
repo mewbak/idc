@@ -428,21 +428,21 @@ transf returns [ret]
 	
 match_term returns [ret]
 	: i:INT 
-		{ ret = transf.match.MatchInt(int(#i.getText())) }
+		{ ret = transf.match.Int(int(#i.getText())) }
 	| r:REAL 
-		{ ret = transf.match.MatchReal(float(#r.getText())) }
+		{ ret = transf.match.Real(float(#r.getText())) }
 	| s:STR 
-		{ ret = transf.match.MatchStr(#s.getText()) }
+		{ ret = transf.match.Str(#s.getText()) }
 	| NIL
-		{ ret = transf.match.MatchNil() }
+		{ ret = transf.match.Nil() }
 	| #( CONS h=match_term t=match_term )
-		{ ret = transf.match.MatchCons(h, t) }
+		{ ret = transf.match.Cons(h, t) }
 	| #( APPL n=match_term a=match_term )
-		{ ret = transf.match.MatchAppl(n, a) }
+		{ ret = transf.match.Appl(n, a) }
 	| w:WILDCARD 
 		{ ret = transf.base.Ident() }
 	| #( v:VAR // TODO: handle sub-patterns
-		{ ret = transf.match.MatchVar(#v.getText()) }
+		{ ret = transf.match.Var(#v.getText()) }
 		( p=match_term
 			{ ret = transf.combine.composition(p, ret) }
 		)?
@@ -475,21 +475,21 @@ collect_term_vars[vars]
 
 build_term returns [ret]
 	: i:INT 
-		{ ret = transf.build.BuildInt(int(#i.getText())) }
+		{ ret = transf.build.Int(int(#i.getText())) }
 	| r:REAL 
-		{ ret = transf.build.BuildReal(float(#r.getText())) }
+		{ ret = transf.build.Real(float(#r.getText())) }
 	| s:STR 
-		{ ret = transf.build.BuildStr(#s.getText()) }
+		{ ret = transf.build.Str(#s.getText()) }
 	| NIL
-		{ ret = transf.build.BuildNil() }
+		{ ret = transf.build.Nil() }
 	| #( CONS h=build_term t=build_term )
-		{ ret = transf.build.BuildCons(h, t) }
+		{ ret = transf.build.Cons(h, t) }
 	| #( APPL n=build_term a=build_term )
-		{ ret = transf.build.BuildAppl(n, a) }
+		{ ret = transf.build.Appl(n, a) }
 	| w:WILDCARD 
 		{ ret = transf.base.Ident() }
 	| v:VAR 
-		{ ret = transf.build.BuildVar(#v.getText()) }
+		{ ret = transf.build.Var(#v.getText()) }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;

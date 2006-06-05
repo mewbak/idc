@@ -8,7 +8,7 @@ from transf import traverse
 class ApplFactory(object):
 
 	def __init__(self, name):
-		self.name = match.MatchStr(name)
+		self.name = match.Str(name)
 	
 	def __call__(self, *args):
 		return traverse.TraverseAppl(self.name, traverse.TraverseList(args))

@@ -50,7 +50,7 @@ def Rule(match_pattern, build_pattern, locals = None):
 		varcollector.visit(match_pattern)
 		locals = varcollector.vars
 		
-	return scope.Scope(match.MatchPattern(match_pattern) & build.BuildPattern(build_pattern), locals)
+	return scope.Scope(match.Pattern(match_pattern) & build.Pattern(build_pattern), locals)
 
 
 def RuleSet(patterns, locals = None):

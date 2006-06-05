@@ -16,8 +16,8 @@ def Foldr(tail, cons, operand=None):
 		operand = base.Ident()
 	foldr = base.Proxy()
 	foldr.subject \
-		= match.MatchNil() & tail \
-		| build.BuildList((
+		= match.Nil() & tail \
+		| build.List((
 			project.Head() & operand, 
 			project.Tail() & foldr
 		)) & cons
@@ -36,8 +36,8 @@ def CollectAll(operand, union=None):
 	if union is None:
 		union = lists.Concat(project.First(), project.Second())
 	collect = base.Proxy()
-	crush = Crush(build.BuildNil(), union, collect)
+	crush = Crush(build.Nil(), union, collect)
 	collect.subject \
-		= build.BuildCons(operand, crush) \
+		= build.Cons(operand, crush) \
 		| crush
 	return collect

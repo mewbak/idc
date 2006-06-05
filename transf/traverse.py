@@ -78,7 +78,7 @@ def TraverseList(elms, tail = None):
 	to matching the empty list
 	'''
 	if tail is None:
-		tail = match.MatchNil()
+		tail = match.Nil()
 	return _TraverseList(iter(elms), tail)
 	
 
@@ -88,7 +88,7 @@ class TraverseAppl(base.Transformation):
 	def __init__(self, name, args):
 		base.Transformation.__init__(self)
 		if isinstance(name, basestring):
-			self.name = match.MatchStr(name)
+			self.name = match.Str(name)
 		else:
 			self.name = name
 		if isinstance(args, (tuple, list)):
@@ -119,7 +119,7 @@ class TraverseAppl(base.Transformation):
 
 def Map(operand):
 	map = base.Proxy()
-	map.subject = match.MatchNil() | TraverseCons(operand, map)
+	map.subject = match.Nil() | TraverseCons(operand, map)
 	return map
 
 
@@ -131,7 +131,7 @@ def Fetch(operand):
 
 def Filter(operand):
 	filter = base.Proxy()
-	filter.subject = match.MatchNil() | FilterCons(operand, filter)
+	filter.subject = match.Nil() | FilterCons(operand, filter)
 	return filter
 
 

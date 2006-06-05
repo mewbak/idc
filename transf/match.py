@@ -11,7 +11,7 @@ from transf import base
 _factory = aterm.factory.Factory()
 
 
-class IsType(base.Transformation):
+class Type(base.Transformation):
 
 	def __init__(self, type):
 		base.Transformation.__init__(self)
@@ -23,27 +23,27 @@ class IsType(base.Transformation):
 		return term
 
 
-def IsInt():
-	return IsType(aterm.types.INT)
+def AnInt():
+	return Type(aterm.types.INT)
 
 
-def IsReal():
-	return IsType(aterm.types.REAL)
+def AReal():
+	return Type(aterm.types.REAL)
 
 
-def IsStr():
-	return IsType(aterm.types.STR)
+def AStr():
+	return Type(aterm.types.STR)
 
 
-def IsList():
-	return IsType(aterm.types.LIST)
+def AList():
+	return Type(aterm.types.LIST)
 
 
-def IsAppl():
-	return IsType(aterm.types.APPL)
+def AnAppl():
+	return Type(aterm.types.APPL)
 
 
-class _MatchLit(base.Transformation):
+class Lit(base.Transformation):
 
 	def __init__(self, type, value):
 		base.Transformation.__init__(self)
@@ -56,22 +56,22 @@ class _MatchLit(base.Transformation):
 		return term
 
 
-def MatchInt(value):
+def Int(value):
 	'''base.Transformation which matches an integer term with the given value.'''
-	return _MatchLit(aterm.types.INT, value)
+	return Lit(aterm.types.INT, value)
 	
 
-def MatchReal(value):
+def Real(value):
 	'''base.Transformation which matches a real term with the given value.'''
-	return _MatchLit(aterm.types.REAL, value)
+	return Lit(aterm.types.REAL, value)
 
 
-def MatchStr(value):
+def Str(value):
 	'''base.Transformation which matches a string term with the given value.'''
-	return _MatchLit(aterm.types.STR, value)
+	return Lit(aterm.types.STR, value)
 	
 
-class MatchNil(base.Transformation):
+class Nil(base.Transformation):
 	'''base.Transformation which matches an empty list term.'''
 
 	def apply(self, term, context):
@@ -80,7 +80,7 @@ class MatchNil(base.Transformation):
 		return term
 
 
-class MatchCons(base.Transformation):
+class Cons(base.Transformation):
 	'''base.Transformation which matches a list construction term.'''
 	
 	def __init__(self, head, tail):
@@ -99,31 +99,31 @@ class MatchCons(base.Transformation):
 			return term
 
 
-def _MatchList(elms_iter, tail):
+def _List(elms_iter, tail):
 	try:
 		elm = elms_iter.next()
 	except StopIteration:
 		return tail
 	else:
-		return MatchCons(elm, _MatchList(elms_iter, tail))
+		return Cons(elm, _List(elms_iter, tail))
 
 
-def MatchList(elms, tail = None):
+def List(elms, tail = None):
 	if tail is None:
-		tail = MatchNil()
-	return _MatchList(iter(elms), tail)
+		tail = Nil()
+	return _List(iter(elms), tail)
 	
 
-class MatchAppl(base.Transformation):
+class Appl(base.Transformation):
 
 	def __init__(self, name, args):
 		base.Transformation.__init__(self)
 		if isinstance(name, basestring):
-			self.name = MatchStr(name)
+			self.name = Str(name)
 		else:
 			self.name = name
 		if isinstance(args, (tuple, list)):
-			self.args = MatchList(args)
+			self.args = List(args)
 		else:
 			self.args = args
 		
@@ -137,7 +137,7 @@ class MatchAppl(base.Transformation):
 			return term
 
 
-class MatchVar(base.Transformation):
+class Var(base.Transformation):
 	
 	def __init__(self, name):
 		base.Transformation.__init__(self)
@@ -154,7 +154,7 @@ class MatchVar(base.Transformation):
 		return term
 
 
-class MatchPattern(base.Transformation):
+class Pattern(base.Transformation):
 	
 	
 	def __init__(self, pattern):

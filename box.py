@@ -165,11 +165,11 @@ def box2text(boxes, formatterClass = TextFormatter):
 def Tag(name, value, operand = None):
 	if operand is None:
 		operand = transf.base.Ident()
-	return transf.build.BuildAppl(
+	return transf.build.Appl(
 		'T',
 		 [
-			transf.build.BuildStr(name),
-			transf.build.BuildStr(value),
+			transf.build.Str(name),
+			transf.build.Str(value),
 			operand,
 		]
 	)
@@ -208,10 +208,10 @@ lit = transf.base.Adaptor(lit)
 def Prefix(sep):
 	prefix = transf.base.Proxy()
 	prefix.subject \
-		= transf.match.MatchNil() \
-		| transf.build.BuildCons(
+		= transf.match.Nil() \
+		| transf.build.Cons(
 			sep,
-			transf.build.BuildCons(
+			transf.build.Cons(
 				transf.project.Head(),
 				transf.project.Tail() & prefix
 			)
@@ -220,14 +220,14 @@ def Prefix(sep):
 
 def Join(sep):
 	return \
-		transf.match.MatchNil() \
+		transf.match.Nil() \
 		| transf.traverse.TraverseCons(
 			transf.base.Ident(),
 			Prefix(sep)
 		)
 	
 commas \
-	= transf.build.BuildAppl(
+	= transf.build.Appl(
 		'H', 
-		[Join(transf.build.BuildStr(', '))]
+		[Join(transf.build.Str(', '))]
 	)

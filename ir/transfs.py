@@ -44,13 +44,13 @@ class SplitBlock(base.Transformation):
 	def __init__(self, name):
 		self.name = name
 		self.split_head = Split(
-			transf.match.MatchAppl(
+			transf.match.Appl(
 				"Label", 
-				[transf.match.MatchPattern(name)]
+				[transf.match.Pattern(name)]
 			)
 		)
 		self.split_tail = Split(
-			transf.match.MatchPattern("Ret(*)")
+			transf.match.Pattern("Ret(*)")
 			# FIXME: not working?
 			#_f.Ret()
 		)
