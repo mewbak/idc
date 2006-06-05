@@ -7,28 +7,27 @@ available at http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-0.16/manual/ .
 '''
 
 
-from transf.exception import *
-from transf.base import *
-from transf.scope import *
+from transf import exception
+from transf import base
+from transf import scope
 
-from transf.combinators import *
-from transf.projection import *
-from transf.matching import *
-from transf.building import *
-from transf.rewriters import *
-from transf.traversal import *
-from transf.unifiers import *
+from transf import combinators
+from transf import projection
+from transf import matching
+from transf import building
+from transf import rewriters
+from transf import traversal
+from transf import unifiers
 
-from transf.annotation import *
+from transf import annotation
 
-from transf.arith import *
-from transf.lists import *
-from transf.strings import *
+from transf import arith
+from transf import lists
+from transf import strings
 
-from transf.debug import *
+from transf import debug
 
-from transf.grammar import *
-
+from transf import grammar
 
 import transf._factory as _factory
 factory = _factory.Factory()

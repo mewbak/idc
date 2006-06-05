@@ -41,11 +41,11 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 annotate = Annotator()
 
 
-class IndexFetch(transf.Transformation, aterm.visitor.Visitor):
+class IndexFetch(transf.base.Transformation, aterm.visitor.Visitor):
 	'''Fetch a subterm.'''
 
 	def __init__(self, index):
-		transf.Transformation.__init__(self)
+		transf.base.Transformation.__init__(self)
 		aterm.visitor.Visitor.__init__(self)
 		self.index = index
 
@@ -70,7 +70,7 @@ class IndexFetch(transf.Transformation, aterm.visitor.Visitor):
 
 def PathFetch(path):
 	'''Transformation which fetchs sub-term with the specified path.'''
-	result = transf.Ident()
+	result = transf.combinators.Ident()
 	for index in path:
 		result = IndexFetch(int(index)) & result
 	return result
@@ -81,10 +81,10 @@ def fetch(term, path):
 	return PathFetch(path)(term)
 
 
-class Index(transf.Transformation, aterm.visitor.IncrementalVisitor):
+class Index(transf.base.Transformation, aterm.visitor.IncrementalVisitor):
 
 	def __init__(self, operand, index):
-		transf.Transformation.__init__(self)
+		transf.base.Transformation.__init__(self)
 		aterm.visitor.IncrementalVisitor.__init__(self)
 		self.operand = operand
 		self.index = index
@@ -157,13 +157,14 @@ def split(term, index):
 	return _Splitter(index)(term)
 
 
-class Range(transf.Transformation):
+class Range(transf.base.Transformation):
 	'''Apply a transformation on a subterm range.'''
 
 	def __init__(self, operand, start, end):
 		'''Start and end indexes specify the subterms that will be transformed, 
 		inclusively.
 		'''
+		transf.base.Transformation.__init__(self)
 		self.operand = operand
 		if start > end:
 			raise ValueError('start index %r greater than end index %r' % (start, end))

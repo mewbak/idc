@@ -2,11 +2,13 @@
 '''
 
 
-from transf import *
+from transf import base
+from transf import strings
+from transf.grammar import *
 
 
 def TraverseType(typer):
-	typet = Proxy()
+	typet = base.Proxy()
 	typet.subject = ParseTransf('''
 		~Pointer(_, <typet>) +
 		~Array(<typet>) +
@@ -16,7 +18,7 @@ def TraverseType(typer):
 
 
 def TraverseExpr(exprr, typet, opr):
-	exprt = Proxy()
+	exprt = base.Proxy()
 	exprt.subject = ParseTransf('''
 		~Lit(<typet>, _) +
 		~Cast(<typet>, <exprt>) +
@@ -32,7 +34,7 @@ def TraverseExpr(exprr, typet, opr):
 
 
 def TraverseStmt(stmtr, exprt, typet):
-	stmtt = Proxy()
+	stmtt = base.Proxy()
 	stmtt.subject = ParseTransf('''
 		~Assign(<typet>, <exprt>, <exprt>) +
 		~Asm(_, <map(exprt)>) +
@@ -69,7 +71,7 @@ size = ParseRule('''
 |	16 -> H([ <<kw> "short">, " ", <<kw> "int"> ])
 |	32 -> <<kw> "int">
 |	64 -> H([ <<kw> "long">, " ", <<kw> "int"> ])
-|	n -> H([ "int", <<ToStr> n> ])
+|	n -> H([ "int", <<strings.ToStr> n> ])
 ''')
 
 typer = ParseRule('''
@@ -88,7 +90,7 @@ typer = ParseRule('''
 |	Void
 		-> <<kw> "void">
 |	Blob(size)
-		-> H([ "blob", <<ToStr> size> ])
+		-> H([ "blob", <<strings.ToStr> size> ])
 ''')
 
 opr = ParseRule('''

@@ -1,10 +1,9 @@
 
 import aterm.visitor
+import transf
 
-from transf import *
-
-from transf import factory as _f
-
+from transf import exception
+from transf import base
 
 class _Splitter(aterm.visitor.Visitor):
 	'''Splits a list term in two lists.'''
@@ -17,19 +16,19 @@ class _Splitter(aterm.visitor.Visitor):
 		raise TypeError('not a term list: %r' % term)
 	
 	def visitNil(self, term, context):
-		raise Failure
+		raise exception.Failure
 		
 	def visitCons(self, term, context):
 		try:
 			head = self.operand(term.head, context)
-		except Failure:
+		except exception.Failure:
 			head, body, tail = self.visit(term.tail, context)
 			return head.insert(0, term.head), body, tail
 		else:
 			return term.factory.makeNil(), term.head, term.tail
 
 
-class Split(Transformation):
+class Split(base.Transformation):
 	'''Splits a list term in two lists.'''
 
 	def __init__(self, operand):
@@ -40,15 +39,18 @@ class Split(Transformation):
 		return term.factory.makeList(self.splitter.visit(term, context))
 
 
-class SplitBlock(Transformation):
+class SplitBlock(base.Transformation):
 
 	def __init__(self, name):
 		self.name = name
 		self.split_head = Split(
-			MatchAppl("Label", [Match(name)])
+			transf.matching.MatchAppl(
+				"Label", 
+				[transf.rewriters.Match(name)]
+			)
 		)
 		self.split_tail = Split(
-			Match("Ret(*)")
+			transf.rewriters.Match("Ret(*)")
 			# FIXME: not working?
 			#_f.Ret()
 		)
@@ -64,7 +66,7 @@ class SplitBlock(Transformation):
 		])
 
 
-class ExtractBlock(Transformation):
+class ExtractBlock(base.Transformation):
 	
 	def __init__(self, operand, name):
 		self.split_block = SplitBlock(name)

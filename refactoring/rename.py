@@ -39,13 +39,12 @@ class Rename(refactoring.Refactoring):
 	def apply(self, term, args):
 		factory = term.factory
 		src, dst = args
-		import transf
 		
-		txn = transf.TraverseAppl(
+		txn = transf.traversal.TraverseAppl(
 			'Sym',
-			[transf.Match(src) & transf.Build(dst)]
+			[transf.rewriters.Match(src) & transf.rewriters.Build(dst)]
 		)
-		txn = transf.InnerMost(txn)
+		txn = transf.traversal.InnerMost(txn)
 		return txn(term)
 
 

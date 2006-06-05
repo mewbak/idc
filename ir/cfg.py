@@ -5,24 +5,29 @@ import transf
 import box
 
 from transf import *
+from transf.exception import *
+from transf.base import *
+from transf.rewriters import *
+from transf.grammar import *
+
 
 from ir import pprint2
 
 
 matchStmtName \
-	= MatchStr('VarDef') \
-	| MatchStr('FuncDef') \
-	| MatchStr('Assign') \
-	| MatchStr('If') \
-	| MatchStr('While') \
-	| MatchStr('Ret)') \
-	| MatchStr('Label') \
-	| MatchStr('Branch') \
-	| MatchStr('Block') \
-	| MatchStr('Break') \
-	| MatchStr('Continue') \
-	| MatchStr('NoOp') \
-	| MatchStr('Ret')
+	= matching.MatchStr('VarDef') \
+	| matching.MatchStr('FuncDef') \
+	| matching.MatchStr('Assign') \
+	| matching.MatchStr('If') \
+	| matching.MatchStr('While') \
+	| matching.MatchStr('Ret)') \
+	| matching.MatchStr('Label') \
+	| matching.MatchStr('Branch') \
+	| matching.MatchStr('Block') \
+	| matching.MatchStr('Break') \
+	| matching.MatchStr('Continue') \
+	| matching.MatchStr('NoOp') \
+	| matching.MatchStr('Ret')
 
 
 class Counter(Transformation):
@@ -40,31 +45,31 @@ class Counter(Transformation):
 
 
 def AnnotateId():
-	return SetAnnotation(Build('Id'), Counter())
+	return annotation.SetAnnotation(Build('Id'), Counter())
 
 
-matchLabel = MatchAppl(MatchStr('Label'), Ident())
+matchLabel = matching.MatchAppl(matching.MatchStr('Label'), combinators.Ident())
 
-matchStmt = MatchAppl(matchStmtName, Ident())
+matchStmt = matching.MatchAppl(matchStmtName, combinators.Ident())
 
-collectStmts = CollectAll(matchStmt)
+collectStmts = unifiers.CollectAll(matchStmt)
 
-markStmts = TopDown(Try(matchStmt & AnnotateId()))
+markStmts = traversal.TopDown(combinators.Try(matchStmt & AnnotateId()))
 
 
 
-this = BuildVar("this")
-next = BuildVar("next")
-cont = BuildVar("cont")
-brek = BuildVar("brek")
-retn = BuildVar("retn")
+this = building.BuildVar("this")
+next = building.BuildVar("next")
+cont = building.BuildVar("cont")
+brek = building.BuildVar("brek")
+retn = building.BuildVar("retn")
 
 
 def Edge(src, dst):
-	return BuildList((src, dst))
+	return building.BuildList((src, dst))
 
 
-stmtsFlow = Proxy()
+stmtsFlow = base.Proxy()
 
 stmtFlow = ParseRule('''
 	Assign(*) -> [[<id>,next]] |
@@ -74,11 +79,11 @@ stmtFlow = ParseRule('''
 ''')
 
 stmtsFlow.subject \
-	= Scope(
-			MatchNil() \
-				& BuildNil() \
-			| MatchCons(MatchVar("head"), MatchVar("tail") & (Head() | BuildVar("next")) & MatchVar("following")) \
-				& Concat(With(BuildVar("head") & stmtFlow, next=BuildVar("following")), BuildVar("tail") & stmtsFlow)
+	= scope.Scope(
+			matching.MatchNil() \
+				& building.BuildNil() \
+			| matching.MatchCons(matching.MatchVar("head"), matching.MatchVar("tail") & (projection.Head() | building.BuildVar("next")) & matching.MatchVar("following")) \
+				& lists.Concat(scope.With(building.BuildVar("head") & stmtFlow, next=building.BuildVar("following")), building.BuildVar("tail") & stmtsFlow)
 		, ['head', 'tail', 'following'])
 
 
@@ -86,23 +91,23 @@ endOfModule = Build("NoStmt") & AnnotateId()
 
 moduleEdges \
 	= Match("Module(stmts)") \
-		& With(BuildVar("stmts") & stmtsFlow, next=endOfModule, cont=endOfModule, brek=endOfModule, retn=endOfModule)
+		& scope.With(building.BuildVar("stmts") & stmtsFlow, next=endOfModule, cont=endOfModule, brek=endOfModule, retn=endOfModule)
 
-	#| MatchStr('Branch(label)') & BuildList((Edge(this,FindLabel(label)))) \
+	#| matching.MatchStr('Branch(label)') & building.BuildList((Edge(this,FindLabel(label)))) \
 		#| Match("If(*,true,false)") & Concat(Concat(Build("[Edge(this,next)]", Build("[this, true, next]") & stmtsFlow), Build("[this, false, next]") & stmtsFlow)
 		#| Match("While(*,block)") & Concat(Build("[Edge(this,next)]", Build("[this, next]") & stmtsFlow))
-	#| MatchStr('While') \
-	#| MatchStr('Label') \
-	#| MatchStr('Block') \
-	#| MatchStr('Break') \
-	#| MatchStr('Continue') \
-	#| MatchStr('Ret')
+	#| matching.MatchStr('While') \
+	#| matching.MatchStr('Label') \
+	#| matching.MatchStr('Block') \
+	#| matching.MatchStr('Break') \
+	#| matching.MatchStr('Continue') \
+	#| matching.MatchStr('Ret')
 
 
 makeNodeId \
-	= GetAnnotation(Build('Id')) & ToStr()
+	= annotation.GetAnnotation(Build('Id')) & strings.ToStr()
 
-box2text = Adaptor(
+box2text = base.Adaptor(
 		lambda term, context: term.factory.makeStr(box.box2text(term))
 )
 
@@ -114,14 +119,14 @@ makeNodeLabel = ParseTransf('''
 		! "..."
 ''')
 
-makeNode = BuildAppl("Node", (makeNodeId, makeNodeLabel))
-makeNodes = Map(makeNode)
+makeNode = building.BuildAppl("Node", (makeNodeId, makeNodeLabel))
+makeNodes = traversal.Map(makeNode)
 
 
 makeEdge = ParseRule('''
 	[src, dst] -> Edge(<<makeNodeId> src>, <<makeNodeId> dst>)
 ''')
-makeEdges = Map(makeEdge)
+makeEdges = traversal.Map(makeEdge)
 
 collectFlows = moduleEdges
 
@@ -157,7 +162,7 @@ makeDot = ParseRule(r'''
 |		_ -> <id>
 ''')
 
-makeDot = BottomUp(makeDot)
+makeDot = traversal.BottomUp(makeDot)
 
 if __name__ == '__main__':
 	import aterm.factory

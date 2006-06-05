@@ -37,9 +37,9 @@ class Rename(refactoring.Refactoring):
 			('Addr(Ref(expr))',
 				'expr'),
 		]
-		txn = transf.RuleSet(rules)
+		txn = transf.rewriters.RuleSet(rules)
 		#txn = transf.Repeat(txn)
-		txn = transf.InnerMost(txn)
+		txn = transf.traversal.InnerMost(txn)
 		return txn(term)
 
 

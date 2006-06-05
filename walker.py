@@ -17,7 +17,7 @@ import sys
 
 import aterm
 
-from transf import Failure
+from transf.exception import Failure
 
 
 class Walker:
