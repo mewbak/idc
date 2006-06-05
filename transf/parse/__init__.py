@@ -8,9 +8,9 @@ try:
 except ImportError:
 	import StringIO
 
-from transf.grammar.lexer import Lexer
-from transf.grammar.parser import Parser
-from transf.grammar.compiler import Walker
+from transf.parse.lexer import Lexer
+from transf.parse.parser import Parser
+from transf.parse.compiler import Walker
 
 
 def ParseTransf(buf):
@@ -54,8 +54,8 @@ def ParseRule(buf):
 if __name__ == '__main__':
 	# TODO: move these to a test case
 	sys.stdout = sys.stderr
-	import transf.combinators
-	from transf.combinators import Ident as MyIdent
+	import transf.combine
+	from transf.combine import Ident as MyIdent
 	testCases = [
 		'id',
 		'fail',
@@ -89,7 +89,7 @@ if __name__ == '__main__':
 		'!C(<id>,<fail>)',
 		'Ident()',
 		'MyIdent()',
-		'transf.combinators.Ident()',
+		'transf.combine.Ident()',
 		'( C(x,y) -> D(y,x) )',
 		'{ C(x,y) -> D(y,x) }',
 		'{x, y: id }',

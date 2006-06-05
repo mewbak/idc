@@ -342,7 +342,7 @@ class compiler extends TreeParser;
         // TODO: handle caller global and local namespaces
     
         // lookup in the builtins module
-        from transf.grammar.builtins import builtins
+        from transf.parse.builtins import builtins
         try:
             return builtins[name]
         except KeyError:
@@ -365,9 +365,9 @@ class compiler extends TreeParser;
 
 transf returns [ret]
 	: IDENT
-		{ ret = transf.combinators.Ident() }
+		{ ret = transf.combine.Ident() }
 	| FAIL
-		{ ret = transf.combinators.Fail() }
+		{ ret = transf.combine.Fail() }
 	| #( QUEST m=match_term )
 		{ ret = m }
 	| #( BANG b=build_term )
@@ -375,9 +375,9 @@ transf returns [ret]
 	| #( TILDE t=traverse_term )
 		{ ret = t }
 	| #( SEMI l=transf r=transf )
-		{ ret = transf.combinators.Composition(l, r) }
+		{ ret = transf.combine.Composition(l, r) }
 	| #( PLUS l=transf r=transf )
-		{ ret = transf.combinators.Choice(l, r) }
+		{ ret = transf.combine.Choice(l, r) }
 	| #( CALL i:ID
 		{ args = [] } 
 		( a=transf { args.append(a) } )*
@@ -407,11 +407,11 @@ transf returns [ret]
         }
 	| #( RULE m=match_term b=build_term
 		( WHERE w=transf 
-			{ ret = transf.combinators.Composition(transf.combinators.Where(w), b) }
+			{ ret = transf.combine.Composition(transf.combine.Where(w), b) }
 		|
 			{ ret = b }
 		)
-			{ ret = transf.combinators.Composition(m, ret) }
+			{ ret = transf.combine.Composition(m, ret) }
 	  )
 	| #( ANON ret=at:transf )
 		{
@@ -421,30 +421,30 @@ transf returns [ret]
                 ret = transf.scope.Scope(ret, vars)
         }
 	| #( APPLY_MATCH t=transf m=match_term )
-		{ ret = transf.combinators.Composition(t, m) }
+		{ ret = transf.combine.Composition(t, m) }
 	| #( BUILD_APPLY t=transf b=build_term )
-		{ ret = transf.combinators.Composition(b, t) }
+		{ ret = transf.combine.Composition(b, t) }
 	;
 	
 match_term returns [ret]
 	: i:INT 
-		{ ret = transf.matching.MatchInt(int(#i.getText())) }
+		{ ret = transf.match.MatchInt(int(#i.getText())) }
 	| r:REAL 
-		{ ret = transf.matching.MatchReal(float(#r.getText())) }
+		{ ret = transf.match.MatchReal(float(#r.getText())) }
 	| s:STR 
-		{ ret = transf.matching.MatchStr(#s.getText()) }
+		{ ret = transf.match.MatchStr(#s.getText()) }
 	| NIL
-		{ ret = transf.matching.MatchNil() }
+		{ ret = transf.match.MatchNil() }
 	| #( CONS h=match_term t=match_term )
-		{ ret = transf.matching.MatchCons(h, t) }
+		{ ret = transf.match.MatchCons(h, t) }
 	| #( APPL n=match_term a=match_term )
-		{ ret = transf.matching.MatchAppl(n, a) }
+		{ ret = transf.match.MatchAppl(n, a) }
 	| w:WILDCARD 
-		{ ret = transf.combinators.Ident() }
+		{ ret = transf.combine.Ident() }
 	| #( v:VAR // TODO: handle sub-patterns
-		{ ret = transf.matching.MatchVar(#v.getText()) }
+		{ ret = transf.match.MatchVar(#v.getText()) }
 		( p=match_term
-			{ ret = transf.combinators.composition(p, ret) }
+			{ ret = transf.combine.composition(p, ret) }
 		)?
 	  )
 	| #( TRANSF txn=transf )
@@ -475,30 +475,30 @@ collect_term_vars[vars]
 
 build_term returns [ret]
 	: i:INT 
-		{ ret = transf.building.BuildInt(int(#i.getText())) }
+		{ ret = transf.build.BuildInt(int(#i.getText())) }
 	| r:REAL 
-		{ ret = transf.building.BuildReal(float(#r.getText())) }
+		{ ret = transf.build.BuildReal(float(#r.getText())) }
 	| s:STR 
-		{ ret = transf.building.BuildStr(#s.getText()) }
+		{ ret = transf.build.BuildStr(#s.getText()) }
 	| NIL
-		{ ret = transf.building.BuildNil() }
+		{ ret = transf.build.BuildNil() }
 	| #( CONS h=build_term t=build_term )
-		{ ret = transf.building.BuildCons(h, t) }
+		{ ret = transf.build.BuildCons(h, t) }
 	| #( APPL n=build_term a=build_term )
-		{ ret = transf.building.BuildAppl(n, a) }
+		{ ret = transf.build.BuildAppl(n, a) }
 	| w:WILDCARD 
-		{ ret = transf.combinators.Ident() }
+		{ ret = transf.combine.Ident() }
 	| v:VAR 
-		{ ret = transf.building.BuildVar(#v.getText()) }
+		{ ret = transf.build.BuildVar(#v.getText()) }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;
 
 traverse_term returns [ret]
 	: #( CONS h=traverse_term t=traverse_term )
-		{ ret = transf.traversal.TraverseCons(h, t) }
+		{ ret = transf.traverse.TraverseCons(h, t) }
 	| #( APPL n=traverse_term a=traverse_term )
-		{ ret = transf.traversal.TraverseAppl(n, a) }
+		{ ret = transf.traverse.TraverseAppl(n, a) }
 	| o:.
 		{ ret = self.match_term(#o) }
 	;

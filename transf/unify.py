@@ -4,28 +4,28 @@
 import aterm
 
 from transf import base
-from transf import combinators
-from transf import matching
-from transf import building
-from transf import projection
+from transf import combine
+from transf import match
+from transf import build
+from transf import project
 from transf import lists
 
 
 def Foldr(tail, cons, operand=None):
 	if operand is None:
-		operand = combinators.Ident()
+		operand = combine.Ident()
 	foldr = base.Proxy()
 	foldr.subject \
-		= matching.MatchNil() & tail \
-		| building.BuildList((
-			projection.Head() & operand, 
-			projection.Tail() & foldr
+		= match.MatchNil() & tail \
+		| build.BuildList((
+			project.Head() & operand, 
+			project.Tail() & foldr
 		)) & cons
 	return foldr
 
 
 def Crush(tail, cons, operand=None):
-	return projection.SubTerms() & Foldr(tail, cons, operand)
+	return project.SubTerms() & Foldr(tail, cons, operand)
 
 
 def CollectAll(operand, union=None):
@@ -34,10 +34,10 @@ def CollectAll(operand, union=None):
 	@param union: transformation which takes two lists are produces a single one
 	'''
 	if union is None:
-		union = lists.Concat(projection.First(), projection.Second())
+		union = lists.Concat(project.First(), project.Second())
 	collect = base.Proxy()
-	crush = Crush(building.BuildNil(), union, collect)
+	crush = Crush(build.BuildNil(), union, collect)
 	collect.subject \
-		= building.BuildCons(operand, crush) \
+		= build.BuildCons(operand, crush) \
 		| crush
 	return collect

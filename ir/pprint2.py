@@ -4,7 +4,7 @@
 
 from transf import base
 from transf import strings
-from transf.grammar import *
+from transf.parse import *
 
 
 def TraverseType(typer):

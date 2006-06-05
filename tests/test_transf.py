@@ -9,13 +9,13 @@ from transf.exception import *
 from transf.base import *
 #from transf.scope import *
 
-from transf.combinators import *
-from transf.projection import *
-#from transf.matching import *
-#from transf.building import *
-from transf.rewriters import *
-from transf.traversal import *
-from transf.unifiers import *
+from transf.combine import *
+from transf.project import *
+#from transf.match import *
+#from transf.build import *
+from transf.rewrite import *
+from transf.traverse import *
+from transf.unify import *
 
 #from transf.annotation import *
 
@@ -71,22 +71,22 @@ class TestCombinators(TestMixin, unittest.TestCase):
 	failTestCases = [(term, 'FAILURE') for term in termsInputs]
 
 	def testIdent(self):
-		self._testTransf(combinators.Ident(), self.identTestCases)
+		self._testTransf(combine.Ident(), self.identTestCases)
 
 	def testFail(self):
-		self._testTransf(combinators.Fail(), self.failTestCases)
+		self._testTransf(combine.Fail(), self.failTestCases)
 	
 	def testNot(self):
-		self._testTransf(Not(combinators.Ident()), self.failTestCases)
-		self._testTransf(Not(combinators.Fail()), self.identTestCases)
+		self._testTransf(Not(combine.Ident()), self.failTestCases)
+		self._testTransf(Not(combine.Fail()), self.identTestCases)
 	
 	def testTry(self):
-		self._testTransf(Try(combinators.Ident()), self.identTestCases)
-		self._testTransf(Try(combinators.Fail()), self.identTestCases)
+		self._testTransf(Try(combine.Ident()), self.identTestCases)
+		self._testTransf(Try(combine.Fail()), self.identTestCases)
 
 	def testChoice(self):
-		self._testTransf(Choice(combinators.Ident(), combinators.Ident()), self.identTestCases)
-		self._testTransf(Choice(combinators.Ident(), combinators.Fail()), self.identTestCases)
+		self._testTransf(Choice(combine.Ident(), combine.Ident()), self.identTestCases)
+		self._testTransf(Choice(combine.Ident(), combine.Fail()), self.identTestCases)
 		self._testTransf(Choice(Fail(), Ident()), self.identTestCases)
 		self._testTransf(Choice(Fail(), Fail()), self.failTestCases)
 		
@@ -135,25 +135,25 @@ class TestTerm(TestMixin, unittest.TestCase):
 		self._testTransf(transf, testCases)
 					
 	def testInt(self):
-		self._testMatchTransf(matching.MatchInt(1), '1')
+		self._testMatchTransf(match.MatchInt(1), '1')
 
 	def testReal(self):
-		self._testMatchTransf(matching.MatchReal(0.1), '0.1')
+		self._testMatchTransf(match.MatchReal(0.1), '0.1')
 
 	def testStr(self):
-		self._testMatchTransf(matching.MatchStr("a"), '"a"')
+		self._testMatchTransf(match.MatchStr("a"), '"a"')
 
 	def testNil(self):
-		self._testMatchTransf(matching.MatchNil(), '[]')
+		self._testMatchTransf(match.MatchNil(), '[]')
 	
 	def testCons(self):
-		self._testMatchTransf(TraverseCons(matching.MatchInt(1),matching.MatchNil()), '[1]')
+		self._testMatchTransf(TraverseCons(match.MatchInt(1),match.MatchNil()), '[1]')
 	
 	def testList(self):
-		self._testMatchTransf(TraverseList([matching.MatchInt(1),matching.MatchInt(2)]), '[1,2]')
+		self._testMatchTransf(TraverseList([match.MatchInt(1),match.MatchInt(2)]), '[1,2]')
 	
 	def testAppl(self):
-		self._testMatchTransf(TraverseAppl(matching.MatchStr("C"),matching.MatchNil()), 'C')
+		self._testMatchTransf(TraverseAppl(match.MatchStr("C"),match.MatchNil()), 'C')
 
 
 class TestTraversers(TestMixin, unittest.TestCase):
@@ -272,7 +272,7 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	)
 	
 	def testFoldr(self):
-		self._testTransf(Foldr(building.BuildInt(0),Add(First(),Second())), self.foldrTestCases)
+		self._testTransf(Foldr(build.BuildInt(0),Add(First(),Second())), self.foldrTestCases)
 
 	crushTestCases = (
 		('[1,2]', '[1,[2,[]]]'),
@@ -291,7 +291,7 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	)
 	
 	def testCollectAll(self):
-		self._testTransf(CollectAll(matching.IsInt()), self.collectAllTestCases)
+		self._testTransf(CollectAll(match.IsInt()), self.collectAllTestCases)
 	
 
 class TestArith(TestMixin, unittest.TestCase):

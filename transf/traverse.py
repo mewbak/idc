@@ -5,8 +5,8 @@ import aterm.types
 
 from transf import exception
 from transf import base
-from transf import combinators
-from transf import matching
+from transf import combine
+from transf import match
 
 
 class TraverseCons(base.Transformation):
@@ -78,7 +78,7 @@ def TraverseList(elms, tail = None):
 	to matching the empty list
 	'''
 	if tail is None:
-		tail = matching.MatchNil()
+		tail = match.MatchNil()
 	return _TraverseList(iter(elms), tail)
 	
 
@@ -88,7 +88,7 @@ class TraverseAppl(base.Transformation):
 	def __init__(self, name, args):
 		base.Transformation.__init__(self)
 		if isinstance(name, basestring):
-			self.name = matching.MatchStr(name)
+			self.name = match.MatchStr(name)
 		else:
 			self.name = name
 		if isinstance(args, (tuple, list)):
@@ -119,29 +119,29 @@ class TraverseAppl(base.Transformation):
 
 def Map(operand):
 	map = base.Proxy()
-	map.subject = matching.MatchNil() | TraverseCons(operand, map)
+	map.subject = match.MatchNil() | TraverseCons(operand, map)
 	return map
 
 
 def Fetch(operand):
 	fetch = base.Proxy()
-	fetch.subject = TraverseCons(operand, combinators.Ident()) | TraverseCons(combinators.Ident(), fetch)
+	fetch.subject = TraverseCons(operand, combine.Ident()) | TraverseCons(combine.Ident(), fetch)
 	return fetch
 
 
 def Filter(operand):
 	filter = base.Proxy()
-	filter.subject = matching.MatchNil() | FilterCons(operand, filter)
+	filter.subject = match.MatchNil() | FilterCons(operand, filter)
 	return filter
 
 
-class All(combinators.Unary):
+class All(combine.Unary):
 	'''Applies a transformation to all subterms of a term.'''
 	
 	def __init__(self, operand):
-		combinators.Unary.__init__(self, operand)
+		combine.Unary.__init__(self, operand)
 		self.list_transf = Map(operand)
-		self.appl_transf = TraverseAppl(combinators.Ident(), self.list_transf)
+		self.appl_transf = TraverseAppl(combine.Ident(), self.list_transf)
 	
 	def apply(self, term, context):
 		if term.type == aterm.types.APPL:
@@ -166,5 +166,5 @@ def TopDown(operand):
 
 def InnerMost(operand):
 	innermost = base.Proxy()
-	innermost.subject = BottomUp(combinators.Try(operand & innermost))
+	innermost.subject = BottomUp(combine.Try(operand & innermost))
 	return innermost

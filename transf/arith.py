@@ -4,13 +4,13 @@
 import aterm
 
 from transf import exception
-from transf import combinators
+from transf import combine
 
 
 # TODO: complete
 
 
-class AddInt(combinators.Binary):
+class AddInt(combine.Binary):
 
 	def apply(self, term, context):
 		x = self.loperand.apply(term, context)

@@ -37,11 +37,11 @@ class ExtractFunction(refactoring.Refactoring):
 	def apply(self, term, args):
 		factory = term.factory
 		name, = args
-		txn = transf.rewriters.Rule(
+		txn = transf.rewrite.Rule(
 			"[Label(name),*rest]",
 			"[FuncDef(Void,name,[],Block(rest))]",
 		)
-		txn = transf.traversal.TraverseAppl(
+		txn = transf.traverse.TraverseAppl(
 			'Module',
 			[ExtractBlock(txn,name)]
 		)

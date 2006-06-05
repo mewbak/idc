@@ -6,7 +6,7 @@ import aterm.visitor
 
 from transf import exception
 from transf import base
-from transf import combinators
+from transf import combine
 from transf import scope
 
 
@@ -90,7 +90,7 @@ def Rule(match_pattern, build_pattern, locals = None):
 
 
 def RuleSet(patterns, locals = None):
-	rules = combinators.Fail()
+	rules = combine.Fail()
 	for match_pattern, build_pattern in patterns:
 		rules = rules | Rule(match_pattern, build_pattern, locals)
 	return rules

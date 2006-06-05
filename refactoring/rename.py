@@ -40,11 +40,11 @@ class Rename(refactoring.Refactoring):
 		factory = term.factory
 		src, dst = args
 		
-		txn = transf.traversal.TraverseAppl(
+		txn = transf.traverse.TraverseAppl(
 			'Sym',
-			[transf.rewriters.Match(src) & transf.rewriters.Build(dst)]
+			[transf.rewrite.Match(src) & transf.rewrite.Build(dst)]
 		)
-		txn = transf.traversal.InnerMost(txn)
+		txn = transf.traverse.InnerMost(txn)
 		return txn(term)
 
 

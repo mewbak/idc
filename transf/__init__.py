@@ -11,13 +11,13 @@ from transf import exception
 from transf import base
 from transf import scope
 
-from transf import combinators
-from transf import projection
-from transf import matching
-from transf import building
-from transf import rewriters
-from transf import traversal
-from transf import unifiers
+from transf import combine
+from transf import project
+from transf import match
+from transf import build
+from transf import rewrite
+from transf import traverse
+from transf import unify
 
 from transf import annotation
 
@@ -27,7 +27,7 @@ from transf import strings
 
 from transf import debug
 
-from transf import grammar
+from transf import parse
 
 import transf._factory as _factory
 factory = _factory.Factory()

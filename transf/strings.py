@@ -5,7 +5,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
-from transf import combinators
+from transf import combine
 
 
 class ToStr(base.Transformation):

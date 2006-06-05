@@ -3,10 +3,10 @@
 
 from transf import exception
 from transf import base
-from transf import combinators
+from transf import combine
 
 
-class Concat(combinators.Binary):
+class Concat(combine.Binary):
 	
 	def apply(self, term, context):
 		head = self.loperand.apply(term, context)

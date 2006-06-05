@@ -38,24 +38,24 @@ class Transformation(object):
 		raise NotImplementedError(self)
 
 	def __invert__(self):
-		from transf import combinators
-		return combinators.Not(self)
+		from transf import combine
+		return combine.Not(self)
 	
 	def __or__(self, other):
-		from transf import combinators
-		return combinators.Choice(self, other)
+		from transf import combine
+		return combine.Choice(self, other)
 
 	def __ror__(self, other):
-		from transf import combinators
-		return combinators.Choice(other, self)
+		from transf import combine
+		return combine.Choice(other, self)
 
 	def __and__(self, other):
-		from transf import combinators
-		return combinators.Composition(self, other)	
+		from transf import combine
+		return combine.Composition(self, other)	
 
 	def __rand__(self, other):
-		from transf import combinators
-		return combinators.Composition(other, self)
+		from transf import combine
+		return combine.Composition(other, self)
 	
 	def __repr__(self):
 		name = self.__class__.__name__
