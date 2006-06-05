@@ -7,6 +7,8 @@ import box
 from transf import *
 from transf.exception import *
 from transf.base import *
+from transf.match import *
+from transf.build import *
 from transf.rewrite import *
 
 
@@ -44,7 +46,7 @@ class Counter(Transformation):
 
 
 def AnnotateId():
-	return annotation.SetAnnotation(Build('Id'), Counter())
+	return annotation.SetAnnotation(BuildPattern('Id'), Counter())
 
 
 matchLabel = match.MatchAppl(match.MatchStr('Label'), base.Ident())
@@ -86,15 +88,15 @@ stmtsFlow.subject \
 		, ['head', 'tail', 'following'])
 
 
-endOfModule = Build("NoStmt") & AnnotateId()
+endOfModule = BuildPattern("NoStmt") & AnnotateId()
 
 moduleEdges \
-	= Match("Module(stmts)") \
+	= MatchPattern("Module(stmts)") \
 		& scope.With(build.BuildVar("stmts") & stmtsFlow, next=endOfModule, cont=endOfModule, brek=endOfModule, retn=endOfModule)
 
 	#| match.MatchStr('Branch(label)') & build.BuildList((Edge(this,FindLabel(label)))) \
-		#| Match("If(*,true,false)") & Concat(Concat(Build("[Edge(this,next)]", Build("[this, true, next]") & stmtsFlow), Build("[this, false, next]") & stmtsFlow)
-		#| Match("While(*,block)") & Concat(Build("[Edge(this,next)]", Build("[this, next]") & stmtsFlow))
+		#| MatchPattern("If(*,true,false)") & Concat(Concat(BuildPattern("[Edge(this,next)]", BuildPattern("[this, true, next]") & stmtsFlow), BuildPattern("[this, false, next]") & stmtsFlow)
+		#| MatchPattern("While(*,block)") & Concat(BuildPattern("[Edge(this,next)]", BuildPattern("[this, next]") & stmtsFlow))
 	#| match.MatchStr('While') \
 	#| match.MatchStr('Label') \
 	#| match.MatchStr('Block') \
@@ -104,7 +106,7 @@ moduleEdges \
 
 
 makeNodeId \
-	= annotation.GetAnnotation(Build('Id')) & strings.ToStr()
+	= annotation.GetAnnotation(BuildPattern('Id')) & strings.ToStr()
 
 box2text = base.Adaptor(
 		lambda term, context: term.factory.makeStr(box.box2text(term))

@@ -8,9 +8,6 @@ from transf import base
 from transf import exception
 
 
-# TODO: handle annotations
-
-
 _factory = aterm.factory.Factory()
 
 
@@ -102,3 +99,17 @@ class BuildVar(base.Transformation):
 			return context[self.name]
 		except KeyError:
 			raise exception.Failure('undefined variable', self.name)
+
+
+class BuildPattern(base.Transformation):
+
+	def __init__(self, pattern):
+		base.Transformation.__init__(self)
+		if isinstance(pattern, basestring):
+			self.pattern = _factory.parse(pattern)
+		else:
+			self.pattern = pattern
+	
+	def apply(self, term, context):
+		# FIXME: avoid the dict copy
+		return self.pattern.make(term, **dict(context))

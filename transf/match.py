@@ -1,10 +1,14 @@
 '''Term matching transformations.'''
 
 
+import aterm.factory
 import aterm.types
 
 from transf import exception
 from transf import base
+
+
+_factory = aterm.factory.Factory()
 
 
 class IsType(base.Transformation):
@@ -148,3 +152,31 @@ class MatchVar(base.Transformation):
 			if not value.isEquivalent(term):
 				raise exception.Failure
 		return term
+
+
+class MatchPattern(base.Transformation):
+	
+	
+	def __init__(self, pattern):
+		base.Transformation.__init__(self)
+		if isinstance(pattern, basestring):
+			self.pattern = _factory.parse(pattern)
+		else:
+			self.pattern = pattern
+	
+	def apply(self, term, context):
+		match = self.pattern.match(term)
+		if not match:
+			raise exception.Failure('pattern mismatch', self.pattern, term)
+
+		for name, value in match.kargs.iteritems():
+			try:
+				prev_value = context[name]
+			except KeyError:
+				context[name] = value
+			else:
+				if not value.isEquivalent(prev_value):
+					raise exception.Failure
+
+		return term
+

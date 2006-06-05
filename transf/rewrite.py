@@ -6,49 +6,13 @@ import aterm.visitor
 
 from transf import exception
 from transf import base
-from transf import combine
+from transf import match
+from transf import build
 from transf import scope
 
 
 _factory = aterm.factory.Factory()
 
-
-class _Pattern(base.Transformation):
-	
-	
-	def __init__(self, pattern):
-		base.Transformation.__init__(self)
-		if isinstance(pattern, basestring):
-			self.pattern = _factory.parse(pattern)
-		else:
-			self.pattern = pattern
-	
-
-class Match(_Pattern):
-	
-	def apply(self, term, context):
-		match = self.pattern.match(term)
-		if not match:
-			raise exception.Failure('pattern mismatch', self.pattern, term)
-
-		for name, value in match.kargs.iteritems():
-			try:
-				prev_value = context[name]
-			except KeyError:
-				context[name] = value
-			else:
-				if not value.isEquivalent(prev_value):
-					raise exception.Failure
-
-		return term
-
-
-class Build(_Pattern):
-	
-	def apply(self, term, context):
-		# FIXME: avoid the dict copy
-		return self.pattern.make(term, **dict(context))
-		
 
 class _VarCollector(aterm.visitor.Visitor):
 	
@@ -86,7 +50,7 @@ def Rule(match_pattern, build_pattern, locals = None):
 		varcollector.visit(match_pattern)
 		locals = varcollector.vars
 		
-	return scope.Scope(Match(match_pattern) & Build(build_pattern), locals)
+	return scope.Scope(match.MatchPattern(match_pattern) & build.BuildPattern(build_pattern), locals)
 
 
 def RuleSet(patterns, locals = None):

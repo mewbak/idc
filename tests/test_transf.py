@@ -11,6 +11,8 @@ from transf.exception import *
 from transf.base import *
 from transf.combine import *
 from transf.project import *
+from transf.match import *
+from transf.build import *
 from transf.rewrite import *
 from transf.traverse import *
 from transf.unify import *
@@ -153,7 +155,7 @@ class TestTerm(TestMixin, unittest.TestCase):
 class TestTraversers(TestMixin, unittest.TestCase):
 
 	mapTestCases = (
-		[Ident(), Fail(), Rule('x', 'X(x)'), Match('1')],
+		[Ident(), Fail(), Rule('x', 'X(x)'), MatchPattern('1')],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
@@ -169,7 +171,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 	# TODO: testFetch
 
 	filterTestCases = (
-		[Ident(), Fail(), Rule('x', 'X(x)'), Match('2')],
+		[Ident(), Fail(), Rule('x', 'X(x)'), MatchPattern('2')],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', '[]', '[X(1)]', '[]'],
@@ -254,7 +256,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 	def testSplit(self):
 		# FIXME: move this away from here
 		from ir.transfs import Split
-		self._testTransf(Split(Match('X')), self.spitTestCases)
+		self._testTransf(Split(MatchPattern('X')), self.spitTestCases)
 
 	# TODO: testInnerMost
 
