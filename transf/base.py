@@ -1,5 +1,6 @@
 '''Base transformation classes.'''
 
+
 import aterm.terms
 import aterm.factory
 
@@ -76,13 +77,17 @@ class Ident(Transformation):
 	
 	def apply(self, term, context):
 		return term
-	
+
+ident = Ident()
+
 
 class Fail(Transformation):
 	'''Failure transformation.'''
 	
 	def apply(self, term, context):
 		raise exception.Failure
+
+fail = Fail()
 
 
 class Adaptor(Transformation):

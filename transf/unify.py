@@ -13,19 +13,19 @@ from transf import lists
 
 def Foldr(tail, cons, operand=None):
 	if operand is None:
-		operand = base.Ident()
+		operand = base.ident
 	foldr = base.Proxy()
 	foldr.subject \
-		= match.Nil() & tail \
+		= match.nil & tail \
 		| build.List((
-			project.Head() & operand, 
-			project.Tail() & foldr
+			project.head & operand, 
+			project.tail & foldr
 		)) & cons
 	return foldr
 
 
 def Crush(tail, cons, operand=None):
-	return project.SubTerms() & Foldr(tail, cons, operand)
+	return project.subterms & Foldr(tail, cons, operand)
 
 
 def CollectAll(operand, union=None):
@@ -34,9 +34,9 @@ def CollectAll(operand, union=None):
 	@param union: transformation which takes two lists are produces a single one
 	'''
 	if union is None:
-		union = lists.Concat(project.First(), project.Second())
+		union = lists.Concat(project.first, project.second)
 	collect = base.Proxy()
-	crush = Crush(build.Nil(), union, collect)
+	crush = Crush(build.nil, union, collect)
 	collect.subject \
 		= build.Cons(operand, crush) \
 		| crush

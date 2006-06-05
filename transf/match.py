@@ -26,21 +26,31 @@ class Type(base.Transformation):
 def AnInt():
 	return Type(aterm.types.INT)
 
+anInt = AnInt()
+
 
 def AReal():
 	return Type(aterm.types.REAL)
+
+aReal = AReal()
 
 
 def AStr():
 	return Type(aterm.types.STR)
 
+aStr = AStr()
+
 
 def AList():
 	return Type(aterm.types.LIST)
 
+aList = AList()
+
 
 def AnAppl():
 	return Type(aterm.types.APPL)
+
+anAppl = AnAppl()
 
 
 class Lit(base.Transformation):
@@ -78,6 +88,8 @@ class Nil(base.Transformation):
 		if term.type != aterm.types.LIST or not term.isEmpty():
 			raise exception.Failure
 		return term
+
+nil = Nil()
 
 
 class Cons(base.Transformation):

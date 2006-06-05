@@ -10,7 +10,6 @@ from transf import *
 from transf.exception import *
 from transf.base import *
 from transf.combine import *
-from transf.project import *
 from transf.rewrite import *
 from transf.traverse import *
 from transf.unify import *
@@ -65,30 +64,30 @@ class TestCombinators(TestMixin, unittest.TestCase):
 	failTestCases = [(term, 'FAILURE') for term in termsInputs]
 
 	def testIdent(self):
-		self._testTransf(base.Ident(), self.identTestCases)
+		self._testTransf(base.ident, self.identTestCases)
 
 	def testFail(self):
-		self._testTransf(base.Fail(), self.failTestCases)
+		self._testTransf(base.fail, self.failTestCases)
 	
 	def testNot(self):
-		self._testTransf(Not(base.Ident()), self.failTestCases)
-		self._testTransf(Not(base.Fail()), self.identTestCases)
+		self._testTransf(Not(base.ident), self.failTestCases)
+		self._testTransf(Not(base.fail), self.identTestCases)
 	
 	def testTry(self):
-		self._testTransf(Try(base.Ident()), self.identTestCases)
-		self._testTransf(Try(base.Fail()), self.identTestCases)
+		self._testTransf(Try(base.ident), self.identTestCases)
+		self._testTransf(Try(base.fail), self.identTestCases)
 
 	def testChoice(self):
-		self._testTransf(Choice(base.Ident(), base.Ident()), self.identTestCases)
-		self._testTransf(Choice(base.Ident(), base.Fail()), self.identTestCases)
-		self._testTransf(Choice(Fail(), Ident()), self.identTestCases)
-		self._testTransf(Choice(Fail(), Fail()), self.failTestCases)
+		self._testTransf(Choice(base.ident, base.ident), self.identTestCases)
+		self._testTransf(Choice(base.ident, base.fail), self.identTestCases)
+		self._testTransf(Choice(fail, ident), self.identTestCases)
+		self._testTransf(Choice(fail, fail), self.failTestCases)
 		
 	def testComposition(self):
-		self._testTransf(Composition(Ident(), Ident()), self.identTestCases)
-		self._testTransf(Composition(Ident(), Fail()), self.failTestCases)
-		self._testTransf(Composition(Fail(), Ident()), self.failTestCases)
-		self._testTransf(Composition(Fail(), Fail()), self.failTestCases)
+		self._testTransf(Composition(ident, ident), self.identTestCases)
+		self._testTransf(Composition(ident, fail), self.failTestCases)
+		self._testTransf(Composition(fail, ident), self.failTestCases)
+		self._testTransf(Composition(fail, fail), self.failTestCases)
 
 
 class TestTerm(TestMixin, unittest.TestCase):
@@ -138,22 +137,22 @@ class TestTerm(TestMixin, unittest.TestCase):
 		self._testMatchTransf(match.Str("a"), '"a"')
 
 	def testNil(self):
-		self._testMatchTransf(match.Nil(), '[]')
+		self._testMatchTransf(match.nil, '[]')
 	
 	def testCons(self):
-		self._testMatchTransf(TraverseCons(match.Int(1),match.Nil()), '[1]')
+		self._testMatchTransf(TraverseCons(match.Int(1),match.nil), '[1]')
 	
 	def testList(self):
 		self._testMatchTransf(TraverseList([match.Int(1),match.Int(2)]), '[1,2]')
 	
 	def testAppl(self):
-		self._testMatchTransf(TraverseAppl(match.Str("C"),match.Nil()), 'C')
+		self._testMatchTransf(TraverseAppl(match.Str("C"),match.nil), 'C')
 
 
 class TestTraversers(TestMixin, unittest.TestCase):
 
 	mapTestCases = (
-		[Ident(), Fail(), Rule('x', 'X(x)'), match.Pattern('1')],
+		[ident, fail, Rule('x', 'X(x)'), match.Pattern('1')],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
@@ -169,7 +168,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 	# TODO: testFetch
 
 	filterTestCases = (
-		[Ident(), Fail(), Rule('x', 'X(x)'), match.Pattern('2')],
+		[ident, fail, Rule('x', 'X(x)'), match.Pattern('2')],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', '[]', '[X(1)]', '[]'],
@@ -182,7 +181,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 		self._testMetaTransf(Filter, self.filterTestCases)
 	
 	allTestCases = (
-		[Ident(), Fail(), Rule('x', 'X(x)')],
+		[ident, fail, Rule('x', 'X(x)')],
 		{
 			'A()': [
 				'A()', 
@@ -206,7 +205,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 		self._testMetaTransf(All, self.allTestCases)	
 
 	bottomUpTestCases = (
-		[Ident(), Fail(), Rule('x', 'X(x)')],
+		[ident, fail, Rule('x', 'X(x)')],
 		{
 			'A()': [
 				'A()', 
@@ -225,7 +224,7 @@ class TestTraversers(TestMixin, unittest.TestCase):
 		self._testMetaTransf(BottomUp, self.bottomUpTestCases)
 
 	topDownTestCases = (
-		[Ident(), Fail(), Try(Rule('f(x,y)', 'X(x,y)'))],
+		[ident, fail, Try(Rule('f(x,y)', 'X(x,y)'))],
 		{
 			'A()': [
 				'A()', 
@@ -266,7 +265,13 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	)
 	
 	def testFoldr(self):
-		self._testTransf(Foldr(build.Int(0),Add(First(),Second())), self.foldrTestCases)
+		self._testTransf(
+			Foldr(
+				build.Int(0),
+				Add(project.first,project.second)
+			), 
+			self.foldrTestCases
+		)
 
 	crushTestCases = (
 		('[1,2]', '[1,[2,[]]]'),
@@ -274,7 +279,7 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	)
 	
 	def testCrush(self):
-		self._testTransf(Crush(Ident(),Ident(), Ident()), self.crushTestCases)
+		self._testTransf(Crush(ident,ident, ident), self.crushTestCases)
 
 	collectAllTestCases = (
 		('1', '[1]'),
@@ -285,7 +290,10 @@ class TestUnifiers(TestMixin, unittest.TestCase):
 	)
 	
 	def testCollectAll(self):
-		self._testTransf(CollectAll(match.AnInt()), self.collectAllTestCases)
+		self._testTransf(
+			CollectAll(match.AnInt()), 
+			self.collectAllTestCases
+		)
 	
 
 class TestArith(TestMixin, unittest.TestCase):
@@ -295,7 +303,10 @@ class TestArith(TestMixin, unittest.TestCase):
 	)
 
 	def testAdd(self):
-		self._testTransf(Add(First(),Second()), self.addTestCases)
+		self._testTransf(
+			Add(project.first, project.second), 
+			self.addTestCases
+		)
 
 
 TestStub = Ident
@@ -333,7 +344,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		'!f(x,y)',
 		'?C(<id>,<fail>)',
 		'!C(<id>,<fail>)',
-		'Ident()',
+		'ident',
 		'TestStub()',
 		'transf.base.Ident()',
 		'( C(x,y) -> D(y,x) )',

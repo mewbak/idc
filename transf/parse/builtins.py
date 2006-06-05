@@ -8,8 +8,8 @@ from transf import unify
 
 
 builtins = {
-	"id": base.Ident(),
-	"fail": base.Fail(),
+	"id": base.ident,
+	"fail": base.fail,
 	"all": traverse.All,
 	#"one": traverse.One,
 	#"some": traverse.Some,

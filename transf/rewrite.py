@@ -54,7 +54,7 @@ def Rule(match_pattern, build_pattern, locals = None):
 
 
 def RuleSet(patterns, locals = None):
-	rules = base.Fail()
+	rules = base.fail
 	for match_pattern, build_pattern in patterns:
 		rules = rules | Rule(match_pattern, build_pattern, locals)
 	return rules

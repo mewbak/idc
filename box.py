@@ -164,7 +164,7 @@ def box2text(boxes, formatterClass = TextFormatter):
 
 def Tag(name, value, operand = None):
 	if operand is None:
-		operand = transf.base.Ident()
+		operand = transf.base.ident
 	return transf.build.Appl(
 		'T',
 		 [
@@ -208,21 +208,21 @@ lit = transf.base.Adaptor(lit)
 def Prefix(sep):
 	prefix = transf.base.Proxy()
 	prefix.subject \
-		= transf.match.Nil() \
+		= transf.match.nil \
 		| transf.build.Cons(
 			sep,
 			transf.build.Cons(
-				transf.project.Head(),
-				transf.project.Tail() & prefix
+				transf.project.head,
+				transf.project.tail & prefix
 			)
 		)
 	return prefix
 
 def Join(sep):
 	return \
-		transf.match.Nil() \
+		transf.match.nil \
 		| transf.traverse.TraverseCons(
-			transf.base.Ident(),
+			transf.base.ident,
 			Prefix(sep)
 		)
 	

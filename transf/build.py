@@ -40,6 +40,8 @@ def Nil():
 	term = _factory.makeNil()
 	return Term(term)
 
+nil = Nil()
+
 
 class Cons(base.Transformation):
 	

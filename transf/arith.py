@@ -5,6 +5,7 @@ import aterm
 
 from transf import exception
 from transf import combine
+from transf import project
 
 
 # TODO: complete
@@ -23,4 +24,6 @@ class AddInt(combine.Binary):
 
 Add = AddInt
 
+
+add = Add(project.first, project.second)
 

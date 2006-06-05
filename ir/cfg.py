@@ -47,9 +47,9 @@ def AnnotateId():
 	return annotation.SetAnnotation(build.Pattern('Id'), Counter())
 
 
-matchLabel = match.Appl(match.Str('Label'), base.Ident())
+matchLabel = match.Appl(match.Str('Label'), base.ident)
 
-matchStmt = match.Appl(matchStmtName, base.Ident())
+matchStmt = match.Appl(matchStmtName, base.ident)
 
 collectStmts = unify.CollectAll(matchStmt)
 
@@ -79,9 +79,9 @@ stmtFlow = parse.Rule('''
 
 stmtsFlow.subject \
 	= scope.Scope(
-			match.Nil() \
-				& build.Nil() \
-			| match.Cons(match.Var("head"), match.Var("tail") & (project.Head() | build.Var("next")) & match.Var("following")) \
+			match.nil \
+				& build.nil \
+			| match.Cons(match.Var("head"), match.Var("tail") & (project.head | build.Var("next")) & match.Var("following")) \
 				& lists.Concat(scope.With(build.Var("head") & stmtFlow, next=build.Var("following")), build.Var("tail") & stmtsFlow)
 		, ['head', 'tail', 'following'])
 

@@ -78,7 +78,7 @@ def TraverseList(elms, tail = None):
 	to matching the empty list
 	'''
 	if tail is None:
-		tail = match.Nil()
+		tail = match.nil
 	return _TraverseList(iter(elms), tail)
 	
 
@@ -119,19 +119,19 @@ class TraverseAppl(base.Transformation):
 
 def Map(operand):
 	map = base.Proxy()
-	map.subject = match.Nil() | TraverseCons(operand, map)
+	map.subject = match.nil | TraverseCons(operand, map)
 	return map
 
 
 def Fetch(operand):
 	fetch = base.Proxy()
-	fetch.subject = TraverseCons(operand, base.Ident()) | TraverseCons(base.Ident(), fetch)
+	fetch.subject = TraverseCons(operand, base.ident) | TraverseCons(base.ident, fetch)
 	return fetch
 
 
 def Filter(operand):
 	filter = base.Proxy()
-	filter.subject = match.Nil() | FilterCons(operand, filter)
+	filter.subject = match.nil | FilterCons(operand, filter)
 	return filter
 
 
@@ -141,7 +141,7 @@ class All(combine.Unary):
 	def __init__(self, operand):
 		combine.Unary.__init__(self, operand)
 		self.list_transf = Map(operand)
-		self.appl_transf = TraverseAppl(base.Ident(), self.list_transf)
+		self.appl_transf = TraverseAppl(base.ident, self.list_transf)
 	
 	def apply(self, term, context):
 		if term.type == aterm.types.APPL:

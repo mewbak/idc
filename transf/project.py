@@ -7,9 +7,6 @@ from transf import exception
 from transf import base
 
 
-# TODO: use singletons to speed up instanciation
-
-
 class Head(base.Transformation):
 	
 	def apply(self, term, context):
@@ -17,6 +14,8 @@ class Head(base.Transformation):
 			return term.head
 		except AttributeError:
 			raise exception.Failure("not a list construction term", term)
+
+head = Head()
 
 
 class Tail(base.Transformation):
@@ -27,33 +26,25 @@ class Tail(base.Transformation):
 		except AttributeError:
 			raise exception.Failure("not a list construction term", term)
 
-
-def First():
-	return Head()
+tail = Tail()
 
 
-def Second():
-	return Tail() & Head()
-
-
-def Third():
-	return Tail() & Tail() & Head()
-
-
-def Fourth():
-	return Tail() & Tail() & Tail() & Head()
+first = head
+second = tail & head
+third = tail & tail & head
+fourth = tail & tail & tail & head
 
 
 def Nth(n):
 	if n > 1:
 		nth = Tail()
 		for i in range(2, n):
-			nth = nth & Tail()
-		nth = nth & Head()
+			nth = nth & tail
+		nth = nth & head
 	elif n < 1:
 		raise ValueError
 	else: # n = 1
-		n = Head()
+		n = head
 
 
 class Name(base.Transformation):
@@ -64,6 +55,8 @@ class Name(base.Transformation):
 		except AttributeError:
 			raise exception.Failure("not an application term", term)
 
+name = Name()
+
 
 class Args(base.Transformation):
 	
@@ -72,6 +65,8 @@ class Args(base.Transformation):
 			return term.args
 		except AttributeError:
 			raise exception.Failure("not an application term", term)
+
+args = Args()
 
 
 class SubTerms(base.Transformation):
@@ -82,3 +77,6 @@ class SubTerms(base.Transformation):
 		if term.type == aterm.types.LIST:
 			return term
 		return term.factory.makeNil()
+
+subterms = SubTerms()
+
