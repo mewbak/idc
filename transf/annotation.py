@@ -5,7 +5,7 @@ from transf import exception
 from transf import base
 
 
-class SetAnnotation(base.Transformation):
+class Set(base.Transformation):
 	
 	def __init__(self, label, value):
 		base.Transformation.__init__(self)
@@ -18,7 +18,7 @@ class SetAnnotation(base.Transformation):
 		return term.setAnnotation(label, value)
 		
 
-class GetAnnotation(base.Transformation):
+class Get(base.Transformation):
 	
 	def __init__(self, label):
 		base.Transformation.__init__(self)

@@ -5,10 +5,6 @@ import transf
 import box
 
 from transf import *
-from transf.exception import *
-from transf.base import *
-from transf.rewrite import *
-
 
 from ir import pprint2
 
@@ -29,10 +25,10 @@ matchStmtName \
 	| match.Str('Ret')
 
 
-class Counter(Transformation):
+class Counter(base.Transformation):
 
 	def __init__(self):
-		Transformation.__init__(self)
+		base.Transformation.__init__(self)
 		self.last = 0
 
 	def apply(self, term, context):
@@ -44,7 +40,7 @@ class Counter(Transformation):
 
 
 def AnnotateId():
-	return annotation.SetAnnotation(build.Pattern('Id'), Counter())
+	return annotation.Set(build.Pattern('Id'), Counter())
 
 
 matchLabel = match.Appl(match.Str('Label'), base.ident)
@@ -104,7 +100,7 @@ moduleEdges \
 
 
 makeNodeId \
-	= annotation.GetAnnotation(build.Pattern('Id')) & strings.ToStr()
+	= annotation.Get(build.Pattern('Id')) & strings.ToStr()
 
 box2text = base.Adaptor(
 		lambda term, context: term.factory.makeStr(box.box2text(term))
@@ -135,17 +131,6 @@ makeGraph = parse.Transf('''
 ''')
 
 
-def escapes(s):
-	s = s.replace('\"', '\\"')
-	s = s.replace('\t', '\\t')
-	s = s.replace('\r', '\\r')
-	s = s.replace('\n', '\\n')
-	return '"' + s + '"'
-
-escape = Adaptor(
-		lambda term, context: term.factory.makeStr(escapes(term.value))
-)
-
 makeDot = parse.Rule(r'''
 		Graph(nodes, edges)
 			-> V([
@@ -155,7 +140,7 @@ makeDot = parse.Rule(r'''
 				H([ "}" ])
 			])
 |		Node(nid, label) 
-			-> H([ nid, "[", "label", "=", <<escape> label>, "]" ])
+			-> H([ nid, "[", "label", "=", <<box.escape> label>, "]" ])
 |		Edge(src, dst) 
 			-> H([ src, "->", dst ])
 |		_ -> <id>
