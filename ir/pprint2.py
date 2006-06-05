@@ -4,12 +4,12 @@
 
 from transf import base
 from transf import strings
-from transf.parse import *
+from transf import parse
 
 
 def TraverseType(typer):
 	typet = base.Proxy()
-	typet.subject = ParseTransf('''
+	typet.subject = parse.Transf('''
 		~Pointer(_, <typet>) +
 		~Array(<typet>) +
 		id
@@ -19,7 +19,7 @@ def TraverseType(typer):
 
 def TraverseExpr(exprr, typet, opr):
 	exprt = base.Proxy()
-	exprt.subject = ParseTransf('''
+	exprt.subject = parse.Transf('''
 		~Lit(<typet>, _) +
 		~Cast(<typet>, <exprt>) +
 		~Unary(<opr>, <exprt>) +
@@ -35,7 +35,7 @@ def TraverseExpr(exprr, typet, opr):
 
 def TraverseStmt(stmtr, exprt, typet):
 	stmtt = base.Proxy()
-	stmtt.subject = ParseTransf('''
+	stmtt.subject = parse.Transf('''
 		~Assign(<typet>, <exprt>, <exprt>) +
 		~Asm(_, <map(exprt)>) +
 		~Block(<map(stmtt)>) +
@@ -50,7 +50,7 @@ def TraverseStmt(stmtr, exprt, typet):
 
 
 def TraverseModule(moduler, stmtt):	
-	modulet = ParseTransf('''
+	modulet = parse.Transf('''
 		~Module(<map(stmtt)>)
 	''') & moduler
 	return modulet
@@ -61,12 +61,12 @@ from box import lit
 from box import sym
 from box import commas
 
-sign = ParseRule('''
+sign = parse.Rule('''
 	Signed -> <<kw> "signed">
 |	Unsigned -> <<kw> "unsigned">
 ''')
 
-size = ParseRule('''
+size = parse.Rule('''
 	8 -> <<kw> "char">
 |	16 -> H([ <<kw> "short">, " ", <<kw> "int"> ])
 |	32 -> <<kw> "int">
@@ -74,7 +74,7 @@ size = ParseRule('''
 |	n -> H([ "int", <<strings.ToStr> n> ])
 ''')
 
-typer = ParseRule('''
+typer = parse.Rule('''
 	Int(size, sign)
 		-> H([ <<sign> sign>, " ", <<size> size> ])
 |	Float(32)
@@ -93,7 +93,7 @@ typer = ParseRule('''
 		-> H([ "blob", <<strings.ToStr> size> ])
 ''')
 
-opr = ParseRule('''
+opr = parse.Rule('''
 	Not -> "!"
 |	BitNot(size) -> "~"
 |	Neg(type) -> "-"
@@ -118,7 +118,7 @@ opr = ParseRule('''
 |	GtEq(_) -> ">="
 ''')
 
-exprr = ParseRule('''
+exprr = parse.Rule('''
 	False 
 		-> "FALSE"
 |	True 
@@ -143,11 +143,11 @@ exprr = ParseRule('''
 		-> H([ <<op> "*">, expr ])
 ''')
 
-exprr = ParseTransf('''
+exprr = parse.Transf('''
 	!H([ "(", <exprr>, ")" ])
 ''')
 
-stmtr = ParseRule('''
+stmtr = parse.Rule('''
 	Assign(type, dexpr, sexpr)
 		-> H([ dexpr, " ", <<op> "=">, " ", sexpr, ";" ])
 |	Asm(opcode, operands) 
@@ -165,7 +165,7 @@ stmtr = ParseRule('''
 		-> H([ <<kw>"return">, " ", expr, ";"])
 ''')
 
-moduler = ParseRule('''
+moduler = parse.Rule('''
 	Module(stmts) -> V([ I(V( stmts )) ])
 ''')
 

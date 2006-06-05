@@ -5,23 +5,17 @@ import unittest
 
 import aterm.factory
 
+import transf
+from transf import *
 from transf.exception import *
 from transf.base import *
-#from transf.scope import *
-
 from transf.combine import *
 from transf.project import *
-#from transf.match import *
-#from transf.build import *
 from transf.rewrite import *
 from transf.traverse import *
 from transf.unify import *
 
-#from transf.annotation import *
-
 from transf.arith import *
-#from transf.lists import *
-#from transf.strings import *
 
 
 class TestMixin:
@@ -71,22 +65,22 @@ class TestCombinators(TestMixin, unittest.TestCase):
 	failTestCases = [(term, 'FAILURE') for term in termsInputs]
 
 	def testIdent(self):
-		self._testTransf(combine.Ident(), self.identTestCases)
+		self._testTransf(base.Ident(), self.identTestCases)
 
 	def testFail(self):
-		self._testTransf(combine.Fail(), self.failTestCases)
+		self._testTransf(base.Fail(), self.failTestCases)
 	
 	def testNot(self):
-		self._testTransf(Not(combine.Ident()), self.failTestCases)
-		self._testTransf(Not(combine.Fail()), self.identTestCases)
+		self._testTransf(Not(base.Ident()), self.failTestCases)
+		self._testTransf(Not(base.Fail()), self.identTestCases)
 	
 	def testTry(self):
-		self._testTransf(Try(combine.Ident()), self.identTestCases)
-		self._testTransf(Try(combine.Fail()), self.identTestCases)
+		self._testTransf(Try(base.Ident()), self.identTestCases)
+		self._testTransf(Try(base.Fail()), self.identTestCases)
 
 	def testChoice(self):
-		self._testTransf(Choice(combine.Ident(), combine.Ident()), self.identTestCases)
-		self._testTransf(Choice(combine.Ident(), combine.Fail()), self.identTestCases)
+		self._testTransf(Choice(base.Ident(), base.Ident()), self.identTestCases)
+		self._testTransf(Choice(base.Ident(), base.Fail()), self.identTestCases)
 		self._testTransf(Choice(Fail(), Ident()), self.identTestCases)
 		self._testTransf(Choice(Fail(), Fail()), self.failTestCases)
 		
@@ -302,6 +296,68 @@ class TestArith(TestMixin, unittest.TestCase):
 
 	def testAdd(self):
 		self._testTransf(Add(First(),Second()), self.addTestCases)
+
+
+TestStub = Ident
+
+class TestParse(TestMixin, unittest.TestCase):
+
+	parseTestCases = [
+		'id',
+		'fail',
+		'id ; fail',
+		'id + fail',
+		'id + fail ; id',
+		'(id + fail) ; id',
+		'?1',
+		'?0.1',
+		'?"s"',
+		'?[]',
+		'?[1,2]',
+		'?C',
+		'?C(1,2)',
+		'?_',
+		'?_(_,_)',
+		'?x',
+		'?f(x,y)',
+		'!1',
+		'!0.1',
+		'!"s"',
+		'![]',
+		'![1,2]',
+		'!C',
+		'!C(1,2)',
+		'!_',
+		'!_(_,_)',
+		'!x',
+		'!f(x,y)',
+		'?C(<id>,<fail>)',
+		'!C(<id>,<fail>)',
+		'Ident()',
+		'TestStub()',
+		'transf.base.Ident()',
+		'( C(x,y) -> D(y,x) )',
+		'{ C(x,y) -> D(y,x) }',
+		'{x, y: id }',
+		'<id> 123',
+		'id => 123',
+		'<id> 1 => 123',
+		'!"," => sep',
+		'where(!"," => sep)',
+		'where( !"," => sep ); id',
+		'{ sep : where( !"," => sep ); id }',
+		'~C(1, <id>)',
+	]
+	
+	def testAST(self):
+		for input in self.parseTestCases:
+			parser = parse._parser(input)
+			parser.transf()
+			ast = parser.getAST()
+	
+	def testParse(self):
+		for input in self.parseTestCases:
+			output = repr(parse.Transf(input))
 
 
 if __name__ == '__main__':

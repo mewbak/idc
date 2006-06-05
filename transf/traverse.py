@@ -125,7 +125,7 @@ def Map(operand):
 
 def Fetch(operand):
 	fetch = base.Proxy()
-	fetch.subject = TraverseCons(operand, combine.Ident()) | TraverseCons(combine.Ident(), fetch)
+	fetch.subject = TraverseCons(operand, base.Ident()) | TraverseCons(base.Ident(), fetch)
 	return fetch
 
 
@@ -141,7 +141,7 @@ class All(combine.Unary):
 	def __init__(self, operand):
 		combine.Unary.__init__(self, operand)
 		self.list_transf = Map(operand)
-		self.appl_transf = TraverseAppl(combine.Ident(), self.list_transf)
+		self.appl_transf = TraverseAppl(base.Ident(), self.list_transf)
 	
 	def apply(self, term, context):
 		if term.type == aterm.types.APPL:

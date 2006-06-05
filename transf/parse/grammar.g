@@ -365,9 +365,9 @@ class compiler extends TreeParser;
 
 transf returns [ret]
 	: IDENT
-		{ ret = transf.combine.Ident() }
+		{ ret = transf.base.Ident() }
 	| FAIL
-		{ ret = transf.combine.Fail() }
+		{ ret = transf.base.Fail() }
 	| #( QUEST m=match_term )
 		{ ret = m }
 	| #( BANG b=build_term )
@@ -440,7 +440,7 @@ match_term returns [ret]
 	| #( APPL n=match_term a=match_term )
 		{ ret = transf.match.MatchAppl(n, a) }
 	| w:WILDCARD 
-		{ ret = transf.combine.Ident() }
+		{ ret = transf.base.Ident() }
 	| #( v:VAR // TODO: handle sub-patterns
 		{ ret = transf.match.MatchVar(#v.getText()) }
 		( p=match_term
@@ -487,7 +487,7 @@ build_term returns [ret]
 	| #( APPL n=build_term a=build_term )
 		{ ret = transf.build.BuildAppl(n, a) }
 	| w:WILDCARD 
-		{ ret = transf.combine.Ident() }
+		{ ret = transf.base.Ident() }
 	| v:VAR 
 		{ ret = transf.build.BuildVar(#v.getText()) }
 	| #( TRANSF txn=transf )

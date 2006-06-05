@@ -5,20 +5,6 @@ from transf import exception
 from transf import base
 
 
-class Ident(base.Transformation):
-	'''Identity transformation.'''
-	
-	def apply(self, term, context):
-		return term
-	
-
-class Fail(base.Transformation):
-	'''Failure transformation.'''
-	
-	def apply(self, term, context):
-		raise exception.Failure
-
-
 class Unary(base.Transformation):
 	'''Base class for unary operations on transformations.'''
 	

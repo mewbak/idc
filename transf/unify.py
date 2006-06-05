@@ -13,7 +13,7 @@ from transf import lists
 
 def Foldr(tail, cons, operand=None):
 	if operand is None:
-		operand = combine.Ident()
+		operand = base.Ident()
 	foldr = base.Proxy()
 	foldr.subject \
 		= match.MatchNil() & tail \

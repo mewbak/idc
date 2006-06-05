@@ -90,7 +90,7 @@ def Rule(match_pattern, build_pattern, locals = None):
 
 
 def RuleSet(patterns, locals = None):
-	rules = combine.Fail()
+	rules = base.Fail()
 	for match_pattern, build_pattern in patterns:
 		rules = rules | Rule(match_pattern, build_pattern, locals)
 	return rules

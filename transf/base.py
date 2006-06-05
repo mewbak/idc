@@ -71,6 +71,19 @@ class Transformation(object):
 		return name + '(' + ', '.join(["%s=%s" % attr for attr in attrs.iteritems()]) + ')'
 			
 
+class Ident(Transformation):
+	'''Identity transformation.'''
+	
+	def apply(self, term, context):
+		return term
+	
+
+class Fail(Transformation):
+	'''Failure transformation.'''
+	
+	def apply(self, term, context):
+		raise exception.Failure
+
 
 class Adaptor(Transformation):
 	'''Transformation adapter for a regular function.'''

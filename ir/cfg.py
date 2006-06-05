@@ -8,7 +8,6 @@ from transf import *
 from transf.exception import *
 from transf.base import *
 from transf.rewrite import *
-from transf.parse import *
 
 
 from ir import pprint2
@@ -48,9 +47,9 @@ def AnnotateId():
 	return annotation.SetAnnotation(Build('Id'), Counter())
 
 
-matchLabel = match.MatchAppl(match.MatchStr('Label'), combine.Ident())
+matchLabel = match.MatchAppl(match.MatchStr('Label'), base.Ident())
 
-matchStmt = match.MatchAppl(matchStmtName, combine.Ident())
+matchStmt = match.MatchAppl(matchStmtName, base.Ident())
 
 collectStmts = unify.CollectAll(matchStmt)
 
@@ -71,7 +70,7 @@ def Edge(src, dst):
 
 stmtsFlow = base.Proxy()
 
-stmtFlow = ParseRule('''
+stmtFlow = parse.Rule('''
 	Assign(*) -> [[<id>,next]] |
 	Label(*) -> [[<id>,next]] |
 	NoOp(*) -> [[<id>,next]] |
@@ -111,7 +110,7 @@ box2text = base.Adaptor(
 		lambda term, context: term.factory.makeStr(box.box2text(term))
 )
 
-makeNodeLabel = ParseTransf('''
+makeNodeLabel = parse.Transf('''
 		?Assign(*); pprint2.stmt; box2text +
 		?Label(*); pprint2.stmt; box2text +
 		?Ret(*); pprint2.stmt; box2text +
@@ -123,14 +122,14 @@ makeNode = build.BuildAppl("Node", (makeNodeId, makeNodeLabel))
 makeNodes = traverse.Map(makeNode)
 
 
-makeEdge = ParseRule('''
+makeEdge = parse.Rule('''
 	[src, dst] -> Edge(<<makeNodeId> src>, <<makeNodeId> dst>)
 ''')
 makeEdges = traverse.Map(makeEdge)
 
 collectFlows = moduleEdges
 
-makeGraph = ParseTransf('''
+makeGraph = parse.Transf('''
 		markStmts;
 		!Graph(<collectStmts; makeNodes>, <collectFlows; makeEdges>)
 ''')
@@ -147,7 +146,7 @@ escape = Adaptor(
 		lambda term, context: term.factory.makeStr(escapes(term.value))
 )
 
-makeDot = ParseRule(r'''
+makeDot = parse.Rule(r'''
 		Graph(nodes, edges)
 			-> V([
 				H([ "digraph", " ", "{" ]),

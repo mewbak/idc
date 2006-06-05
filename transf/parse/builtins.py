@@ -1,14 +1,15 @@
 '''Builtin lookup table.'''
 
 
+from transf import base
 from transf import combine
 from transf import traverse
 from transf import unify
 
 
 builtins = {
-	"id": combine.Ident(),
-	"fail": combine.Fail(),
+	"id": base.Ident(),
+	"fail": base.Fail(),
 	"all": traverse.All,
 	#"one": traverse.One,
 	#"some": traverse.Some,

@@ -164,7 +164,7 @@ def box2text(boxes, formatterClass = TextFormatter):
 
 def Tag(name, value, operand = None):
 	if operand is None:
-		operand = transf.combine.Ident()
+		operand = transf.base.Ident()
 	return transf.build.BuildAppl(
 		'T',
 		 [
@@ -222,7 +222,7 @@ def Join(sep):
 	return \
 		transf.match.MatchNil() \
 		| transf.traverse.TraverseCons(
-			transf.combine.Ident(),
+			transf.base.Ident(),
 			Prefix(sep)
 		)
 	

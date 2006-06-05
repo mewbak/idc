@@ -70,7 +70,7 @@ class IndexFetch(transf.base.Transformation, aterm.visitor.Visitor):
 
 def PathFetch(path):
 	'''Transformation which fetchs sub-term with the specified path.'''
-	result = transf.combine.Ident()
+	result = transf.base.Ident()
 	for index in path:
 		result = IndexFetch(int(index)) & result
 	return result
