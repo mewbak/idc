@@ -5,6 +5,7 @@ from transf import base
 from transf import combine
 from transf import traverse
 from transf import unify
+from transf import lists
 
 
 builtins = {
@@ -17,4 +18,5 @@ builtins = {
 	"where": combine.Where,
 	"map": traverse.Map,
 	"foldr": unify.Foldr,
+	"concat": lists.Concat,
 }

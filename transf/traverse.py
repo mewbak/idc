@@ -62,13 +62,13 @@ class FilterCons(Cons):
 			return term
 
 
-def _List(elms_iter, tail):
+def _IterList(elms_iter, tail):
 	try:
 		elm = elms_iter.next()
 	except StopIteration:
 		return tail
 	else:
-		return Cons(elm, _List(elms_iter, tail))
+		return Cons(elm, _IterList(elms_iter, tail))
 
 
 def List(elms, tail = None):
@@ -80,7 +80,7 @@ def List(elms, tail = None):
 	'''
 	if tail is None:
 		tail = match.nil
-	return _List(iter(elms), tail)
+	return _IterList(iter(elms), tail)
 	
 
 class Appl(base.Transformation):

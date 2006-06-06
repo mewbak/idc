@@ -4,9 +4,10 @@
 from transf import exception
 from transf import base
 from transf import combine
+from transf import build
 
 
-class Concat(combine.Binary):
+class _Concat(combine.Binary):
 	
 	def apply(self, term, context):
 		head = self.loperand.apply(term, context)
@@ -15,3 +16,19 @@ class Concat(combine.Binary):
 			return head.extend(tail)
 		except AttributeError:
 			raise exception.Failure('not term lists', head, tail)
+
+
+def _IterConcat(elms_iter):
+		head = elms_iter.next()
+		try:
+			tail = _IterConcat(elms_iter)
+		except StopIteration:
+			return head
+		else:
+			return _Concat(head, tail)
+
+def Concat(*operands):
+	try:
+		return _IterConcat(iter(operands))
+	except StopIteration:
+		return build.nil
