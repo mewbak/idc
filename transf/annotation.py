@@ -14,17 +14,12 @@ class Set(base.Transformation):
 		
 	def apply(self, term, context):
 		label = self.label.apply(term, context)
-		print label
 		label = term.factory.makeAppl(
 			label, 
 			term.factory.makeList([term.factory.makeWildcard()])
 		)
-		print label
 		value = self.value.apply(term, context)
-		print value
 		value = label.make(value)
-		print value
-		print
 		return term.setAnnotation(label, value)
 		
 
@@ -35,19 +30,14 @@ class Get(base.Transformation):
 		self.label = label
 		
 	def apply(self, term, context):
-		print term
 		label = self.label.apply(term, context)
-		print label
 		label = term.factory.makeAppl(
 			label, 
 			term.factory.makeList([term.factory.makeWildcard()])
 		)
-		print label
 		try:
 			value = term.getAnnotation(label)
 			value = value.args.head
-			print value
-			print
 			return value
 		except ValueError:
 			raise exception.Failure
