@@ -38,7 +38,7 @@ class PrettyPrinter:
 			]))
 		| Assign(type, dst, src)
 			-> :semi(H([:expr(dst)," ","="," ",:expr(src)]))
-		| If(cond, ifTrue, NoOp)
+		| If(cond, ifTrue, NoStmt)
 			-> V([
 				H([:kw("if"),"(",:expr(cond),")"]),
 				:block(ifTrue)
@@ -55,6 +55,8 @@ class PrettyPrinter:
 				H([:kw("while"),"(",:expr(cond),")"]),
 				:block(stmt)
 			])
+		| Ret(type, NoExpr)
+			-> :semi(H([:kw("return")]))
 		| Ret(type, value)
 			-> :semi(H([:kw("return"), " ", :expr(value)]))
 		| Label(name:_str)

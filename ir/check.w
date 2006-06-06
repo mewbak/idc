@@ -25,7 +25,7 @@ class Checker:
 		| Block(stmts:stmt*)
 		| Break
 		| Continue
-		| NoOp
+		| NoStmt
 		;
 	
 	arg

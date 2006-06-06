@@ -20,9 +20,9 @@ class Rename(refactoring.Refactoring):
 		factory = term.factory
 		rules = [
 			('Assign(type,dst,Cond(cond,src,dst)))',
-				'If(cond, Assign(type,dst,src),NoOp)'),
+				'If(cond, Assign(type,dst,src),NoStmt)'),
 			('Assign(type,dst,Cond(cond,src,dst)))',
-				'If(Not(cond), Assign(type,dst,src),NoOp)'),
+				'If(Not(cond), Assign(type,dst,src),NoStmt)'),
 		
 			('Assign(_,Sym("pc"),expr)', 
 				'Branch(Addr(expr))'),
@@ -51,5 +51,5 @@ class TestCase(refactoring.TestCase):
 			('Assign(Blob(32),Sym("pc"),Ref(Sym("label")))', '[]',
 				'Branch(Sym("label"))'),	
 			('Assign(Blob(32),Sym("pc"),Cond(Sym("flag"),Ref(Sym("label")),Sym("pc")))', '[]',
-				'If(Sym("flag"),Branch(Sym("label")),NoOp)'),		
+				'If(Sym("flag"),Branch(Sym("label")),NoStmt)'),		
 	]

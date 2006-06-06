@@ -21,22 +21,20 @@ matchStmtName \
 	| match.Str('Block') \
 	| match.Str('Break') \
 	| match.Str('Continue') \
-	| match.Str('NoOp') \
+	| match.Str('NoStmt') \
 	| match.Str('Ret')
 
 
 class Counter(base.Transformation):
 
-	def __init__(self):
+	def __init__(self, value = 1):
 		base.Transformation.__init__(self)
-		self.last = 0
+		self.value = value
 
 	def apply(self, term, context):
-		self.last += 1
-		return term.factory.makeInt(self.last)
-
-	def reset(self):
-		self.last = 0
+		term = term.factory.makeInt(self.value)
+		self.value += 1
+		return term
 
 
 def AnnotateId():
@@ -66,10 +64,13 @@ def Edge(src, dst):
 
 stmtsFlow = base.Proxy()
 
-stmtFlow = parse.Rule('''
+stmtFlow = base.Proxy()
+stmtFlow.subject = debug.Dump() & parse.Rule('''
 	Assign(*) -> [[<id>,next]] |
-	Label(*) -> [[<id>,next]] |
-	NoOp(*) -> [[<id>,next]] |
+	Label(_) -> [[<id>,next]] |
+	If(_,true,NoStmt) -> <concat(![[<id>,next],[<id>,true]],<stmtFlow> true)> |
+	If(_,true,false) -> <concat(![[<id>,true],[<id>,false]],<stmtFlow> true, <stmtFlow> false)> |
+	NoStmt -> [[<id>,next]] |
 	Ret(*) -> [[<id>,next]]
 ''')
 
@@ -77,12 +78,18 @@ stmtsFlow.subject \
 	= scope.Scope(
 			match.nil \
 				& build.nil \
-			| match.Cons(match.Var("head"), match.Var("tail") & (project.head | build.Var("next")) & match.Var("following")) \
-				& lists.Concat(scope.With(build.Var("head") & stmtFlow, next=build.Var("following")), build.Var("tail") & stmtsFlow)
+			| match.Cons(
+				match.Var("head"), 
+				match.Var("tail") & (project.head | build.Var("next")) & match.Var("following")
+			) \
+				& lists.Concat(
+					scope.With(build.Var("head") & stmtFlow, next=build.Var("following")), 
+					build.Var("tail") & stmtsFlow
+				)
 		, ['head', 'tail', 'following'])
 
 
-endOfModule = build.Pattern("NoStmt") & AnnotateId()
+endOfModule = build.Pattern("NoStmt{Id(0)}") 
 
 moduleEdges \
 	= match.Pattern("Module(stmts)") \
@@ -109,8 +116,9 @@ box2text = base.Adaptor(
 makeNodeLabel = parse.Transf('''
 		?Assign(*); pprint2.stmt; box2text +
 		?Label(*); pprint2.stmt; box2text +
+		?If(cond,_,_); <pprint2.expr> cond; box2text +
 		?Ret(*); pprint2.stmt; box2text +
-		?NoOp(*); !"" +
+		?NoStmt(*); !"" +
 		! "..."
 ''')
 

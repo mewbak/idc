@@ -161,6 +161,8 @@ stmtr = parse.Rule('''
 		]))
 |	Label(name)
 		-> D(H([ name, ":" ]))
+|	Ret(type,NoExpr)
+		-> H([ <<kw>"return">, ";"])
 |	Ret(type,expr)
 		-> H([ <<kw>"return">, " ", expr, ";"])
 ''')

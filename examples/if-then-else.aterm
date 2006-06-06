@@ -1,0 +1,24 @@
+Module(
+	[
+		Label("main"),
+		If(
+			Binary(
+				Gt(
+					Int(32, Signed)), 
+				Sym("ecx"), 
+				Lit(Int(32, Signed), 0),
+			),
+			Assign(
+				Int(32, Signed), 
+				Sym("eax"),
+				Lit(Int(32, Signed), 1)
+			),
+			Assign(
+				Int(32, Signed), 
+				Sym("eax"),
+				Lit(Int(32, Signed), 0)
+			),
+		),
+		Ret(Void, NoExpr)
+	]
+)
