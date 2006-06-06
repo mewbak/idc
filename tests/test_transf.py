@@ -272,7 +272,7 @@ class TestUnify(TestMixin, unittest.TestCase):
 	
 	def testFoldr(self):
 		self._testTransf(
-			Foldr(build.Int(0), Add(project.first, project.second)),
+			Foldr(build.Int(0), Add),
 			self.foldrTestCases
 		)
 
@@ -282,7 +282,7 @@ class TestUnify(TestMixin, unittest.TestCase):
 	)
 	
 	def testCrush(self):
-		self._testTransf(Crush(ident,ident, ident), self.crushTestCases)
+		self._testTransf(Crush(ident, lambda x,y: build.List([x, y]), ident), self.crushTestCases)
 
 	collectAllTestCases = (
 		('1', '[1]'),

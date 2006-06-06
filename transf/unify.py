@@ -7,36 +7,37 @@ from transf import base
 from transf import combine
 from transf import match
 from transf import build
+from transf import traverse
 from transf import project
 from transf import lists
 
 
-def Foldr(tail, cons, operand=None):
+def Foldr(tail, Cons, operand=None):
 	if operand is None:
 		operand = base.ident
 	foldr = base.Proxy()
 	foldr.subject \
 		= match.nil & tail \
-		| build.List((
+		| Cons(
 			project.head & operand, 
 			project.tail & foldr
-		)) & cons
+		)
 	return foldr
 
 
-def Crush(tail, cons, operand=None):
-	return project.subterms & Foldr(tail, cons, operand)
+def Crush(tail, Cons, operand=None):
+	return project.subterms & Foldr(tail, Cons, operand)
 
 
-def CollectAll(operand, union=None):
+def CollectAll(operand, Union=None):
 	'''Collect all subterms for which operand succeeds.
 	
-	@param union: transformation which takes two lists are produces a single one
+	@param union: transformation factory which takes two lists are produces a single one
 	'''
-	if union is None:
-		union = lists.Concat(project.first, project.second)
+	if Union is None:
+		Union = lists.Concat
 	collect = base.Proxy()
-	crush = Crush(build.nil, union, collect)
+	crush = Crush(build.nil, Union, collect)
 	collect.subject \
 		= build.Cons(operand, crush) \
 		| crush

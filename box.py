@@ -206,17 +206,11 @@ lit = transf.base.Adaptor(lit)
 
 
 def Prefix(sep):
-	prefix = transf.base.Proxy()
-	prefix.subject \
-		= transf.match.nil \
-		| transf.build.Cons(
-			sep,
-			transf.build.Cons(
-				transf.project.head,
-				transf.project.tail & prefix
-			)
-		)
-	return prefix
+	return transf.unify.Foldr(
+		transf.base.ident,
+		lambda head, tail: transf.build.List([sep, head], tail=tail)
+	)
+
 
 def Join(sep):
 	return \
@@ -225,9 +219,11 @@ def Join(sep):
 			transf.base.ident,
 			Prefix(sep)
 		)
-	
+
+
 commas \
 	= transf.build.Appl(
 		'H', 
 		[Join(transf.build.Str(', '))]
 	)
+

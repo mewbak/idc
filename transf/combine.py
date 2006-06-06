@@ -44,14 +44,22 @@ class Not(Unary):
 			raise exception.Failure
 
 
-class Try(Unary):
+class _Try(Unary):
 	'''Attempt a transformation, otherwise return the term unmodified.'''
 	
 	def apply(self, term, context):
 		try:
-			return self.operand(term, context)
+			return self.operand.apply(term, context)
 		except exception.Failure:
 			return term
+
+
+def Try(operand):
+	if operand is base.ident:
+		return operand
+	if operand is base.fail:
+		return base.ident
+	return _Try(operand)
 
 
 class Where(Unary):
@@ -60,36 +68,59 @@ class Where(Unary):
 	'''
 	
 	def apply(self, term, context):
-		self.operand(term, context)
+		self.operand.apply(term, context)
 		return term
 
 
-class Composition(Binary):
+class _Composition(Binary):
 	'''Transformation composition.'''
 	
 	def apply(self, term, context):
-		return self.roperand(self.loperand(term, context), context)
+		term = self.loperand.apply(term, context)
+		return self.roperand.apply(term, context)
 
 
-class Choice(Binary):
+def Composition(loperand, roperand):
+	if loperand is base.ident:
+		return roperand
+	if roperand is base.ident:
+		return loperand
+	if loperand is base.fail:
+		return loperand
+	return _Composition(loperand, roperand)
+	
+
+class _Choice(Binary):
 	'''Attempt the first transformation, transforming the second on failure.'''
 	
 	def apply(self, term, context):
 		try:
-			return self.loperand(term, context)
+			return self.loperand.apply(term, context)
 		except exception.Failure:
-			return self.roperand(term, context)
+			return self.roperand.apply(term, context)
 
+
+def Choice(loperand, roperand):
+	if loperand is base.ident:
+		return loperand
+	if loperand is base.fail:
+		return roperand
+	if roperand is base.ident:
+		return Try(loperand)
+	if roperand is base.fail:
+		return loperand
+	return _Choice(loperand, roperand)
+	
 
 class GuardedChoice(Ternary):
 	
 	def apply(self, term, context):
 		try:
-			result = self.operand1(term, context)
+			result = self.operand1.apply(term, context)
 		except exception.Failure:
-			return self.operand3(term, context)
+			return self.operand3.apply(term, context)
 		else:
-			return self.operand2(result, context)
+			return self.operand2.apply(result, context)
 
 
 def IfThenElse(cond, true, false):

@@ -6,8 +6,10 @@ import unittest
 import aterm.factory
 import box
 
+import test_transf
 
-class TestCase(unittest.TestCase):
+
+class TestWriter(unittest.TestCase):
 	
 	def setUp(self):
 		self.factory = aterm.factory.Factory()
@@ -47,6 +49,16 @@ class TestCase(unittest.TestCase):
 			output = box.box2text(boxes)
 			
 			self.failUnlessEqual(output, expectedOutput)
+
+
+class TestTransfs(test_transf.TestMixin, unittest.TestCase):
+	
+	commasTestCases = [
+		('[ "A", "B", "C" ]', 'H([ "A", ", ", "B", ", ", "C" ])'),
+	]
+	
+	def testCommas(self):
+		self._testTransf(box.commas, self.commasTestCases)
 
 
 if __name__ == '__main__':
