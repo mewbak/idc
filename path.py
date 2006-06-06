@@ -2,11 +2,14 @@
 '''
 
 
-import aterm
+import aterm.factory
 import aterm.visitor
 import walker
 import transf
 
+
+_factory = aterm.factory.Factory()
+_path = _factory.parse('Path(_)')
 
 class Annotator(aterm.visitor.IncrementalVisitor):
 	'''Annotate the term and sub-terms with their relative path.'''
@@ -18,7 +21,7 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 	
 	def visit(self, term, path, index):
 		term = super(Annotator, self).visit(term, path, index)
-		return term.setAnnotation(term.factory.parse('Path'), path)
+		return term.setAnnotation(_path, _path.make(path))
 		
 	def visitTerm(self, term, path, index):
 		return term

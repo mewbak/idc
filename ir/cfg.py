@@ -40,7 +40,7 @@ class Counter(base.Transformation):
 
 
 def AnnotateId():
-	return annotation.Set(build.Pattern('Id'), Counter())
+	return annotation.Set(build.Str('Id'), Counter())
 
 
 matchLabel = match.Appl(match.Str('Label'), base.ident)
@@ -100,7 +100,7 @@ moduleEdges \
 
 
 makeNodeId \
-	= annotation.Get(build.Pattern('Id')) & strings.ToStr()
+	= annotation.Get(build.Str('Id')) & strings.ToStr()
 
 box2text = base.Adaptor(
 		lambda term, context: term.factory.makeStr(box.box2text(term))
@@ -140,7 +140,7 @@ makeDot = parse.Rule(r'''
 				H([ "}" ])
 			])
 |		Node(nid, label) 
-			-> H([ nid, "[", "label", "=", <<box.escape> label>, "]" ])
+			-> H([ nid, "[", "label", "=", <<box.escape> label>, ",", "shape", "=", "box", "]" ])
 |		Edge(src, dst) 
 			-> H([ src, "->", dst ])
 |		_ -> <id>
@@ -155,6 +155,10 @@ if __name__ == '__main__':
 	for arg in sys.argv[1:]:
 		term = factory.readFromTextFile(file(arg, 'rt'))
 
+		#print markStmts(term)
+		#print ( markStmts & collectFlows & makeEdges )(term)
+		#print ( markStmts & collectStmts & makeNodes )(term)
+
 		term = makeGraph(term)
 		print term
 		
@@ -167,7 +171,3 @@ if __name__ == '__main__':
 		import os
 		os.system("echo '%s' | dot -Tps | ggv - &" % dotcode)
 
-		#term = markStmts.apply(term, {})
-
-		#print ( collectStmts & makeNodes )(term)
-		#print ( collectFlows & makeEdges )(term)

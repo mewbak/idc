@@ -303,7 +303,8 @@ class PrettyPrinter:
 		: _
 			{
 				try:
-					p = str($t.getAnnotation($!.parse('Path')))
+					p = $t.getAnnotation($!.parse('Path(_)'))
+					p = str(p.args.head)
 					$$ = $!.make('T("path",_,_)', p, $<)
 				except ValueError:
 					$$ = $<				

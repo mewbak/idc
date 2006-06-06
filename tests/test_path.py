@@ -23,13 +23,13 @@ class TestCase(unittest.TestCase):
 		return res
 	
 	annotatorTestCases = [
-		('1', '1{Path,[]}'),
-		('[1,2]', '[1{Path,[0]},2{Path,[1]}]{Path,[]}'),
-		('C(1,2)', 'C(1{Path,[0]},2{Path,[1]}){Path,[]}'),
-		('[[[]]]', '[[[]{Path,[0,0]}]{Path,[0]}]{Path,[]}'),
-		('C(C(C))', 'C(C(C{Path,[0,0]}){Path,[0]}){Path,[]}'),
-		('[[1],[2]]', '[[1{Path,[0,0]}]{Path,[0]},[2{Path,[0,1]}]{Path,[1]}]{Path,[]}'),
-		('C(C(1),C(2))', 'C(C(1{Path,[0,0]}){Path,[0]},C(2{Path,[0,1]}){Path,[1]}){Path,[]}'),
+		('1', '1{Path([])}'),
+		('[1,2]', '[1{Path([0])},2{Path([1])}]{Path([])}'),
+		('C(1,2)', 'C(1{Path([0])},2{Path([1])}){Path([])}'),
+		('[[[]]]', '[[[]{Path([0,0])}]{Path([0])}]{Path([])}'),
+		('C(C(C))', 'C(C(C{Path([0,0])}){Path([0])}){Path([])}'),
+		('[[1],[2]]', '[[1{Path([0,0])}]{Path([0])},[2{Path([0,1])}]{Path([1])}]{Path([])}'),
+		('C(C(1),C(2))', 'C(C(1{Path([0,0])}){Path([0])},C(2{Path([0,1])}){Path([1])}){Path([])}'),
 	]
 	
 	def testAnnotate(self):

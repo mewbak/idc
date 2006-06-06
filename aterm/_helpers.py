@@ -148,6 +148,25 @@ class Annotator(visitor.Visitor):
 annotate = Annotator().visit
 
 
+class Remover(visitor.Visitor):
+	
+	def __init__(self, pattern):
+		visitor.Visitor.__init__(self)
+		self.pattern = pattern
+		
+	def visitNil(self, term):
+		return term
+	
+	def visitCons(self, term):
+		tail = self.visit(term.tail)
+		if self.pattern.match(term.head):
+			return tail
+		elif tail is term.tail:
+			return term
+		else:
+			return term.factory.makeCons(term.head, tail, term.annotations)
+
+
 class Maker(visitor.IncrementalVisitor):
 	
 	def __init__(self, args, kargs):
@@ -208,7 +227,6 @@ class Constness(visitor.Visitor):
 	def visitPlaceholder(self, term):
 		return False
 
-
 isConstant = Constness().visit
 
 
@@ -253,7 +271,6 @@ class Hash(visitor.Visitor):
 		))
 
 
-
 class Writer(visitor.Visitor):
 	'''Base class for term writers.'''
 	
@@ -272,7 +289,6 @@ class _GetSymbol(visitor.Visitor):
 	
 	def visitVar(self, term):
 		return term.name
-
 
 _getSymbol = _GetSymbol().visit
 

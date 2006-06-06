@@ -98,53 +98,6 @@ class Term(object):
 			other = self.factory.parse(other)
 		return other.match(self)
 
-	def getAnnotation(self, label):
-		'''Gets an annotation associated with label'''
-		annotations = self.annotations
-		while not annotations.isEmpty():
-			if label.isEquivalent(annotations.getHead()):
-				return annotations.getTail().getHead()				
-			annotations = annotations.getTail().getTail()
-		raise ValueError("undefined annotation '%r'" % label)
-	
-	def setAnnotation(self, label, annotation):
-		'''Returns a new version of this term with the 
-		annotation associated with this label added or updated.'''
-		return self.setAnnotations(self._setAnnotation(label, annotation, self.annotations))
-
-	def _setAnnotation(self, label, annotation, annotations):
-		if annotations.isEmpty():
-			return self.factory.makeCons(label, self.factory.makeCons(annotation, annotations))
-			
-		_label = annotations.getHead()
-		annotations = annotations.getTail()
-		_annotation = annotations.getHead()
-		annotations = annotations.getTail()
-		
-		if label.isEquivalent(_label):
-			return self.factory.makeCons(label, self.factory.makeCons(annotation, annotations))
-		else:
-			return self.factory.makeCons(_label, self.factory.makeCons(_annotation, self._setAnnotation(label, annotation, annotations)))
-				
-	def removeAnnotation(self, label):
-		'''Returns a new version of this term with the 
-		annotation associated with this label removed.'''
-		return self.setAnnotations(self._removeAnnotation(label, self.annotations))
-		
-	def _removeAnnotation(self, label, annotations):
-		if annotations.isEmpty():
-			return annotations
-			
-		_label = annotations.getHead()
-		annotations = annotations.getTail()
-		_annotation = annotations.getHead()
-		annotations = annotations.getTail()
-		
-		if label.isEquivalent(_label):
-			return annotations
-		else:
-			return self.factory.makeCons(_label, self.factory.makeCons(_annotation, self._removeAnnotation(label, annotations)))
-
 	def getAnnotations(self):
 		'''Returns the annotation list.'''
 		return self.annotations
@@ -153,6 +106,36 @@ class Term(object):
 		'''Modify the annotation list.'''
 		return _helpers.annotate(self, annotations)
 
+	def getAnnotation(self, label):
+		'''Gets an annotation associated'''
+		if isinstance(label, basestring):
+			label = self.factory.parse(label)
+		annotations = self.annotations
+		while annotations:
+			if label.match(annotations.head):
+				return annotations.head				
+			annotations = annotations.tail
+		raise ValueError("undefined annotation '%r'" % label)
+	
+	def setAnnotation(self, label, annotation):
+		'''Returns a new version of this term with the 
+		annotation associated with this label added or updated.'''
+		if isinstance(label, basestring):
+			label = self.factory.parse(label)
+		remover = _helpers.Remover(label)
+		annotations = remover.visit(self.annotations)
+		annotations = self.factory.makeCons(annotation, annotations)
+		return self.setAnnotations(annotations)
+				
+	def removeAnnotation(self, label):
+		'''Returns a new version of this term with the 
+		annotation associated with this label removed.'''
+		if isinstance(label, basestring):
+			label = self.factory.parse(label)
+		remover = _helpers.Remover(label)
+		annotations = remover.visit(self.annotations)
+		return self.setAnnotations(annotations)
+		
 	def make(self, *args, **kargs):
 		'''Create a new term based on this term and a list of arguments.'''
 		maker = _helpers.Maker(args, kargs)

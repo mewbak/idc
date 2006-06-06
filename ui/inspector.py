@@ -165,17 +165,7 @@ class TermTreeModel(gtk.GenericTreeModel):
 			else:
 				return 'VAR'
 		elif column == 2:
-			value = ''
-			sep = ''
-			annos = term.getAnnotations()
-			while not annos.isEmpty():
-				label = annos.getHead()
-				annos = annos.getTail()
-				anno = annos.getHead()
-				annos = annos.getTail()
-				value += sep + str(label) + ':' + str(anno)
-				sep = ','
-			return value
+			return ', '.join([str(anno) for anno in term.getAnnotations()])
 		else:
 			return None
 	   

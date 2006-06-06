@@ -366,19 +366,19 @@ class TestCase(unittest.TestCase):
 				term = term1
 				self.failUnlessEqual(term.getAnnotations(), factory.parse("[]"))
 				
-				term = term.setAnnotation(factory.parse("A"), factory.parse("1"))
-				self.failUnlessEqual(term.getAnnotations(), factory.parse("[A,1]"))
+				term = term.setAnnotation(factory.parse("A(_)"), factory.parse("A(1)"))
+				self.failUnlessEqual(term.getAnnotations(), factory.parse("[A(1)]"))
 				
-				term = term.setAnnotation(factory.parse("B"), factory.parse("2"))
-				self.failUnlessEqual(term.getAnnotation(factory.parse("A")), factory.parse("1"))
-				self.failUnlessEqual(term.getAnnotation(factory.parse("B")), factory.parse("2"))
+				term = term.setAnnotation(factory.parse("B(_)"), factory.parse("B(2)"))
+				self.failUnlessEqual(term.getAnnotation(factory.parse("A(_)")), factory.parse("A(1)"))
+				self.failUnlessEqual(term.getAnnotation(factory.parse("B(_)")), factory.parse("B(2)"))
 		
-				term = term.setAnnotation(factory.parse("A"), factory.parse("3"))
-				self.failUnlessEqual(term.getAnnotation(factory.parse("A")), factory.parse("3"))
-				self.failUnlessEqual(term.getAnnotation(factory.parse("B")), factory.parse("2"))
+				term = term.setAnnotation(factory.parse("A(_)"), factory.parse("A(3)"))
+				self.failUnlessEqual(term.getAnnotation(factory.parse("A(_)")), factory.parse("A(3)"))
+				self.failUnlessEqual(term.getAnnotation(factory.parse("B(_)")), factory.parse("B(2)"))
 		
 				try:
-					term.getAnnotation(factory.parse("C"))
+					term.getAnnotation(factory.parse("C(_)"))
 					self.fail()
 				except ValueError:
 					pass
