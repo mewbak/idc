@@ -91,6 +91,7 @@ doc: all
 	rm -rf html
 	epydoc \
 		--css blue \
+		--no-private \
 		aterm \
 		transf \
 		path \

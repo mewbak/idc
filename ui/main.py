@@ -50,7 +50,7 @@ class MainApp(glade.GladeApp):
 				self.widget, 
 				[
 					('Assembly Files', ['*.s', '*.asm']),
-					('Decompilation Projects', ['*.idc']),
+					('Decompilation Projects', ['*.aterm']),
 					('All Files', ['*']),
 				], 
 				'./examples',
@@ -59,7 +59,7 @@ class MainApp(glade.GladeApp):
 		if path is not None:
 			if path.endswith('.s'):
 				self.document.open_asm(path)
-			if path.endswith('.idc'):
+			if path.endswith('.aterm'):
 				self.document.open_ir(path)
 
 	def on_save_activate(self, event):
@@ -71,7 +71,7 @@ class MainApp(glade.GladeApp):
 				None, 
 				self.widget, 
 				[
-					('Decompilation Project', ['*.idc']),
+					('Decompilation Project', ['*.aterm']),
 					('C Source File', ['*.c']),
 					('All Files', ['*']),
 				], 
@@ -79,7 +79,7 @@ class MainApp(glade.GladeApp):
 		)
 		
 		if path is not None:
-			if path.endswith('.idc'):
+			if path.endswith('.aterm'):
 				self.document.save_ir(path)
 			if path.endswith('.c'):
 				self.document.export_c(path)
