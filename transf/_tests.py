@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+'''Unit tests for the transformation package.'''
 
 
 import unittest
@@ -313,6 +314,7 @@ class TestArith(TestMixin, unittest.TestCase):
 
 
 TestStub = Ident
+
 
 class TestParse(TestMixin, unittest.TestCase):
 

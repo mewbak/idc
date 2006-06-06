@@ -51,6 +51,8 @@ all: ssl/pentium.py
 
 # Unit, component, and integration testing
 
+TESTOPTS = -v
+
 tests: \
 	test-aterm \
 	test-transf \
@@ -62,7 +64,13 @@ tests: \
 	test-refactoring
 
 test-%: all
-	$(PYTHON) tests/test_$*.py -v
+	$(PYTHON) tests/test_$*.py $(TESTOPTS)
+
+test-aterm: all
+	$(PYTHON) aterm/_tests.py $(TESTOPTS)
+
+test-transf: all
+	$(PYTHON) transf/_tests.py $(TESTOPTS)
 
 .PHONY: test-%
 
@@ -71,7 +79,7 @@ examples:
 
 .PHONY: examples
 	
-test_asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py examples
+test-asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py examples
 	$(SHELL) $<
 	
 .PHONY: tests

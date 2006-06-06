@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+'''Unit tests for the aterm package.'''
 
 
 import unittest
@@ -7,7 +8,7 @@ import aterm.factory
 import aterm.types
 
 
-class TestCase(unittest.TestCase):
+class TestTerm(unittest.TestCase):
 	
 	def setUp(self):
 		self.factory = aterm.factory.Factory()

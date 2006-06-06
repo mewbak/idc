@@ -6,7 +6,7 @@ import unittest
 import aterm.factory
 import box
 
-import test_transf
+import transf._tests
 
 
 class TestWriter(unittest.TestCase):
@@ -51,7 +51,7 @@ class TestWriter(unittest.TestCase):
 			self.failUnlessEqual(output, expectedOutput)
 
 
-class TestTransfs(test_transf.TestMixin, unittest.TestCase):
+class TestTransfs(transf._tests.TestMixin, unittest.TestCase):
 	
 	commasTestCases = [
 		('[ "A", "B", "C" ]', 'H([ "A", ", ", "B", ", ", "C" ])'),
