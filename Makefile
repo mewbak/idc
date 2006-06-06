@@ -88,8 +88,8 @@ doc: all
 		path \
 		walker \
 		box \
-		ir \
-		ui
+		#ir \
+		#ui
 
 .PHONY: doc
 
@@ -119,6 +119,9 @@ dist: all doc
 
 
 # Clean the generated files
+
+sweep:
+	@$(RM) $(shell find -iname '*.py[oc]')
 
 clean:
 	@$(RM) .deps.mak $(patsubst %.w,%.py,$(shell find -iname '*.w'))

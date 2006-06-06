@@ -32,7 +32,8 @@ def Crush(tail, Cons, operand=None):
 def CollectAll(operand, Union=None):
 	'''Collect all subterms for which operand succeeds.
 	
-	@param union: transformation factory which takes two lists are produces a single one
+	@param Union: transformation factory which takes two lists and produces a
+	single one
 	'''
 	if Union is None:
 		Union = lists.Concat
