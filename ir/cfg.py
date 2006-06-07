@@ -60,11 +60,11 @@ MarkStmtsIds = lambda: traverse.TopDown(combine.Try(matchStmt & SetStmtId(Counte
 #######################################################################
 # Statements Flow
 
-stmtFlowAnno = build.Str('StmtFlow')
+CtrlFlowAnno = build.Str('CtrlFlow')
 
-getStmtFlow = annotation.Get(stmtFlowAnno)
-SetStmtFlow = lambda flows: annotation.Set(stmtFlowAnno, flows)
-SetStmtFlows = lambda *stmts: SetStmtFlow(build.List([stmt & getStmtId for stmt in stmts]))
+getCtrlFlow = annotation.Get(CtrlFlowAnno)
+SetCtrlFlow = lambda flows: annotation.Set(CtrlFlowAnno, flows)
+SetCtrlFlows = lambda *stmts: SetCtrlFlow(build.List([stmt & getStmtId for stmt in stmts]))
 
 
 #######################################################################
@@ -76,19 +76,19 @@ markStmtFlow = base.Proxy()
 
 markStmtFlow.subject = parse.Rule('''
 	Assign(*) 
-		-> <SetStmtFlows(!next)>
+		-> <SetCtrlFlows(!next)>
 |	Label(*) 
-		-> <SetStmtFlows(!next)>
+		-> <SetCtrlFlows(!next)>
 |	If(_, true, false)
-		-> <SetStmtFlows(!true, !false); ~_(_, <markStmtFlow>, <markStmtFlow>) >
+		-> <SetCtrlFlows(!true, !false); ~_(_, <markStmtFlow>, <markStmtFlow>) >
 |	NoStmt
-		-> <SetStmtFlows(!next)>
+		-> <SetCtrlFlows(!next)>
 |	Continue(*)
-		-> <SetStmtFlows(!cont)>
+		-> <SetCtrlFlows(!cont)>
 |	Break(*)
-		-> <SetStmtFlows(!brek)>
+		-> <SetCtrlFlows(!brek)>
 |	Ret(*)
-		-> <SetStmtFlows(!retn)>
+		-> <SetCtrlFlows(!retn)>
 ''')
 
 markStmtsFlow.subject \
@@ -130,7 +130,7 @@ markStmtsFlow.subject = parse.Transf('''
 		>
 ''')"""
 
-endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetStmtFlows()
+endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetCtrlFlows()
 
 markModuleFlow \
 	= traverse._.Module( 
@@ -180,7 +180,7 @@ makeNodeShape = parse.Rule('''
 ''')
 
 makeNodeEdges \
-	= getStmtFlow \
+	= getCtrlFlow \
 	& traverse.Map(
 		build._.Edge(makeNodeId)
 	)
@@ -213,8 +213,8 @@ CountDsts = lambda id: unify.Count(match._.Edge(base.ident, id))
 replaceStmtFlow = \
 	combine.IfThenElse(
 		getStmtId & match._.src,
-		annotation.Del(stmtIdAnno) & annotation.Del(stmtFlowAnno),
-		SetStmtFlow(getStmtFlow & traverse.Map(combine.Try(match._.src & build._.dst))),
+		annotation.Del(stmtIdAnno) & annotation.Del(CtrlFlowAnno),
+		SetCtrlFlow(getCtrlFlow & traverse.Map(combine.Try(match._.src & build._.dst))),
 	)
 
 replaceStmtFlow = traverse.BottomUp(combine.Try(replaceStmtFlow))
@@ -222,11 +222,11 @@ replaceStmtFlow = traverse.BottomUp(combine.Try(replaceStmtFlow))
 matchNoStmts \
 	= match.Appl("NoStmt", match.nil) \
 	& combine.Where(getStmtId)\
-	& combine.Where(getStmtFlow)
+	& combine.Where(getCtrlFlow)
 
 collectNoStmts = unify.CollectAll(matchNoStmts)
 
-getSingleFlow = getStmtFlow & match.Pattern('[_]') & project.first
+getSingleFlow = getCtrlFlow & match.Pattern('[_]') & project.first
 
 
 def removeNoStmts(term, context):

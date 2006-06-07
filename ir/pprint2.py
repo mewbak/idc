@@ -6,60 +6,14 @@ from transf import base
 from transf import strings
 from transf import parse
 
+import ir.traverse
 
-def TraverseType(typer):
-	typet = base.Proxy()
-	typet.subject = parse.Transf('''
-		~Pointer(_, <typet>) +
-		~Array(<typet>) +
-		id
-	''') & typer
-	return typet
-
-
-def TraverseExpr(exprr, typet, opr):
-	exprt = base.Proxy()
-	exprt.subject = parse.Transf('''
-		~Lit(<typet>, _) +
-		~Cast(<typet>, <exprt>) +
-		~Unary(<opr>, <exprt>) +
-		~Binary(<opr>, <exprt>, <exprt>) +
-		~Cond(<exprt>, <exprt>, <exprt>) +
-		~Call(<exprt>, <map(exprt)>) +
-		~Addr(<exprt>) +
-		~Ref(<exprt>) +
-		id
-	''') & exprr
-	return exprt
-
-
-def TraverseStmt(stmtr, exprt, typet):
-	stmtt = base.Proxy()
-	stmtt.subject = parse.Transf('''
-		~Assign(<typet>, <exprt>, <exprt>) +
-		~Asm(_, <map(exprt)>) +
-		~Block(<map(stmtt)>) +
-		~FuncDef(<typet>, _, _, <stmtt>) +
-		~If(<exprt>, <stmtt>, <stmtt>) +
-		~While(<exprt>, <stmtt>) +
-		~Ret(<type>, <exprt>) +
-		~Branch(<exprt>) +
-		id
-	''') & stmtr
-	return stmtt
-
-
-def TraverseModule(moduler, stmtt):	
-	modulet = parse.Transf('''
-		~Module(<map(stmtt)>)
-	''') & moduler
-	return modulet
-	
 from box import op
 from box import kw
 from box import lit
 from box import sym
 from box import commas
+
 
 sign = parse.Rule('''
 	Signed -> <<kw> "signed">
@@ -171,13 +125,13 @@ moduler = parse.Rule('''
 	Module(stmts) -> V([ I(V( stmts )) ])
 ''')
 
-type = TraverseType(typer)
+type = ir.traverse.Type(typer)
 
-expr = TraverseExpr(exprr, type, opr)
+expr = ir.traverse.Expr(exprr, type, opr)
 
-stmt = TraverseStmt(stmtr, expr, type)
+stmt = ir.traverse.Stmt(stmtr, expr, type)
 
-module = TraverseModule(moduler, stmt)
+module = ir.traverse.Module(moduler, stmt)
 
 
 if __name__ == '__main__':
