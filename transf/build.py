@@ -26,6 +26,10 @@ def Int(value):
 	term = _factory.makeInt(value)
 	return Term(term)
 
+zero = Int(0)
+one = Int(1)
+two = Int(2)
+
 
 def Real(value):
 	term = _factory.makeReal(value)

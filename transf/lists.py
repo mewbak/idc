@@ -5,6 +5,7 @@ from transf import exception
 from transf import base
 from transf import combine
 from transf import build
+from transf import unify
 
 
 class _Concat(combine.Binary):
@@ -32,3 +33,6 @@ def Concat(*operands):
 		return _IterConcat(iter(operands))
 	except StopIteration:
 		return build.nil
+
+
+concat = unify.Foldr(build.nil, Concat)

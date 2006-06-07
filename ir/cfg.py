@@ -79,14 +79,16 @@ markStmtFlow.subject = parse.Rule('''
 		-> <SetStmtFlows(!next)>
 |	Label(*) 
 		-> <SetStmtFlows(!next)>
-|	If(_, true, NoStmt) 
-		-> <SetStmtFlows(!next, !true); ~_(_, <markStmtFlow>, _) >
-|	If(_, true, false) 
+|	If(_, true, false)
 		-> <SetStmtFlows(!true, !false); ~_(_, <markStmtFlow>, <markStmtFlow>) >
 |	NoStmt
 		-> <SetStmtFlows(!next)>
+|	Continue(*)
+		-> <SetStmtFlows(!cont)>
+|	Break(*)
+		-> <SetStmtFlows(!brek)>
 |	Ret(*)
-		-> <SetStmtFlows(!next)>
+		-> <SetStmtFlows(!retn)>
 ''')
 
 markStmtsFlow.subject \
@@ -102,7 +104,33 @@ markStmtsFlow.subject \
 		following = project.tail & (project.head | build._.next)
 	)
 
-endOfModule = build._.NoStmt() & SetStmtId(build.Int(0))
+"""
+markStmtsFlow.subject \
+	= match.nil \
+		build.List([base.ident, build._.next])
+	| scope.With(
+		traverse.Cons(
+			scope.With(
+				markStmtFlow,
+				next = build._.following
+			),
+			markStmtsFlow
+		),
+		following = project.tail & (project.head | build._.next)
+	)
+
+markStmtsFlow.subject = parse.Transf('''
+	[] 
+		-> [<id>,next]
+|	[head, *tail]
+		-> <
+			<markStmtsFlow> tail => [new_tail, following];
+			<{next: (next -> following); <markStmt> head}> head => new_head;
+			![<new_head>,<new_tail>]
+		>
+''')"""
+
+endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetStmtFlows()
 
 markModuleFlow \
 	= traverse._.Module( 
@@ -136,52 +164,101 @@ makeNodeLabel = parse.Rule('''
 		-> < <pprint2.expr> cond; renderBox >
 |	Ret(*)
 		-> < pprint2.stmt; renderBox >
-|	NoStmt(*)
+|	NoStmt
 		-> ""
 |	_ 
 		-> "..."
 ''')
 
-makeNode = build._.Node(getStmtId & makeNodeId, makeNodeLabel)
-makeNodes = unify.CollectAll(makeNode)
+makeNodeShape = parse.Rule('''
+	If(cond,_,_)
+		-> "diamond"
+|	NoStmt
+		-> "point"
+|	_ 
+		-> "box"
+''')
 
-makeNodeEdges = scope.With(
-	getStmtFlow & traverse.Map(
-		build._.Edge(build._.src, makeNodeId)
-	),
-	src = getStmtId & makeNodeId
+makeNodeEdges \
+	= getStmtFlow \
+	& traverse.Map(
+		build._.Edge(makeNodeId)
+	)
+
+makeNodeAttr = lambda name, value: build._.Attr(name, value)
+
+makeNodeAttrs \
+	= build.List([
+		makeNodeAttr("label", makeNodeLabel & box.escape),
+		makeNodeAttr("shape", makeNodeShape)
+	])
+
+makeNode = build._.Node(
+	getStmtId & makeNodeId, 
+	makeNodeAttrs, 
+	makeNodeEdges
 )
 
-makeEdges \
-	= unify.CollectAll(makeNodeEdges) \
-	& unify.Foldr(
-	build.nil,
-	lists.Concat
-)
+makeNodes = build._[base.ident, endOfModule] & unify.CollectAll(makeNode)
 
-makeGraph = build._.Graph(makeNodes, makeEdges)
+makeGraph = build._.Graph(makeNodes)
+
+
+#######################################################################
+# Graph Simplification
+
+
+CountSrcs = lambda id: unify.Count(match._.Edge(id, base.ident))
+CountDsts = lambda id: unify.Count(match._.Edge(base.ident, id))
+
+
 
 
 #######################################################################
 # Dot output
 
-makeDot = parse.Rule(r'''
-		Graph(nodes, edges)
-			-> V([
-				H([ "digraph", " ", "{" ]),
-				V( nodes ),
-				V( edges ),
-				H([ "}" ])
-			])
-|		Node(nid, label) 
-			-> H([ nid, "[", "label", "=", <<box.escape> label>, ",", "shape", "=", "box", "]" ])
-|		Edge(src, dst) 
-			-> H([ src, "->", dst ])
-|		_ -> <id>
+dotAttr = parse.Rule('''
+		Attr(name, value) 
+			-> H([ name, "=", value ])
 ''')
 
-makeDot = traverse.BottomUp(makeDot)
+dotAttrs = parse.Transf('''
+		!H([ "[", <map(dotAttr); box.commas>, "]" ])
+''')
 
+dotNode = parse.Rule('''
+		Node( nid, attrs, _)
+			-> H([ nid, <<dotAttrs> attrs> ])
+''')
+
+dotNodes = traverse.Map(dotNode)
+
+dotNodeEdge = parse.Rule('''
+		Edge(dst) 
+			-> H([ src, "->", dst ])
+''')
+
+dotNodeEdges = parse.Rule('''
+		Node(src, _, edges) 
+			-> <<map(dotNodeEdge)> edges>
+''')
+
+dotEdges = traverse.Map(dotNodeEdges) & lists.concat
+
+makeDot = parse.Rule(r'''
+		Graph(nodes)
+			-> V([
+				H([ "digraph", " ", "{" ]),
+				V( <<dotNodes> nodes> ),
+				V( <<dotEdges> nodes> ),
+				H([ "}" ])
+			])
+
+''')
+
+
+#######################################################################
+# Example
 
 
 if __name__ == '__main__':
@@ -192,18 +269,21 @@ if __name__ == '__main__':
 		term = factory.readFromTextFile(file(arg, 'rt'))
 
 		term = MarkStmtsIds() (term)
-		print term
+		#print term
 		term = markFlow (term)
 		print term
+		print
 		
-		print makeNodes (term)
-		print makeEdges (term)
+		#print makeNodes (term)
+		#print makeEdges (term)
 		
 		term = makeGraph(term)
 		print term
+		print
 		
 		term = makeDot(term)
 		print term
+		print
 
 		dotcode = box.box2text(term)
 		print dotcode
