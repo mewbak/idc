@@ -1,16 +1,21 @@
 '''View graphs in dot-language.'''
 
 
+import sys
+import os
+
 import gtk
 import gtk.gdk
 
-import sys
-import os
+
+DOT = 'dot'
+FORMAT = 'svg'
 
 
 class DotView(gtk.Window):
 	
 	# TODO: add zoom/pan as in http://mirageiv.berlios.de/
+	# TODO: use maps to detect clicks in nodes
 	
 	def __init__(self, parent = None):
 		gtk.Window.__init__(self)
@@ -36,21 +41,25 @@ class DotView(gtk.Window):
 		self.show_all()
 	
 	def set_dotcode(self, dotcode):
+		# TODO: return the dotin stream
 		
-		dotin, dotout = os.popen2(['dot', '-Tsvg'], 'rw')
+		# See images.py in pygtk demos
+		pixbuf_loader = gtk.gdk.PixbufLoader(FORMAT)
+		pixbuf_loader.connect('area_prepared', self.on_pixbuf_loader_area_prepared)
+		pixbuf_loader.connect('area_updated', self.on_pixbuf_loader_area_updated)
+	
+		dotin, dotout = os.popen2([DOT, '-T' + FORMAT], 'rw')
 
 		dotin.write(dotcode)
 		dotin.close()
 
-		svgcode = dotout.read()
+		while True:
+			buf = dotout.read(8192)
+			if not buf:
+				break
+			pixbuf_loader.write(buf)
+			
 		dotout.close()
-
-		# See images.py in pygtk demos
-		pixbuf_loader = gtk.gdk.PixbufLoader('svg')
-		pixbuf_loader.connect("area_prepared", self.on_pixbuf_loader_area_prepared)
-		pixbuf_loader.connect("area_updated", self.on_pixbuf_loader_area_updated)
-	
-		pixbuf_loader.write(svgcode)
 		pixbuf_loader.close()
 	
 	def on_pixbuf_loader_area_prepared(self, pixbuf_loader):
@@ -59,7 +68,6 @@ class DotView(gtk.Window):
 
 	def on_pixbuf_loader_area_updated(self, pixbuf_loader, x, y, width, height):
 		self.image.queue_draw()
-		
 
 
 if __name__ == '__main__':
