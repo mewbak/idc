@@ -207,11 +207,42 @@ makeGraph = build._.Graph(makeNodes)
 #######################################################################
 # Graph Simplification
 
-
 CountSrcs = lambda id: unify.Count(match._.Edge(id, base.ident))
 CountDsts = lambda id: unify.Count(match._.Edge(base.ident, id))
 
+replaceStmtFlow = \
+	combine.IfThenElse(
+		getStmtId & match._.src,
+		annotation.Del(stmtIdAnno) & annotation.Del(stmtFlowAnno),
+		SetStmtFlow(getStmtFlow & traverse.Map(combine.Try(match._.src & build._.dst))),
+	)
 
+replaceStmtFlow = traverse.BottomUp(combine.Try(replaceStmtFlow))
+
+matchNoStmts \
+	= match.Appl("NoStmt", match.nil) \
+	& combine.Where(getStmtId)\
+	& combine.Where(getStmtFlow)
+
+collectNoStmts = unify.CollectAll(matchNoStmts)
+
+getSingleFlow = getStmtFlow & match.Pattern('[_]') & project.first
+
+
+def removeNoStmts(term, context):
+		noStmts = collectNoStmts.apply(term, context)
+		print noStmts
+		for noStmt in noStmts:
+			new_context = transf.context.Context(context, ['src', 'dst'])
+			new_context['src'] = getStmtId.apply(noStmt, context)
+			new_context['dst'] = getSingleFlow.apply(noStmt, context)
+			print new_context['src'], "INTO", new_context['dst']
+			term = replaceStmtFlow.apply(term, new_context)
+		return term
+
+removeNoStmts = base.Adaptor(removeNoStmts)
+
+simplifyFlow = removeNoStmts
 
 
 #######################################################################
@@ -273,6 +304,12 @@ if __name__ == '__main__':
 		term = markFlow (term)
 		print term
 		print
+		
+		print "*********"
+		term = simplifyFlow (term)
+		print term
+		print "*********"
+		#sys.exit(0)
 		
 		#print makeNodes (term)
 		#print makeEdges (term)

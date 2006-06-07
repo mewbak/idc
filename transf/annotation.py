@@ -41,6 +41,24 @@ class Get(base.Transformation):
 			return value
 		except ValueError:
 			raise exception.Failure
-		
 
+
+class Del(base.Transformation):
+	
+	def __init__(self, label):
+		base.Transformation.__init__(self)
+		self.label = label
+		
+	def apply(self, term, context):
+		label = self.label.apply(term, context)
+		label = term.factory.makeAppl(
+			label, 
+			term.factory.makeList([term.factory.makeWildcard()])
+		)
+		try:
+			value = term.removeAnnotation(label)
+			return value
+		except ValueError:
+			raise exception.Failure
+		
 

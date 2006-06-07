@@ -8,6 +8,9 @@ from transf import build
 from transf import unify
 
 
+length = unify.Count(base.ident)
+
+
 class _Concat(combine.Binary):
 	
 	def apply(self, term, context):
