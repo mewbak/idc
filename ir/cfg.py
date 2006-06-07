@@ -175,7 +175,10 @@ if __name__ == '__main__':
 
 		dotcode = box.box2text(term)
 		print dotcode
-		
-		import os
-		os.system("echo '%s' | dot -Tps | ggv - &" % dotcode)
+
+		import gtk
+		import ui.dotview
+		win = ui.dotview.DotView()
+		win.set_dotcode(dotcode)
+		gtk.main()
 
