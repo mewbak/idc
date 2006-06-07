@@ -6,6 +6,7 @@ from transf import combine
 from transf import traverse
 from transf import unify
 from transf import lists
+from transf import strings
 
 
 builtins = {
@@ -19,4 +20,5 @@ builtins = {
 	"map": traverse.Map,
 	"foldr": unify.Foldr,
 	"concat": lists.Concat,
+	"str": strings.ToStr,
 }

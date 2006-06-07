@@ -40,7 +40,7 @@ class Factory(object):
 		if inicial.isupper():
 			return lambda *args: self.__Appl(self.__Str(name), self.__List(map(self.__coerce, args)))
 		if inicial.islower():
-			return Var(name)
+			return self.__Var(name)
 		raise AttributeError
 
 	def __getitem__(self, key):

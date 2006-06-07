@@ -2,6 +2,7 @@
 
 
 import sys
+import os.path
 
 from transf import base
 
@@ -14,8 +15,12 @@ class Dump(base.Transformation):
 			self.log = sys.stderr
 		else:
 			self.log = fp
+		caller = sys._getframe(1)
+		self.filename = os.path.abspath(caller.f_code.co_filename)
+		self.lineno = caller.f_lineno
 	
 	def apply(self, term, context):
+		self.log.write('File "%s", line %d\n' % (self.filename, self.lineno))
 		self.log.write("Term:\n")
 		try:
 			term_repr = repr(term)
