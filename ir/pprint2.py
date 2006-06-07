@@ -7,6 +7,7 @@ from transf import strings
 from transf import parse
 
 import ir.traverse
+from ir.traverse import UP, DOWN
 
 from box import op
 from box import kw
@@ -28,7 +29,7 @@ size = parse.Rule('''
 |	n -> H([ "int", <<strings.ToStr> n> ])
 ''')
 
-typer = parse.Rule('''
+typeUp = parse.Rule('''
 	Int(size, sign)
 		-> H([ <<sign> sign>, " ", <<size> size> ])
 |	Float(32)
@@ -47,7 +48,7 @@ typer = parse.Rule('''
 		-> H([ "blob", <<strings.ToStr> size> ])
 ''')
 
-opr = parse.Rule('''
+oper = parse.Rule('''
 	Not -> "!"
 |	BitNot(size) -> "~"
 |	Neg(type) -> "-"
@@ -72,7 +73,7 @@ opr = parse.Rule('''
 |	GtEq(_) -> ">="
 ''')
 
-exprr = parse.Rule('''
+exprUp = parse.Rule('''
 	False 
 		-> "FALSE"
 |	True 
@@ -97,11 +98,11 @@ exprr = parse.Rule('''
 		-> H([ <<op> "*">, expr ])
 ''')
 
-exprr = parse.Transf('''
-	!H([ "(", <exprr>, ")" ])
+exprUp = parse.Transf('''
+	!H([ "(", <exprUp>, ")" ])
 ''')
 
-stmtr = parse.Rule('''
+stmtUp = parse.Rule('''
 	Assign(type, dexpr, sexpr)
 		-> H([ dexpr, " ", <<op> "=">, " ", sexpr, ";" ])
 |	Asm(opcode, operands) 
@@ -121,17 +122,30 @@ stmtr = parse.Rule('''
 		-> H([ <<kw>"return">, " ", expr, ";"])
 ''')
 
-moduler = parse.Rule('''
+moduleUp = parse.Rule('''
 	Module(stmts) -> V([ I(V( stmts )) ])
 ''')
 
-type = ir.traverse.Type(typer)
+type = ir.traverse.Type(
+	Wrapper = UP(typeUp)
+)
 
-expr = ir.traverse.Expr(exprr, type, opr)
+expr = ir.traverse.Expr(
+	type = type, 
+	op = oper,
+	Wrapper = UP(exprUp)
+)
 
-stmt = ir.traverse.Stmt(stmtr, expr, type)
+stmt = ir.traverse.Stmt(
+	expr = expr,
+	type = type,
+	Wrapper = UP(stmtUp)
+)
 
-module = ir.traverse.Module(moduler, stmt)
+module = ir.traverse.Module(
+	stmt = stmt,
+	Wrapper = UP(moduleUp)
+)
 
 
 if __name__ == '__main__':

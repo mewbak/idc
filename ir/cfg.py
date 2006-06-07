@@ -6,6 +6,7 @@ import box
 
 from transf import *
 
+import ir.traverse
 from ir import pprint2
 
 
@@ -64,7 +65,7 @@ CtrlFlowAnno = build.Str('CtrlFlow')
 
 getCtrlFlow = annotation.Get(CtrlFlowAnno)
 SetCtrlFlow = lambda flows: annotation.Set(CtrlFlowAnno, flows)
-SetCtrlFlows = lambda *stmts: SetCtrlFlow(build.List([stmt & getStmtId for stmt in stmts]))
+SetCtrlFlows = lambda flows: SetCtrlFlow(flows & traverse.Map(getStmtId))
 
 
 #######################################################################
@@ -72,24 +73,24 @@ SetCtrlFlows = lambda *stmts: SetCtrlFlow(build.List([stmt & getStmtId for stmt 
 
 markStmtsFlow = base.Proxy()
 
-markStmtFlow = base.Proxy()
-
-markStmtFlow.subject = parse.Rule('''
-	Assign(*) 
-		-> <SetCtrlFlows(!next)>
-|	Label(*) 
-		-> <SetCtrlFlows(!next)>
-|	If(_, true, false)
-		-> <SetCtrlFlows(!true, !false); ~_(_, <markStmtFlow>, <markStmtFlow>) >
-|	NoStmt
-		-> <SetCtrlFlows(!next)>
-|	Continue(*)
-		-> <SetCtrlFlows(!cont)>
-|	Break(*)
-		-> <SetCtrlFlows(!brek)>
-|	Ret(*)
-		-> <SetCtrlFlows(!retn)>
+stmtFlow = parse.Rule('''
+	Assign(*) -> [next]
+|	Label(*) -> [next]
+|	If(_, true, false) -> [true, false]
+|	While(_, stmt) -> [next, stmt]
+|	NoStmt -> [next]
+|	Continue(*) -> [cont]
+|	Break(*) -> [brek]
+|	Ret(*)-> [retn]
 ''')
+
+markStmtFlow = SetCtrlFlows(stmtFlow)
+
+
+markStmtFlow = ir.traverse.Stmt(
+	stmts = markStmtsFlow,
+	Wrapper = ir.traverse.DOWN(markStmtFlow)
+)
 
 markStmtsFlow.subject \
 	= match.nil \
@@ -130,17 +131,15 @@ markStmtsFlow.subject = parse.Transf('''
 		>
 ''')"""
 
-endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetCtrlFlows()
+endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetCtrlFlows(build.nil)
 
 markModuleFlow \
-	= traverse._.Module( 
-		scope.With(
-				markStmtsFlow, 
-				next=endOfModule, 
-				cont=endOfModule, 
-				brek=endOfModule, 
-				retn=endOfModule
-		)
+	= scope.With(
+		ir.traverse.Module(stmts = markStmtsFlow),
+		next=endOfModule, 
+		cont=endOfModule, 
+		brek=endOfModule, 
+		retn=endOfModule
 	)
 
 markFlow = markModuleFlow
