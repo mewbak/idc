@@ -108,6 +108,16 @@ class Var(base.Transformation):
 			raise exception.Failure('undefined variable', self.name)
 
 
+class Annos(base.Transformation):
+	
+	def __init__(self, annos):
+		base.Transformation.__init__(self)
+		self.annos = annos
+
+	def apply(self, term, context):
+		return term.setAnnotations(self.annos.apply(term, context))
+
+	
 class Pattern(base.Transformation):
 
 	def __init__(self, pattern):

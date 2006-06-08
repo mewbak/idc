@@ -23,7 +23,7 @@ class Cons(base.Transformation):
 			old_head = term.head
 			old_tail = term.tail
 		except AttributeError:
-			raise exception.Failure
+			raise exception.Failure('not a list cons term', term)
 		
 		new_head = self.head.apply(old_head, context)
 		new_tail = self.tail.apply(old_tail, context)
@@ -102,7 +102,7 @@ class Appl(base.Transformation):
 			old_name = term.name
 			old_args = term.args
 		except AttributeError:
-			raise exception.Failure
+			raise exception.Failure('not an application term', term)
 		
 		new_name = self.name.apply(old_name, context)
 		new_args = self.args.apply(old_args, context)
@@ -115,6 +115,25 @@ class Appl(base.Transformation):
 			)
 		else:
 			return term
+
+
+class Annos(base.Transformation):
+	
+	def __init__(self, annos):
+		base.Transformation.__init__(self)
+		self.annos = annos
+
+	def apply(self, term, context):
+		old_annos = term.annotations
+		new_annos = self.annos.apply(old_annos, context)
+		if new_annos is not old_annos:
+			return term.setAnnotations(new_annos)
+		else:
+			return term
+
+
+def Anno(anno):
+	return Annos(traverse.One(anno))
 
 
 _ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, match.Var, match.Pattern)
@@ -138,21 +157,47 @@ def Filter(operand):
 	return filter
 
 
-class All(combine.Unary):
-	'''Applies a transformation to all subterms of a term.'''
+
+class _Subterms(base.Transformation):
 	
-	def __init__(self, operand):
-		combine.Unary.__init__(self, operand)
-		self.list_transf = Map(operand)
-		self.appl_transf = Appl(base.ident, self.list_transf)
-	
+	def __init__(self, list, lit):
+		base.Transformation.__init__(self)
+		self.lit = lit
+		self.list = list
+		self.appl = Appl(base.ident, list)
+		
 	def apply(self, term, context):
 		if term.type == aterm.types.APPL:
-			return self.appl_transf.apply(term, context)
+			return self.appl.apply(term, context)
 		elif term.type == aterm.types.LIST:
-			return self.list_transf.apply(term, context)
+			return self.list.apply(term, context)
 		else:
-			return term
+			return self.lit.apply(term, context)
+
+
+def All(operand):
+	'''Applies a transformation to all direct subterms of a term.'''
+	return _Subterms(Map(operand), base.ident)
+
+
+def One(operand):
+	'''Applies a transformation to exactly one direct subterm of a term.'''
+	one = base.Proxy()
+	one.subject = _Subterms(
+		Cons(operand, base.ident) | Cons(base.ident, one), 
+		base.fail
+	)
+	return one
+
+
+def Some(operand):
+	'''Applies a transformation to as many direct subterms of a term, but at list one.'''
+	some = base.Proxy()
+	some.subject = _Subterms(
+		Cons(operand, Map(combine.Try(operand))) | Cons(base.ident, some),
+		base.fail
+	)
+	return some
 
 
 def BottomUp(operand):

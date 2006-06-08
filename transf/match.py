@@ -167,6 +167,22 @@ class Var(base.Transformation):
 		return term
 
 
+class Annos(base.Transformation):
+	
+	def __init__(self, annos):
+		base.Transformation.__init__(self)
+		self.annos = annos
+
+	def apply(self, term, context):
+		self.annos.apply(term.annotations, context)
+		return term
+
+
+def Anno(anno):
+	from transf import traverse
+	return Annos(traverse.One(Where(anno)))
+
+
 class Pattern(base.Transformation):
 	
 	def __init__(self, pattern):
