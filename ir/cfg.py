@@ -75,7 +75,7 @@ markStmtsFlow = base.Proxy()
 stmtFlow = parse.Rule('''
 	Assign(*) -> [next]
 |	Label(*) -> [next]
-|	If(_, true, false) -> [true, false]
+|	If(_, true, false) -> [true{Cond("True")}, false{Cond("False")}]
 |	While(_, stmt) -> [next, stmt]
 |	NoStmt -> [next]
 |	Continue(*) -> [cont]
@@ -83,7 +83,11 @@ stmtFlow = parse.Rule('''
 |	Ret(*)-> [retn]
 ''')
 
-markStmtFlow = SetCtrlFlow(stmtFlow & traverse.Map(getStmtId))
+markStmtFlow \
+	= SetCtrlFlow(
+		combine.Try(traverse.All(combine.Try(getStmtId))) &
+		stmtFlow
+	)
 
 
 markStmtFlow = ir.traverse.Stmt(
@@ -101,7 +105,7 @@ markStmtsFlow.subject \
 			),
 			markStmtsFlow
 		),
-		following = project.tail & (project.head | build._.next)
+		following = project.tail & (project.head & getStmtId | build._.next)
 	)
 
 """
@@ -131,6 +135,7 @@ markStmtsFlow.subject = parse.Transf('''
 ''')"""
 
 endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetCtrlFlow(build.nil)
+endOfModule = build.zero
 
 markModuleFlow \
 	= scope.With(
@@ -151,9 +156,11 @@ MarkFlow = lambda: MarkStmtsIds() & markFlow
 
 makeNodeId = strings.ToStr()
 
+makeAttr = lambda name, value: build._.Attr(name, value)
+
 renderBox = base.Adaptor(lambda term, context: term.factory.makeStr(box.box2text(term)))
 
-makeNodeLabel = parse.Rule('''
+makeNodeLabel = debug.Dump() & parse.Rule('''
 	Assign(*)
 		-> < pprint2.stmt; renderBox >
 |	Label(*)
@@ -177,19 +184,29 @@ makeNodeShape = parse.Rule('''
 		-> "box"
 ''')
 
+makeNodeAttrs \
+	= build.List([
+		makeAttr("label", makeNodeLabel & box.escape),
+		makeAttr("shape", makeNodeShape)
+	])
+
+makeEdgeLabel \
+	= annotation.Get('Cond') \
+	| build.Str("")
+
+makeEdgeAttrs \
+	= build.List([
+		makeAttr("label", makeEdgeLabel & box.escape),
+	])
+	
 makeNodeEdges \
 	= getCtrlFlow \
 	& traverse.Map(
-		build._.Edge(makeNodeId)
+		build._.Edge(
+			makeNodeId,
+			makeEdgeAttrs,
+		)
 	)
-
-makeNodeAttr = lambda name, value: build._.Attr(name, value)
-
-makeNodeAttrs \
-	= build.List([
-		makeNodeAttr("label", makeNodeLabel & box.escape),
-		makeNodeAttr("shape", makeNodeShape)
-	])
 
 makeNode = build._.Node(
 	getStmtId & makeNodeId, 
@@ -197,7 +214,10 @@ makeNode = build._.Node(
 	makeNodeEdges
 )
 
-makeNodes = build._[base.ident, endOfModule] & unify.CollectAll(makeNode)
+makeNodes = lists.Concat(
+	build.List([build.Term('Node("0", [Attr("shape", "point")], [])')]),
+	unify.CollectAll(makeNode)
+)
 
 makeGraph = build._.Graph(makeNodes)
 
@@ -258,15 +278,15 @@ dotAttrs = parse.Transf('''
 ''')
 
 dotNode = parse.Rule('''
-		Node( nid, attrs, _)
+		Node(nid, attrs, _)
 			-> H([ nid, <<dotAttrs> attrs> ])
 ''')
 
 dotNodes = traverse.Map(dotNode)
 
 dotNodeEdge = parse.Rule('''
-		Edge(dst) 
-			-> H([ src, "->", dst ])
+		Edge(dst, attrs) 
+			-> H([ src, "->", dst, <<dotAttrs> attrs> ])
 ''')
 
 dotNodeEdges = parse.Rule('''
