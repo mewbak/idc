@@ -29,7 +29,9 @@ class TestMixin:
 			except exception.Failure:
 				result = self.factory.parse('FAILURE')
 			
-			self.failUnlessEqual(result, expectedResult)
+			self.failUnlessEqual(result, expectedResult, 
+				msg = "%r -> %r (!= %r)" %(term, result, expectedResult)
+			)
 
 	def _testMetaTransf(self, metaTransf, testCases):
 		result = []
@@ -59,6 +61,7 @@ class TestCombine(TestMixin, unittest.TestCase):
 		
 	identTestCases = [(term, term) for term in termsInputs]
 	failTestCases = [(term, 'FAILURE') for term in termsInputs]
+	xxxTestCases = [(term, 'X') for term in termsInputs]
 
 	def testIdent(self):
 		self._testTransf(ident, self.identTestCases)
@@ -66,25 +69,84 @@ class TestCombine(TestMixin, unittest.TestCase):
 	def testFail(self):
 		self._testTransf(fail, self.failTestCases)
 	
+	unaryTestCases = [
+		[0], [1], [2],
+	]
+	
+	binaryTestCases = [
+		[0, 0], [0, 1], [0, 2], 
+		[1, 0], [1, 1], [1, 2],
+		[2, 0], [2, 1], [2, 2],
+	]
+	
+	ternaryTestCases = [
+		[0, 0, 0], [0, 0, 1], [0, 0, 2],
+		[0, 1, 0], [0, 1, 1], [0, 1, 2],
+		[0, 2, 0], [0, 2, 1], [0, 2, 2],
+		[1, 0, 0], [1, 0, 1], [1, 0, 2],
+		[1, 1, 0], [1, 1, 1], [1, 1, 2],
+		[1, 2, 0], [1, 2, 1], [1, 2, 2],
+		[2, 0, 0], [2, 0, 1], [2, 0, 2],
+		[2, 1, 0], [2, 1, 1], [2, 1, 2],
+		[2, 2, 0], [2, 2, 1], [2, 2, 2],
+	]
+
+	def _testCombination(self, Transf, n, func):
+		argTable = {
+			0: fail,
+			1: ident, 
+			2: Rule('_', 'X'),
+		}
+		testCaseTable = {
+			1: self.unaryTestCases, 
+			2: self.binaryTestCases,
+			3: self.ternaryTestCases,
+		}
+		resultTable = {
+			0: self.failTestCases,
+			1: self.identTestCases, 
+			2: self.xxxTestCases,
+		}
+		testCases = testCaseTable[n]
+		for args in testCases:
+			transf = Transf(*map(argTable.get, args))
+			result = int(func(*args))
+			resultCases = resultTable[result]
+			try:
+				self._testTransf(transf, resultCases)
+			except AssertionError:
+				self.fail(msg = "%r => ? != %r" % (args, result))
+	
 	def testNot(self):
-		self._testTransf(combine.Not(ident), self.failTestCases)
-		self._testTransf(combine.Not(fail), self.identTestCases)
+		func = lambda x: not x
+		self._testCombination(combine.Not, 1, func)
 	
 	def testTry(self):
-		self._testTransf(combine.Try(ident), self.identTestCases)
-		self._testTransf(combine.Try(fail), self.identTestCases)
+		func = lambda x: x or 1
+		self._testCombination(combine._Try, 1, func)
+		self._testCombination(combine.Try, 1, func)
 
 	def testChoice(self):
-		self._testTransf(combine.Choice(ident, ident), self.identTestCases)
-		self._testTransf(combine.Choice(ident, fail), self.identTestCases)
-		self._testTransf(combine.Choice(fail, ident), self.identTestCases)
-		self._testTransf(combine.Choice(fail, fail), self.failTestCases)
+		func = lambda x, y: x or y
+		self._testCombination(combine._Choice, 2, func)
+		self._testCombination(combine.Choice, 2, func)
 		
 	def testComposition(self):
-		self._testTransf(combine.Composition(ident, ident), self.identTestCases)
-		self._testTransf(combine.Composition(ident, fail), self.failTestCases)
-		self._testTransf(combine.Composition(fail, ident), self.failTestCases)
-		self._testTransf(combine.Composition(fail, fail), self.failTestCases)
+		func = lambda x, y: x and y and max(x, y) or 0
+		self._testCombination(combine._Composition, 2, func)
+		self._testCombination(combine.Composition, 2, func)
+
+	def testGuardedChoice(self):
+		func = lambda x, y, z: (x and y and max(x, y) or 0) or (not x and z)
+		self._testCombination(combine.GuardedChoice, 3, func)
+
+	def testIfThen(self):
+		func = lambda x, y: (x and y) or (not x)
+		self._testCombination(combine.IfThen, 2, func)
+		
+	def testIfThenElse(self):
+		func = lambda x, y, z: (x and y) or (not x and z)
+		self._testCombination(combine.IfThenElse, 3, func)
 
 
 class TestMatch(TestMixin, unittest.TestCase):
@@ -301,6 +363,23 @@ class TestTraverse(TestMixin, unittest.TestCase):
 	# TODO: testInnerMost
 
 
+class TestProject(TestMixin, unittest.TestCase):
+
+	fetchTestCases = (
+		[ident, fail, Rule('X(*a)', 'Y(*a)')],
+		{
+			'[]': ['FAILURE', 'FAILURE', 'FAILURE'],
+			'[X]': ['X', 'FAILURE', 'Y'],
+			'[X,A]': ['X', 'FAILURE', 'Y'],
+			'[A,X]': ['A', 'FAILURE', 'Y'],
+			'[X(1),X(2)]': ['X(1)', 'FAILURE', 'Y(1)'],
+		}
+	)
+	
+	def testFetch(self):
+		self._testMetaTransf(project.Fetch, self.fetchTestCases)
+	
+
 class TestUnify(TestMixin, unittest.TestCase):
 
 	foldrTestCases = (
@@ -338,6 +417,57 @@ class TestUnify(TestMixin, unittest.TestCase):
 			self.collectAllTestCases
 		)
 	
+
+class TestAnno(TestMixin, unittest.TestCase):
+
+	def _testAnnoTransf(self, Transf, testCases):
+		for input, label, values, output in testCases:
+			transf = Transf(label, *map(build.Pattern, values))
+			self._testTransf(transf, [(input, output)])
+		
+	setTestCases = (
+		('X', "A", ['1'], 'X{A(1)}'),
+		('X{B(2)}', "A", ['1'], 'X{A(1),B(2)}'),
+		('X{A(1)}', "A", ['2'], 'X{A(2)}'),
+		('X{A(1),B(2)}', "A", ['2'], 'X{A(2),B(2)}'),
+		('X{B(1),A(2)}', "A", ['1'], 'X{B(1),A(1)}'),
+	)
+
+	def testSet(self):
+		self._testAnnoTransf(annotation.Set, self.setTestCases)
+
+	updateTestCases = (
+		('X', "A", ['1'], 'FAILURE'),
+		('X{B(2)}', "A", ['1'], 'FAILURE'),
+		('X{A(1)}', "A", ['2'], 'X{A(2)}'),
+		('X{A(1),B(2)}', "A", ['2'], 'X{A(2),B(2)}'),
+		('X{B(1),A(2)}', "A", ['1'], 'X{B(1),A(1)}'),
+	)
+
+	def testUpdate(self):
+		self._testAnnoTransf(annotation.Update, self.updateTestCases)
+
+	getTestCases = (
+		('X{A(1)}', "A", [], '1'),
+		('X{A(1),B(2)}', "A", [], '1'),
+		('X{B(1),A(2)}', "A", [], '2'),
+		('X', "A", [], 'FAILURE'),
+	)
+
+	def testGet(self):
+		self._testAnnoTransf(annotation.Get, self.getTestCases)
+
+	delTestCases = (
+		('X', "A", [], 'X'),
+		('X{B(2)}', "A", [], 'X{B(2)}'),
+		('X{A(1)}', "A", [], 'X'),
+		('X{A(1),B(2)}', "A", [], 'X{B(2)}'),
+		('X{B(1),A(2)}', "A", [], 'X{B(1)}'),
+	)
+
+	def testDel(self):
+		self._testAnnoTransf(annotation.Del, self.delTestCases)
+
 
 class TestArith(TestMixin, unittest.TestCase):
 

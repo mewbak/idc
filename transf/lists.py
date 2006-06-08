@@ -1,10 +1,15 @@
-'''List manipulation transformations.'''
+'''List manipulation transformations.
+
+See also U{http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-unstable-latest/manual/chunk-chapter/library-lists.html}.
+'''
 
 
 from transf import exception
 from transf import base
 from transf import combine
+from transf import match
 from transf import build
+from transf import project
 from transf import unify
 
 

@@ -16,7 +16,10 @@ class Term(base.Transformation):
 
 	def __init__(self, term):
 		base.Transformation.__init__(self)
-		self.term = term
+		if isinstance(term, basestring):
+			self.term = _factory.parse(term)
+		else:
+			self.term = term
 	
 	def apply(self, term, context):
 		return self.term

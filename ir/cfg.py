@@ -50,7 +50,7 @@ matchStmt = match.Appl(matchStmtName, base.ident)
 #######################################################################
 # Statements IDs
 
-stmtIdAnno = build.Str('StmtId')
+stmtIdAnno = 'StmtId'
 
 getStmtId = annotation.Get(stmtIdAnno)
 SetStmtId = lambda id: annotation.Set(stmtIdAnno, id)
@@ -61,11 +61,10 @@ MarkStmtsIds = lambda: traverse.TopDown(combine.Try(matchStmt & SetStmtId(Counte
 #######################################################################
 # Statements Flow
 
-CtrlFlowAnno = build.Str('CtrlFlow')
+ctrlFlowAnno = 'CtrlFlow'
 
-getCtrlFlow = annotation.Get(CtrlFlowAnno)
-SetCtrlFlow = lambda flows: annotation.Set(CtrlFlowAnno, flows)
-SetCtrlFlows = lambda flows: SetCtrlFlow(flows & traverse.Map(getStmtId))
+getCtrlFlow = annotation.Get(ctrlFlowAnno)
+SetCtrlFlow = lambda flows: annotation.Set(ctrlFlowAnno, flows)
 
 
 #######################################################################
@@ -84,7 +83,7 @@ stmtFlow = parse.Rule('''
 |	Ret(*)-> [retn]
 ''')
 
-markStmtFlow = SetCtrlFlows(stmtFlow)
+markStmtFlow = SetCtrlFlow(stmtFlow & traverse.Map(getStmtId))
 
 
 markStmtFlow = ir.traverse.Stmt(
@@ -131,7 +130,7 @@ markStmtsFlow.subject = parse.Transf('''
 		>
 ''')"""
 
-endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetCtrlFlows(build.nil)
+endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetCtrlFlow(build.nil)
 
 markModuleFlow \
 	= scope.With(
@@ -206,14 +205,16 @@ makeGraph = build._.Graph(makeNodes)
 #######################################################################
 # Graph Simplification
 
-CountSrcs = lambda id: unify.Count(match._.Edge(id, base.ident))
-CountDsts = lambda id: unify.Count(match._.Edge(base.ident, id))
-
 replaceStmtFlow = \
 	combine.IfThenElse(
 		getStmtId & match._.src,
-		annotation.Del(stmtIdAnno) & annotation.Del(CtrlFlowAnno),
-		SetCtrlFlow(getCtrlFlow & traverse.Map(combine.Try(match._.src & build._.dst))),
+		annotation.Del(stmtIdAnno) & annotation.Del(ctrlFlowAnno),
+		annotation.Update(
+			ctrlFlowAnno, 
+			traverse.Map(
+				combine.Try(match._.src & build._.dst)
+			),
+		)
 	)
 
 replaceStmtFlow = traverse.BottomUp(combine.Try(replaceStmtFlow))
@@ -299,7 +300,7 @@ if __name__ == '__main__':
 		term = factory.readFromTextFile(file(arg, 'rt'))
 
 		term = MarkStmtsIds() (term)
-		#print term
+		print term
 		term = markFlow (term)
 		print term
 		print

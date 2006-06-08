@@ -47,6 +47,13 @@ def Nth(n):
 		n = head
 
 
+def Fetch(operand):
+	from transf import debug
+	fetch = base.Proxy()
+	fetch.subject = head & operand | tail & fetch
+	return fetch
+
+	
 class Name(base.Transformation):
 	
 	def apply(self, term, context):
@@ -79,4 +86,12 @@ class SubTerms(base.Transformation):
 		return term.factory.makeNil()
 
 subterms = SubTerms()
+
+
+class Annos(base.Transformation):
+	
+	def apply(self, term, context):
+		return term.annotations
+
+annos = Annos()
 

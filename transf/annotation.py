@@ -1,64 +1,49 @@
-'''Annotation transformations.'''
+'''High-level annotation transformations.'''
 
 
 from transf import exception
 from transf import base
+from transf import scope
+from transf import combine
+from transf import match
+from transf import build
+from transf import traverse
+from transf import project
 
 
-class Set(base.Transformation):
-	
-	def __init__(self, label, value):
-		base.Transformation.__init__(self)
-		self.label = label
-		self.value = value
-		
-	def apply(self, term, context):
-		label = self.label.apply(term, context)
-		label = term.factory.makeAppl(
-			label, 
-			term.factory.makeList([term.factory.makeWildcard()])
+def Set(label, *values):
+	annos_var = build.Var('annos')
+	return scope.With(
+		traverse.Annos(
+			traverse.One(traverse.Appl(match.Str(label), annos_var))
+			| build.Cons(build.Appl(build.Str(label), annos_var), base.ident)
+		),
+		annos = build.List(values)
+	)
+
+
+def Update(label, *values):
+	values = traverse.List(values)
+	return traverse.Annos(
+		traverse.One(traverse.Appl(match.Str(label), values))
+	)
+
+
+def Get(label):
+	return project.annos \
+		& project.Fetch(match.Appl(match.Str(label), base.ident)) \
+		& project.args \
+		& combine.IfThen(
+			match.Cons(base.ident, match.nil), 
+			project.head
 		)
-		value = self.value.apply(term, context)
-		value = label.make(value)
-		return term.setAnnotation(label, value)
-		
 
-class Get(base.Transformation):
-	
-	def __init__(self, label):
-		base.Transformation.__init__(self)
-		self.label = label
-		
-	def apply(self, term, context):
-		label = self.label.apply(term, context)
-		label = term.factory.makeAppl(
-			label, 
-			term.factory.makeList([term.factory.makeWildcard()])
+
+def Del(label):
+	return traverse.Annos(
+		combine.Try(
+			traverse.Filter(
+				combine.Not(match.Appl(match.Str(label), base.ident))
+			)
 		)
-		try:
-			value = term.getAnnotation(label)
-			value = value.args.head
-			return value
-		except ValueError:
-			raise exception.Failure
-
-
-class Del(base.Transformation):
-	
-	def __init__(self, label):
-		base.Transformation.__init__(self)
-		self.label = label
-		
-	def apply(self, term, context):
-		label = self.label.apply(term, context)
-		label = term.factory.makeAppl(
-			label, 
-			term.factory.makeList([term.factory.makeWildcard()])
-		)
-		try:
-			value = term.removeAnnotation(label)
-			return value
-		except ValueError:
-			raise exception.Failure
-		
-
+	)

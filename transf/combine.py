@@ -116,15 +116,33 @@ class GuardedChoice(Ternary):
 	
 	def apply(self, term, context):
 		try:
-			result = self.operand1.apply(term, context)
+			term = self.operand1.apply(term, context)
 		except exception.Failure:
 			return self.operand3.apply(term, context)
 		else:
-			return self.operand2.apply(result, context)
+			return self.operand2.apply(term, context)
 
 
-def IfThenElse(cond, true, false):
-	return GuardedChoice(Where(cond), true, false)
+class IfThen(Binary):
+	
+	def apply(self, term, context):
+		try:
+			self.loperand.apply(term, context)
+		except exception.Failure:
+			return term
+		else:
+			return self.roperand.apply(term, context)
+
+
+class IfThenElse(Ternary):
+	
+	def apply(self, term, context):
+		try:
+			self.operand1.apply(term, context)
+		except exception.Failure:
+			return self.operand3.apply(term, context)
+		else:
+			return self.operand2.apply(term, context)
 
 
 def Repeat(operand):

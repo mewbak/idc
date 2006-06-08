@@ -133,7 +133,7 @@ class Annos(base.Transformation):
 
 
 def Anno(anno):
-	return Annos(traverse.One(anno))
+	return Annos(One(anno))
 
 
 _ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, match.Var, match.Pattern)
