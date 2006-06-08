@@ -202,80 +202,47 @@ class PrettyPrinter:
 		
 		# See http://www.difranco.net/cop2220/op-prec.htm
 		
-		: False 
-			{ $$ = 0 }		
-		| True 
-			{ $$ = 0 }		
-		| Lit(type, value:_lit)
-			{ $$ = 0 }		
-		| Sym(name:_str)
-			{ $$ = 0 }		
-		| Cast(type, expr)
-			{ $$ = 1 }		
-		| Addr(addr)
-			{ $$ = 1 }		
-		| Ref(expr)
-			{ $$ = 1 }		
-		| Unary(op, expr)
-			-> :unaryOpPrec(op)
-		| Binary(op, lexpr, rexpr)
-			-> :binaryOpPrec(op)
-		| Cond(cond, texpr, fexpr)
-			{ $$ = 13 }		
-		| Call(addr, args)
-			{ $$ = 0 }
+		: False { $$ = 0 }		
+		| True { $$ = 0 }		
+		| Lit(type, value:_lit) { $$ = 0 }		
+		| Sym(name:_str) { $$ = 0 }		
+		| Cast(type, expr) { $$ = 1 }		
+		| Addr(addr) { $$ = 1 }		
+		| Ref(expr) { $$ = 1 }		
+		| Unary(op, expr) -> :unaryOpPrec(op)
+		| Binary(op, lexpr, rexpr) -> :binaryOpPrec(op)
+		| Cond(cond, texpr, fexpr) { $$ = 13 }		
+		| Call(addr, args) { $$ = 0 }
 		| :_assertFail("bad expression term")
 		;
 
 	unaryOpPrec
-		: Not 
-			{ $$ = 1 }		
-		| BitNot(size) 
-			{ $$ = 1 }		
-		| Neg(type)
-			{ $$ = 1 }		
+		: Not { $$ = 1 }		
+		| BitNot(size) { $$ = 1 }		
+		| Neg(type) { $$ = 1 }		
 		;
 
 	binaryOpPrec
-		: And
-			{ $$ = 10 }		
-		| Or
-			{ $$ = 11 }		
+		: And { $$ = 10 }		
+		| Or { $$ = 11 }		
 
-		| BitAnd(size)
-			{ $$ = 7 }		
-		| BitOr(size)
-			{ $$ = 9 }		
-		| BitXor(size)
-			{ $$ = 8 }		
-		| LShift(size)
-			{ $$ = 4 }		
-		| RShift(size)
-			{ $$ = 4 }		
+		| BitAnd(size) { $$ = 7 }		
+		| BitOr(size) { $$ = 9 }		
+		| BitXor(size) { $$ = 8 }		
+		| LShift(size) { $$ = 4 }		
+		| RShift(size) { $$ = 4 }		
+		| Plus(type) { $$ = 3 }		
+		| Minus(type) { $$ = 3 }		
+		| Mult(type) { $$ = 2 }		
+		| Div(type) { $$ = 2 }		
+		| Mod(type) { $$ = 2 }		
 		
-		| Plus(type)
-			{ $$ = 3 }		
-		| Minus(type)
-			{ $$ = 3 }		
-		| Mult(type)
-			{ $$ = 2 }		
-		| Div(type)
-			{ $$ = 2 }		
-		| Mod(type)
-			{ $$ = 2 }		
-		
-		| Eq(type)
-			{ $$ = 6 }
-		| NotEq(type)
-			{ $$ = 6 }
-		| Lt(type)
-			{ $$ = 5 }
-		| LtEq(type)
-			{ $$ = 5 }
-		| Gt(type)
-			{ $$ = 5 }
-		| GtEq(type)
-			{ $$ = 5 }	
+		| Eq(type) { $$ = 6 }
+		| NotEq(type) { $$ = 6 }
+		| Lt(type) { $$ = 5 }
+		| LtEq(type) { $$ = 5 }
+		| Gt(type) { $$ = 5 }
+		| GtEq(type) { $$ = 5 }	
 		;
 
 	name

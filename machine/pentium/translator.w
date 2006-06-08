@@ -41,7 +41,7 @@ class Translator:
 	
 	stmt
 		: Asm("ret", [])
-			-> [Ret(Void, Sym(" "))]
+			-> [Ret(Void, NoExpr)]
 		| Asm(opcode:_str, operands:_list)
 			{
 				op = $opcode.getValue()

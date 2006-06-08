@@ -74,6 +74,8 @@ def Stmt(stmts = None, expr = None, type = None, Wrapper = None):
 		stmts = traverse.Map(stmt)
 		
 	stmt.subject = parse.Transf('''
+		~VarDef(<type>, _, <expr>) +
+		~FuncDef(<type>, _, _, <stmt>) +
 		~Assign(<type>, <expr>, <expr>) +
 		~Asm(_, <map(expr)>) +
 		~Block(<stmts>) +

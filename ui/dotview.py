@@ -9,7 +9,7 @@ import gtk.gdk
 
 
 DOT = 'dot'
-FORMAT = 'svg'
+FORMAT = 'png'
 
 
 class DotView(gtk.Window):

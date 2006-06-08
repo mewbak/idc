@@ -33,6 +33,7 @@ matchStmtName \
 	= match.Str('VarDef') \
 	| match.Str('FuncDef') \
 	| match.Str('Assign') \
+	| match.Str('Asm') \
 	| match.Str('If') \
 	| match.Str('While') \
 	| match.Str('Ret)') \
@@ -75,13 +76,21 @@ markStmtsFlow = base.Proxy()
 stmtFlow = parse.Rule('''
 	Assign(*) -> [next]
 |	Label(*) -> [next]
+|	Asm(*) -> [next]
 |	If(_, true, false) -> [true{Cond("True")}, false{Cond("False")}]
-|	While(_, stmt) -> [next, stmt]
+|	While(_, stmt) -> [next{Cond("False")}, stmt{Cond("True")}]
 |	NoStmt -> [next]
 |	Continue(*) -> [cont]
 |	Break(*) -> [brek]
 |	Ret(*)-> [retn]
+|	n(*) -> [next{Cond(n)}]
 ''')
+
+stmtChildNext = parse.Rule('''
+	While(_, _) -> <getStmtId>
+|	_ -> next
+''')
+
 
 markStmtFlow \
 	= SetCtrlFlow(
@@ -92,7 +101,7 @@ markStmtFlow \
 
 markStmtFlow = ir.traverse.Stmt(
 	stmts = markStmtsFlow,
-	Wrapper = ir.traverse.DOWN(markStmtFlow)
+	Wrapper = lambda x: markStmtFlow & scope.With(x, next=stmtChildNext)
 )
 
 markStmtsFlow.subject \
@@ -137,6 +146,10 @@ markStmtsFlow.subject = parse.Transf('''
 endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetCtrlFlow(build.nil)
 endOfModule = build.zero
 
+if 0:
+	markStmtFlow.subject = debug.Trace('markStmtFlow', markStmtFlow.subject)
+	markStmtsFlow.subject = debug.Trace('markStmtsFlow', markStmtsFlow.subject)
+
 markModuleFlow \
 	= scope.With(
 		ir.traverse.Module(stmts = markStmtsFlow),
@@ -158,25 +171,35 @@ makeNodeId = strings.ToStr()
 
 makeAttr = lambda name, value: build._.Attr(name, value)
 
-renderBox = base.Adaptor(lambda term, context: term.factory.makeStr(box.box2text(term)))
+renderBox \
+	= base.Adaptor(lambda term, context: term.factory.makeStr(box.box2text(term))) \
+	| build.Str("???")
 
-makeNodeLabel = debug.Dump() & parse.Rule('''
+makeNodeLabel = parse.Rule('''
 	Assign(*)
+		-> < pprint2.stmt; renderBox >
+|	Branch(*)
 		-> < pprint2.stmt; renderBox >
 |	Label(*)
 		-> < pprint2.stmt; renderBox >
+|	Asm(*)
+		-> < pprint2.stmt; renderBox >
 |	If(cond,_,_)
+		-> < <pprint2.expr> cond; renderBox >
+|	While(cond,_)
 		-> < <pprint2.expr> cond; renderBox >
 |	Ret(*)
 		-> < pprint2.stmt; renderBox >
 |	NoStmt
 		-> ""
-|	_ 
-		-> "..."
+|	n(*) 
+		-> n
 ''')
 
 makeNodeShape = parse.Rule('''
 	If(cond,_,_)
+		-> "diamond"
+|	While(cond,_)
 		-> "diamond"
 |	NoStmt
 		-> "point"
@@ -304,7 +327,6 @@ makeDot = parse.Rule(r'''
 				V( <<dotEdges> nodes> ),
 				H([ "}" ])
 			])
-
 ''')
 
 
@@ -319,15 +341,19 @@ if __name__ == '__main__':
 	for arg in sys.argv[1:]:
 		term = factory.readFromTextFile(file(arg, 'rt'))
 
+		#print ( pprint2.module  )(term)
+		#print ( pprint2.module & renderBox )(term)
+
 		term = MarkStmtsIds() (term)
-		print term
+		#print term
+		#term = (debug.Traceback(markFlow)) (term)
 		term = markFlow (term)
-		print term
-		print
+		#print term
+		#print
 		
 		print "*********"
 		term = simplifyFlow (term)
-		print term
+		#print term
 		print "*********"
 		#sys.exit(0)
 		
