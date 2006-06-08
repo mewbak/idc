@@ -532,6 +532,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		'where( !"," => sep ); id',
 		'{ sep : where( !"," => sep ); id }',
 		'~C(1, <id>)',
+		'!1{A,B,C}',
 	]
 	
 	def testAST(self):

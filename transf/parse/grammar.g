@@ -177,6 +177,7 @@ tokens {
 	APPL;
 	NIL;
 	CONS;
+	ANNOS;
 	CALL;
 	RULE;
 	SCOPE;
@@ -273,7 +274,7 @@ debug_term
 	;
 */
 
-term
+term_atom
 	: INT
 	| REAL
 	| STR
@@ -296,6 +297,13 @@ term
 	| WILDCARD ( term_args { ## = #(#[APPL,"APPL"], ##) } )?
 	| LANGLE! transf RANGLE!
 		{ ## = #(#[TRANSF,"TRANSF"], ##) }
+	;
+
+term
+	: term_atom 
+		( LCURLY! term_list RCURLY!
+			{ ## = #(#[ANNOS,"ANNOS"], ##) }
+		)?
 	;
 
 term_implicit_wildcard
@@ -336,6 +344,10 @@ id_list
 
 
 class compiler extends TreeParser;
+
+options {
+	defaultErrorHandler = false;
+}
 
 {
     def bind_transf_name(self, name):
@@ -447,6 +459,8 @@ match_term returns [ret]
 			{ ret = transf.combine.composition(p, ret) }
 		)?
 	  )
+	| #( ANNOS t=match_term a=match_term )
+		{ ret = t & transf.match.Annos(a) }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;
@@ -457,9 +471,7 @@ collect_transf_vars[vars]
 	;
 
 collect_term_vars[vars]
-	: INT 
-	| REAL 
-	| STR 
+	: INT | REAL | STR 
 	| NIL
 	| #( CONS collect_term_vars[vars] collect_term_vars[vars] )
 	| #( APPL collect_term_vars[vars] collect_term_vars[vars] )
@@ -470,6 +482,7 @@ collect_term_vars[vars]
             if name not in vars:
                 vars.append(name)
         }
+	| #( ANNOS collect_term_vars[vars] collect_term_vars[vars] )
 	| TRANSF
 	;
 
@@ -490,16 +503,36 @@ build_term returns [ret]
 		{ ret = transf.base.ident }
 	| v:VAR 
 		{ ret = transf.build.Var(#v.getText()) }
+	| #( ANNOS t=build_term a=build_term )
+		{ ret = t & transf.build.Annos(a) }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;
 
 traverse_term returns [ret]
-	: #( CONS h=traverse_term t=traverse_term )
+	: i:INT 
+		{ ret = transf.match.Int(int(#i.getText())) }
+	| r:REAL 
+		{ ret = transf.match.Real(float(#r.getText())) }
+	| s:STR 
+		{ ret = transf.match.Str(#s.getText()) }
+	| NIL
+		{ ret = transf.match.nil }
+	| #( CONS h=traverse_term t=traverse_term )
 		{ ret = transf.traverse.Cons(h, t) }
 	| #( APPL n=traverse_term a=traverse_term )
 		{ ret = transf.traverse.Appl(n, a) }
-	| o:.
-		{ ret = self.match_term(#o) }
+	| w:WILDCARD 
+		{ ret = transf.base.ident }
+	| #( v:VAR // TODO: handle sub-patterns
+		{ ret = transf.match.Var(#v.getText()) }
+		( p=match_term
+			{ ret = transf.combine.composition(p, ret) }
+		)?
+	  )
+	| #( ANNOS t=traverse_term a=traverse_term )
+		{ ret = t & transf.traverse.Annos(a) }
+	| #( TRANSF txn=transf )
+		{ ret = txn }
 	;
 

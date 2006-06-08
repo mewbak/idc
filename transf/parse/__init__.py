@@ -1,12 +1,6 @@
 '''Term parsing.'''
 
 
-__all__ = [
-	'Transf',
-	'Rule',
-]
-
-
 import sys
 
 try:
@@ -17,6 +11,13 @@ except ImportError:
 from transf.parse.lexer import Lexer
 from transf.parse.parser import Parser
 from transf.parse.compiler import Walker
+
+
+__all__ = [
+	'Transf',
+	'Rule',
+]
+
 
 def _parser(buf):
 	'''Generate a parser for a string buffer.'''
