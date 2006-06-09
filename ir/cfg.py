@@ -7,7 +7,7 @@ import box
 from transf import *
 
 import ir.traverse
-from ir import pprint2
+import ir.pprint
 
 
 
@@ -191,25 +191,15 @@ renderBox \
 	| build.Str("???")
 
 makeNodeLabel = parse.Rule('''
-	Assign(*)
-		-> < pprint2.stmt; renderBox >
-|	Branch(*)
-		-> < pprint2.stmt; renderBox >
-|	Label(*)
-		-> < pprint2.stmt; renderBox >
-|	Asm(*)
-		-> < pprint2.stmt; renderBox >
-|	If(cond,_,_)
-		-> < <pprint2.expr> cond; renderBox >
+	If(cond,_,_)
+		-> <<ir.pprint.expr>cond>
 |	While(cond,_)
-		-> < <pprint2.expr> cond; renderBox >
-|	Ret(*)
-		-> < pprint2.stmt; renderBox >
-|	NoStmt
-		-> ""
+		-> <<ir.pprint.expr>cond>
+|	_
+		-> <ir.pprint.stmtKern>
 |	n(*) 
 		-> n
-''')
+''') & renderBox
 
 makeNodeShape = parse.Rule('''
 	If(cond,_,_)

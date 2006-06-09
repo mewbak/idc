@@ -5,7 +5,7 @@ import unittest
 
 import aterm.factory
 import box
-import ir
+import ir.pprint
 
 
 class TestCase(unittest.TestCase):

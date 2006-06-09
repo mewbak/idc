@@ -66,11 +66,8 @@ tests: \
 test-%: all
 	$(PYTHON) tests/test_$*.py $(TESTOPTS)
 
-test-aterm: all
-	$(PYTHON) aterm/_tests.py $(TESTOPTS)
-
-test-transf: all
-	$(PYTHON) transf/_tests.py $(TESTOPTS)
+test-%: all
+	$(PYTHON) $*/_tests.py $(TESTOPTS)
 
 .PHONY: test-%
 

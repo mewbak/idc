@@ -196,76 +196,76 @@ expr = ir.traverse.Expr(
 
 stmt = base.Proxy()
 
-stmtUp = parse.Rule('''
+stmtKern = Path(parse.Rule('''
 	Assign(_, dst, src)
-		-> H([ <<expr>dst>, " ", <<op>"=">, " ", <<expr>src>, ";" ])
-|	If(cond, true, NoStmt)
+		-> H([ <<expr>dst>, " ", <<op>"=">, " ", <<expr>src> ])
+|	If(cond, _, _)
+		-> H([ <<kw>"if">, "(", <<expr>cond>, ")" ])
+|	While(cond, _)
+		-> H([ <<kw>"while">, "(", <<expr>cond>, ")" ])
+|	FuncDef(type, name, args, body)
+		-> H([ <<type>type>, " ", name, "(", <<commas> args>, ")" ])
+|	Label(name)
+		-> H([ name, ":" ])
+|	Branch(label)
+		-> H([ <<kw>"goto">, " ", <<expr>label> ])
+|	Ret(_, NoExpr)
+		-> H([ <<kw>"return"> ])
+|	Ret(_, value)
+		-> H([ <<kw>"return">, " ", <<expr>value> ])
+|	NoStmt
+		-> ""
+|	Asm(opcode, operands) 
+		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<map(expr)>operands>]>, ")" ])
+'''))
+
+stmt.subject = Path(parse.Rule('''
+	Assign(*)
+		-> H([ <stmtKern>, ";" ])
+|	If(_, true, NoStmt)
 		-> V([
-			H([ <<kw>"if">, "(", <<expr>cond>, ")" ]),
+			<stmtKern>,
 				I( <<stmt>true> )
 		])
-|	If(cond, true, false)
+|	If(_, true, false)
 		-> V([
-			H([ <<kw>"if">, "(", <<expr>cond>, ")" ]),
+			<stmtKern>,
 				I( <<stmt>true> ),
 			H([ <<kw>"else"> ]),
 				I( <<stmt>false> )
 		])
-|	While(cond, body)
+|	While(_, body)
 		-> V([
-			H([ <<kw>"while">, "(", <<expr>cond>, ")" ]),
-			I( <<stmt>body> )
+			<stmtKern>,
+				I( <<stmt>body> )
 		])
 |	Block( stmts )
 		-> V([
 			D("{"), 
 				V( <<map(stmt)>stmts> ), 
-			D("}") 
+			D("}")
 		])
-|	FuncDef(type, name, args, body)
+|	FuncDef(_, _, _, body)
 		-> D(V([
-			H([ <<type>type>, " ", name, "(", <<commas> args>, ")" ]),
+			<stmtKern>,
 				I( <<stmt>body> )
 		]))
-|	Label(name)
-		-> D(H([ name, ":" ]))
-|	Branch(label)
-		-> H([ <<kw>"goto">, " ", <<expr>label>, ";" ])
-|	Ret(_, NoExpr)
-		-> H([ <<kw>"return">, ";" ])
-|	Ret(_, value)
-		-> H([ <<kw>"return">, " ", <<expr>value>, ";" ])
-|	NoStmt
-		-> ";"
-|	Asm(opcode, operands) 
-		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<map(expr)>operands>]>, ")", ";" ])
-''')
+|	Label(*)
+		-> D( <stmtKern> )
+|	_
+		-> H([ <stmtKern>, ";" ])
+'''))
 
-stmt.subject = parse.Transf('''
-	Path(
-	stmtUp
-	)
-''')
-
-moduleUp = parse.Rule('''
-	Module(stmts) -> V([ I(V( stmts )) ])
-''')
-
-
-module = ir.traverse.Module(
-	stmt = stmt,
-	Wrapper = UP(moduleUp)
-)
+module = Path(parse.Rule('''
+	Module(stmts)
+		-> V([ 
+			I(V( <<map(stmt)>stmts> )) 
+		])
+'''))
 
 
 #######################################################################
-# Traversers
-
-if 0:
-	oper = debug.Trace('oper', oper)
-	exprUp = debug.Trace('exprUp', exprUp)
-	stmtUp = debug.Trace('stmtUp', stmtUp)
-	moduleUp = debug.Trace('moduleUp', moduleUp)
+# Test
 
 
 if __name__ == '__main__':
