@@ -11,6 +11,30 @@ from transf import base
 from transf import combine
 
 
+#############################################################################
+# Automatically start the debugger on an exception.
+# http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/65287
+
+def excepthook(type, value, tb):
+
+	if hasattr(sys, 'ps1') \
+	or not (sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty()) \
+	or type == SyntaxError or type == KeyboardInterrupt:
+		# we are in interactive mode or we don't have a tty-like
+		# device, so we call the default hook
+		sys.__excepthook__(type, value, tb)
+	else:
+		import traceback, pdb
+		# we are NOT in interactive mode, print the exception...
+		traceback.print_exception(type, value, tb)
+		print
+		# ...then start the debugger in post-mortem mode.
+		pdb.pm()
+
+#sys.excepthook = excepthook
+
+
+
 def dump_term(log, term):
 	log.write("Term:\n")
 	log.write("\n\t")
@@ -26,7 +50,7 @@ def dump_context(log, context):
 	for name, value in context.iteritems():
 		log.write("\t%s = " % name)
 		try:
-			value.writeToTextFile(value)
+			value.writeToTextFile(log)
 		except:
 			log.write('<error>')
 		log.write("\n")
