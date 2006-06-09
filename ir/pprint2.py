@@ -17,6 +17,9 @@ from box import sym
 from box import commas
 
 
+#######################################################################
+# Types
+
 sign = parse.Rule('''
 	Signed -> <<kw> "signed">
 |	Unsigned -> <<kw> "unsigned">
@@ -50,11 +53,58 @@ typeUp = parse.Rule('''
 |	_ -> "???"
 ''')
 
+
+#######################################################################
+# Operator precendence.
+#
+# See http://www.difranco.net/cop2220/op-prec.htm
+
+opPrec = parse.Rule('''
+	Not(*) -> 1
+|	BitNot(*) -> 1
+|	Neg(*) -> 1
+|	And(*) -> 10 		
+|	Or(*) -> 11 		
+|	BitAnd(*) -> 7 		
+|	BitOr(*) -> 9 		
+|	BitXor(*) -> 8 		
+|	LShift(*) -> 4 		
+|	RShift(*) -> 4 		
+|	Plus(*) -> 3 		
+|	Minus(*) -> 3 		
+|	Mult(*) -> 2 		
+|	Div(*) -> 2 		
+|	Mod(*) -> 2 		
+|	Eq(*) -> 6 
+|	NotEq(*) -> 6 
+|	Lt(*) -> 5 
+|	LtEq(*) -> 5 
+|	Gt(*) -> 5 
+|	GtEq(*) -> 5 	
+''')
+
+exprPrec = parse.Rule('''
+	False -> 0
+|	True -> 0
+|	Lit(_, _) -> 0
+|	Sym(_) -> 0
+|	Cast(_, _) -> 1
+|	Addr(_) -> 1
+|	Ref(_) -> 1
+|	Unary(op, _) -> <<opPrec>op>
+|	Binary(op, _, _) -> <<opPrec>op>
+|	Cond(_, _, _) -> 13
+|	Call(_, _) -> 0
+''')
+
+
+#######################################################################
+# Expressions
+
 oper = parse.Rule('''
 	Not -> "!"
-|	BitNot(size) -> "~"
-|	Neg(type) -> "-"
-
+|	BitNot(_) -> "~"
+|	Neg(_) -> "-"
 |	And -> "&&"
 |	Or -> "||"
 |	BitAnd(_) -> "&"
@@ -91,22 +141,39 @@ exprUp = parse.Rule('''
 |	Binary(op, lexpr, rexpr)
 		-> H([ lexpr, " ", op, " ", rexpr ])
 |	Cond(cond, texpr, fexpr)
-		-> H([ cond, " ", <<op> "?">, " ", texpr, " ", <<op> ":">, " ", fexpr ])
+		-> H([ cond, " ", <<op>"?">, " ", texpr, " ", <<op>":">, " ", fexpr ])
 |	Call(addr, args)
 		-> H([ addr, "(", <<commas> args>, ")" ])
 |	Addr(addr)
-		-> H([ <<op> "&">, addr ])
+		-> H([ <<op>"&">, addr ])
 |	Ref(expr)
-		-> H([ <<op> "*">, expr ])
+		-> H([ <<op>"*">, expr ])
 ''')
 
-exprUp = parse.Transf('''
-	!H([ "(", <exprUp>, ")" ])
-''')
+def Expr(expr):
+	return parse.Transf('''
+		let 
+			pprec = !prec + !99, # parent precedence
+			prec = exprPrec
+		in
+			expr ;
+			exprUp ;
+			if gt(!prec, !pprec) then
+				!H([ "(", <id>, ")" ])
+				#!H([ "(GT:", <id>, ")" ])
+			else
+				id
+				#!H([ "(LT:", <id>, ")" ])
+			end
+		end
+	''')
+
+#######################################################################
+# Statements
 
 stmtUp = parse.Rule('''
 	Assign(type, dexpr, sexpr)
-		-> H([ dexpr, " ", <<op> "=">, " ", sexpr, ";" ])
+		-> H([ dexpr, " ", <<op>"=">, " ", sexpr, ";" ])
 |	Asm(opcode, operands) 
 		-> H([ <<kw>"asm">, "(", <<commas> [<<lit> opcode>, *operands]>, ")", ";" ])
 |	If(cond, true, NoStmt)
@@ -149,6 +216,10 @@ moduleUp = parse.Rule('''
 	Module(stmts) -> V([ I(V( stmts )) ])
 ''')
 
+
+#######################################################################
+# Traversers
+
 if 0:
 	oper = debug.Trace('oper', oper)
 	exprUp = debug.Trace('exprUp', exprUp)
@@ -163,7 +234,7 @@ type = ir.traverse.Type(
 expr = ir.traverse.Expr(
 	type = type, 
 	op = oper,
-	Wrapper = UP(exprUp)
+	Wrapper = Expr
 )
 
 stmt = ir.traverse.Stmt(
