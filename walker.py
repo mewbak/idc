@@ -1,15 +1,14 @@
 '''Base classes for term walker construction.
 
-A walker is a class aimed to process/transform a aterm as it traverses the tree.
+A term walker is a class aimed to process/transform a term as it traverses the
+term. It is an extension of the Visitor design pattern.
 
 An aterm walker's interface is very liberal: is up to the caller determine which
-method to call and which arguments to pass, and the return is not necessarily an
-aterm. Nevertheless, it is usually expected that the first argument is the
-target term, and that a Failure exception can be raised if the transformation is
-not successful.
+method to call and which arguments to pass, and the return value is not
+necessarily a term.
 
 As a walker may change its context as it traverses the tree, sucessive calls to
-the same walker method's do not necessarily yield the same results.
+the same walker methods do not necessarily yield the same results.
 '''
 
 
@@ -17,24 +16,131 @@ import sys
 
 import aterm
 
-from transf.exception import Failure
 
+def _getIntHandler(walker, term, prefix):
+	return getattr(walker, prefix + 'Int'), (term.value,)
+		
+def _getRealHandler(walker, term, prefix):
+	return getattr(walker, prefix + 'Real'), (term.value,)
 
-class Walker:
-	'''Aterm walker base class.'''
+def _getStrHandler(walker, term, prefix):
+	return getattr(walker, prefix + 'Str'), (term.value,)
 
-	def __init__(self, factory):
-		# TODO: eliminate this
-		self.factory = factory
+def _getLitHandler(walker, term, prefix):
+	return getattr(walker, prefix + 'Lit'), (term.value,)
+
+def _getListHandler(walker, term, prefix):
+	try:
+		if term:
+			return getattr(walker, prefix + 'Cons'), (term.head, term.tail)
+		else:
+			return getattr(walker, prefix + 'Nil'), ()
+	except AttributeError:
+		return _getHandler(walker, prefix + 'List'), (term,)
+
+def _getApplHandler(walker, term, prefix):
+	try:
+		return getattr(walker, prefix + 'Appl' + term.name.value), tuple(term.args)
+	except AttributeError:
+		return getattr(walker, prefix + 'Appl'), (term.name, term.args)
+
+def _getTermHandler(walker, term, prefix):
+	return getattr(walker, prefix + 'Term'), (term,)
+
+_getHandlersTable = {
+	aterm.types.INT: (_getIntHandler, _getLitHandler, _getTermHandler),
+	aterm.types.REAL: (_getRealHandler, _getLitHandler, _getTermHandler),
+	aterm.types.STR: (_getStrHandler, _getLitHandler, _getTermHandler),
+	aterm.types.LIST: (_getListHandler, _getTermHandler),
+	aterm.types.APPL: (_getApplHandler, _getTermHandler),
+}
+
+def _getHandler(walker, term, prefix):
+	try:
+		hgs = _getHandlersTable[term.type]
+	except KeyError:
+		hgs = (_getTermHandler,)
 	
-	#def __call__(self, root):
-	#	'''Apply this walker transformation to the root aterm.  Since a walker may
-	#	store context, this method should be called only once in the object's
-	#	lifetime. May not be implemented for every walkers.'''
-	#	
-	#	raise NotImplementedError
+	for hg in hgs:
+		try:
+			return hg(walker, term, prefix)
+		except AttributeError:
+			pass
+	raise AttributeError
+	
 
+class Walker(object):
+	'''Base class for term walkers.'''
+
+	def __init__(self):
+		pass
+
+	# TODO: handle annotations?
+	# TODO: pass the term arg?
+	
+	def _dispatch(self, term, prefix, **kargs):
+		'''Dispatch the term to a method with a name starting with the given 
+		prefix, and a suffix determined from the term.
+		
+		Suffixes are (listed by the order their are tried):
+		- Int for an integer term
+		- Real for an integer term
+		- Str for a string term
+		- Lit for a generic literal term
+		- Nil for a nil list term
+		- Cons for a cons list term
+		- List for a generic list term
+		- ApplName for an Name application term
+		- Appl for a generic application term
+		- Term for a generic term
+		'''
+		
+		try:
+			method, args = _getHandler(self, term, prefix)
+		except AttributeError:
+			raise ValueError("unexpected term", term)
+		else:
+			return method(*args, **kargs)
+
+	def _int(self, term):
+		'''Get the value of an integer term.'''
+		if term.type != aterm.types.INT:
+			raise TypeError("not an integer term", term)
+		return term.value
+	
+	def _real(self, term):
+		'''Get the value of a real term.'''
+		if term.type != aterm.types.REAL:
+			raise TypeError("not a real term", term)
+		return term.value
+	
+	def _str(self, term):
+		'''Get the value of a string term.'''
+		if term.type != aterm.types.STR:
+			raise TypeError("not a string term", term)
+		return term.value
+	
+	def _lit(self, term):
+		'''Get the value of a literal term.'''
+		if not term.type in (aterm.types.INT, aterm.types.REAL, aterm.types.STR):
+			raise TypeError("not a literal term", term)
+		return term.value
+	
+	def _obj(self, term):
+		'''Convert the term to a python object.'''
+		return self._dispatch(term, '_obj')
+
+	def _objLit(self, value):
+		return value
+	
+	def _objList(self, terms):
+		return map(self._obj, terms)
+
+	# XXX: is this actually useful?
 	def _match(self, term, pattern):
+		'''Match the term against the given pattern. Variables are stored in 
+		the caller's local namespace.
+		'''
 		match = term.rmatch(pattern)
 		if match:
 			caller = sys._getframe(1)
@@ -42,108 +148,6 @@ class Walker:
 			return True
 		else:
 			return False
-	
-	def _dispatchAppl(self, term, methodPrefix, **kargs):
-		if term.type != aterm.types.APPL:
-			raise ValueError('not an application term', term)
-		name = term.name
-		if name.type != aterm.types.STR:
-			raise ValueError('name not a string term', name)
-		methodName = methodPrefix + name.value
-		try:
-			method = getattr(self, methodName)
-		except AttributeError:
-			raise ValueError('unexpected name', name)
-		args = term.args
-		return method(*args, **kargs)
-	
-	def _fail(self, target, msg = None):
-		'''Signals a transformation failure, with an optional error message.'''
-		if msg is None:
-			msg = 'failed to transform term'
-		else:
-			msg = msg.getValue()
-		msg = '%s: %r' % (msg, target)
-		raise Failure(msg, target)
-	
-	def _assertFail(self, target, msg = None):
-		'''Signals an assertion failure, with an optional error message.'''
-		if msg is None:
-			msg = 'unexpected term'
-		else:
-			msg = msg.getValue()
-		msg = '%s: %r' % (msg, target)
-		raise AssertionError(msg)
-	
-	def _int(self, target):
-		'''Enforce the target is an integer term.'''
-		if target.getType() != aterm.types.INT:
-			raise Failure("not an integer term", target)
-		return target
-	
-	def _real(self, target):
-		'''Enforce the target is a real term.'''
-		if target.getType() != aterm.types.REAL:
-			raise Failure("not a real term", target)
-		return target
-	
-	def _str(self, target):
-		'''Enforce the target is a string term.'''
-		if target.getType() != aterm.types.STR:
-			raise Failure("not a string term", target)
-		return target
-	
-	def _lit(self, target):
-		'''Enforce the target to be a literal term.'''
-		if not target.getType() in (aterm.types.INT, aterm.types.REAL, aterm.types.STR):
-			raise Failure("not a literal term", target)
-		return target
-	
-	def _list(self, target):
-		'''Enforce the target is a list term.'''
-		if target.getType() != aterm.types.LIST:
-			raise Failure("not a list term", target)
-		return target
-	
-	def _appl(self, target):
-		'''Enforce the target is an application term.'''
-		if target.getType() != aterm.types.APPL:
-			raise Failure("not an application term", target)
-		return target
-	
-	def _map(self, target, func, *args, **kargs):
-		'''Applies the given function to every element in the target. The target must be
-		a list, and the result will also be a list.'''
-		if target.getType() != aterm.types.LIST:
-			raise TypeError('not a list term: %r' % target)
-		if target.isEmpty():
-			return target
-		return target.factory.makeCons(
-				func(target.getHead(), *args), 
-				self._map(target.getTail(), func, *args, **kargs),
-				target.getAnnotations()
-			)
 
-	def _cat(self, target, tail):
-		'''Concatenates two lists.'''
-		if target.getType() != aterm.types.LIST:
-			raise TypeError('not a list term: %r' % target)
-		if target.isEmpty():
-			return tail
-		return target.factory.makeCons(
-				target.getHead(), 
-				self._cat(target.getTail(), tail),
-				target.getAnnotations()
-			)
-
-	def _catMany(self, target):
-		'''Concatenates several lists.'''
-		if target.getType() != aterm.types.LIST:
-			raise TypeError('not a list term: %r' % target)
-		if target.isEmpty():
-			return target		
-		return self._cat(
-				target.getHead(),
-				self._catMany(target.getTail())
-			)
+	# TODO: implement methods for collecting terms?
 	

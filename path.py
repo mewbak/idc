@@ -4,7 +4,6 @@
 
 import aterm.factory
 import aterm.visitor
-import walker
 import transf
 
 

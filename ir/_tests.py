@@ -67,7 +67,7 @@ class TestCase(unittest.TestCase):
 				input = self.factory.parse(inputStr)
 			
 				boxes = getattr(ir.pprint, methodName)(input)
-				output = box.box2text(boxes)
+				output = box.stringify(boxes)
 				
 				self.failUnlessEqual(output, expectedOutput)
 

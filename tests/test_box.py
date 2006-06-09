@@ -34,7 +34,7 @@ class TestWriter(unittest.TestCase):
 		for inputStr, expectedOutput in self.box2TextTestCases:
 			input = self.factory.parse(inputStr)
 		
-			output = box.box2text(input)
+			output = box.stringify(input)
 			
 			self.failUnlessEqual(output, expectedOutput)
 
@@ -46,7 +46,7 @@ class TestWriter(unittest.TestCase):
 			input = self.factory.parse(inputStr)
 		
 			boxes = box.term2box(input)
-			output = box.box2text(boxes)
+			output = box.stringify(boxes)
 			
 			self.failUnlessEqual(output, expectedOutput)
 

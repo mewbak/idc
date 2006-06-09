@@ -31,16 +31,6 @@ all:
 .PHONY: default all
 
 
-# Aterm walker generation
-
-all: $(patsubst %.w,%.py,$(shell find -iname '*.w'))
-	
-%.py: %.w util/wc/wc.py util/wc/lexer.py util/wc/parser.py util/wc/compiler.py
-	$(PYTHON) util/wc/wc.py -o $@ $<
-
-tests/test_wc.py: tests/test_wc.w
-
-
 # SSL compilation
 
 all: ssl/pentium.py
@@ -57,8 +47,6 @@ tests: \
 	test-aterm \
 	test-transf \
 	test-path \
-	test-walker \
-	test-wc \
 	test-box \
 	test-ir \
 	test-refactoring
@@ -130,7 +118,7 @@ sweep:
 	@$(RM) $(shell find -iname '*.py[oc]')
 
 clean:
-	@$(RM) .deps.mak $(patsubst %.w,%.py,$(shell find -iname '*.w'))
+	@$(RM) .deps.mak
 
 .PHONY: clean
 

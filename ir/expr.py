@@ -3,7 +3,6 @@
 
 
 import aterm.terms
-import walker
 
 
 class Expr:

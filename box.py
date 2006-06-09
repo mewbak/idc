@@ -99,44 +99,39 @@ class Writer(walker.Walker):
 
 	NONE, VERT, HORIZ = range(3)
 	
-	def __init__(self, factory, formatter):
-		walker.Walker.__init__(self, factory)
+	def __init__(self, formatter):
+		walker.Walker.__init__(self)
 		self.formatter = formatter
 	
 	def write(self, box, mode = NONE):
-		if box.type == aterm.types.APPL:
-			self._dispatchAppl(box, "write", mode = mode)
-		elif box.type == aterm.types.STR:
-			self.writeS(box, mode)
-		else:
-			raise ValueError('bad box', box)
+		self._dispatch(box, 'write', mode = mode)
 	
-	def writeV(self, boxes, mode):
+	def writeApplV(self, boxes, mode):
 		if mode == self.HORIZ:
-			sys.stderr.write("warning: vbox inside hbox: %r\n" % boxes)
+			raise Warning('vbox inside hbox', boxes)
 		else:
 			mode = self.VERT
 		for box in boxes:
 			self.write(box, mode)
 	
-	def writeI(self, box, mode):
+	def writeApplI(self, box, mode):
 		self.formatter.indent()
 		self.write(box, mode)
 		self.formatter.dedent()
 	
-	def writeD(self, box, mode):
+	def writeApplD(self, box, mode):
 		self.formatter.dedent()
 		self.write(box, mode)
 		self.formatter.indent()
 	
-	def writeT(self, n, v, box, mode):
-		assert n.type == aterm.types.STR
-		assert v.type == aterm.types.STR
-		self.formatter.handle_tag_start(n.value, v.value)
+	def writeApplT(self, name, value, box, mode):
+		name = self._str(name)
+		value = self._str(value)
+		self.formatter.handle_tag_start(name, value)
 		self.write(box, mode)
-		self.formatter.handle_tag_end(n.value)
+		self.formatter.handle_tag_end(name)
 
-	def writeH(self, boxes, mode):
+	def writeApplH(self, boxes, mode):
 		if mode == self.VERT:
 			self.formatter.write_indent()
 		for box in boxes:
@@ -144,21 +139,24 @@ class Writer(walker.Walker):
 		if mode == self.VERT:
 			self.formatter.write_eol()
 	
-	def writeS(self, s, mode):
+	def writeStr(self, s, mode):
 		if mode == self.VERT:
 			self.formatter.write_indent()
-		self.formatter.write(s.value)
+		self.formatter.write(s)
 		if mode == self.VERT:
 			self.formatter.write_eol()
 
 
-def box2text(boxes, formatterClass = TextFormatter):
-	'''Convert box terms into a string.'''
-
-	fp = StringIO()
-	formatter = formatterClass(fp)
-	writer = Writer(boxes.factory, formatter)
+def write(boxes, formatter):
+	'''Write the boxes with an formatter.'''
+	writer = Writer(formatter)
 	writer.write(boxes)
+
+
+def stringify(boxes, Formatter = TextFormatter):
+	'''Convert box terms into a string.'''
+	fp = StringIO()
+	write(boxes, Formatter(fp))
 	return fp.getvalue()
 
 

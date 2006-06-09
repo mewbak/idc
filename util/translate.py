@@ -19,7 +19,7 @@ factory = aterm.factory.Factory()
 
 def pretty_print(term):
 	boxes = ir.pprint.module(term)
-	sys.stderr.write(box.box2text(boxes, box.AnsiTextFormatter))
+	sys.stderr.write(box.stringify(boxes, box.AnsiTextFormatter))
 
 
 def translate(fpin, fpout, verbose = True):

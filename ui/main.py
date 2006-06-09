@@ -89,7 +89,7 @@ class MainApp(glade.GladeApp):
 		boxes = ir.pprint.module(term)
 		buffer = self.textview.get_buffer()
 		formatter = textbuffer.TextBufferFormatter(buffer)
-		writer = box.Writer(boxes.factory, formatter)
+		writer = box.Writer(formatter)
 		writer.write(boxes)
 
 	def on_quit_activate(self, event):

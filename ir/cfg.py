@@ -187,7 +187,7 @@ makeNodeId = strings.ToStr()
 makeAttr = lambda name, value: build._.Attr(name, value)
 
 renderBox \
-	= base.Adaptor(lambda term, context: term.factory.makeStr(box.box2text(term))) \
+	= base.Adaptor(lambda term, context: term.factory.makeStr(box.stringify(term))) \
 	| build.Str("???")
 
 makeNodeLabel = parse.Rule('''
@@ -375,7 +375,7 @@ if __name__ == '__main__':
 		print term
 		print
 
-		dotcode = box.box2text(term)
+		dotcode = box.stringify(term)
 		print dotcode
 
 		import gtk

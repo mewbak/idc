@@ -121,7 +121,7 @@ part
             
             if self.debug:
            	    from ir import pprint
-                from box import box2text
+                from box import stringify
 
                 kargs = {}
                 for nam in iparams + tmpnames:
@@ -130,7 +130,7 @@ part
                 term = ibody.make(**kargs)
                 term = self.factory.make("Block(_)", term)
                 
-                text = box2text(pprint.stmt(term))
+                text = stringify(pprint.stmt(term))
                 sys.stderr.write(text)
                 sys.stderr.write("\n\n\n")
 		}

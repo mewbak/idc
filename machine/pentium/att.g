@@ -21,11 +21,11 @@ header "att_parser.__main__" {
     print
 
     try:
-        from walker import Failure
+        from transf.exception import Failure
         from ir import pprint
-        from box import box2text
+        from box import stringify
        
-        text = box2text(pprint.module(term))
+        text = stringify(pprint.module(term))
         print "** C pretty-print **"
         print text
         print

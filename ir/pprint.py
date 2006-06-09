@@ -289,7 +289,7 @@ if __name__ == '__main__':
 		print check.expr(input)
 		result = expr(inputStr)
 		print result
-		print box.box2text(result)
+		print box.stringify(result)
 		print output
 		print
 		
@@ -311,7 +311,7 @@ if __name__ == '__main__':
 		print check.stmt(input)
 		result = stmt(input)
 		print result
-		print box.box2text(result)
+		print box.stringify(result)
 		print output
 		print 
 	
