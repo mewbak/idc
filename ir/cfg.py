@@ -60,6 +60,18 @@ MarkStmtsIds = lambda: traverse.TopDown(combine.Try(matchStmt & SetStmtId(Counte
 
 
 #######################################################################
+# Branches & Labels
+
+matchLabel = match.Appl(matchStmtName, base.ident)
+
+makeLabelRef = parse.Rule('''
+	Label(name) -> [name, <getStmtId>]
+''')
+
+makeLableTable = unify.CollectAll(matchLabel & makeLabelRef)
+	
+
+#######################################################################
 # Statements Flow
 
 ctrlFlowAnno = 'CtrlFlow'
@@ -83,6 +95,8 @@ stmtFlow = parse.Rule('''
 |	Continue(*) -> [cont]
 |	Break(*) -> [brek]
 |	Ret(*)-> [retn]
+|	Branch(Sym(name)) -> [<debug.Dump(); lists.Lookup(!name,!lbls); debug.Dump() >]
+|	Branch(*) -> []
 |	n(*) -> [next{Cond(n)}]
 ''')
 
@@ -156,7 +170,8 @@ markModuleFlow \
 		next=endOfModule, 
 		cont=endOfModule, 
 		brek=endOfModule, 
-		retn=endOfModule
+		retn=endOfModule,
+		lbls=makeLableTable
 	)
 
 markFlow = markModuleFlow
@@ -345,6 +360,8 @@ if __name__ == '__main__':
 		#print ( pprint2.module & renderBox )(term)
 
 		term = MarkStmtsIds() (term)
+		#print makeLableTable (term)
+		#print (lists.Lookup(build.Str("main"), makeLableTable)) (term)
 		#print term
 		#term = (debug.Traceback(markFlow)) (term)
 		term = markFlow (term)

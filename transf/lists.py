@@ -44,3 +44,21 @@ def Concat(*operands):
 
 
 concat = unify.Foldr(build.nil, Concat)
+
+
+class Lookup(base.Transformation):
+	
+	def __init__(self, key, table):
+		base.Transformation.__init__(self)
+		self.key = key
+		self.table = table
+	
+	def apply(self, term, context):
+		key = self.key.apply(term, context)
+		table = self.table.apply(term, context)
+		
+		for name, value in table:
+			if key.isEquivalent(name):
+				return value
+		raise exception.Failure('key not found in table', key, table)
+		
