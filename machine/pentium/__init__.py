@@ -17,9 +17,8 @@ class Pentium(Machine):
 		return term			
 
 	def translate(self, term):
-		from machine.pentium.translator import Translator
+		from machine.pentium import translator
 		
-		walker = Translator(term.factory)
-		term = walker.module(term)				
+		term = translator.module(term)				
 		return term
 

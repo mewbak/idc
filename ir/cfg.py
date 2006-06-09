@@ -95,7 +95,7 @@ stmtFlow = parse.Rule('''
 |	Continue(*) -> [cont]
 |	Break(*) -> [brek]
 |	Ret(*)-> [retn]
-|	Branch(Sym(name)) -> [<debug.Dump(); lists.Lookup(!name,!lbls); debug.Dump() >]
+|	Branch(Sym(name)) -> [<lists.Lookup(!name,!lbls)>]
 |	Branch(*) -> []
 |	n(*) -> [next{Cond(n)}]
 ''')

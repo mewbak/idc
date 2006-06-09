@@ -147,6 +147,6 @@ class IfThenElse(Ternary):
 
 def Repeat(operand):
 	'''Applies a transformation until it fails.'''
-	repeat = Proxy()
+	repeat = base.Proxy()
 	repeat.subject = Try(operand & repeat)
 	return repeat

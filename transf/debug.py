@@ -91,10 +91,10 @@ class Trace(combine.Unary):
 		return r
 	
 	def apply(self, term, context):
-		self.log.write('=> Entering %s (%s)\n' % (self.name, self.short_repr(term)))
+		self.log.write('=> Entering %s: %s\n' % (self.name, self.short_repr(term)))
 		#dump_term(self.log, term)
 		term = self.operand.apply(term, context)
-		self.log.write('<= Leaving %s\n (%s)\n' % (self.name, self.short_repr(term)))
+		self.log.write('<= Leaving %s: %s\n' % (self.name, self.short_repr(term)))
 		#dump_term(self.log, term)
 		return term
 
