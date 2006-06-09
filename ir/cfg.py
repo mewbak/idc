@@ -330,11 +330,7 @@ if __name__ == '__main__':
 		print term
 		print
 		
-		term = lang.dot.pprint(term)
-		print term
-		print
-
-		dotcode = box.stringify(term)
+		dotcode = lang.dot.stringify(term)
 		print dotcode
 
 		import gtk
