@@ -163,16 +163,13 @@ def box2text(boxes, formatterClass = TextFormatter):
 
 
 def Tag(name, value, operand = None):
+	if isinstance(name, basestring):
+		name = transf.build.Str(name)
+	if isinstance(value, basestring):
+		value = transf.build.Str(value)
 	if operand is None:
 		operand = transf.base.ident
-	return transf.build.Appl(
-		'T',
-		 [
-			transf.build.Str(name),
-			transf.build.Str(value),
-			operand,
-		]
-	)
+	return transf.build.Appl('T', [name, value, operand])
 
 op = Tag('type', 'operator')
 kw = Tag('type', 'keyword')
@@ -202,6 +199,7 @@ def lit(term, context):
 	if term.type == aterm.types.STR:
 		term = escape.apply(term, context)
 		return string.apply(term, context)
+	raise transf.exception.Failure
 lit = transf.base.Adaptor(lit)
 
 

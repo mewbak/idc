@@ -248,7 +248,9 @@ class InspectorWindow(glade.GladeWindow):
 		
 		print start, end  
 		if start is not None and end is not None:
-			self.treeview.get_selection().select_range(start, end)
+			tree_selection = self.treeview.get_selection()
+			tree_selection.unselect_all()
+			tree_selection.select_range(start, end)
 			self.treeview.scroll_to_cell(start)
 			#self.treeview.set_cursor(start)
 	

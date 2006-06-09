@@ -14,8 +14,8 @@ locale.setlocale(locale.LC_ALL,'')
 
 import glade
 
-import ir
 import box
+import ir.pprint
 import document
 import refactoring
 
@@ -86,7 +86,7 @@ class MainApp(glade.GladeApp):
 
 	def on_term_update(self, term):
 		term = term.get()
-		boxes = ir.prettyPrint(term)
+		boxes = ir.pprint.module(term)
 		buffer = self.textview.get_buffer()
 		formatter = textbuffer.TextBufferFormatter(buffer)
 		writer = box.Writer(boxes.factory, formatter)

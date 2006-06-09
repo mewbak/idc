@@ -6,7 +6,7 @@
 import observer
 
 import aterm.factory
-import ir
+import ir.pprint
 import path
 import box
 
@@ -74,8 +74,7 @@ class Document:
 		"""Export C code."""
 		term = self.term.get()
 		fp = file(filename, 'wt')
-		printer = ir.PrettyPrinter(term.factory)
-		boxes = printer.module(term)
+		boxes = ir.pprint.module(term)
 		formatter = box.TextFormatter(fp)
 		writer = box.Writer(formatter)
 		writer.write(boxes)

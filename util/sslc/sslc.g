@@ -120,7 +120,7 @@ part
             self.instructions[#iname.getText()] = (iparams, tmpnames, ibody)
             
             if self.debug:
-           	    from ir import PrettyPrinter
+           	    from ir import pprint
                 from box import box2text
 
                 kargs = {}
@@ -130,8 +130,7 @@ part
                 term = ibody.make(**kargs)
                 term = self.factory.make("Block(_)", term)
                 
-                printer = PrettyPrinter(self.factory)
-                text = box2text(printer.stmt(term))
+                text = box2text(pprint.stmt(term))
                 sys.stderr.write(text)
                 sys.stderr.write("\n\n\n")
 		}

@@ -22,11 +22,10 @@ header "att_parser.__main__" {
 
     try:
         from walker import Failure
-        from ir import PrettyPrinter
+        from ir import pprint
         from box import box2text
        
-        printer = PrettyPrinter(factory)
-        text = box2text(printer.module(term))
+        text = box2text(pprint.module(term))
         print "** C pretty-print **"
         print text
         print

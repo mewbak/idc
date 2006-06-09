@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '.
 
 import aterm.factory 
 import box
-import ir
+import ir.pprint
 import machine.pentium
 
 
@@ -18,8 +18,7 @@ factory = aterm.factory.Factory()
 
 
 def pretty_print(term):
-	printer = ir.PrettyPrinter(term.factory)
-	boxes = printer.module(term)
+	boxes = pprint.module(term)
 	sys.stderr.write(box.box2text(boxes, box.AnsiTextFormatter))
 
 

@@ -64,9 +64,7 @@ class TestCase(unittest.TestCase):
 			for inputStr, expectedOutput in subTestCases:
 				input = self.factory.parse(inputStr)
 			
-				printer = ir.PrettyPrinter(self.factory)
-				boxes = getattr(printer, methodName)(input)
-				
+				boxes = getattr(ir.pprint, methodName)(input)
 				output = box.box2text(boxes)
 				
 				self.failUnlessEqual(output, expectedOutput)

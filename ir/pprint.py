@@ -3,18 +3,29 @@
 
 
 from transf import base
+from transf import combine
 from transf import strings
+from transf import annotation
 from transf import parse
 from transf import debug
 
 import ir.traverse
 from ir.traverse import UP, DOWN
 
+import box
 from box import op
 from box import kw
 from box import lit
 from box import sym
 from box import commas
+
+
+#######################################################################
+# Path annotation
+
+reprz = base.Adaptor(lambda term, context: term.factory.makeStr(repr(term)))
+
+Path = lambda operand: box.Tag('path', annotation.Get('Path') & reprz, operand ) | operand
 
 
 #######################################################################
@@ -52,6 +63,10 @@ typeUp = parse.Rule('''
 		-> H([ "blob", <<strings.ToStr> size> ])
 |	_ -> "???"
 ''')
+
+type = ir.traverse.Type(
+	Wrapper = UP(typeUp)
+)
 
 
 #######################################################################
@@ -150,13 +165,13 @@ exprUp = parse.Rule('''
 		-> H([ <<op>"*">, expr ])
 ''')
 
-def Expr(expr):
-	return parse.Transf('''
+Expr = lambda traverse: parse.Transf('''
+	Path(
 		let 
 			pprec = !prec + !99, # parent precedence
 			prec = exprPrec
 		in
-			expr ;
+			traverse ;
 			exprUp ;
 			if gt(!prec, !pprec) then
 				!H([ "(", <id>, ")" ])
@@ -166,55 +181,81 @@ def Expr(expr):
 				#!H([ "(LT:", <id>, ")" ])
 			end
 		end
+	)
 	''')
+
+expr = ir.traverse.Expr(
+	type = type, 
+	op = oper,
+	Wrapper = Expr
+)
+
 
 #######################################################################
 # Statements
 
+stmt = base.Proxy()
+
 stmtUp = parse.Rule('''
-	Assign(type, dexpr, sexpr)
-		-> H([ dexpr, " ", <<op>"=">, " ", sexpr, ";" ])
-|	Asm(opcode, operands) 
-		-> H([ <<kw>"asm">, "(", <<commas> [<<lit> opcode>, *operands]>, ")", ";" ])
+	Assign(_, dst, src)
+		-> H([ <<expr>dst>, " ", <<op>"=">, " ", <<expr>src>, ";" ])
 |	If(cond, true, NoStmt)
 		-> V([
-				H([ <<kw>"if">, "(", cond, ")" ]),
-				I( true )
+			H([ <<kw>"if">, "(", <<expr>cond>, ")" ]),
+				I( <<stmt>true> )
 		])
 |	If(cond, true, false)
 		-> V([
-				H([ <<kw>"if">, "(", cond, ")" ]),
-				I( true ),
-				H([ <<kw>"else"> ]),
-				I( true )
+			H([ <<kw>"if">, "(", <<expr>cond>, ")" ]),
+				I( <<stmt>true> ),
+			H([ <<kw>"else"> ]),
+				I( <<stmt>false> )
 		])
-|	While(cond, stmt)
+|	While(cond, body)
 		-> V([
-			H([ <<kw>"while">, "(", cond, ")" ]),
-			I(stmt)
+			H([ <<kw>"while">, "(", <<expr>cond>, ")" ]),
+			I( <<stmt>body> )
 		])
-|	Block(stmts)
-		-> V([ "{", I(V( stmts )), "}" ])
-|	Branch(label)
-		-> H([ <<kw>"goto">, " ", label, ";" ])
+|	Block( stmts )
+		-> V([
+			D("{"), 
+				V( <<map(stmt)>stmts> ), 
+			D("}") 
+		])
 |	FuncDef(type, name, args, body)
 		-> D(V([
-			H([ type, " ", name, "(", <<commas> args>, ")" ]),
-			I( body )
+			H([ <<type>type>, " ", name, "(", <<commas> args>, ")" ]),
+				I( <<stmt>body> )
 		]))
 |	Label(name)
 		-> D(H([ name, ":" ]))
-|	Ret(type,NoExpr)
-		-> H([ <<kw>"return">, ";"])
-|	Ret(type,expr)
-		-> H([ <<kw>"return">, " ", expr, ";"])
+|	Branch(label)
+		-> H([ <<kw>"goto">, " ", <<expr>label>, ";" ])
+|	Ret(_, NoExpr)
+		-> H([ <<kw>"return">, ";" ])
+|	Ret(_, value)
+		-> H([ <<kw>"return">, " ", <<expr>value>, ";" ])
 |	NoStmt
-		-> _
+		-> ";"
+|	Asm(opcode, operands) 
+		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<map(expr)>operands>]>, ")", ";" ])
+''')
+
+stmt.subject = parse.Transf('''
+	Path(
+	stmtUp
+	)
 ''')
 
 moduleUp = parse.Rule('''
 	Module(stmts) -> V([ I(V( stmts )) ])
 ''')
+
+
+module = ir.traverse.Module(
+	stmt = stmt,
+	Wrapper = UP(moduleUp)
+)
 
 
 #######################################################################
@@ -227,28 +268,6 @@ if 0:
 	moduleUp = debug.Trace('moduleUp', moduleUp)
 
 
-type = ir.traverse.Type(
-	Wrapper = UP(typeUp)
-)
-
-expr = ir.traverse.Expr(
-	type = type, 
-	op = oper,
-	Wrapper = Expr
-)
-
-stmt = ir.traverse.Stmt(
-	expr = expr,
-	type = type,
-	Wrapper = UP(stmtUp)
-)
-
-module = ir.traverse.Module(
-	stmt = stmt,
-	Wrapper = UP(moduleUp)
-)
-
-
 if __name__ == '__main__':
 	import aterm.factory
 	import box
@@ -259,8 +278,8 @@ if __name__ == '__main__':
 	
 	exprTestCases = [
 		('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Sym("x"))', '1 + x\n'),
-		('Sym("eax"{Path,[0,1,1,0]}){Path,[1,1,0]}', ''),
-		('Lit(Int(32{Path,[0,0,2,1,0]},Signed{Path,[1,0,2,1,0]}){Path,[0,2,1,0]},1234{Path,[1,2,1,0]}){Path,[2,1,0]}){Path,[1,0],Id,2}', '')
+		('Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])}', ''),
+		('Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}', '')
 	]
 	
 	for inputStr, output in exprTestCases:
@@ -279,8 +298,8 @@ if __name__ == '__main__':
 		('Asm("ret",[])', 'asm("ret");\n'),
 		('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);\n'),
 		('FuncDef(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),	
-		('Assign(Void,Sym("eax"{Path,[0,1,1,0]}){Path,[1,1,0]},Lit(Int(32{Path,[0,0,2,1,0]},Signed{Path,[1,0,2,1,0]}){Path,[0,2,1,0]},1234{Path,[1,2,1,0]}){Path,[2,1,0]}){Path,[1,0],Id,2}',''),
-		('Assign(Blob(32{Path,[0,0,1,0]}){Path,[0,1,0]},Sym("eax"{Path,[0,1,1,0]}){Path,[1,1,0]},Lit(Int(32{Path,[0,0,2,1,0]},Signed{Path,[1,0,2,1,0]}){Path,[0,2,1,0]},1234{Path,[1,2,1,0]}){Path,[2,1,0]}){Path,[1,0],Id,2}',''),
+		('Assign(Void,Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
+		('Assign(Blob(32{Path([0,0,1,0])}){Path([0,1,0])},Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('If(Binary(Eq(Int(32,"Signed")),Binary(BitOr(32),Binary(BitXor(32),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),Branch(Sym(".L4")),NoStmt)', ''),
 	]
 	
