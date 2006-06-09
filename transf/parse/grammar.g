@@ -48,13 +48,15 @@ tokens {
 	REAL;
 	VAR;
 	WILDCARD = "_";
-	WHERE = "where";
+	IDENT = "id";
+	FAIL = "fail";
 	IF = "if";
 	THEN = "then";
 	ELSE = "else";
 	END = "end";
-	IDENT = "id";
-	FAIL = "fail";
+	LET = "let";
+	IN = "in";
+	WHERE = "where";
 }
 
 protected
@@ -164,6 +166,8 @@ TILDE: '~';
 
 AT: '@';
 
+EQUAL: '=';
+
 
 class parser extends Parser;
 
@@ -209,6 +213,16 @@ transf_atom
 		) RPAREN!
 	| LANGLE! transf RANGLE! term
 		{ ## = #(#[BUILD_APPLY,"BUILD_APPLY"], ##) }
+	| IF^ transf THEN! transf ( ELSE! transf )? END!
+	| LET^ defn_list IN transf END!
+	;
+
+defn
+	: ID EQUAL! transf
+	;
+
+defn_list
+	: defn ( COMMA! defn )*
 	;
 
 id
@@ -436,6 +450,20 @@ transf returns [ret]
 		{ ret = transf.combine.Composition(t, m) }
 	| #( BUILD_APPLY t=transf b=build_term )
 		{ ret = transf.combine.Composition(b, t) }
+	| #( IF c=transf t=transf 
+		(
+			{ ret = transf.combine.IfThen(c, t) }
+		| e=transf
+			{ ret = transf.combine.IfThenElse(c, t, e) }
+		)
+	  )
+	| #( LET 
+			{ vars = {} }
+		( n:ID v=transf
+			{ vars[#n.getText()] = v }
+		)* IN t=transf
+	  )
+	  	{ ret = transf.scope.With(t, **vars) }
 	;
 	
 match_term returns [ret]

@@ -4,6 +4,8 @@
 
 import unittest
 
+import antlr
+
 import aterm.factory
 
 from transf import *
@@ -11,7 +13,6 @@ from transf import *
 from transf.base import ident, fail
 from transf.combine import Try
 from transf.rewrite import Rule
-
 
 
 class TestMixin:
@@ -533,17 +534,27 @@ class TestParse(TestMixin, unittest.TestCase):
 		'{ sep : where( !"," => sep ); id }',
 		'~C(1, <id>)',
 		'!1{A,B,C}',
+		'if ?c then !x end',
+		'if ?c then !x else !y end',
+		'let x=!X, y=!Y in ![x,y] end',
 	]
 	
 	def testAST(self):
 		for input in self.parseTestCases:
 			parser = parse._parser(input)
-			parser.transf()
+			try:
+				parser.transf()
+			except antlr.ANTLRException, ex:
+				self.fail(msg = "%r failed: %s" % (input, ex))
 			ast = parser.getAST()
 	
 	def testParse(self):
 		for input in self.parseTestCases:
-			output = repr(parse.Transf(input))
+			try:
+				output = repr(parse.Transf(input))
+			except antlr.ANTLRException, ex:
+				self.fail(msg = "%r failed: %s" % (input, ex))
+			print output
 
 
 if __name__ == '__main__':

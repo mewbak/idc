@@ -7,6 +7,7 @@ from transf import traverse
 from transf import unify
 from transf import lists
 from transf import strings
+from transf import arith
 
 
 builtins = {
@@ -21,4 +22,8 @@ builtins = {
 	"foldr": unify.Foldr,
 	"concat": lists.Concat,
 	"str": strings.ToStr,
+	
+	"add": arith.Add,
+	"sub": arith.Sub,
+	"gt": arith.Gt,
 }
