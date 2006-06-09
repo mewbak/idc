@@ -1,5 +1,6 @@
 '''Control Flow Graph (CFG) generation.'''
 
+
 import aterm
 import transf
 import box
@@ -8,7 +9,7 @@ from transf import *
 
 import ir.traverse
 import ir.pprint
-
+import lang.dot
 
 
 #######################################################################
@@ -294,48 +295,6 @@ simplifyFlow = removeNoStmts
 
 
 #######################################################################
-# Dot output
-
-dotAttr = parse.Rule('''
-		Attr(name, value) 
-			-> H([ name, "=", value ])
-''')
-
-dotAttrs = parse.Transf('''
-		!H([ "[", <map(dotAttr); box.commas>, "]" ])
-''')
-
-dotNode = parse.Rule('''
-		Node(nid, attrs, _)
-			-> H([ nid, <<dotAttrs> attrs> ])
-''')
-
-dotNodes = traverse.Map(dotNode)
-
-dotNodeEdge = parse.Rule('''
-		Edge(dst, attrs) 
-			-> H([ src, "->", dst, <<dotAttrs> attrs> ])
-''')
-
-dotNodeEdges = parse.Rule('''
-		Node(src, _, edges) 
-			-> <<map(dotNodeEdge)> edges>
-''')
-
-dotEdges = traverse.Map(dotNodeEdges) & lists.concat
-
-makeDot = parse.Rule(r'''
-		Graph(nodes)
-			-> V([
-				H([ "digraph", " ", "{" ]),
-				V( <<dotNodes> nodes> ),
-				V( <<dotEdges> nodes> ),
-				H([ "}" ])
-			])
-''')
-
-
-#######################################################################
 # Example
 
 
@@ -371,7 +330,7 @@ if __name__ == '__main__':
 		print term
 		print
 		
-		term = makeDot(term)
+		term = lang.dot.pprint(term)
 		print term
 		print
 

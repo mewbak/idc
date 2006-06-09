@@ -15,7 +15,7 @@ FORMAT = 'png'
 class DotView(gtk.Window):
 	
 	# TODO: add zoom/pan as in http://mirageiv.berlios.de/
-	# TODO: use maps to detect clicks in nodes
+	# TODO: use maps to detect clicks in nodes as in http://hoohoo.ncsa.uiuc.edu/docs/tutorials/imagemapping.html
 	
 	def __init__(self, parent = None):
 		gtk.Window.__init__(self)
