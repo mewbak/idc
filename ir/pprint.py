@@ -271,6 +271,7 @@ module = Path(parse.Rule('''
 if __name__ == '__main__':
 	import aterm.factory
 	import box
+	import check
 
 	print commas('[1,2,3]')
 
@@ -285,7 +286,7 @@ if __name__ == '__main__':
 	for inputStr, output in exprTestCases:
 		input = factory.parse(inputStr)
 			
-		print input
+		print check.expr(input)
 		result = expr(inputStr)
 		print result
 		print box.box2text(result)
@@ -307,6 +308,7 @@ if __name__ == '__main__':
 		input = factory.parse(inputStr)
 
 		print input
+		print check.stmt(input)
 		result = stmt(input)
 		print result
 		print box.box2text(result)

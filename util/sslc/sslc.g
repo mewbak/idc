@@ -188,7 +188,7 @@ rt returns [res]
 		lv=lvalue e=expr )
 		{
             res = [self.factory.make("Assign(_,_,_)",
-                self.factory.make(type, size=size, sign=sign),
+                self.factory.make(type, size=size, sign=self.factory.parse(sign)),
                 lv,
                 e)
             ]
@@ -280,7 +280,7 @@ expr returns [res]
             typ = #t.getType()
             if typ in opTable:
                 op = opTable[typ]
-                op = self.factory.make(op, type="Int", size=32, sign="Signed")
+                op = self.factory.make(op, type="Int", size=32, sign=self.factory.parse("Signed"))
                 if len(args) == 1:
                     res = self.factory.make("Unary(_,_)", op, *args)
                 elif len(args) == 2:

@@ -63,10 +63,10 @@ tests: \
 	test-ir \
 	test-refactoring
 
-test-%: all
+test-%: all tests/test_%.py
 	$(PYTHON) tests/test_$*.py $(TESTOPTS)
 
-test-%: all
+test-%: all %/_tests.py
 	$(PYTHON) $*/_tests.py $(TESTOPTS)
 
 .PHONY: test-%

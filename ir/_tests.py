@@ -5,6 +5,8 @@ import unittest
 
 import aterm.factory
 import box
+
+import ir.check
 import ir.pprint
 
 
@@ -28,7 +30,7 @@ class TestCase(unittest.TestCase):
 	]
 	
 	def testChecker(self):
-		checker = ir.Checker(self.factory)
+		checker = ir.check
 
 		for methodName, inputStr, expectedOutput in self.checkerTestCases:
 			input = self.factory.parse(inputStr)
@@ -36,7 +38,7 @@ class TestCase(unittest.TestCase):
 			try:
 				getattr(checker, methodName)(input)
 				output = True
-			except ir.Failure:
+			except:
 				output = False
 			
 			self.failUnlessEqual(

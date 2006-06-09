@@ -18,7 +18,7 @@ factory = aterm.factory.Factory()
 
 
 def pretty_print(term):
-	boxes = pprint.module(term)
+	boxes = ir.pprint.module(term)
 	sys.stderr.write(box.box2text(boxes, box.AnsiTextFormatter))
 
 
