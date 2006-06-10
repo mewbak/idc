@@ -13,18 +13,26 @@ from transf import arith
 builtins = {
 	"id": base.ident,
 	"fail": base.fail,
-	"all": traverse.All,
-	#"one": traverse.One,
-	#"some": traverse.Some,
+	
+	"try": combine.Try,
 	"not": combine.Not,
 	"where": combine.Where,
+
 	"map": traverse.Map,
+	"filter": traverse.Filter,
+	"all": traverse.All,
+	"one": traverse.One,
+	"some": traverse.Some,
+	
 	"foldr": unify.Foldr,
+
 	"concat": lists.Concat,
+	
 	"str": strings.ToStr,
 	
 	"neg": arith.Neg,
 	"add": arith.Add,
 	"sub": arith.Sub,
 	"gt": arith.Gt,
+
 }

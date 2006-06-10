@@ -310,49 +310,46 @@ makeGraph = build._.Graph(makeNodes)
 #######################################################################
 # Graph Simplification
 
-replaceStmtFlow = \
-	combine.IfThenElse(
-		getStmtId & match._.src,
-		annotation.Del(stmtIdAnno) & annotation.Del(ctrlFlowAnno),
-		annotation.Update(
-			ctrlFlowAnno, 
-			traverse.Map(
-				combine.Try(match._.src & build._.dst)
-			),
-		)
-	)
+matchPointShapeAttr = parse.Transf('''
+	?Attr("shape", "point")
+''')
 
-replaceStmtFlow = traverse.BottomUp(combine.Try(replaceStmtFlow))
+matchPointShapeNode = parse.Rule('''
+	Node(src, <one(matchPointShapeAttr)>, [Edge(dst, _)]) -> [src, dst]
+''')
 
-matchNoStmts \
-	= match.Appl("NoStmt", match.nil) \
-	& combine.Where(getStmtId)\
-	& combine.Where(getCtrlFlow)
+replaceEdge = parse.Transf('''
+	~Edge(<?src;!dst>, _)
+''')
 
-collectNoStmts = unify.CollectAll(matchNoStmts)
+removeInNode = parse.Transf('''
+	~Node(<not(?src)>, _, <map(try(replaceEdge))>)
+''')
 
-getSingleFlow = getCtrlFlow & match.Pattern('[_]') & project.first
+removeInGraph = parse.Transf('''
+	~Graph(<filter(removeInNode)>)
+''')
 
+collectPoints = unify.CollectAll(matchPointShapeNode)
 
-def removeNoStmts(term, context):
-		noStmts = collectNoStmts.apply(term, context)
+def simplifyPoints(term, context):
+		noStmts = collectPoints.apply(term, context)
 		print noStmts
-		for noStmt in noStmts:
+		for src, dst in noStmts:
 			new_context = transf.context.Context(context, ['src', 'dst'])
-			new_context['src'] = getStmtId.apply(noStmt, context)
-			new_context['dst'] = getSingleFlow.apply(noStmt, context)
-			print new_context['src'], "INTO", new_context['dst']
-			term = replaceStmtFlow.apply(term, new_context)
+			new_context['src'] = src
+			new_context['dst'] = dst
+			print src, "INTO", dst
+			term = removeInGraph.apply(term, new_context)
 		return term
 
-removeNoStmts = base.Adaptor(removeNoStmts)
+simplifyPoints = base.Adaptor(simplifyPoints)
 
-simplifyFlow = removeNoStmts
-simplifyFlow = base.ident
+simplifyGraph = simplifyPoints
 
 #######################################################################
 
-render = markFlow & makeGraph
+render = markFlow & makeGraph & simplifyGraph
 
 #######################################################################
 # Example
@@ -379,7 +376,6 @@ if __name__ == '__main__':
 		print
 		
 		print "*********"
-		term = simplifyFlow (term)
 		#print term
 		print "*********"
 		#sys.exit(0)
@@ -388,7 +384,11 @@ if __name__ == '__main__':
 		#print makeEdges (term)
 		
 		term = makeGraph(term)
-		#print term
+		print term
+		print
+
+		term = simplifyGraph (term)
+		print term
 		print
 		
 		dotcode = lang.dot.stringify(term)
