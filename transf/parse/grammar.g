@@ -190,8 +190,12 @@ tokens {
 	BUILD_APPLY;
 }
 
-grammar
+tgrammar
 	: transf EOF!
+	;
+
+rgrammar
+	: rule_def EOF!
 	;
 
 transf_atom
@@ -208,7 +212,7 @@ transf_atom
 		| anon_rule
 		) RCURLY!
 	| LPAREN!
-		( ( rule ) => rule 
+		( ( term INTO ) => rule_def 
 		| transf
 		) RPAREN!
 	| LANGLE! transf RANGLE! term

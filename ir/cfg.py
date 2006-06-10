@@ -56,7 +56,8 @@ matchStmtName \
 	| match.Str('Break') \
 	| match.Str('Continue') \
 	| match.Str('NoStmt') \
-	| match.Str('Ret')
+	| match.Str('Ret') \
+	| match.Str('Module')
 
 matchStmt = match.Appl(matchStmtName, base.ident)
 
@@ -101,96 +102,103 @@ SetCtrlFlow = lambda flows: annotation.Set(ctrlFlowAnno, flows)
 #######################################################################
 # Flow Traversal
 
+setNext = scope.Set('next')
+GetTerminalNodeId = lambda id: arith.NegInt(id)
+
+markStmtFlow = base.Proxy()
 markStmtsFlow = base.Proxy()
 
-stmtFlow = parse.Rule('''
-	Assign(*) -> [next]
-|	Label(*) -> [next]
-|	Asm(*) -> [next]
-|	If(_, true, false) -> [true{Cond("True")}, false{Cond("False")}]
-|	While(_, stmt) -> [next{Cond("False")}, stmt{Cond("True")}]
-|	NoStmt -> [next]
-|	Continue(*) -> [cont]
-|	Break(*) -> [brek]
-|	Ret(*)-> [retn]
-|	Branch(Sym(name)) -> [<lists.Lookup(!name,!lbls)>]
-|	Branch(*) -> []
-|	n(*) -> [next{Cond(n)}]
+markStmtFlow.subject = parse.Transf('''
+let this = getStmtId in
+	?Assign(*)
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?Label(*)
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?Asm(*) 
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?If(*)
+		< { true, false: 
+			~_(_, 
+				<let next=!next in markStmtFlow; where(!next => true) end>, 
+				<let next=!next in markStmtFlow; where(!next => false) end>
+			)
+			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
+		}
+		; where(!this; setNext)
++	?While(*)
+		< { true, false:
+			where(!next => false)
+			; ~_(_, <markStmtsFlow; where(!next => true)>)
+			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
+		}
+		; where(!this; setNext)
++	?NoStmt(*)
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?Continue(*) 
+		< SetCtrlFlow(![cont])
+		; where(!this; setNext)
++	?Break(*) 
+		< SetCtrlFlow(![brek])
+		; where(!this; setNext)
++	?Ret(*) 
+		< SetCtrlFlow(![retn])
+		; where(!this; setNext)
++	?Branch(*)
+		< SetCtrlFlow({ _(Sym(name)) -> [<lists.Lookup(!name,!lbls)>] } + ![])
+		; where(!this; setNext)
++	?Block(*)
+		< ~_(<markStmtsFlow>)
+		; SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?FuncDef(*)
+		< let 
+			next = !next,
+			retn = GetTerminalNodeId(!this),
+			brek = !0,
+			cont = !0,
+			lbls = makeLableTable
+		in 
+			~_(_, _, _, <markStmtFlow>)
+			; SetCtrlFlow(![next])
+		end
+		# where(!next; setNext)
++	
+		SetCtrlFlow({ n(*) -> [next{Cond(n)}] })
+		; where(!this; setNext)
+end
 ''')
 
-stmtChildNext = parse.Rule('''
-	While(_, _) -> <getStmtId>
-|	_ -> next
+def MapR(operand):
+	map = base.Proxy()
+	map.subject \
+		= match.nil \
+		| traverse.Cons(base.ident, map) \
+		& traverse.Cons(operand, base.ident)
+	return map
+
+markStmtsFlow.subject = MapR(markStmtFlow)
+
+markModuleFlow = parse.Transf('''
+	?Module(*)
+		; let
+			next = !0,
+			retn = !0,
+			brek = !0,
+			cont = !0,
+			# TODO: don't make a global lable table
+			lbls = makeLableTable
+		in
+			~_(<markStmtsFlow>)
+		end
 ''')
-
-
-markStmtFlow \
-	= SetCtrlFlow(
-		combine.Try(traverse.All(combine.Try(getStmtId))) &
-		stmtFlow
-	)
-
-
-markStmtFlow = ir.traverse.Stmt(
-	stmts = markStmtsFlow,
-	Wrapper = lambda x: markStmtFlow & scope.With(x, next=stmtChildNext)
-)
-
-markStmtsFlow.subject \
-	= match.nil \
-	| scope.With(
-		traverse.Cons(
-			scope.With(
-				markStmtFlow,
-				next = build._.following
-			),
-			markStmtsFlow
-		),
-		following = project.tail & (project.head & getStmtId | build._.next)
-	)
-
-"""
-markStmtsFlow.subject \
-	= match.nil \
-		build.List([base.ident, build._.next])
-	| scope.With(
-		traverse.Cons(
-			scope.With(
-				markStmtFlow,
-				next = build._.following
-			),
-			markStmtsFlow
-		),
-		following = project.tail & (project.head | build._.next)
-	)
-
-markStmtsFlow.subject = parse.Transf('''
-	[] 
-		-> [<id>,next]
-|	[head, *tail]
-		-> <
-			<markStmtsFlow> tail => [new_tail, following];
-			<{next: (next -> following); <markStmt> head}> head => new_head;
-			![<new_head>,<new_tail>]
-		>
-''')"""
-
-endOfModule = build._.NoStmt() & SetStmtId(build.Int(0)) & SetCtrlFlow(build.nil)
-endOfModule = build.zero
 
 if 0:
 	markStmtFlow.subject = debug.Trace('markStmtFlow', markStmtFlow.subject)
 	markStmtsFlow.subject = debug.Trace('markStmtsFlow', markStmtsFlow.subject)
-
-markModuleFlow \
-	= scope.With(
-		ir.traverse.Module(stmts = markStmtsFlow),
-		next=endOfModule, 
-		cont=endOfModule, 
-		brek=endOfModule, 
-		retn=endOfModule,
-		lbls=makeLableTable
-	)
 
 markFlow = markStmtsIds & markModuleFlow
 
@@ -222,6 +230,10 @@ makeNodeShape = parse.Rule('''
 		-> "diamond"
 |	While(cond,_)
 		-> "diamond"
+|	Module(*)
+		-> "point"
+|	Block(*)
+		-> "point"
 |	NoStmt
 		-> "point"
 |	_ 
@@ -242,12 +254,14 @@ makeEdgeAttrs \
 	= build.List([
 		makeAttr("label", makeEdgeLabel & box.escape),
 	])
-	
+
+isValidNodeId = combine.Not(match.zero)
+
 makeNodeEdges \
 	= getCtrlFlow \
-	& traverse.Map(
+	& traverse.Filter(
 		build._.Edge(
-			makeNodeId,
+			isValidNodeId & makeNodeId,
 			makeEdgeAttrs,
 		)
 	)
@@ -258,9 +272,36 @@ makeNode = build._.Node(
 	makeNodeEdges
 )
 
+hasTerminalNode = match.Pattern('FuncDef(*)')
+
+makeTerminalNode = hasTerminalNode & build._.Node(
+	GetTerminalNodeId(getStmtId), 
+	build.List([
+		makeAttr("label", build.Str('""')),
+		makeAttr("shape", build.Str("doublecircle")),
+		makeAttr("style", build.Str("filled")),
+		makeAttr("fillcolor", build.Str("black"))
+	]),
+	build.nil
+)
+
+reduceStmts = parse.Transf('''
+{ stmts:
+	( ?Block(stmts)
+	+ ?If(_, *stmts)
+	+ ?While(_, *stmts)
+	+ ?FuncDef(_,_,_,*stmts)
+	+ ?Module(stmts)
+	) 
+	; !stmts
+	+ ![]
+}
+''')
+
+# TODO: try to merge both collects in one? it doesn't seem to be more efficient though
 makeNodes = lists.Concat(
-	build.List([build.Term('Node("0", [Attr("shape", "point")], [])')]),
-	unify.CollectAll(makeNode)
+	unify.CollectAll(makeNode, reduce = reduceStmts),
+	unify.CollectAll(makeTerminalNode, reduce = reduceStmts)
 )
 
 makeGraph = build._.Graph(makeNodes)
@@ -307,7 +348,7 @@ def removeNoStmts(term, context):
 removeNoStmts = base.Adaptor(removeNoStmts)
 
 simplifyFlow = removeNoStmts
-
+simplifyFlow = base.ident
 
 #######################################################################
 
@@ -331,10 +372,11 @@ if __name__ == '__main__':
 		#print makeLableTable (term)
 		#print (lists.Lookup(build.Str("main"), makeLableTable)) (term)
 		#print term
+		print
 		#term = (debug.Traceback(markFlow)) (term)
 		term = markFlow (term)
 		#print term
-		#print
+		print
 		
 		print "*********"
 		term = simplifyFlow (term)
@@ -346,7 +388,7 @@ if __name__ == '__main__':
 		#print makeEdges (term)
 		
 		term = makeGraph(term)
-		print term
+		#print term
 		print
 		
 		dotcode = lang.dot.stringify(term)
@@ -356,5 +398,6 @@ if __name__ == '__main__':
 		import ui.dotview
 		win = ui.dotview.DotWindow()
 		win.set_dotcode(dotcode)
+		win.connect('destroy', gtk.main_quit)
 		gtk.main()
 

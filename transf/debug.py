@@ -5,6 +5,7 @@ import sys
 import traceback
 import inspect
 import os.path
+import time
 
 from transf import exception
 from transf import base
@@ -93,8 +94,13 @@ class Trace(combine.Unary):
 	def apply(self, term, context):
 		self.log.write('=> Entering %s: %s\n' % (self.name, self.short_repr(term)))
 		#dump_term(self.log, term)
-		term = self.operand.apply(term, context)
-		self.log.write('<= Leaving %s: %s\n' % (self.name, self.short_repr(term)))
+		start = time.clock()
+		try:
+			term = self.operand.apply(term, context)
+		finally:
+			end = time.clock()
+			delta = end - start
+			self.log.write('<= Leaving %s (%.03fs): %s\n' % (self.name, delta, self.short_repr(term)))
 		#dump_term(self.log, term)
 		return term
 

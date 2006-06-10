@@ -200,19 +200,28 @@ def Some(operand):
 	return some
 
 
-def BottomUp(operand):
-	bottomup = base.Proxy()
-	bottomup.subject = All(bottomup) & operand
-	return bottomup
+def DownUp(down = None, up = None, stop = None):
+	downup = base.Proxy()
+	downup.subject = All(downup)
+	if stop is not None:
+		downup.subject = stop | downup.subject
+	if up is not None:
+		downup.subject = downup.subject & up
+	if down is not None:
+		downup.subject = down & downup.subject
+	return downup
 
 
-def TopDown(operand):
-	topdown = base.Proxy()
-	topdown.subject = operand & All(topdown)
-	return topdown
+def TopDown(operand, stop = None):
+	return DownUp(down = operand, stop = stop)
+
+
+def BottomUp(operand, stop = None):
+	return DownUp(up = operand, stop = stop)
 
 
 def InnerMost(operand):
 	innermost = base.Proxy()
 	innermost.subject = BottomUp(combine.Try(operand & innermost))
 	return innermost
+
