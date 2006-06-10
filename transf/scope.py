@@ -32,3 +32,13 @@ class With(base.Transformation):
 			new_context[name] = transf.apply(term, context)
 		return self.transf(term, new_context)
 
+
+class Set(base.Transformation):
+
+	def __init__(self, name):
+		base.Transformation.__init__(self)
+		self.name = name
+
+	def apply(self, term, context):
+		context[self.name] = term
+		return term

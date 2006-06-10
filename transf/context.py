@@ -3,12 +3,17 @@
 
 import UserDict
 
+try:
+	set
+except NameError:
+	from sets import ImmutableSet as set
+
 
 class Context(UserDict.DictMixin):
 	
 	def __init__(self, parent = None, locals = ()):
 		self.parent = parent
-		self.locals = locals
+		self.locals = set(locals)
 		self.values = {}
 	
 	def __getitem__(self, name):
@@ -20,13 +25,19 @@ class Context(UserDict.DictMixin):
 			else:
 				raise
 	
-	def __setitem__(self, name, value):
-		try:
-			self.values[name]
-		except KeyError:
+	def _updateitem(self, name, value):
+		if name in self.values or name in self.locals:
 			self.values[name] = value
+		elif parent is not None:
+			self.parent._updateitem(name, value)
 		else:
 			raise KeyError
+			
+	def __setitem__(self, name, value):
+		try:
+			self._updateitem(name, value)
+		except KeyError:
+			self.values[name] = value
 	
 	def keys(self):
 		keys = self.values.keys()

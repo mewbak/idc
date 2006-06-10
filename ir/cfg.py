@@ -15,16 +15,28 @@ import lang.dot
 #######################################################################
 # Utilities
 
-class Counter(base.Transformation):
+class Count(base.Transformation):
 
-	def __init__(self, value = 1):
+	def __init__(self, name):
 		base.Transformation.__init__(self)
-		self.value = value
+		self.name = name
 
 	def apply(self, term, context):
-		term = term.factory.makeInt(self.value)
-		self.value += 1
+		try:
+			value = int(context[self.name])
+		except TypeError:
+			raise exception.Failure
+		except KeyError:
+			value = 0
+		
+		value += 1
+		
+		term = term.factory.makeInt(value)
+		
+		context[self.name] =  term
 		return term
+
+
 
 
 #######################################################################
@@ -56,8 +68,13 @@ stmtIdAnno = 'StmtId'
 
 getStmtId = annotation.Get(stmtIdAnno)
 SetStmtId = lambda id: annotation.Set(stmtIdAnno, id)
+setStmtId = SetStmtId(Count('stmtid'))
 
-MarkStmtsIds = lambda: traverse.TopDown(combine.Try(matchStmt & SetStmtId(Counter(1))))
+markStmtsIds = scope.With(
+	traverse.TopDown(combine.Try(matchStmt & setStmtId)),
+	stmtid = build.zero
+)
+
 
 
 #######################################################################
@@ -175,9 +192,7 @@ markModuleFlow \
 		lbls=makeLableTable
 	)
 
-markFlow = markModuleFlow
-
-MarkFlow = lambda: MarkStmtsIds() & markFlow
+markFlow = markStmtsIds & markModuleFlow
 
 
 #######################################################################
@@ -296,7 +311,7 @@ simplifyFlow = removeNoStmts
 
 #######################################################################
 
-render = MarkStmtsIds() & markFlow & makeGraph
+render = markFlow & makeGraph
 
 #######################################################################
 # Example
@@ -312,7 +327,7 @@ if __name__ == '__main__':
 		#print ( pprint2.module  )(term)
 		#print ( pprint2.module & renderBox )(term)
 
-		term = MarkStmtsIds() (term)
+		term = markStmtsIds (term)
 		#print makeLableTable (term)
 		#print (lists.Lookup(build.Str("main"), makeLableTable)) (term)
 		#print term

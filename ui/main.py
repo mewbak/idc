@@ -36,7 +36,7 @@ class MainApp(glade.GladeApp):
 		self.refactoring_factory = refactoring.Factory()
 		
 		if len(sys.argv) > 1:
-			self.document.open_asm(sys.argv[1])
+			self.open(sys.argv[1])
 		else:
 			self.document.new()
 
@@ -56,7 +56,9 @@ class MainApp(glade.GladeApp):
 				], 
 				'./examples',
 		)
-		
+		self.open(path)
+	
+	def open(self, path):
 		if path is not None:
 			if path.endswith('.s'):
 				self.document.open_asm(path)
