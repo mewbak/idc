@@ -10,7 +10,7 @@ from transf import combine
 
 class ToStr(base.Transformation):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
 			return term.factory.makeStr(str(term.value))
 		except AttributeError:

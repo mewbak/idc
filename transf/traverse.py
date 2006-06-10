@@ -18,15 +18,15 @@ class Cons(base.Transformation):
 		self.head = head
 		self.tail = tail
 		
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
 			old_head = term.head
 			old_tail = term.tail
 		except AttributeError:
 			raise exception.Failure('not a list cons term', term)
 		
-		new_head = self.head.apply(old_head, context)
-		new_tail = self.tail.apply(old_tail, context)
+		new_head = self.head.apply(old_head, ctx)
+		new_tail = self.tail.apply(old_tail, ctx)
 		if new_head is not old_head or new_tail is not old_tail:
 			return term.factory.makeCons(
 				new_head,
@@ -39,16 +39,16 @@ class Cons(base.Transformation):
 
 class FilterCons(Cons):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
 			old_head = term.head
 			old_tail = term.tail
 		except AttributeError:
 			raise exception.Failure
 		
-		new_tail = self.tail.apply(old_tail, context)
+		new_tail = self.tail.apply(old_tail, ctx)
 		try:
-			new_head = self.head.apply(old_head, context)
+			new_head = self.head.apply(old_head, ctx)
 		except exception.Failure:
 			return new_tail
 
@@ -97,15 +97,15 @@ class Appl(base.Transformation):
 		else:
 			self.args = args
 				
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
 			old_name = term.name
 			old_args = term.args
 		except AttributeError:
 			raise exception.Failure('not an application term', term)
 		
-		new_name = self.name.apply(old_name, context)
-		new_args = self.args.apply(old_args, context)
+		new_name = self.name.apply(old_name, ctx)
+		new_args = self.args.apply(old_args, ctx)
 		
 		if new_name is not old_name or new_args is not old_args:
 			return term.factory.makeAppl(
@@ -123,9 +123,9 @@ class Annos(base.Transformation):
 		base.Transformation.__init__(self)
 		self.annos = annos
 
-	def apply(self, term, context):
-		old_annos = term.annotations
-		new_annos = self.annos.apply(old_annos, context)
+	def apply(self, term, ctx):
+		old_annos = term.getAnnotations()
+		new_annos = self.annos.apply(old_annos, ctx)
 		if new_annos is not old_annos:
 			return term.setAnnotations(new_annos)
 		else:
@@ -166,13 +166,13 @@ class _Subterms(base.Transformation):
 		self.list = list
 		self.appl = Appl(base.ident, list)
 		
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		if term.type == aterm.types.APPL:
-			return self.appl.apply(term, context)
+			return self.appl.apply(term, ctx)
 		elif term.type == aterm.types.LIST:
-			return self.list.apply(term, context)
+			return self.list.apply(term, ctx)
 		else:
-			return self.lit.apply(term, context)
+			return self.lit.apply(term, ctx)
 
 
 def All(operand):

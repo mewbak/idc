@@ -18,9 +18,9 @@ length = unify.Count(base.ident)
 
 class _Concat(combine.Binary):
 	
-	def apply(self, term, context):
-		head = self.loperand.apply(term, context)
-		tail = self.roperand.apply(term, context)
+	def apply(self, term, ctx):
+		head = self.loperand.apply(term, ctx)
+		tail = self.roperand.apply(term, ctx)
 		try:
 			return head.extend(tail)
 		except AttributeError:
@@ -53,9 +53,9 @@ class Lookup(base.Transformation):
 		self.key = key
 		self.table = table
 	
-	def apply(self, term, context):
-		key = self.key.apply(term, context)
-		table = self.table.apply(term, context)
+	def apply(self, term, ctx):
+		key = self.key.apply(term, ctx)
+		table = self.table.apply(term, ctx)
 		
 		for name, value in table:
 			if key.isEquivalent(name):

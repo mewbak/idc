@@ -21,7 +21,7 @@ class Term(base.Transformation):
 		else:
 			self.term = term
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		return self.term
 
 
@@ -46,9 +46,10 @@ def Str(value):
 	return Term(term)
 
 
+_nil = _factory.makeNil()
+
 def Nil():
-	term = _factory.makeNil()
-	return Term(term)
+	return Term(_nil)
 
 nil = Nil()
 
@@ -60,9 +61,9 @@ class Cons(base.Transformation):
 		self.head = head
 		self.tail = tail
 		
-	def apply(self, term, context):
-		head = self.head.apply(term, context)
-		tail = self.tail.apply(term, context)
+	def apply(self, term, ctx):
+		head = self.head.apply(term, ctx)
+		tail = self.tail.apply(term, ctx)
 		return term.factory.makeCons(head, tail)
 
 
@@ -94,9 +95,9 @@ class Appl(base.Transformation):
 		else:
 			self.args = args
 		
-	def apply(self, term, context):
-		name = self.name.apply(term, context)
-		args = self.args.apply(term, context)
+	def apply(self, term, ctx):
+		name = self.name.apply(term, ctx)
+		args = self.args.apply(term, ctx)
 		return term.factory.makeAppl(name, args)
 
 
@@ -106,9 +107,9 @@ class Var(base.Transformation):
 		base.Transformation.__init__(self)
 		self.name = name
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			return context[self.name]
+			return ctx[self.name]
 		except KeyError:
 			raise exception.Failure('undefined variable', self.name)
 
@@ -119,8 +120,8 @@ class Annos(base.Transformation):
 		base.Transformation.__init__(self)
 		self.annos = annos
 
-	def apply(self, term, context):
-		return term.setAnnotations(self.annos.apply(term, context))
+	def apply(self, term, ctx):
+		return term.setAnnotations(self.annos.apply(term, ctx))
 
 	
 class Pattern(base.Transformation):
@@ -132,9 +133,9 @@ class Pattern(base.Transformation):
 		else:
 			self.pattern = pattern
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		# FIXME: avoid the dict copy
-		return self.pattern.make(term, **dict(context))
+		return self.pattern.make(term, **dict(ctx))
 
 
 _ = _helper.Factory(Int, Real, Str, List, Appl, Var, Pattern)

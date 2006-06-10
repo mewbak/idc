@@ -35,9 +35,9 @@ class Ternary(base.Transformation):
 class Not(Unary):
 	'''Fail if a transformation applies.'''
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			self.operand(term, context)
+			self.operand.apply(term, ctx)
 		except exception.Failure:
 			return term
 		else:
@@ -47,9 +47,9 @@ class Not(Unary):
 class _Try(Unary):
 	'''Attempt a transformation, otherwise return the term unmodified.'''
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			return self.operand.apply(term, context)
+			return self.operand.apply(term, ctx)
 		except exception.Failure:
 			return term
 
@@ -67,17 +67,17 @@ class Where(Unary):
 	term.
 	'''
 	
-	def apply(self, term, context):
-		self.operand.apply(term, context)
+	def apply(self, term, ctx):
+		self.operand.apply(term, ctx)
 		return term
 
 
 class _Composition(Binary):
 	'''Transformation composition.'''
 	
-	def apply(self, term, context):
-		term = self.loperand.apply(term, context)
-		return self.roperand.apply(term, context)
+	def apply(self, term, ctx):
+		term = self.loperand.apply(term, ctx)
+		return self.roperand.apply(term, ctx)
 
 
 def Composition(loperand, roperand):
@@ -93,11 +93,11 @@ def Composition(loperand, roperand):
 class _Choice(Binary):
 	'''Attempt the first transformation, transforming the second on failure.'''
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			return self.loperand.apply(term, context)
+			return self.loperand.apply(term, ctx)
 		except exception.Failure:
-			return self.roperand.apply(term, context)
+			return self.roperand.apply(term, ctx)
 
 
 def Choice(loperand, roperand):
@@ -114,35 +114,35 @@ def Choice(loperand, roperand):
 
 class GuardedChoice(Ternary):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			term = self.operand1.apply(term, context)
+			term = self.operand1.apply(term, ctx)
 		except exception.Failure:
-			return self.operand3.apply(term, context)
+			return self.operand3.apply(term, ctx)
 		else:
-			return self.operand2.apply(term, context)
+			return self.operand2.apply(term, ctx)
 
 
 class IfThen(Binary):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			self.loperand.apply(term, context)
+			self.loperand.apply(term, ctx)
 		except exception.Failure:
 			return term
 		else:
-			return self.roperand.apply(term, context)
+			return self.roperand.apply(term, ctx)
 
 
 class IfThenElse(Ternary):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			self.operand1.apply(term, context)
+			self.operand1.apply(term, ctx)
 		except exception.Failure:
-			return self.operand3.apply(term, context)
+			return self.operand3.apply(term, ctx)
 		else:
-			return self.operand2.apply(term, context)
+			return self.operand2.apply(term, ctx)
 
 
 def Repeat(operand):

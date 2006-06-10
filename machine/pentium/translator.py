@@ -29,7 +29,7 @@ class SslLookup(transf.base.Transformation):
 	def __init__(self):
 		transf.base.Transformation.__init__(self)
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		opcode, operands = term.args
 
 		opcode = opcode.value

@@ -5,7 +5,7 @@ import aterm.terms
 import aterm.factory
 
 from transf import exception
-from transf import context as _context
+from transf import context
 
 
 _factory = aterm.factory.Factory()
@@ -26,15 +26,15 @@ class Transformation(object):
 	def __init__(self):
 		pass
 	
-	def __call__(self, term, context = None):
+	def __call__(self, term, ctx = None):
 		'''Applies the transformation.'''
 		if isinstance(term, basestring):
 			term = _factory.parse(term)
-		if context is None:
-			context = _context.Context()
-		return self.apply(term, context)
+		if ctx is None:
+			ctx = context.Context()
+		return self.apply(term, ctx)
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		'''Applies the transformation.'''
 		raise NotImplementedError(self)
 
@@ -75,7 +75,7 @@ class Transformation(object):
 class Ident(Transformation):
 	'''Identity transformation.'''
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		return term
 
 ident = Ident()
@@ -84,7 +84,7 @@ ident = Ident()
 class Fail(Transformation):
 	'''Failure transformation.'''
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		raise exception.Failure
 
 fail = Fail()
@@ -99,8 +99,8 @@ class Adaptor(Transformation):
 		self.args = args
 		self.kargs = kargs
 
-	def apply(self, term, context):
-		return self.func(term, context, *self.args, **self.kargs)
+	def apply(self, term, ctx):
+		return self.func(term, ctx, *self.args, **self.kargs)
 
 
 class Proxy(Transformation):
@@ -114,10 +114,10 @@ class Proxy(Transformation):
 		Transformation.__init__(self)
 		self.subject = subject
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		if self.subject is None:
 			raise ValueError('subject transformation not specified')
-		return self.subject(term, context)
+		return self.subject.apply(term, ctx)
 
 
 

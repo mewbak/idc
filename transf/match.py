@@ -18,7 +18,7 @@ class Type(base.Transformation):
 		base.Transformation.__init__(self)
 		self.type = type
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		if term.type != self.type:
 			raise exception.Failure
 		return term
@@ -61,7 +61,7 @@ class Lit(base.Transformation):
 		self.type = type
 		self.value = value
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		if term.type != self.type or term.value != self.value:
 			raise exception.Failure
 		return term
@@ -91,7 +91,7 @@ def Str(value):
 class Nil(base.Transformation):
 	'''base.Transformation which matches an empty list term.'''
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		if term.type != aterm.types.LIST or not term.isEmpty():
 			raise exception.Failure
 		return term
@@ -108,10 +108,10 @@ class Cons(base.Transformation):
 		self.head = head
 		self.tail = tail
 		
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			self.head.apply(term.head, context)
-			self.tail.apply(term.tail, context)
+			self.head.apply(term.head, ctx)
+			self.tail.apply(term.tail, ctx)
 		except AttributeError:
 			raise exception.Failure
 		else:	
@@ -146,13 +146,15 @@ class Appl(base.Transformation):
 		else:
 			self.args = args
 		
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			self.name.apply(term.name, context)
-			self.args.apply(term.args, context)
+			name = term.name
+			args = term.args
 		except AttributeError:
 			raise exception.Failure
-		else:	
+		else:
+			self.name.apply(name, ctx)
+			self.args.apply(args, ctx)
 			return term
 
 
@@ -162,11 +164,11 @@ class Var(base.Transformation):
 		base.Transformation.__init__(self)
 		self.name = name
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			value = context[self.name]
+			value = ctx[self.name]
 		except KeyError:
-			context[self.name] = term
+			ctx[self.name] = term
 		else:
 			if not value.isEquivalent(term):
 				raise exception.Failure
@@ -179,8 +181,8 @@ class Annos(base.Transformation):
 		base.Transformation.__init__(self)
 		self.annos = annos
 
-	def apply(self, term, context):
-		self.annos.apply(term.annotations, context)
+	def apply(self, term, ctx):
+		self.annos.apply(term.getAnnotations(), ctx)
 		return term
 
 
@@ -198,16 +200,16 @@ class Pattern(base.Transformation):
 		else:
 			self.pattern = pattern
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		match = self.pattern.match(term)
 		if not match:
 			raise exception.Failure('pattern mismatch', self.pattern, term)
 
 		for name, value in match.kargs.iteritems():
 			try:
-				prev_value = context[name]
+				prev_value = ctx[name]
 			except KeyError:
-				context[name] = value
+				ctx[name] = value
 			else:
 				if not value.isEquivalent(prev_value):
 					raise exception.Failure

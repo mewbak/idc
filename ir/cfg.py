@@ -21,9 +21,9 @@ class Count(base.Transformation):
 		base.Transformation.__init__(self)
 		self.name = name
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			value = int(context[self.name])
+			value = int(ctx[self.name])
 		except TypeError:
 			raise exception.Failure
 		except KeyError:
@@ -33,10 +33,8 @@ class Count(base.Transformation):
 		
 		term = term.factory.makeInt(value)
 		
-		context[self.name] =  term
+		ctx[self.name] =  term
 		return term
-
-
 
 
 #######################################################################
@@ -211,7 +209,7 @@ makeNodeId = strings.ToStr()
 makeAttr = lambda name, value: build._.Attr(name, value)
 
 renderBox \
-	= base.Adaptor(lambda term, context: term.factory.makeStr(box.stringify(term))) \
+	= base.Adaptor(lambda term, ctx: term.factory.makeStr(box.stringify(term))) \
 	| build.Str("???")
 
 makeNodeLabel = parse.Rule('''
@@ -332,15 +330,15 @@ removeInGraph = parse.Transf('''
 
 collectPoints = unify.CollectAll(matchPointShapeNode)
 
-def simplifyPoints(term, context):
-		noStmts = collectPoints.apply(term, context)
+def simplifyPoints(term, ctx):
+		noStmts = collectPoints.apply(term, ctx)
 		print noStmts
 		for src, dst in noStmts:
-			new_context = transf.context.Context(context, ['src', 'dst'])
-			new_context['src'] = src
-			new_context['dst'] = dst
+			new_ctx = transf.ctx.Context(ctx, ['src', 'dst'])
+			new_ctx['src'] = src
+			new_ctx['dst'] = dst
 			print src, "INTO", dst
-			term = removeInGraph.apply(term, new_context)
+			term = removeInGraph.apply(term, new_ctx)
 		return term
 
 simplifyPoints = base.Adaptor(simplifyPoints)

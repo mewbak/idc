@@ -2,8 +2,14 @@
 
 
 from transf import exception
-from transf import context as _context
+from transf import context
 from transf import base
+
+
+try:
+	set
+except NameError:
+	from sets import ImmutableSet as set
 
 
 class Scope(base.Transformation):
@@ -14,9 +20,9 @@ class Scope(base.Transformation):
 		self.transf = transf
 		self.locals = locals
 		
-	def apply(self, term, context):
-		new_context = _context.Context(parent=context, locals=self.locals)
-		return self.transf(term, new_context)
+	def apply(self, term, ctx):
+		new_ctx = context.Context(parent = ctx, locals = self.locals)
+		return self.transf.apply(term, new_ctx)
 
 
 class With(base.Transformation):
@@ -26,11 +32,11 @@ class With(base.Transformation):
 		self.transf = transf
 		self.vars = vars
 		
-	def apply(self, term, context):
-		new_context = _context.Context(parent=context, locals=self.vars.keys())
+	def apply(self, term, ctx):
+		new_ctx = context.Context(parent=ctx, locals=self.vars.keys())
 		for name, transf in self.vars.iteritems():
-			new_context[name] = transf.apply(term, context)
-		return self.transf(term, new_context)
+			new_ctx[name] = transf.apply(term, ctx)
+		return self.transf.apply(term, new_ctx)
 
 
 class Set(base.Transformation):
@@ -39,6 +45,6 @@ class Set(base.Transformation):
 		base.Transformation.__init__(self)
 		self.name = name
 
-	def apply(self, term, context):
-		context[self.name] = term
+	def apply(self, term, ctx):
+		ctx[self.name] = term
 		return term

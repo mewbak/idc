@@ -46,9 +46,9 @@ def dump_term(log, term):
 	log.write("\n")
 
 
-def dump_context(log, context):
+def dump_context(log, ctx):
 	log.write("Context:\n")
-	for name, value in context.iteritems():
+	for name, value in ctx.iteritems():
 		log.write("\t%s = " % name)
 		try:
 			value.writeToTextFile(log)
@@ -68,10 +68,10 @@ class Dump(base.Transformation):
 		self.filename = os.path.abspath(caller.f_code.co_filename)
 		self.lineno = caller.f_lineno
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		self.log.write('File "%s", line %d\n' % (self.filename, self.lineno))
 		dump_term(self.log, term)
-		dump_context(self.log, context)
+		dump_context(self.log, ctx)
 		return term
 
 
@@ -91,12 +91,12 @@ class Trace(combine.Unary):
 			r = r[:trunc] + "..."
 		return r
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		self.log.write('=> Entering %s: %s\n' % (self.name, self.short_repr(term)))
 		#dump_term(self.log, term)
 		start = time.clock()
 		try:
-			term = self.operand.apply(term, context)
+			term = self.operand.apply(term, ctx)
 		finally:
 			end = time.clock()
 			delta = end - start
@@ -114,9 +114,9 @@ class Traceback(combine.Unary):
 		else:
 			self.log = log
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
-			return self.operand.apply(term, context)
+			return self.operand.apply(term, ctx)
 		except exception.Failure:
 			e_type, e_value, tb = sys.exc_info()
 			records = inspect.getinnerframes(tb, 0)
@@ -135,10 +135,10 @@ class Traceback(combine.Unary):
 			frame, file, lineno, func, lines, index = records[-1]
 			
 			term = locals['term']
-			context = locals['context']
+			ctx = locals['ctx']
 			
 			dump_term(self.log, term)
-			dump_context(self.log, context)
+			dump_context(self.log, ctx)
 			raise #exception.Failure
 
 

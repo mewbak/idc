@@ -48,10 +48,10 @@ class Factory(object):
 
 	def makeNil(self, annotations = None):
 		'''Creates a new empty list term'''
-		if annotations is None or self.__nil:
-			return self.__nil
-		else:
+		if annotations:
 			return terms.Nil(self, annotations)
+		else:
+			return self.__nil
 
 	def makeCons(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''

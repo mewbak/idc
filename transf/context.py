@@ -3,17 +3,12 @@
 
 import UserDict
 
-try:
-	set
-except NameError:
-	from sets import ImmutableSet as set
-
 
 class Context(UserDict.DictMixin):
 	
 	def __init__(self, parent = None, locals = ()):
 		self.parent = parent
-		self.locals = set(locals)
+		self.locals = locals
 		self.values = {}
 	
 	def __getitem__(self, name):

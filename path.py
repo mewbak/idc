@@ -51,7 +51,7 @@ class IndexFetch(transf.base.Transformation, aterm.visitor.Visitor):
 		aterm.visitor.Visitor.__init__(self)
 		self.index = index
 
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		return self.visit(term, 0)
 	
 	def visitTerm(self, term, index):
@@ -91,32 +91,32 @@ class Index(transf.base.Transformation, aterm.visitor.IncrementalVisitor):
 		self.operand = operand
 		self.index = index
 		
-	def apply(self, term, context):
-		return self.visit(term, context, 0)
+	def apply(self, term, ctx):
+		return self.visit(term, ctx, 0)
 	
-	def visitTerm(self, term, context, index):
+	def visitTerm(self, term, ctx, index):
 		raise TypeError('not a term list or application: %r' % term)
 	
-	def visitNil(self, term, context, index):
+	def visitNil(self, term, ctx, index):
 		raise IndexError('index out of range')
 	
-	def visitHead(self, term, context, index):
+	def visitHead(self, term, ctx, index):
 		if index == self.index:
-			return self.operand(term, context)
+			return self.operand(term, ctx)
 		else:
 			return term
 	
-	def visitTail(self, term, context, index):
+	def visitTail(self, term, ctx, index):
 		if index < self.index:
-			return self.visit(term, context, index + 1)
+			return self.visit(term, ctx, index + 1)
 		else:
 			return term
 
-	def visitName(self, term, context, index):
+	def visitName(self, term, ctx, index):
 		return term
 
-	def visitArgs(self, term, context, index):
-		return self.visit(term, context, index)
+	def visitArgs(self, term, ctx, index):
+		return self.visit(term, ctx, index)
 
 
 def Path(transformation, path):
@@ -173,11 +173,11 @@ class Range(transf.base.Transformation):
 		self.start = start
 		self.end = end
 		
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		head, rest = split(term, self.start)
 		old_body, tail = split(rest, self.end - self.start)
 		
-		new_body = self.operand(old_body, context)
+		new_body = self.operand(old_body, ctx)
 		if new_body is not old_body:
 			return head.extend(new_body.extend(tail))
 		else:

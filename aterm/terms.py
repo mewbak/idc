@@ -31,12 +31,13 @@ class Term(object):
 	
 	def __init__(self, factory, annotations = None):
 		self.factory = factory
-		if annotations is None:
-			self.annotations = self.factory.makeNil()
-		else:
+		if annotations:
 			self.annotations = annotations
+		else:			
+			self.annotations = None
 	
-	if __debug__:
+	# XXX: this has a large inpact in performance
+	if __debug__ and False:
 		def __setattr__(self, name, value):
 			'''Prevent modification of term attributes.'''
 			
@@ -100,7 +101,10 @@ class Term(object):
 
 	def getAnnotations(self):
 		'''Returns the annotation list.'''
-		return self.annotations
+		if self.annotations is None:
+			return self.factory.makeNil()
+		else:
+			return self.annotations
 
 	def setAnnotations(self, annotations):
 		'''Modify the annotation list.'''
@@ -123,7 +127,10 @@ class Term(object):
 		if isinstance(label, basestring):
 			label = self.factory.parse(label)
 		remover = _helpers.Remover(label)
-		annotations = remover.visit(self.annotations)
+		if self.annotations:
+			annotations = remover.visit(self.annotations)
+		else:
+			annotations = self.factory.makeNil()
 		annotations = self.factory.makeCons(annotation, annotations)
 		return self.setAnnotations(annotations)
 				
@@ -133,8 +140,12 @@ class Term(object):
 		if isinstance(label, basestring):
 			label = self.factory.parse(label)
 		remover = _helpers.Remover(label)
-		annotations = remover.visit(self.annotations)
-		return self.setAnnotations(annotations)
+		annotation = self.annotations
+		if self.annotations:
+			annotations = remover.visit(self.annotations)
+			return self.setAnnotations(annotations)
+		else:
+			return self
 		
 	def make(self, *args, **kargs):
 		'''Create a new term based on this term and a list of arguments.'''
@@ -281,11 +292,6 @@ class Nil(List):
 	__slots__ = []
 	
 	def __init__(self, factory, annotations = None):
-		# this circular reference must be checked here in order to
-		# avoid a infinite loop
-		if annotations is None:
-			annotations = self
-			
 		List.__init__(self, factory, annotations)
 
 	def isEmpty(self):

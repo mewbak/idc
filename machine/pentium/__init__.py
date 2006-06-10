@@ -19,6 +19,6 @@ class Pentium(Machine):
 	def translate(self, term):
 		from machine.pentium import translator
 		
-		term = translator.module(term)				
+		term = translator.module.apply(term, {})
 		return term
 

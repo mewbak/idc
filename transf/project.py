@@ -5,11 +5,12 @@ import aterm.types
 
 from transf import exception
 from transf import base
+from transf import build
 
 
 class Head(base.Transformation):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
 			return term.head
 		except AttributeError:
@@ -20,7 +21,7 @@ head = Head()
 
 class Tail(base.Transformation):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
 			return term.tail
 		except AttributeError:
@@ -56,7 +57,7 @@ def Fetch(operand):
 	
 class Name(base.Transformation):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
 			return term.name
 		except AttributeError:
@@ -67,7 +68,7 @@ name = Name()
 
 class Args(base.Transformation):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		try:
 			return term.args
 		except AttributeError:
@@ -78,20 +79,20 @@ args = Args()
 
 class SubTerms(base.Transformation):
 	
-	def apply(self, term, context):
+	def apply(self, term, ctx):
 		if term.type == aterm.types.APPL:
 			return term.args
 		if term.type == aterm.types.LIST:
 			return term
-		return term.factory.makeNil()
+		return build._nil
 
 subterms = SubTerms()
 
 
 class Annos(base.Transformation):
 	
-	def apply(self, term, context):
-		return term.annotations
+	def apply(self, term, ctx):
+		return term.getAnnotations()
 
 annos = Annos()
 

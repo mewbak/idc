@@ -65,10 +65,17 @@ class EqualityComparator(EquivalenceComparator):
 	annotations).
 	'''
 
+	def compareAnnos(self, terms, others):
+		if terms is None:
+			return others is None
+		else:
+			return others is not None and \
+				isEquivalent(terms, others)
+		
 	def visit(self, term, other):
 		return \
 			EquivalenceComparator.visit(self, term, other) and \
-			isEquivalent(term.annotations, other.annotations)
+			self.compareAnnos(term.annotations, other.annotations)
 
 
 isEqual = EqualityComparator().visit
@@ -237,9 +244,8 @@ class Hash(visitor.Visitor):
 	
 	def visit(self, term):
 		value = visitor.Visitor.visit(self, term)
-		annotations = term.annotations
-		if not annotations.isEmpty():
-			return hash((value, self.visit(annotations)))
+		if term.annotations:
+			return hash((value, self.visit(term.annotations)))
 		else:
 			return value
 
@@ -298,7 +304,7 @@ class TextWriter(Writer):
 
 	def writeAnnotations(self, term):
 		annotations = term.annotations
-		if not annotations.isEmpty():
+		if annotations:
 			self.fp.write('{')
 			self.visit(annotations, inside_list = True)
 			self.fp.write('}')

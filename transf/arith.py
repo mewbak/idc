@@ -17,8 +17,8 @@ class _Unary(combine.Unary):
 		combine.Unary.__init__(self, operand)
 		self.func = func
 		
-	def apply(self, term, context):
-		x = self.operand.apply(term, context)
+	def apply(self, term, ctx):
+		x = self.operand.apply(term, ctx)
 		try:
 			return self.func(term,x)
 		except TypeError:
@@ -31,9 +31,9 @@ class _Binary(combine.Binary):
 		combine.Binary.__init__(self, loperand, roperand)
 		self.func = func
 		
-	def apply(self, term, context):
-		x = self.loperand.apply(term, context)
-		y = self.roperand.apply(term, context)
+	def apply(self, term, ctx):
+		x = self.loperand.apply(term, ctx)
+		y = self.roperand.apply(term, ctx)
 		try:
 			return self.func(term,x,y)
 		except TypeError:

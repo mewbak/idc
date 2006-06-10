@@ -176,7 +176,7 @@ string = Tag('type', 'string')
 sym = Tag('type', 'symbol')
 
 
-def escape(term, context):
+def escape(term, ctx):
 	s = str(term.value)
 	s = s.replace('\"', '\\"')
 	s = s.replace('\t', '\\t')
@@ -187,16 +187,16 @@ def escape(term, context):
 escape = transf.base.Adaptor(escape)
 
 
-def lit(term, context):
+def lit(term, ctx):
 	if term.type == aterm.types.INT:
 		term = term.factory.makeStr(str(term.value))
-		return const.apply(term, context)
+		return const.apply(term, ctx)
 	if term.type == aterm.types.REAL:
 		term = term.factory.makeStr(str(term.value))
-		return const.apply(term, context)
+		return const.apply(term, ctx)
 	if term.type == aterm.types.STR:
-		term = escape.apply(term, context)
-		return string.apply(term, context)
+		term = escape.apply(term, ctx)
+		return string.apply(term, ctx)
 	raise transf.exception.Failure
 lit = transf.base.Adaptor(lit)
 
