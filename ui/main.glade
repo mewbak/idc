@@ -93,6 +93,15 @@
 	  </child>
 
 	  <child>
+	    <widget class="GtkMenuItem" id="refactor">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_Refactor</property>
+	      <property name="use_underline">True</property>
+	      <signal name="activate" handler="on_refactor_activate" last_modification_time="Sat, 10 Jun 2006 10:33:20 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
 	    <widget class="GtkMenuItem" id="view_menu">
 	      <property name="visible">True</property>
 	      <property name="label" translatable="yes">_View</property>
@@ -102,11 +111,19 @@
 		<widget class="GtkMenu" id="view_menu_menu">
 
 		  <child>
-		    <widget class="GtkCheckMenuItem" id="inspector">
+		    <widget class="GtkMenuItem" id="viewterm">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Show _Inspector</property>
+		      <property name="label" translatable="yes">_Term</property>
 		      <property name="use_underline">True</property>
-		      <property name="active">False</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="viewcfg">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_Control Flow Graph</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_viewcfg_activate" last_modification_time="Sat, 10 Jun 2006 10:33:20 GMT"/>
 		    </widget>
 		  </child>
 		</widget>

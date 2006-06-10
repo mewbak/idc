@@ -11,7 +11,7 @@ import glade
 class TextDialog(glade.GladeWindow):
 	
 	def __init__(self):
-		glade.GladeWindow.__init__(self, "./ui/inputter.glade", "textdialog")
+		glade.GladeWindow.__init__(self, "inputter.glade", "textdialog")
 	
 	def aon_okbutton_clicked(self, *args):
 		print "OK!"

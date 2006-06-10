@@ -295,6 +295,10 @@ simplifyFlow = removeNoStmts
 
 
 #######################################################################
+
+render = MarkStmtsIds() & markFlow & makeGraph
+
+#######################################################################
 # Example
 
 
@@ -335,7 +339,7 @@ if __name__ == '__main__':
 
 		import gtk
 		import ui.dotview
-		win = ui.dotview.DotView()
+		win = ui.dotview.DotWindow()
 		win.set_dotcode(dotcode)
 		gtk.main()
 

@@ -5,6 +5,7 @@ import gtk
 import gobject
 
 from ui import glade
+from ui import view
 
 import aterm.types
 
@@ -203,11 +204,9 @@ class TermTreeModel(gtk.GenericTreeModel):
 
 class InspectorWindow(glade.GladeWindow):
 
-	def __init__(self, main_window):
+	def __init__(self):
 		glade.GladeWindow.__init__(self, "inspector.glade", "inspector_window")
-
-		self.main_window = main_window
-		
+				
 		treeview = self.treeview
 
 		renderer = gtk.CellRendererText()
@@ -222,23 +221,45 @@ class InspectorWindow(glade.GladeWindow):
 		column = gtk.TreeViewColumn("Annotations", renderer, text=2)
 		treeview.append_column(column)
 
-		document = self.main_window.document
-		document.term.attach(self.on_term_update)
-		document.selection.attach(self.on_selection_update)
-		
-		if document.term.get() is not None:
-			self.on_term_update(document.term)
-		if document.selection.get() is not None:
-			self.on_selection_update(document.selection)
-			
 		self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+
+	def set_term(self, term):
+		treeview = self.treeview
+		treemodel = TermTreeModel(term)
+		treeview.set_model(treemodel)
+		treeview.expand_all()
+
+	def get_path(self, path):
+		if path is not None:
+			path = [int(i) for i in path]
+			path.reverse()
+			path = tuple([0] + path)
+			return path
+		else:
+			return None
+
+		
+
+class InspectorView(InspectorWindow, view.View):
+	
+	def __init__(self, model):
+		InspectorWindow.__init__(self)
+		view.View.__init__(self, model)
+		
+		model.term.attach(self.on_term_update)
+		model.selection.attach(self.on_selection_update)
+		
+		if model.term.get() is not None:
+			self.on_term_update(model.term)
+		if model.selection.get() is not None:
+			self.on_selection_update(model.selection)
+
+	def get_name(self, name):
+		return 'Inspector View'
 		
 	def on_term_update(self, term):
 		term = term.get()
-		treeview = self.treeview
-		model = TermTreeModel(term)
-		treeview.set_model(model)
-		treeview.expand_all()
+		self.set_term(term)
 
 	def on_selection_update(self, selection):
 		start, end = selection.get()
@@ -254,23 +275,25 @@ class InspectorWindow(glade.GladeWindow):
 			self.treeview.scroll_to_cell(start)
 			#self.treeview.set_cursor(start)
 	
-	def get_path(self, path):
-		if path is not None:
-			path = [int(i) for i in path]
-			path.reverse()
-			path = tuple([0] + path)
-			return path
-		else:
-			return None
-	
 	def on_inspector_window_destroy(self, event):
-		document = self.main_window.document
-
-		document.term.detach(self.on_term_update)
-		document.selection.detach(self.on_selection_update)
-		self.main_window.inspector.set_active(False)
-		self.main_window.inspector_window = None
-
-		# TODO: deactivate
-		
+		self.destroy()
 	
+	def destroy(self):
+		model = self.model
+
+		model.term.detach(self.on_term_update)
+		model.selection.detach(self.on_selection_update)
+		
+
+if __name__ == '__main__':
+	import sys 
+	import aterm.factory
+	
+	factory = aterm.factory.Factory()
+	term = factory.readFromTextFile(sys.stdin)
+
+	win = InspectorWindow()
+	win.set_term(term)
+	win.widget.connect('destroy', gtk.main_quit)
+	gtk.main()
+

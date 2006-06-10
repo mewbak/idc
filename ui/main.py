@@ -22,6 +22,7 @@ import refactoring
 from ui import inspector
 from ui import textbuffer
 from ui import inputter
+from ui import dotview
 
 
 class MainApp(glade.GladeApp):
@@ -95,15 +96,11 @@ class MainApp(glade.GladeApp):
 	def on_quit_activate(self, event):
 		self.quit()
 
-	def on_inspector_toggled(self, menuitem):
-		"""(De)activate the inspector window."""
-		if self.inspector.get_active():
-			assert self.inspector_window is None
-			self.inspector_window = inspector.InspectorWindow(self)
-		else:
-			assert self.inspector_window is not None
-			self.inspector_window.widget.destroy()
-			self.inspector_window = None
+	def on_viewterm_activate(self, event):
+		inspector.InspectorView(self.document)
+
+	def on_viewcfg_activate(self, event):
+		dotview.CfgView(self.document)
 
 	def on_main_window_destroy(self, event):
 		self.quit()
