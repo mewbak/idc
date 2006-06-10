@@ -537,6 +537,9 @@ class TestParse(TestMixin, unittest.TestCase):
 		'if ?c then !x end',
 		'if ?c then !x else !y end',
 		'let x=!X, y=!Y in ![x,y] end',
+		'?1 < !2 + !3',
+		'?1 < !2 + !3 + !4',
+		'?1 + !2 + !3 + !4',
 	]
 	
 	def testAST(self):
@@ -550,6 +553,7 @@ class TestParse(TestMixin, unittest.TestCase):
 	
 	def testParse(self):
 		for input in self.parseTestCases:
+			print input
 			try:
 				output = repr(parse.Transf(input))
 			except antlr.ANTLRException, ex:

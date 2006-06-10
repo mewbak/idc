@@ -23,6 +23,7 @@ builtins = {
 	"concat": lists.Concat,
 	"str": strings.ToStr,
 	
+	"neg": arith.Neg,
 	"add": arith.Add,
 	"sub": arith.Sub,
 	"gt": arith.Gt,

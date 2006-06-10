@@ -70,6 +70,12 @@ class Lit(base.Transformation):
 def Int(value):
 	'''base.Transformation which matches an integer term with the given value.'''
 	return Lit(aterm.types.INT, value)
+
+zero = Int(0)
+one = Int(1)
+two = Int(2)
+three = Int(3)
+four = Int(4)
 	
 
 def Real(value):

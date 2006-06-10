@@ -28,7 +28,7 @@ class Context(UserDict.DictMixin):
 	def _updateitem(self, name, value):
 		if name in self.values or name in self.locals:
 			self.values[name] = value
-		elif parent is not None:
+		elif self.parent is not None:
 			self.parent._updateitem(name, value)
 		else:
 			raise KeyError

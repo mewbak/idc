@@ -14,11 +14,11 @@ from transf import project
 class _Unary(combine.Unary):
 
 	def __init__(self, operand, func):
-		combine.Binary.__init__(self, operand)
+		combine.Unary.__init__(self, operand)
 		self.func = func
 		
 	def apply(self, term, context):
-		x = self.loperand.apply(term, context)
+		x = self.operand.apply(term, context)
 		try:
 			return self.func(term,x)
 		except TypeError:
@@ -43,9 +43,11 @@ class _Binary(combine.Binary):
 
 # TODO: use decorators and/or metaclasses to simplify this
 
+_fnNegInt = lambda t, x: t.factory.makeInt(-int(x))
 _fnIncInt = lambda t, x: t.factory.makeInt(int(x) + 1)
 _fnDecInt = lambda t, x: t.factory.makeInt(int(x) - 1)
 
+NegInt = lambda o: _Unary(o, _fnNegInt)
 IncInt = lambda o: _Unary(o, _fnIncInt)
 DecInt = lambda o: _Unary(o, _fnDecInt)
 
@@ -79,6 +81,7 @@ LtInt = lambda l, r: _Binary(l, r, _fnLtInt)
 GeqInt = lambda l, r: _Binary(l, r, _fnGeqInt)
 LeqInt = lambda l, r: _Binary(l, r, _fnLeqInt)
 
+Neg = NegInt
 Inc = IncInt
 Dec = DecInt
 Add = AddInt

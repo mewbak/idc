@@ -239,7 +239,10 @@ transf_composition
 	;
 
 transf_choice
-	: transf_composition ( PLUS^ transf_composition )*
+	: transf_composition 
+		( LANGLE^ transf_composition PLUS! transf_choice
+		| PLUS^ transf_choice 
+		)?
 	;
 
 transf_expr
@@ -404,6 +407,8 @@ transf returns [ret]
 		{ ret = transf.combine.Composition(l, r) }
 	| #( PLUS l=transf r=transf )
 		{ ret = transf.combine.Choice(l, r) }
+	| #( LANGLE l=transf m=transf r=transf )
+		{ ret = transf.combine.GuardedChoice(l, m, r) }
 	| #( CALL i:ID
 		{ args = [] } 
 		( a=transf { args.append(a) } )*
