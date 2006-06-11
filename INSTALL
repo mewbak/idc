@@ -2,33 +2,44 @@ INSTALLATION INSTRUCTIONS
 =========================
 
 
-1. Make the necessary modifications to the PYTHON, JAVA, and ANTLR_JAR
-   variables in the Makefile.
+Dependencies
+~~~~~~~~~~~~
 
-2. If you have gcj installed, do:
+ * python
 
-     make antlr
+ * antlr <http://www.antlr.org>
 
-   to compile a native-code antlr binary, which is much faster than the running
-   the Java byte-code binary.
+ * make
+ 
+ * pygtk for gui
+ 
+ * graphviz
 
-3. To build all the generated python code, do:
+
+Building 
+~~~~~~~~
+
+1. Make the necessary modifications to the configuration variables on the top
+   of the Makefile.
+
+2. To build all the generated python code, do:
 
      make all
 
-4. To run all the tests, do:
+3. To run all the tests, do:
 
      make tests
 
-5. To see the assembly translation do:
 
-     python translate.py examples/ex*.s
+Running
+~~~~~~~
 
-5. To play around with the GUI do:
+ * To see the assembly translation do:
+
+     python util/translate.py examples/ex*.s
+
+ * To play around with the GUI do:
 
      python idc.py
 
-   You will need pygtk for that. At the moment it does nothing more than open
-   and display a file.
-
-That's all that can be done at the present.
+   You will need pygtk for that.
