@@ -15,14 +15,14 @@ except NameError:
 class Scope(base.Transformation):
 	'''Introduces a new variable scope before the transformation.'''
 	
-	def __init__(self, transf, locals = None):
+	def __init__(self, transf, names = None):
 		base.Transformation.__init__(self)
 		self.transf = transf
-		self.locals = locals
+		self.names = names
 		
 	def apply(self, term, ctx):
-		new_ctx = context.Context(parent = ctx, locals = self.locals)
-		return self.transf.apply(term, new_ctx)
+		ctx = context.Context(self.names, ctx)
+		return self.transf.apply(term, ctx)
 
 
 class With(base.Transformation):
@@ -33,7 +33,7 @@ class With(base.Transformation):
 		self.vars = vars
 		
 	def apply(self, term, ctx):
-		new_ctx = context.Context(parent=ctx, locals=self.vars.keys())
+		new_ctx = context.Context(self.vars.keys(), ctx)
 		for name, transf in self.vars.iteritems():
 			new_ctx[name] = transf.apply(term, ctx)
 		return self.transf.apply(term, new_ctx)

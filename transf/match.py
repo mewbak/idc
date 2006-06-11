@@ -168,10 +168,12 @@ class Var(base.Transformation):
 		try:
 			value = ctx[self.name]
 		except KeyError:
-			ctx[self.name] = term
+			raise exception.Failure('undefined variable', self.name)
 		else:
-			if not value.isEquivalent(term):
-				raise exception.Failure
+			if value is None:
+				ctx[self.name] = term
+			elif not value.isEquivalent(term):
+				raise exception.Failure('variable mismatch', self.name, value, term)
 		return term
 
 
@@ -209,11 +211,13 @@ class Pattern(base.Transformation):
 			try:
 				prev_value = ctx[name]
 			except KeyError:
-				ctx[name] = value
+				raise exception.Failure('undeclared variable', name)
 			else:
-				if not value.isEquivalent(prev_value):
+				if prev_value is None:
+					ctx[name] = value
+				elif not value.isEquivalent(prev_value):
 					raise exception.Failure
-
+					
 		return term
 
 

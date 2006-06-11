@@ -109,9 +109,14 @@ class Var(base.Transformation):
 	
 	def apply(self, term, ctx):
 		try:
-			return ctx[self.name]
+			value = ctx[self.name]
 		except KeyError:
-			raise exception.Failure('undefined variable', self.name)
+			raise exception.Failure('undeclared variable', self.name)
+		else:
+			if value is None:
+				raise exception.Failure('undefined variable', self.name)
+			else:
+				return value
 
 
 class Annos(base.Transformation):
@@ -135,7 +140,11 @@ class Pattern(base.Transformation):
 	
 	def apply(self, term, ctx):
 		# FIXME: avoid the dict copy
-		return self.pattern.make(term, **dict(ctx))
+		kargs = {}
+		for name, value in ctx.iteritems():
+			if value is not None:
+				kargs[name] = value
+		return self.pattern.make(term, **kargs)
 
 
 _ = _helper.Factory(Int, Real, Str, List, Appl, Var, Pattern)

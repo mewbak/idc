@@ -334,7 +334,7 @@ def simplifyPoints(term, ctx):
 		noStmts = collectPoints.apply(term, ctx)
 		print noStmts
 		for src, dst in noStmts:
-			new_ctx = transf.ctx.Context(ctx, ['src', 'dst'])
+			new_ctx = transf.context.Context(['src', 'dst'], ctx)
 			new_ctx['src'] = src
 			new_ctx['dst'] = dst
 			print src, "INTO", dst

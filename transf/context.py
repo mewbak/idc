@@ -1,53 +1,76 @@
 '''Support for transformation context.'''
 
 
-import UserDict
-
-
-class Context(UserDict.DictMixin):
+class Context(dict):
+	'''Dictionary-like object for namespace resolution.'''
 	
-	def __init__(self, parent = None, locals = ()):
+	__slots__ = ['parent']
+	
+	def __init__(self, names = None, parent = None):
+		dict.__init__(self)
+		if names:
+			for name in names:
+				dict.__setitem__(self, name, None)
 		self.parent = parent
-		self.locals = locals
-		self.values = {}
+	
+	def __contains__(self, name):
+		if dict.__contains__(self, name):
+			return True
+		elif self.parent is not None:
+			return name in self.parent
+		else:
+			return False
 	
 	def __getitem__(self, name):
-		try:
-			return self.values[name]
-		except KeyError:
-			if self.parent is not None and name not in self.locals:
-				return self.parent[name]
-			else:
-				raise
-	
-	def _updateitem(self, name, value):
-		if name in self.values or name in self.locals:
-			self.values[name] = value
+		if dict.__contains__(self, name):
+			return dict.__getitem__(self, name)
 		elif self.parent is not None:
-			self.parent._updateitem(name, value)
+			return self.parent[name]
 		else:
 			raise KeyError
-			
-	def __setitem__(self, name, value):
-		try:
-			self._updateitem(name, value)
-		except KeyError:
-			self.values[name] = value
 	
+	def __len__(self):
+		return len(self.keys())
+
+	def __setitem__(self, name, value):
+		if dict.__contains__(self, name):
+			dict.__setitem__(self, name, value)
+		elif self.parent is not None:
+			self.parent[name] = value
+		else:
+			raise KeyError
+	
+	def __repr__(self):
+		return repr(dict(self.iteritems()))
+
+	def items(self):
+		return list(self.iteritems())
+
 	def keys(self):
-		keys = self.values.keys()
-		if self.parent is not None:
-			for key in self.parent:
-				if key not in self.locals:
-					keys.append(key)
-		return keys
+		return list(self.iterkeys())
+
+	def values(self):
+		return list(self.itervalues())
 
 	def iteritems(self):
-		for name, value in self.values.iteritems():
+		for name, value in dict.iteritems(self):
 			yield name, value
 		if self.parent is not None:
 			for name, value in self.parent.iteritems():
-				if name not in self.locals:
+				if not dict.__contains__(self, name):
 					yield name, value
-		raise StopIteration
-		
+
+	def iterkeys(self):
+		for name, value in self.iteritems():
+			yield name
+
+	__iter__ = iterkeys
+	
+	def itervalues(self):
+		for name, value in self.iteritems():
+			yield value
+	
+	def update(self, other):
+		for name, value in other.iteritems():
+			self[name] = value
+
