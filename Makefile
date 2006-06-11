@@ -106,7 +106,6 @@ dist: all doc
 		--exclude '.*.sw?' \
 		--exclude '.svn' \
 		--exclude '*.pyc' \
-		--exclude '*TokenTypes.txt' \
 		.
 
 .PHONY: dist
@@ -115,7 +114,7 @@ dist: all doc
 # Clean the generated files
 
 sweep:
-	@$(RM) $(shell find -iname '*.py[oc]')
+	@$(RM) $(shell find -iname '*.py[oc]' -or -iname '*.prof' -or -iname '*.log')
 
 clean:
 	@$(RM) .deps.mak

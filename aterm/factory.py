@@ -104,40 +104,56 @@ class Factory(object):
 			msg += repr(value)
 			raise TypeError(msg)
 
-	def readFromTextFile(self, fp):
-		'''Creates a new term by parsing from a text stream.'''
+	def _parse(self, buf, pos = 0):
+		'''Creates a new term by parsing a string.'''
 		
 		from aterm.lexer import Lexer
 		from aterm.parser import Parser
 		from antlr import ANTLRException
 
 		try:
-			lexer = Lexer(fp)
+			lexer = Lexer(buf, pos)
 			parser = Parser(lexer, factory = self)
 			return parser.aterm()
 		except ANTLRException, ex:
 			raise exceptions.ParseException(str(ex))
 	
+	def readFromTextFile(self, fp):
+		'''Creates a new term by parsing from a text stream.'''
+
+		try:
+			fileno = fp.fileno()
+		except AttributeError:
+			# read whole file into memory
+			buf = fp.read()
+			pos = 0
+		else:
+			# map the whole file into memory
+			import os
+			import mmap
+			pos = os.lseek(fileno, 0, 0)
+			length = os.lseek(fileno, 0, 2)
+			os.lseek(fileno, pos, 0)
+			buf = mmap.mmap(fileno, length, access = mmap.ACCESS_READ)
+			
+		return self._parse(buf, pos)
+
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
-
+		
 		try:
 			return self.parseCache[buf]
 		except KeyError:
-			try:
-				from cStringIO import StringIO
-			except ImportError:
-				from StringIO import StringIO
-
-			fp = StringIO(buf)
-			result = self.readFromTextFile(fp)
+			pass
+		
+		result = self._parse(buf)
+		
+		if len(self.parseCache) > self.MAX_PARSE_CACHE_LEN:
+			# TODO: use a LRU cache policy
+			self.parseCache.clear()
+		self.parseCache[buf] = result
 			
-			if len(self.parseCache) > self.MAX_PARSE_CACHE_LEN:
-				# TODO: use a LRU cache policy
-				self.parseCache.clear()
-			self.parseCache[buf] = result
-			
-			return result
+		return result
 
 	def match(self, pattern, other):
 		'''Matches the term to a string pattern and a list of arguments. 

@@ -10,78 +10,10 @@ options {
 }
 
 
-class lexer extends Lexer;
-
-tokens {
-	INT;
-	REAL;
-}
-
-// Whitespace -- ignored
-WS	
-	: ( ' ' | '\t' | '\f' )+ { $setType(SKIP); }
-	| ( '\r' ('\n')? | '\n' ) { $newline; $setType(SKIP); }
-	;
-
-REAL_OR_INT	
-	:
-		{ $setType(INT); }
-		// sign
-		('-')?
-		// fraction
-		( ('0'..'9')+ ( '.' ('0'..'9')* { $setType(REAL); } )?
-		| '.' ('0'..'9')+ { $setType(REAL); }
-		) 
-		// exponent
-		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )?
-	;
-
-STR
-	: '"'! ( CHAR )* '"'!
-	;
-
-protected
-CHAR
-	:
-		'\\'!
-		( 'n' { $setText("\n"); }
-		| 'r' { $setText("\r"); }
-		| 't' { $setText("\t"); }
-		| '"' { $setText("\""); }
-		| ~('n'|'r'|'t'|'"')
-		)
-	| ~('"'|'\\')
-	;
-
-CONS
-	: ('A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
-	;
-
-VAR
-	: ('a'..'z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
-	;
-
-WILDCARD: '_';
-
-LPAREN: '(';
-RPAREN: ')';
-
-LSQUARE: '[';
-RSQUARE: ']';
-
-COMMA: ',';
-
-STAR: '*';
-
-LCURLY: '{';
-RCURLY: '}';
-
-ASSIGN: '=';
-
-
 class parser extends Parser;
 
 options {
+	importVocab = lexer;
 	defaultErrorHandler = false;
 }
 
