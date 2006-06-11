@@ -362,7 +362,11 @@ class TextWriter(Writer):
 		self.writeAnnotations(term)
 	
 	def visitReal(self, term):
-		self.fp.write('%g' % term.value)
+		value = term.value
+		if float(int(value)) == value:
+			self.fp.write('%0.1f' % value)
+		else:
+			self.fp.write('%g' % value)
 		self.writeAnnotations(term)
 	
 	def visitStr(self, term):
