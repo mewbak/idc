@@ -69,7 +69,7 @@ getStmtId = annotation.Get(stmtIdAnno)
 SetStmtId = lambda id: annotation.Set(stmtIdAnno, id)
 setStmtId = SetStmtId(Count('stmtid'))
 
-markStmtsIds = scope.With(
+markStmtsIds = scope.Let(
 	traverse.TopDown(combine.Try(matchStmt & setStmtId)),
 	stmtid = build.zero
 )

@@ -111,7 +111,7 @@ def Pattern(match_transf, build_transf, locals = None):
 	build_transf = _Coerce(build_transf, build.Term, build.Pattern)
 	rule = match_transf & build_transf
 	if locals:
-		rule = scope.Scope(rule, locals)
+		rule = scope.Local(rule, locals)
 	return rule
 
 
@@ -134,5 +134,5 @@ def PatternSeq(seq, locals = None):
 		return base.fail
 	else:
 		if locals:
-			rules = scope.Scope(rules, locals)
+			rules = scope.Local(rules, locals)
 		return rules

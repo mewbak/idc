@@ -438,7 +438,7 @@ transf returns [ret]
 	  )
 		{
             if vars:
-                ret = transf.scope.Scope(ret, vars)
+                ret = transf.scope.Local(ret, vars)
         }
 	| #( RULE m=match_term b=build_term
 		( WHERE w=transf 
@@ -453,7 +453,7 @@ transf returns [ret]
             vars = []
             self.collect_transf_vars(#at, vars)
             if vars:
-                ret = transf.scope.Scope(ret, vars)
+                ret = transf.scope.Local(ret, vars)
         }
 	| #( APPLY_MATCH t=transf m=match_term )
 		{ ret = transf.combine.Composition(t, m) }
@@ -472,7 +472,7 @@ transf returns [ret]
 			{ vars[#n.getText()] = v }
 		)* IN t=transf
 	  )
-	  	{ ret = transf.scope.With(t, **vars) }
+	  	{ ret = transf.scope.Let(t, **vars) }
 	;
 	
 match_term returns [ret]

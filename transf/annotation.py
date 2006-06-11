@@ -13,7 +13,7 @@ from transf import project
 
 def Set(label, *values):
 	annos_var = build.Var('annos')
-	return scope.With(
+	return scope.Let(
 		traverse.Annos(
 			traverse.One(traverse.Appl(match.Str(label), annos_var))
 			| build.Cons(build.Appl(build.Str(label), annos_var), base.ident)
