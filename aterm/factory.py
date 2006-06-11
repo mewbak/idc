@@ -104,7 +104,7 @@ class Factory(object):
 			msg += repr(value)
 			raise TypeError(msg)
 
-	def _parse(self, buf, pos = 0):
+	def _parse(self, buf, pos = 0, filename = None):
 		'''Creates a new term by parsing a string.'''
 		
 		from aterm.lexer import Lexer
@@ -112,7 +112,7 @@ class Factory(object):
 		from antlr import ANTLRException
 
 		try:
-			lexer = Lexer(buf, pos)
+			lexer = Lexer(buf, pos, filename)
 			parser = Parser(lexer, factory = self)
 			return parser.aterm()
 		except ANTLRException, ex:
@@ -136,7 +136,12 @@ class Factory(object):
 			os.lseek(fileno, pos, 0)
 			buf = mmap.mmap(fileno, length, access = mmap.ACCESS_READ)
 			
-		return self._parse(buf, pos)
+		try:
+			filename = fp.name
+		except AttributeError:
+			filename = None
+			
+		return self._parse(buf, pos, filename)
 
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''

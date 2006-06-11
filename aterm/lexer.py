@@ -78,21 +78,41 @@ char_table = {
 }
 
 
+class RecognitionException(antlr.RecognitionException):
+	
+	def __init__(self, *args):
+		antlr.RecognitionException.__init__(self, *args)
+		self.msg = args[0]
+	
+	def __str__(self):
+		buf = antlr.RecognitionException.__str__(self)
+		buf += self.msg
+		return buf
+	
+	__repr__ = __str__
+		
+
 class Lexer(antlr.TokenStream):
 	
-	def __init__(self, buf, pos = 0):
+	def __init__(self, buf, pos = 0, filename = None):
 		self.buf = buf
 		self.pos = pos
 		self.line = 0
 		self.linepos = pos
+		self.filename = filename
 	
 	def nextToken(self):
 		while True:
+			# save state
+			pos = self.pos
+			line = self.line
+			col = self.pos - self.linepos
+			
 			if self.pos == len(self.buf):
 				type = antlr.EOF
 				text = ""
 				break
-			mo = tokens_re.match(self.buf, self.pos)
+			mo = tokens_re.match(self.buf, pos)
 			if mo:
 				i = mo.lastindex
 				self.pos = mo.end()
@@ -105,12 +125,11 @@ class Lexer(antlr.TokenStream):
 					self.linepos = self.pos
 					continue
 				text = mo.group()
-				# FIXME: catch exceptions
 				type = group_table[i - 3]
 				if type == STR:
 					lineoff = max(text.rfind('\r'), text.rfind('\n'))
 					if lineoff != -1:
-						self.linepos = mo.start() + lineoff + 1
+						self.linepos = pos + lineoff + 1
 					text = text[1:-1]
 					text = text.replace('\\r', '\r')
 					text = text.replace('\\n', '\n')
@@ -118,16 +137,23 @@ class Lexer(antlr.TokenStream):
 					text = text.replace('\\', '')
 				break
 			else:
-				text = self.buf[self.pos]
-				# FIXME: catch exceptions
-				type = char_table[text]
+				text = self.buf[pos]
 				self.pos += 1
+				try:
+					type = char_table[text]
+				except KeyError:
+					msg = 'unexpected char: '
+					if text >= ' ' and text <= '~':
+						msg += "'%s'" % text
+					else:
+						msg += "0x%X" % text
+					ex = RecognitionException(msg, self.filename, line, col)
+					raise antlr.TokenStreamRecognitionException(ex)
 				break
-		col = self.pos - self.linepos
 		return antlr.CommonToken(
 			type = type, 
 			text = text, 
-			line = self.line, 
+			line = line, 
 			col = col
 		)
 
