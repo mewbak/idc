@@ -60,11 +60,15 @@ class Term(object):
 	
 	def getHash(self):
 		'''Generate a hash value for this term.'''
-		return _helpers.Hash().visit(self)
+		return _helpers.Hash.hash(self)
 
-	def __hash__(self):
-		'''Shorthand for getHash().'''
-		return self.getHash()
+	def getStructuralHash(self):
+		'''Generate a hash value for this term. 
+		Annotations are not taken into account.
+		'''
+		return _helpers.StructuralHash.hash(self)
+
+	__hash__ = getStructuralHash
 		
 	def isConstant(self):
 		'''Whether this term is constant, as opposed to have variables or wildcards.'''
@@ -172,7 +176,7 @@ class Term(object):
 		return fp.getvalue()
 	
 	def __repr__(self):
-		return str(self)
+		return '<term ' + str(self) + '>'
 
 
 class Literal(Term):

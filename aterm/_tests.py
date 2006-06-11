@@ -352,13 +352,51 @@ class TestTerm(unittest.TestCase):
 			result = self.factory.make(patternStr, *args, **kargs)
 			self.failUnlessEqual(result, expectedResult)
 
-	def testHash(self):
+	def _testHash(self, cmpf, hashf, msg = None):
 		for terms1Str in self.identityTestCases:
-				for term1Str in terms1Str:
-					term1 = self.factory.parse(term1Str)
-					hash = term1.getHash()
-					self.failUnless(isinstance(hash, int))
+			for term1Str in terms1Str:
+				term1 = self.factory.parse(term1Str)
+				hash1 = hashf(term1)
+				self.failUnless(isinstance(hash1, int))
+				self.failIfEqual(hash1, -1)
+				for terms2Str in self.identityTestCases:
+					for term2Str in terms2Str:
+						term2 = self.factory.parse(term2Str)
+						hash2 = hashf(term2)
+						term_eq = cmpf(term1, term2)
+						hash_eq = hash1 == hash2
+						detail = '%s (0x%08x) and %s (0x%08x)' % (
+							term1Str, hash1, term2Str, hash2
+						)
+						if term_eq:
+							self.failUnless(hash_eq,
+								'%s hash/equality incoerence for '
+								'%s' % (msg, detail)
+							)
+						elif 0: 
+							# XXX: this fails on python 2.3 but no on 2.4...
+							self.failIf(hash_eq,
+								'%s hash colision for '
+								'%s' % (msg, detail)
+							)
 
+	def testHash(self):
+		self._testHash(
+			lambda t, o: t.isEquivalent(o), 
+			lambda t: t.getStructuralHash(), 
+			msg = 'structural'
+		)
+		self._testHash(
+			lambda t, o: t.isEqual(o), 
+			lambda t: t.getHash(), 
+			msg = 'full'
+		)
+		self._testHash(
+			lambda t, o: t == o, 
+			lambda t: hash(t), 
+			msg = 'python'
+		)
+		
 	def testAnnotations(self):
 		factory = self.factory
 	
