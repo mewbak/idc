@@ -88,7 +88,7 @@ class TestCase(unittest.TestCase):
 	
 	def testPath(self):
 		self.checkTransformation(
-			lambda _path: path.Path(transf.rewrite.Rule('x', 'X(x)'), _path),
+			lambda _path: path.Path(transf.rewrite.Pattern('x', 'X(x)'), _path),
 			self.pathTestCases
 		)
 
@@ -129,7 +129,7 @@ class TestCase(unittest.TestCase):
 			input = self.factory.parse(inputStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
-			result = path.Range(transf.traverse.Map(transf.rewrite.Rule('x', 'X(x)')), start, end)(input)
+			result = path.Range(transf.traverse.Map(transf.rewrite.Pattern('x', 'X(x)')), start, end)(input)
 			
 			self.failUnlessEqual(result, expectedResult)
 

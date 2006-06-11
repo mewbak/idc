@@ -59,7 +59,7 @@ class Transformation(object):
 		return combine.Composition(other, self)
 	
 	def __repr__(self):
-		name = self.__class__.__name__
+		name = self.__class__.__module__ + '.' + self.__class__.__name__
 		attrs = {}
 		for objname in dir(self):
 			obj = getattr(self, objname)
@@ -69,7 +69,7 @@ class Transformation(object):
 				except:
 					objrepr = "<error>"
 				attrs[objname] = objrepr
-		return name + '(' + ', '.join(["%s=%s" % attr for attr in attrs.iteritems()]) + ')'
+		return '<' + name + '(' + ', '.join(["%s=%s" % attr for attr in attrs.iteritems()]) + ')>'
 			
 
 class Ident(Transformation):

@@ -1,7 +1,11 @@
 '''Term rewriting transformations.'''
 
 
+__docformat__ = 'epytext'
+
+
 import aterm.factory
+import aterm.terms
 import aterm.visitor
 
 from transf import exception
@@ -15,47 +19,120 @@ _factory = aterm.factory.Factory()
 
 
 class _VarCollector(aterm.visitor.Visitor):
-	
-	def __init__(self):
+
+	def collect(cls, term, vars):
+		collector = _VarCollector(vars)
+		collector.visit(term)
+	collect = classmethod(collect)
+
+	def __init__(self, vars):
 		aterm.visitor.Visitor.__init__(self)
-		self.vars = []
+		self.vars = vars
 	
-	def visitLit(self, term, *args, **kargs):
+	def visit(self, term):
+		aterm.visitor.Visitor.visit(self, term)
+		if term.annotations:
+			self.visit(self, term.annotations)
+		
+	def visitLit(self, term):
 		pass
 		
-	def visitNil(self, term, *args, **kargs):
+	def visitNil(self, term):
 		pass
 
-	def visitCons(self, term, *args, **kargs):
+	def visitCons(self, term):
 		self.visit(term.head)
 		self.visit(term.tail)
 
-	def visitAppl(self, term, *args, **kargs):
+	def visitAppl(self, term):
 		self.visit(term.name)
 		self.visit(term.args)
 
-	def visitWildcard(self, term, *args, **kargs):
+	def visitWildcard(self, term):
 		pass
 
-	def visitVar(self, term, *args, **kargs):
+	def visitVar(self, term):
 		self.vars.append(term.name)
-
-
-def Rule(match_pattern, build_pattern, locals = None):
 	
-	if locals is None:
-		if isinstance(match_pattern, basestring):
-			match_pattern = _factory.parse(match_pattern)
-		varcollector = _VarCollector()
-		varcollector.visit(match_pattern)
-		locals = varcollector.vars
+
+def _Coerce(transf, Term, Pattern, locals = None):
+	if isinstance(transf, basestring):
+		transf = _factory.parse(transf)
+	if isinstance(transf, aterm.terms.Term):
+		if transf.isConstant():
+			transf = Term(transf)
+		else:
+			if locals is not None:
+				_VarCollector.collect(transf, locals)
+			transf = Pattern(transf)
+	elif not isinstance(transf, base.Transformation):
+		raise TypeError('not a transformation', transf)
+	return transf
+
+
+def Term(match_term, build_transf):
+	match_transf = match.Term(match_term)
+	build_transf = _Coerce(build_transf, build.Term, build.Pattern, [])
+	return match_transf & build_transf
+
+
+class TermSet(base.Transformation):
+	
+	def __init__(self, seq):
+		base.Transformation.__init__(self)
+		self.transfs = {}
 		
-	return scope.Scope(match.Pattern(match_pattern) & build.Pattern(build_pattern), locals)
+		try:
+			it = seq.iteritems()
+		except AttributeError:
+			it = iter(seq)
+
+		for match_term, build_transf in it:
+			if isinstance(match_term, basestring):
+				match_term = _factory.parse(match_term)
+			build_transf = _Coerce(build_transf, build.Term, build.Pattern, [])
+			self.transfs[match_term] = build_transf
+		
+	def apply(self, term, ctx):
+		try:
+			build_transf = self.transfs[term]
+		except KeyError:
+			raise exceptions.Failure('term not in set', term)
+		else:
+			return build_transf.apply(term, ctx)
+			
+
+def Pattern(match_transf, build_transf, locals = None):
+	if locals is None:
+		locals = []
+		match_transf = _Coerce(match_transf, match.Term, match.Pattern, locals)
+	else:
+		match_transf = _Coerce(match_transf, match.Term, match.Pattern)
+	build_transf = _Coerce(build_transf, build.Term, build.Pattern)
+	rule = match_transf & build_transf
+	if locals:
+		rule = scope.Scope(rule, locals)
+	return rule
 
 
-def RuleSet(patterns, locals = None):
-	rules = base.fail
-	for match_pattern, build_pattern in patterns:
-		rules = rules | Rule(match_pattern, build_pattern, locals)
-	return rules
-
+def _PatternIter(iter, locals):
+	match_transf, build_transf = iter.next()
+	rule = Pattern(match_transf, build_transf, locals)
+	try:
+		return rule | _PatternIter(iter, locals)
+	except StopIteration:
+		return rule
+	
+def PatternSeq(seq, locals = None):
+	if locals is None:
+		rule_locals = None
+	else:
+		rule_locals = []
+	try:
+		rules = _PatternIter(iter(seq), rule_locals)
+	except StopIteration:
+		return base.fail
+	else:
+		if locals:
+			rules = scope.Scope(rules, locals)
+		return rules

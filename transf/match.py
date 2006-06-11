@@ -3,6 +3,7 @@
 
 import aterm.factory
 import aterm.types
+import aterm.terms
 
 from transf import exception
 from transf import base
@@ -52,6 +53,23 @@ def AnAppl():
 	return Type(aterm.types.APPL)
 
 anAppl = AnAppl()
+
+
+class Term(base.Transformation):
+	
+	def __init__(self, term):
+		base.Transformation.__init__(self)
+		if isinstance(term, basestring):
+			self.term = _factory.parse(term)
+		else:
+			assert isinstance(term, aterm.terms.Term)
+			self.term = term
+
+	def apply(self, term, ctx):
+		if self.term.isEquivalent(term):
+			return term
+		else:
+			raise exception.Failure('term mismatch', self.term, term)
 
 
 class Lit(base.Transformation):

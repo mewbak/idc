@@ -37,7 +37,7 @@ class ExtractFunction(refactoring.Refactoring):
 	def apply(self, term, args):
 		factory = term.factory
 		name, = args
-		txn = transf.rewrite.Rule(
+		txn = transf.rewrite.Pattern(
 			"[Label(name),*rest]",
 			"[FuncDef(Void,name,[],Block(rest))]",
 		)

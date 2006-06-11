@@ -9,14 +9,39 @@ import antlr
 import aterm.factory
 
 from transf import *
-
 from transf.base import ident, fail
-from transf.combine import Try
-from transf.rewrite import Rule
 
 
 class TestMixin:
 	
+	termInputs = [
+		'0',
+		'1',
+		'2',
+		'0.0',
+		'0.1',
+		'0.2',
+		'""',
+		'"a"',
+		'"b"',
+		'[]',
+		'[1]',
+		'[1,2]',
+		'C',
+		'C(1)',
+		'D',
+	]
+	
+	varTermInputs = termInputs + [
+		'[1,*]',
+		'[1,*x]',
+		'C(1,*)',
+		'C(1,*a)',
+		'_',
+		'x',
+		'y',
+	]
+
 	def setUp(self):
 		self.factory = aterm.factory.Factory()
 
@@ -29,9 +54,13 @@ class TestMixin:
 				result = transf(term)
 			except exception.Failure:
 				result = self.factory.parse('FAILURE')
+				
+			self.failUnless(isinstance(result, aterm.terms.Term), 
+				msg = "not a term: %s -> %s (!= %s)" % (term, result, expectedResult)
+			)
 			
 			self.failUnlessEqual(result, expectedResult, 
-				msg = "%r -> %r (!= %r)" %(term, result, expectedResult)
+				msg = "%s -> %s (!= %s)" %(term, result, expectedResult)
 			)
 
 	def _testMetaTransf(self, metaTransf, testCases):
@@ -44,25 +73,9 @@ class TestMixin:
 
 class TestCombine(TestMixin, unittest.TestCase):
 	
-	annotatorTestCases = [
-		('1', '1{Path,[]}'),
-		('[1,2]', '[1{Path,[0]},2{Path,[1]}]{Path,[]}'),
-		('C(1,2)', 'C(1{Path,[0]},2{Path,[1]}){Path,[]}'),
-	]
-	
-	termsInputs = [
-		'1',
-		'0.1',
-		'"s"',
-		'[1,2]',
-		'C(1,2)',
-		'_',
-		'x',
-	]
-		
-	identTestCases = [(term, term) for term in termsInputs]
-	failTestCases = [(term, 'FAILURE') for term in termsInputs]
-	xxxTestCases = [(term, 'X') for term in termsInputs]
+	identTestCases = [(term, term) for term in TestMixin.termInputs]
+	failTestCases = [(term, 'FAILURE') for term in TestMixin.termInputs]
+	xxxTestCases = [(term, 'X') for term in TestMixin.termInputs]
 
 	def testIdent(self):
 		self._testTransf(ident, self.identTestCases)
@@ -96,7 +109,7 @@ class TestCombine(TestMixin, unittest.TestCase):
 		argTable = {
 			0: fail,
 			1: ident, 
-			2: Rule('_', 'X'),
+			2: rewrite.Pattern('_', 'X'),
 		}
 		testCaseTable = {
 			1: self.unaryTestCases, 
@@ -116,7 +129,7 @@ class TestCombine(TestMixin, unittest.TestCase):
 			try:
 				self._testTransf(transf, resultCases)
 			except AssertionError:
-				self.fail(msg = "%r => ? != %r" % (args, result))
+				self.fail(msg = "%s => ? != %s" % (args, result))
 	
 	def testNot(self):
 		func = lambda x: not x
@@ -151,31 +164,6 @@ class TestCombine(TestMixin, unittest.TestCase):
 
 
 class TestMatch(TestMixin, unittest.TestCase):
-	
-	termInputs = [
-		'0',
-		'1',
-		'2',
-		'0.0',
-		'0.1',
-		'0.2',
-		'""',
-		'"a"',
-		'"b"',
-		'[]',
-		'[1]',
-		'[1,2]',
-		'[1,*]',
-		'[1,*x]',
-		'C',
-		'C(1)',
-		'C(1,*)',
-		'C(1,*a)',
-		'D',
-		'_',
-		'x',
-		'y',
-	]
 	
 	def _testMatchTransf(self, transf, *matchStrs):
 		testCases = []
@@ -215,10 +203,45 @@ class TestMatch(TestMixin, unittest.TestCase):
 		self._testMatchTransf(match._.C(1,2), 'C(1,2)')
 
 
+class TestRewrite(TestMixin, unittest.TestCase):
+	
+	setTransfTestCases = [
+		lambda t,i: base.ident,
+		lambda t,i: base.fail,
+		lambda t,i: rewrite.Pattern('x', i),
+		lambda t,i: rewrite.Pattern(t, 'X(%s)' % i),
+		lambda t,i: rewrite.Pattern(t, 'X(%s,%s)' % (t, i)),
+	]
+	
+	def _testSetTransf(self, SetTransf):
+		for Transf in self.setTransfTestCases:
+			testCases = []
+			seq = []
+			i = 0
+			for input in self.termInputs:
+				i += 1
+				inputTransf = Transf(input, str(i))
+				try:
+					output = str(inputTransf(input))
+				except exception.Failure:
+					output = 'FAILURE'
+				seq.append((input,inputTransf))
+				testCases.append((input, output))
+			transf = SetTransf(seq)
+			self._testTransf(transf, testCases)
+	
+	def testTermSet(self):
+		self._testSetTransf(rewrite.TermSet)
+	
+	def testPatternSeq(self):
+		# XXX: this is just a sanity check as it does not use patterns
+		self._testSetTransf(rewrite.PatternSeq)
+
+
 class TestTraverse(TestMixin, unittest.TestCase):
 
 	mapTestCases = (
-		[ident, fail, Rule('x', 'X(x)'), match.Pattern('1')],
+		[ident, fail, rewrite.Pattern('x', 'X(x)'), match.Pattern('1')],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
@@ -234,7 +257,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 	# TODO: testFetch
 
 	filterTestCases = (
-		[ident, fail, Rule('x', 'X(x)'), match.Pattern('2')],
+		[ident, fail, rewrite.Pattern('x', 'X(x)'), match.Pattern('2')],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', '[]', '[X(1)]', '[]'],
@@ -247,7 +270,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.Filter, self.filterTestCases)
 
 	allTestCases = (
-		[ident, fail, Rule('x', 'X(x)')],
+		[ident, fail, rewrite.Pattern('x', 'X(x)')],
 		{
 			'A()': [
 				'A()', 
@@ -271,7 +294,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.All, self.allTestCases)	
 	
 	oneTestCases = (
-		[ident, fail, Rule('X(*a)', 'Y(*a)')],
+		[ident, fail, rewrite.Pattern('X(*a)', 'Y(*a)')],
 		{
 			'1': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'0.1': ['FAILURE', 'FAILURE', 'FAILURE'],
@@ -291,7 +314,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.One, self.oneTestCases)	
 
 	someTestCases = (
-		[ident, fail, Rule('X(*a)', 'Y(*a)')],
+		[ident, fail, rewrite.Pattern('X(*a)', 'Y(*a)')],
 		{
 			'1': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'0.1': ['FAILURE', 'FAILURE', 'FAILURE'],
@@ -311,7 +334,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.Some, self.someTestCases)	
 
 	bottomUpTestCases = (
-		[ident, fail, Rule('x', 'X(x)')],
+		[ident, fail, rewrite.Pattern('x', 'X(x)')],
 		{
 			'A()': [
 				'A()', 
@@ -330,7 +353,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.BottomUp, self.bottomUpTestCases)
 
 	topDownTestCases = (
-		[ident, fail, Try(Rule('f(x,y)', 'X(x,y)'))],
+		[ident, fail, combine.Try(rewrite.Pattern('f(x,y)', 'X(x,y)'))],
 		{
 			'A()': [
 				'A()', 
@@ -367,7 +390,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 class TestProject(TestMixin, unittest.TestCase):
 
 	fetchTestCases = (
-		[ident, fail, Rule('X(*a)', 'Y(*a)')],
+		[ident, fail, rewrite.Pattern('X(*a)', 'Y(*a)')],
 		{
 			'[]': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'[X]': ['X', 'FAILURE', 'Y'],
@@ -548,17 +571,17 @@ class TestParse(TestMixin, unittest.TestCase):
 			try:
 				parser.transf()
 			except antlr.ANTLRException, ex:
-				self.fail(msg = "%r failed: %s" % (input, ex))
+				self.fail(msg = "%s failed: %s" % (input, ex))
 			ast = parser.getAST()
 	
 	def testParse(self):
 		for input in self.parseTestCases:
-			print input
+			#print input
 			try:
 				output = repr(parse.Transf(input))
 			except antlr.ANTLRException, ex:
-				self.fail(msg = "%r failed: %s" % (input, ex))
-			print output
+				self.fail(msg = "%s failed: %s" % (input, ex))
+			#print output
 
 
 if __name__ == '__main__':
