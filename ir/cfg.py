@@ -37,6 +37,19 @@ class Count(base.Transformation):
 		return term
 
 
+reduceStmts = parse.Transf('''
+{ stmts:
+	( ?Block(stmts)
+	+ ?If(_, *stmts)
+	+ ?While(_, *stmts)
+	+ ?FuncDef(_,_,_,*stmts)
+	+ ?Module(stmts)
+	) 
+	; !stmts
+	+ ![]
+}
+''')
+
 #######################################################################
 # Statement matching
 
@@ -85,8 +98,30 @@ makeLabelRef = parse.Rule('''
 	Label(name) -> [name, <getStmtId>]
 ''')
 
-makeLableTable = unify.CollectAll(matchLabel & makeLabelRef)
-	
+makeLabelTable = unify.CollectAll(matchLabel & makeLabelRef)
+
+setLabelRef = rewrite.Pattern(
+	"Label(name)",
+	table.Set('lbls', build.Var('name'), getStmtId)
+)
+
+setLabelTable = base.Proxy()
+setLabelTables = traverse.Map(setLabelTable)
+setLabelTable.subject = parse.Transf('''
+	where(
+		setLabelRef
+		+ reduceStmts
+		; setLabelTables
+	)
+''')
+
+LabelTable = lambda operand: scope.Local(
+	table.New('lbls') & setLabelTable & operand,
+	['lbls']
+)
+
+LookupLabel = lambda name: table.Get('lbls', name)
+
 
 #######################################################################
 # Statements Flow
@@ -157,9 +192,8 @@ let this = getStmtId in
 			next = !next,
 			retn = GetTerminalNodeId(!this),
 			brek = !0,
-			cont = !0,
-			lbls = makeLableTable
-		in 
+			cont = !0
+		in
 			~_(_, _, _, <markStmtFlow>)
 			; SetCtrlFlow(![next])
 		end
@@ -210,7 +244,7 @@ let this = getStmtId in
 		< SetCtrlFlow(![retn])
 		; where(!this; setNext)
 +	?Branch(*)
-		< SetCtrlFlow({ _(Sym(name)) -> [<lists.Lookup(!name,!lbls)>] } + ![])
+		< SetCtrlFlow({ _(Sym(name)) -> [<LookupLabel(!name)>] } + ![])
 		; where(!this; setNext)
 +	?Block(*)
 		< ~_(<markStmtsFlow>)
@@ -221,10 +255,9 @@ let this = getStmtId in
 			next = !next,
 			retn = GetTerminalNodeId(!this),
 			brek = !0,
-			cont = !0,
-			lbls = makeLableTable
+			cont = !0
 		in 
-			~_(_, _, _, <markStmtFlow>)
+			LabelTable(~_(_, _, _, <markStmtFlow>))
 			; SetCtrlFlow(![next])
 		end
 		# where(!next; setNext)
@@ -250,11 +283,9 @@ markModuleFlow = parse.Transf('''
 			next = !0,
 			retn = !0,
 			brek = !0,
-			cont = !0,
-			# TODO: don't make a global lable table
-			lbls = makeLableTable
+			cont = !0
 		in
-			~_(<markStmtsFlow>)
+			LabelTable(~_(<markStmtsFlow>))
 		end
 ''')
 
@@ -347,18 +378,6 @@ makeTerminalNode = hasTerminalNode & build._.Node(
 	build.nil
 )
 
-reduceStmts = parse.Transf('''
-{ stmts:
-	( ?Block(stmts)
-	+ ?If(_, *stmts)
-	+ ?While(_, *stmts)
-	+ ?FuncDef(_,_,_,*stmts)
-	+ ?Module(stmts)
-	) 
-	; !stmts
-	+ ![]
-}
-''')
 
 # TODO: try to merge both collects in one? it doesn't seem to be more efficient though
 makeNodes = lists.Concat(
@@ -422,37 +441,33 @@ if __name__ == '__main__':
 	import sys
 	factory = aterm.factory.Factory()
 	for arg in sys.argv[1:]:
+		print "* Reading aterm"
 		term = factory.readFromTextFile(file(arg, 'rt'))
-
-		#print ( pprint2.module  )(term)
 		#print ( pprint2.module & renderBox )(term)
+		#print
 
+		print "* Marking statements"
 		term = markStmtsIds (term)
-		#print makeLableTable (term)
-		#print (lists.Lookup(build.Str("main"), makeLableTable)) (term)
 		#print term
-		print
-		#term = (debug.Traceback(markFlow)) (term)
+		#print
+		
+		print "* Marking flow"
 		term = markFlow (term)
 		#print term
-		print
+		#print
 		
-		print "*********"
-		#print term
-		print "*********"
-		#sys.exit(0)
-		
-		#print makeNodes (term)
-		#print makeEdges (term)
-		
+		print "* Making Graph"
 		term = makeGraph(term)
-		print term
-		print
+		#print term
+		#print
 
+		print "* Simplifying Graph"
 		term = simplifyGraph (term)
-		print term
-		print
+		#print term
+		#print
 		
+		print "* Generating DOT"
+		term = simplifyGraph (term)
 		dotcode = lang.dot.stringify(term)
 		print dotcode
 

@@ -47,6 +47,7 @@ from transf import annotation
 from transf import arith
 from transf import lists
 from transf import strings
+from transf import table
 
 from transf import debug
 
