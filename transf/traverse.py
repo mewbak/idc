@@ -28,6 +28,7 @@ class Cons(base.Transformation):
 		
 		new_head = self.head.apply(old_head, ctx)
 		new_tail = self.tail.apply(old_tail, ctx)
+		
 		if new_head is not old_head or new_tail is not old_tail:
 			return term.factory.makeCons(
 				new_head,
@@ -38,7 +39,54 @@ class Cons(base.Transformation):
 			return term
 
 
-class FilterCons(Cons):
+class ConsR(Cons):
+	
+	def apply(self, term, ctx):
+		try:
+			old_head = term.head
+			old_tail = term.tail
+		except AttributeError:
+			raise exception.Failure('not a list cons term', term)
+		
+		new_tail = self.tail.apply(old_tail, ctx)
+		new_head = self.head.apply(old_head, ctx)
+		
+		if new_head is not old_head or new_tail is not old_tail:
+			return term.factory.makeCons(
+				new_head,
+				new_tail,
+				term.annotations
+			)
+		else:
+			return term
+
+
+class ConsFilter(Cons):
+	
+	def apply(self, term, ctx):
+		try:
+			old_head = term.head
+			old_tail = term.tail
+		except AttributeError:
+			raise exception.Failure
+		
+		try:
+			new_head = self.head.apply(old_head, ctx)
+		except exception.Failure:
+			return self.tail.apply(old_tail, ctx)
+		new_tail = self.tail.apply(old_tail, ctx)
+		
+		if new_head is not old_head or new_tail is not old_tail:
+			return term.factory.makeCons(
+				new_head,
+				new_tail,
+				term.annotations
+			)
+		else:
+			return term
+
+
+class ConsFilterR(Cons):
 	
 	def apply(self, term, ctx):
 		try:
@@ -131,23 +179,28 @@ def Anno(anno):
 _ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, match.Var, match.Pattern)
 
 
-def Map(operand):
+def Map(operand, Cons = Cons):
 	map = base.Proxy()
 	map.subject = match.nil | Cons(operand, map)
 	return map
+
+
+def MapR(operand):
+	return Map(operand, ConsR)
+
+
+def Filter(operand):
+	return Map(operand, ConsFilter)
+
+
+def FilterR(operand):
+	return Map(operand, ConsFilter)
 
 
 def Fetch(operand):
 	fetch = base.Proxy()
 	fetch.subject = Cons(operand, base.ident) | Cons(base.ident, fetch)
 	return fetch
-
-
-def Filter(operand):
-	filter = base.Proxy()
-	filter.subject = match.nil | FilterCons(operand, filter)
-	return filter
-
 
 
 class _Subterms(base.Transformation):

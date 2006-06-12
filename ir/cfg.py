@@ -267,15 +267,7 @@ let this = getStmtId in
 end
 ''')
 
-def MapR(operand):
-	map = base.Proxy()
-	map.subject \
-		= match.nil \
-		| traverse.Cons(base.ident, map) \
-		& traverse.Cons(operand, base.ident)
-	return map
-
-markStmtsFlow.subject = MapR(markStmtFlow)
+markStmtsFlow.subject = traverse.MapR(markStmtFlow)
 
 markModuleFlow = parse.Transf('''
 	?Module(*)
