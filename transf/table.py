@@ -7,14 +7,14 @@ from transf import _operate
 
 
 class Table(dict):
-	'''A table is merely a dictionary of terms to terms.'''
+	'''A table is mapping of terms to terms.'''
 	
 	pass
 	
 
 class New(base.Transformation):
 	'''Create a new table in the context.
-	A variable must be declared in the context.
+	The name must be declared in the context.
 	'''
 
 	def __init__(self, name):

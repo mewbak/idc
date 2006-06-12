@@ -39,3 +39,20 @@ def Let(operand, **defs):
 		return operand
 	return _Let(operand, defs)
 
+
+class Dynamic(_operate.Unary):
+	'''Introduces a dynamic scope around a transformation, allowing them
+	to be called outside the original scope, while preserving the original 
+	context.
+	
+	@param operand: a transformation.
+	@param ctx: the context to be passed to the operand.
+	'''
+	
+	def __init__(self, operand, ctx):
+		_operate.Unary.__init__(self, operand)
+		self.ctx = ctx
+		
+	def apply(self, term, ctx):
+		return self.operand.apply(term, self.ctx)
+
