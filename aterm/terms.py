@@ -86,7 +86,7 @@ class Term(object):
 	
 	def __eq__(self, other):
 		if isinstance(other, Term):
-			return _helpers.isEqual(self, other)
+			return _helpers.isEquivalent(self, other)
 		else:
 			return False
 
