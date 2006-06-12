@@ -170,6 +170,70 @@ let this = getStmtId in
 end
 ''')
 
+markStmtFlow.subject = parse.Transf('''
+let this = getStmtId in
+	?Assign(*)
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?Label(*)
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?Asm(*) 
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?If(*)
+		< { true, false: 
+			~_(_, 
+				<let next=!next in markStmtFlow; where(!next => true) end>, 
+				<let next=!next in markStmtFlow; where(!next => false) end>
+			)
+			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
+		}
+		; where(!this; setNext)
++	?While(*)
+		< { true, false:
+			where(!next => false)
+			; ~_(_, <markStmtsFlow; where(!next => true)>)
+			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
+		}
+		; where(!this; setNext)
++	?NoStmt(*)
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?Continue(*) 
+		< SetCtrlFlow(![cont])
+		; where(!this; setNext)
++	?Break(*) 
+		< SetCtrlFlow(![brek])
+		; where(!this; setNext)
++	?Ret(*) 
+		< SetCtrlFlow(![retn])
+		; where(!this; setNext)
++	?Branch(*)
+		< SetCtrlFlow({ _(Sym(name)) -> [<lists.Lookup(!name,!lbls)>] } + ![])
+		; where(!this; setNext)
++	?Block(*)
+		< ~_(<markStmtsFlow>)
+		; SetCtrlFlow(![next])
+		; where(!this; setNext)
++	?FuncDef(*)
+		< let 
+			next = !next,
+			retn = GetTerminalNodeId(!this),
+			brek = !0,
+			cont = !0,
+			lbls = makeLableTable
+		in 
+			~_(_, _, _, <markStmtFlow>)
+			; SetCtrlFlow(![next])
+		end
+		# where(!next; setNext)
++	
+		SetCtrlFlow({ n(*) -> [next{Cond(n)}] })
+		; where(!this; setNext)
+end
+''')
+
 def MapR(operand):
 	map = base.Proxy()
 	map.subject \

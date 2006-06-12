@@ -57,6 +57,9 @@ tokens {
 	LET = "let";
 	IN = "in";
 	WHERE = "where";
+	SWITCH = "switch";
+	CASE = "case";
+	OTHERWISE = "otherwise";
 }
 
 protected
@@ -219,6 +222,10 @@ transf_atom
 		{ ## = #(#[BUILD_APPLY,"BUILD_APPLY"], ##) }
 	| IF^ transf THEN! transf ( ELSE! transf )? END!
 	| LET^ defn_list IN transf END!
+	| SWITCH^ transf 
+		( CASE transf COLON! transf )* 
+		( OTHERWISE COLON! transf )? 
+	  END!
 	;
 
 defn
@@ -465,6 +472,17 @@ transf returns [ret]
 		| e=transf
 			{ ret = transf.combine.IfThenElse(c, t, e) }
 		)
+	  )
+	| #( SWITCH cond=transf 
+			{ cases = [] }
+		( CASE c=transf a=transf
+			{ cases.append((c, a)) }
+		)*
+		( OTHERWISE o=transf
+		|
+			{ o=None }
+		)
+			{ ret = transf.sugar.Switch(cond, cases, o) }
 	  )
 	| #( LET 
 			{ vars = {} }

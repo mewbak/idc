@@ -21,8 +21,9 @@ To help distinguish between transformations and transformation factories,
 throughout the code, transformations instances' names start with a lower-case
 letter, while transformations factories start with a capital.
 
-More information about Stratego/XT can be found in its U{manual 
-<http://www.stratego-language.org/Stratego/StrategoDocumentation>}.
+More information about Stratego/XT can be found in its 
+U{Manual <http://www.stratego-language.org/Stratego/StrategoDocumentation>} and its
+U{API Documentation <http://nix.cs.uu.nl/dist/stratego/stratego-lib-docs-0.16/docs/>.
 '''
 
 __docformat__ = 'epytext'
@@ -39,6 +40,7 @@ from transf import build
 from transf import rewrite
 from transf import traverse
 from transf import unify
+from transf import sugar
 
 from transf import annotation
 

@@ -133,6 +133,7 @@ class TestCombine(TestMixin, unittest.TestCase):
 	
 	def testNot(self):
 		func = lambda x: not x
+		self._testCombination(combine._Not, 1, func)
 		self._testCombination(combine.Not, 1, func)
 	
 	def testTry(self):
@@ -152,14 +153,17 @@ class TestCombine(TestMixin, unittest.TestCase):
 
 	def testGuardedChoice(self):
 		func = lambda x, y, z: (x and y and max(x, y) or 0) or (not x and z)
+		self._testCombination(combine._GuardedChoice, 3, func)
 		self._testCombination(combine.GuardedChoice, 3, func)
 
 	def testIfThen(self):
 		func = lambda x, y: (x and y) or (not x)
+		self._testCombination(combine._IfThen, 2, func)
 		self._testCombination(combine.IfThen, 2, func)
 		
 	def testIfThenElse(self):
 		func = lambda x, y, z: (x and y) or (not x and z)
+		self._testCombination(combine._IfThenElse, 3, func)
 		self._testCombination(combine.IfThenElse, 3, func)
 
 
@@ -563,6 +567,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		'?1 < !2 + !3',
 		'?1 < !2 + !3 + !4',
 		'?1 + !2 + !3 + !4',
+		'switch !x case ?1: !A case ?2: !B otherwise: !C end',
 	]
 	
 	def testAST(self):

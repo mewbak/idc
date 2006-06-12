@@ -32,9 +32,7 @@ class Ternary(base.Transformation):
 		self.operand3 = operand3
 	
 
-class Not(Unary):
-	'''Fail if a transformation applies.'''
-	
+class _Not(Unary):
 	def apply(self, term, ctx):
 		try:
 			self.operand.apply(term, ctx)
@@ -42,6 +40,14 @@ class Not(Unary):
 			return term
 		else:
 			raise exception.Failure
+
+def Not(operand):
+	'''Fail if a transformation applies.'''
+	if operand is base.ident:
+		return base.fail
+	if operand is base.fail:
+		return base.ident
+	return _Not(operand)
 
 
 class _Try(Unary):
@@ -53,7 +59,6 @@ class _Try(Unary):
 		except exception.Failure:
 			return term
 
-
 def Try(operand):
 	if operand is base.ident:
 		return operand
@@ -62,47 +67,47 @@ def Try(operand):
 	return _Try(operand)
 
 
-class Where(Unary):
-	'''Succeeds if the transformation succeeds, but returns the original 
-	term.
-	'''
-	
+class _Where(Unary):
 	def apply(self, term, ctx):
 		self.operand.apply(term, ctx)
 		return term
 
+def Where(operand):
+	'''Succeeds if the transformation succeeds, but returns the original term.'''
+	if operand is base.ident:
+		return base.ident
+	if operand is base.fail:
+		return base.ident
+	return _Where(operand)
+
 
 class _Composition(Binary):
-	'''Transformation composition.'''
-	
 	def apply(self, term, ctx):
 		term = self.loperand.apply(term, ctx)
 		return self.roperand.apply(term, ctx)
 
-
 def Composition(loperand, roperand):
+	'''Transformation composition.'''
 	if loperand is base.ident:
 		return roperand
 	if roperand is base.ident:
 		return loperand
 	if loperand is base.fail:
-		return loperand
+		return base.fail
 	return _Composition(loperand, roperand)
 	
 
 class _Choice(Binary):
-	'''Attempt the first transformation, transforming the second on failure.'''
-	
 	def apply(self, term, ctx):
 		try:
 			return self.loperand.apply(term, ctx)
 		except exception.Failure:
 			return self.roperand.apply(term, ctx)
 
-
 def Choice(loperand, roperand):
+	'''Attempt the first transformation, transforming the second on failure.'''
 	if loperand is base.ident:
-		return loperand
+		return base.ident
 	if loperand is base.fail:
 		return roperand
 	if roperand is base.ident:
@@ -112,8 +117,7 @@ def Choice(loperand, roperand):
 	return _Choice(loperand, roperand)
 	
 
-class GuardedChoice(Ternary):
-	
+class _GuardedChoice(Ternary):
 	def apply(self, term, ctx):
 		try:
 			term = self.operand1.apply(term, ctx)
@@ -122,9 +126,19 @@ class GuardedChoice(Ternary):
 		else:
 			return self.operand2.apply(term, ctx)
 
+def GuardedChoice(operand1, operand2, operand3):
+	if operand1 is base.ident:
+		return operand2
+	if operand1 is base.fail:
+		return operand3
+	if operand2 is base.ident:
+		return operand1 | operand2
+	if operand3 is base.fail:
+		return operand1 & operand2
+	return _GuardedChoice(operand1, operand2, operand3)
 
-class IfThen(Binary):
-	
+
+class _IfThen(Binary):
 	def apply(self, term, ctx):
 		try:
 			self.loperand.apply(term, ctx)
@@ -133,9 +147,19 @@ class IfThen(Binary):
 		else:
 			return self.roperand.apply(term, ctx)
 
+def IfThen(loperand, roperand):
+	if loperand is base.ident:
+		return roperand
+	if loperand is base.fail:
+		return base.ident
+	if roperand is base.ident:
+		return Where(loperand)
+	if roperand is base.fail:
+		return Not(loperand)
+	return _IfThen(loperand, roperand)
 
-class IfThenElse(Ternary):
-	
+
+class _IfThenElse(Ternary):
 	def apply(self, term, ctx):
 		try:
 			self.operand1.apply(term, ctx)
@@ -144,9 +168,12 @@ class IfThenElse(Ternary):
 		else:
 			return self.operand2.apply(term, ctx)
 
+def IfThenElse(operand1, operand2, operand3):
+	if operand1 is base.ident:
+		return operand2
+	if operand1 is base.fail:
+		return operand3
+	if operand3 is base.fail:
+		return IfThen(operand1, operand2)
+	return _IfThenElse(operand1, operand2, operand3)
 
-def Repeat(operand):
-	'''Applies a transformation until it fails.'''
-	repeat = base.Proxy()
-	repeat.subject = Try(operand & repeat)
-	return repeat

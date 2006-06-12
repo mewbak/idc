@@ -1,8 +1,20 @@
 '''Support for transformation context.'''
 
 
+class Anonymous(str):
+	'''Anonymous variable -- a string with an unique hash.'''
+	
+	__slots__ = []
+	
+	def __hash__(self):
+		return id(self)
+	
+	def __eq__(self, other):
+		return self is other
+
+
 class Context(dict):
-	'''Dictionary-like object for namespace resolution.'''
+	'''Transformation context -- a nested dictionary.'''
 	
 	__slots__ = ['parent']
 	
