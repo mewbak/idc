@@ -6,7 +6,7 @@ See also U{http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-unstable-latest/m
 
 from transf import exception
 from transf import base
-from transf import combine
+from transf import _operate
 from transf import match
 from transf import build
 from transf import project
@@ -16,7 +16,7 @@ from transf import unify
 length = unify.Count(base.ident)
 
 
-class _Concat(combine.Binary):
+class _Concat2(_operate.Binary):
 	
 	def apply(self, term, ctx):
 		head = self.loperand.apply(term, ctx)
@@ -26,24 +26,21 @@ class _Concat(combine.Binary):
 		except AttributeError:
 			raise exception.Failure('not term lists', head, tail)
 
+def Concat2(loperand, roperand):
+	'''Concatenates two lists.'''
+	if loperand is build.nil:
+		return roperand
+	if roperand is build.nil:
+		return loperand
+	return _Concat2(loperand, roperand)
 
-def _IterConcat(elms_iter):
-		head = elms_iter.next()
-		try:
-			tail = _IterConcat(elms_iter)
-		except StopIteration:
-			return head
-		else:
-			return _Concat(head, tail)
 
 def Concat(*operands):
-	try:
-		return _IterConcat(iter(operands))
-	except StopIteration:
-		return build.nil
+	'''Concatenates several lists.'''
+	return _operate.Nary(operands, Concat2, build.nil)
 
+concat = unify.Foldr(build.nil, Concat2)
 
-concat = unify.Foldr(build.nil, Concat)
 
 
 class Lookup(base.Transformation):

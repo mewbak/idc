@@ -1,10 +1,10 @@
-'''Base transformation classes.'''
+'''Transformations which introduce new scopes.'''
 
 
 from transf import exception
 from transf import context
-from transf import combine
 from transf import base
+from transf import _operate
 
 
 try:
@@ -13,11 +13,11 @@ except NameError:
 	from sets import ImmutableSet as set
 
 
-class Local(combine.Unary):
+class Local(_operate.Unary):
 	'''Introduces a new variable scope before the transformation.'''
 	
 	def __init__(self, operand, names = None):
-		combine.Unary.__init__(self, operand)
+		_operate.Unary.__init__(self, operand)
 		self.names = names
 		
 	def apply(self, term, ctx):
@@ -25,10 +25,10 @@ class Local(combine.Unary):
 		return self.operand.apply(term, ctx)
 
 
-class Let(combine.Unary):
+class Let(_operate.Unary):
 	
 	def __init__(self, operand, **vars):
-		combine.Unary.__init__(self, operand)
+		_operate.Unary.__init__(self, operand)
 		self.vars = vars
 		
 	def apply(self, term, ctx):
@@ -39,6 +39,8 @@ class Let(combine.Unary):
 
 
 class Set(base.Transformation):
+	
+	# XXX: move this away
 
 	def __init__(self, name):
 		base.Transformation.__init__(self)

@@ -4,17 +4,17 @@
 import aterm
 
 from transf import exception
-from transf import combine
+from transf import _operate
 from transf import project
 
 
 # TODO: complete
 
 
-class _Unary(combine.Unary):
+class _Unary(_operate.Unary):
 
 	def __init__(self, operand, func):
-		combine.Unary.__init__(self, operand)
+		_operate.Unary.__init__(self, operand)
 		self.func = func
 		
 	def apply(self, term, ctx):
@@ -25,10 +25,10 @@ class _Unary(combine.Unary):
 			raise exception.Failure('wrong term type', x)
 
 
-class _Binary(combine.Binary):
+class _Binary(_operate.Binary):
 
 	def __init__(self, loperand, roperand, func):
-		combine.Binary.__init__(self, loperand, roperand)
+		_operate.Binary.__init__(self, loperand, roperand)
 		self.func = func
 		
 	def apply(self, term, ctx):

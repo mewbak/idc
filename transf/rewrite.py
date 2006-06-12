@@ -10,6 +10,7 @@ import aterm.visitor
 
 from transf import exception
 from transf import base
+from transf import _operate
 from transf import match
 from transf import build
 from transf import scope
@@ -115,24 +116,15 @@ def Pattern(match_transf, build_transf, locals = None):
 	return rule
 
 
-def _PatternIter(iter, locals):
-	match_transf, build_transf = iter.next()
-	rule = Pattern(match_transf, build_transf, locals)
-	try:
-		return rule | _PatternIter(iter, locals)
-	except StopIteration:
-		return rule
-	
 def PatternSeq(seq, locals = None):
 	if locals is None:
-		rule_locals = None
+		l = None
 	else:
-		rule_locals = []
-	try:
-		rules = _PatternIter(iter(seq), rule_locals)
-	except StopIteration:
-		return base.fail
-	else:
-		if locals:
-			rules = scope.Local(rules, locals)
-		return rules
+		l = []
+	rules = _operate.Nary(seq, 
+		lambda (m, b), r: Pattern(m, b, l) | r,
+		base.fail
+	)
+	if locals:
+		rules = scope.Local(rules, locals)
+	return rules

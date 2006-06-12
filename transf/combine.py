@@ -1,38 +1,18 @@
 '''Transformation combinators.'''
 
 
+__docformat__ = 'epytext'
+
+
 from transf import exception
 from transf import base
+from transf import _operate
 
 
-class Unary(base.Transformation):
-	'''Base class for unary operations on transformations.'''
+class _Not(_operate.Unary):
+
+	__slots__ = []
 	
-	def __init__(self, operand):
-		base.Transformation.__init__(self)
-		self.operand = operand
-
-
-class Binary(base.Transformation):
-	'''Base class for binary operations on transformations.'''
-	
-	def __init__(self, loperand, roperand):
-		base.Transformation.__init__(self)
-		self.loperand = loperand
-		self.roperand = roperand
-
-
-class Ternary(base.Transformation):
-	'''Base class for ternary operations on transformations.'''
-	
-	def __init__(self, operand1, operand2, operand3):
-		base.Transformation.__init__(self)
-		self.operand1 = operand1
-		self.operand2 = operand2
-		self.operand3 = operand3
-	
-
-class _Not(Unary):
 	def apply(self, term, ctx):
 		try:
 			self.operand.apply(term, ctx)
@@ -50,8 +30,10 @@ def Not(operand):
 	return _Not(operand)
 
 
-class _Try(Unary):
+class _Try(_operate.Unary):
 	'''Attempt a transformation, otherwise return the term unmodified.'''
+	
+	__slots__ = []
 	
 	def apply(self, term, ctx):
 		try:
@@ -67,7 +49,10 @@ def Try(operand):
 	return _Try(operand)
 
 
-class _Where(Unary):
+class _Where(_operate.Unary):
+
+	__slots__ = []
+	
 	def apply(self, term, ctx):
 		self.operand.apply(term, ctx)
 		return term
@@ -81,7 +66,10 @@ def Where(operand):
 	return _Where(operand)
 
 
-class _Composition(Binary):
+class _Composition(_operate.Binary):
+
+	__slots__ = []
+	
 	def apply(self, term, ctx):
 		term = self.loperand.apply(term, ctx)
 		return self.roperand.apply(term, ctx)
@@ -97,7 +85,10 @@ def Composition(loperand, roperand):
 	return _Composition(loperand, roperand)
 	
 
-class _Choice(Binary):
+class _Choice(_operate.Binary):
+
+	__slots__ = []
+	
 	def apply(self, term, ctx):
 		try:
 			return self.loperand.apply(term, ctx)
@@ -117,7 +108,10 @@ def Choice(loperand, roperand):
 	return _Choice(loperand, roperand)
 	
 
-class _GuardedChoice(Ternary):
+class _GuardedChoice(_operate.Ternary):
+
+	__slots__ = []
+	
 	def apply(self, term, ctx):
 		try:
 			term = self.operand1.apply(term, ctx)
@@ -127,6 +121,10 @@ class _GuardedChoice(Ternary):
 			return self.operand2.apply(term, ctx)
 
 def GuardedChoice(operand1, operand2, operand3):
+	'''If operand1 succeeds then operand2 is applied, otherwise operand3 is 
+	applied. If operand2 fails, the complete expression fails; no backtracking to
+	operand3 takes place.
+	''' 
 	if operand1 is base.ident:
 		return operand2
 	if operand1 is base.fail:
@@ -138,7 +136,10 @@ def GuardedChoice(operand1, operand2, operand3):
 	return _GuardedChoice(operand1, operand2, operand3)
 
 
-class _IfThen(Binary):
+class _IfThen(_operate.Binary):
+
+	__slots__ = []
+	
 	def apply(self, term, ctx):
 		try:
 			self.loperand.apply(term, ctx)
@@ -159,7 +160,10 @@ def IfThen(loperand, roperand):
 	return _IfThen(loperand, roperand)
 
 
-class _IfThenElse(Ternary):
+class _IfThenElse(_operate.Ternary):
+
+	__slots__ = []
+	
 	def apply(self, term, ctx):
 		try:
 			self.operand1.apply(term, ctx)

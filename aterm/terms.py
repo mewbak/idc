@@ -84,7 +84,11 @@ class Term(object):
 		well.'''
 		return _helpers.isEqual(self, other)
 	
-	__eq__ = isEqual
+	def __eq__(self, other):
+		if isinstance(other, Term):
+			return _helpers.isEqual(self, other)
+		else:
+			return False
 
 	def match(self, other):
 		'''Matches this term pattern against a string or term.'''

@@ -9,7 +9,7 @@ import time
 
 from transf import exception
 from transf import base
-from transf import combine
+from transf import _operate
 
 
 #############################################################################
@@ -75,10 +75,10 @@ class Dump(base.Transformation):
 		return term
 
 
-class Trace(combine.Unary):
+class Trace(_operate.Unary):
 
 	def __init__(self, name, operand, log=None):
-		combine.Unary.__init__(self, operand)
+		_operate.Unary.__init__(self, operand)
 		if log is None:
 			self.log = sys.stderr
 		else:
@@ -105,10 +105,10 @@ class Trace(combine.Unary):
 		return term
 
 
-class Traceback(combine.Unary):
+class Traceback(_operate.Unary):
 
 	def __init__(self, operand, log=None):
-		combine.Unary.__init__(self, operand)
+		_operate.Unary.__init__(self, operand)
 		if log is None:
 			self.log = sys.stderr
 		else:

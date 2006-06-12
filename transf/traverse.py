@@ -5,6 +5,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
+from transf import _operate
 from transf import combine
 from transf import match
 from transf import _helper
@@ -62,15 +63,6 @@ class FilterCons(Cons):
 			return term
 
 
-def _IterList(elms_iter, tail):
-	try:
-		elm = elms_iter.next()
-	except StopIteration:
-		return tail
-	else:
-		return Cons(elm, _IterList(elms_iter, tail))
-
-
 def List(elms, tail = None):
 	'''Transformation which traverses a term list. 
 	
@@ -80,7 +72,7 @@ def List(elms, tail = None):
 	'''
 	if tail is None:
 		tail = match.nil
-	return _IterList(iter(elms), tail)
+	return _operate.Nary(iter(elms), Cons, tail)
 	
 
 class Appl(base.Transformation):

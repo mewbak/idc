@@ -27,7 +27,7 @@ class Transformation(object):
 		pass
 	
 	def __call__(self, term, ctx = None):
-		'''Applies the transformation.'''
+		'''User-friendly wrapper for apply.'''
 		if isinstance(term, basestring):
 			term = _factory.parse(term)
 		if ctx is None:

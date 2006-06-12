@@ -6,6 +6,7 @@ import aterm.types
 
 from transf import base
 from transf import exception
+from transf import _operate
 from transf import _helper
 
 
@@ -67,20 +68,11 @@ class Cons(base.Transformation):
 		return term.factory.makeCons(head, tail)
 
 
-def _IterList(elms_iter, tail):
-	try:
-		elm = elms_iter.next()
-	except StopIteration:
-		return tail
-	else:
-		return Cons(elm, _IterList(elms_iter, tail))
-
-
 def List(elms, tail = None):
 	if tail is None:
-		tail = Nil()
-	return _IterList(iter(elms), tail)
-	
+		tail = nil
+	return _operate.Nary(iter(elms), Cons, tail)
+
 
 class Appl(base.Transformation):
 	
