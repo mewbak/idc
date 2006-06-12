@@ -14,22 +14,27 @@ from transf import _helper
 _factory = aterm.factory.Factory()
 
 
-class Term(base.Transformation):
+class _Term(base.Transformation):
 
+	# NOTE: this class should not be derived to avoid 
+	# breaking optimizations
+	
 	def __init__(self, term):
 		base.Transformation.__init__(self)
-		if isinstance(term, basestring):
-			self.term = _factory.parse(term)
-		else:
-			self.term = term
+		self.term = term
 	
 	def apply(self, term, ctx):
 		return self.term
 
+def Term(term):
+	if isinstance(term, basestring):
+		term = _factory.parse(term)
+	return _Term(term)
+
 
 def Int(value):
 	term = _factory.makeInt(value)
-	return Term(term)
+	return _Term(term)
 
 zero = Int(0)
 one = Int(1)
@@ -39,24 +44,22 @@ four = Int(4)
 
 
 def Real(value):
-	term = _factory.makeReal(value)
-	return Term(term)
+	return _Term(_factory.makeReal(value))
 
 
 def Str(value):
-	term = _factory.makeStr(value)
-	return Term(term)
+	return _Term(_factory.makeStr(value))
 
 
 _nil = _factory.makeNil()
 
 def Nil():
-	return Term(_nil)
+	return _Term(_nil)
 
 nil = Nil()
 
 
-class Cons(base.Transformation):
+class _Cons(base.Transformation):
 	
 	def __init__(self, head, tail):
 		base.Transformation.__init__(self)
@@ -68,6 +71,13 @@ class Cons(base.Transformation):
 		tail = self.tail.apply(term, ctx)
 		return term.factory.makeCons(head, tail)
 
+def Cons(head, tail):
+	if isinstance(tail, (tuple, list)):
+		tail = List(tail)
+	if isinstance(head, _Term) and isinstance(tail, _Term):
+		return _Term(_factory.makeCons(head.term, tail.term))
+	return _Cons(head, tail)
+
 
 def List(elms, tail = None):
 	if tail is None:
@@ -75,23 +85,26 @@ def List(elms, tail = None):
 	return _operate.Nary(iter(elms), Cons, tail)
 
 
-class Appl(base.Transformation):
+class _Appl(base.Transformation):
 	
 	def __init__(self, name, args):
 		base.Transformation.__init__(self)
-		if isinstance(name, basestring):
-			self.name = Str(name)
-		else:
-			self.name = name
-		if isinstance(args, (tuple, list)):
-			self.args = List(args)
-		else:
-			self.args = args
+		self.name = name
+		self.args = args
 		
 	def apply(self, term, ctx):
 		name = self.name.apply(term, ctx)
 		args = self.args.apply(term, ctx)
 		return term.factory.makeAppl(name, args)
+
+def Appl(name, args):
+	if isinstance(name, basestring):
+		name = Str(name)
+	if isinstance(args, (tuple, list)):
+		args = List(args)
+	if isinstance(name, _Term) and isinstance(args, _Term):
+		return _Term(_factory.makeAppl(name.term, args.term))
+	return _Appl(name, args)
 
 
 class Var(base.Transformation):
