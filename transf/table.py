@@ -1,3 +1,4 @@
+'''Hash table transformations.'''
 
 
 from transf import exception
@@ -6,11 +7,15 @@ from transf import _operate
 
 
 class Table(dict):
+	'''A table is merely a dictionary of terms to terms.'''
 	
 	pass
 	
 
 class New(base.Transformation):
+	'''Create a new table in the context.
+	A variable must be declared in the context.
+	'''
 
 	def __init__(self, name):
 		base.Transformation.__init__(self)
@@ -46,7 +51,8 @@ class _Base(base.Transformation):
 			
 	
 class Get(_Base, _operate.UnaryMixin):
-	
+	'''Get an element of the table.'''
+
 	# XXX: shouldn't this be a nullary op?
 	
 	def __init__(self, name, operand):
@@ -63,6 +69,7 @@ class Get(_Base, _operate.UnaryMixin):
 
 
 class Set(_Base, _operate.BinaryMixin):
+	'''Set an element of the table.'''
 	
 	def __init__(self, name, loperand, roperand):
 		_Base.__init__(self, name)
@@ -77,6 +84,7 @@ class Set(_Base, _operate.BinaryMixin):
 
 
 class Clear(_Base):
+	'''Clear the table.'''
 	
 	def apply(self, term, ctx):
 		tbl = self._get_table(ctx)
@@ -84,3 +92,4 @@ class Clear(_Base):
 		return term
 
 
+# TODO: write union and intersection operators
