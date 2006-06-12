@@ -16,45 +16,65 @@ class Anonymous(str):
 class Context(dict):
 	'''Transformation context -- a nested dictionary.'''
 	
-	__slots__ = ['parent']
+	__slots__ = ['_p']
 	
-	def __init__(self, names = None, parent = None):
+	def __init__(self, keys = None, parent = None):
 		dict.__init__(self)
-		if names:
-			for name in names:
-				dict.__setitem__(self, name, None)
-		self.parent = parent
+		if keys:
+			for k in keys:
+				dict.__setitem__(self, k, None)
+		self._p = parent
 	
-	def __contains__(self, name):
-		if dict.__contains__(self, name):
+	def __contains__(self, k):
+		if dict.__contains__(self, k):
 			return True
-		elif self.parent is not None:
-			return name in self.parent
+		elif self._p is not None:
+			return k in self._p
 		else:
 			return False
 	
-	def __getitem__(self, name):
-		if dict.__contains__(self, name):
-			return dict.__getitem__(self, name)
-		elif self.parent is not None:
-			return self.parent[name]
+	def __getitem__(self, k):
+		if dict.__contains__(self, k):
+			return dict.__getitem__(self, k)
+		elif self._p is not None:
+			return self._p[k]
 		else:
 			raise KeyError
 	
 	def __len__(self):
 		return len(self.keys())
 
-	def __setitem__(self, name, value):
-		if dict.__contains__(self, name):
-			dict.__setitem__(self, name, value)
-		elif self.parent is not None:
-			self.parent[name] = value
+	def __setitem__(self, k, v):
+		if dict.__contains__(self, k):
+			dict.__setitem__(self, k, v)
+		elif self._p is not None:
+			self._p[k] = v
 		else:
-			raise KeyError
+			raise KeyError(k)
 	
-	def __repr__(self):
-		return repr(dict(self.iteritems()))
-
+	def __delitem__(self, k):
+		if dict.__contains__(self, k):
+			dict.__setitem__(self, k, None)
+		elif self._p is not None:
+			del self._p[k]
+		else:
+			raise KeyError(k)
+	
+	def setdefault(self, k, v):
+		try:
+			r = dict.__getitem__(self, k)
+		except KeyError:
+			if self._p is not None:
+				return self._p.setdefault(k, v)
+			else:
+				raise KeyError(k)
+		else:
+			if r is None:
+				dict.__setitem__(self, k, v)
+				return v
+			else:
+				return r
+		
 	def items(self):
 		return list(self.iteritems())
 
@@ -65,24 +85,27 @@ class Context(dict):
 		return list(self.itervalues())
 
 	def iteritems(self):
-		for name, value in dict.iteritems(self):
-			yield name, value
-		if self.parent is not None:
-			for name, value in self.parent.iteritems():
-				if not dict.__contains__(self, name):
-					yield name, value
+		for k, v in dict.iteritems(self):
+			yield k, v
+		if self._p is not None:
+			for k, v in self._p.iteritems():
+				if not dict.__contains__(self, k):
+					yield k, v
 
 	def iterkeys(self):
-		for name, value in self.iteritems():
-			yield name
+		for k, v in self.iteritems():
+			yield k
 
 	__iter__ = iterkeys
 	
 	def itervalues(self):
-		for name, value in self.iteritems():
-			yield value
+		for k, v in self.iteritems():
+			yield v
 	
-	def update(self, other):
-		for name, value in other.iteritems():
-			self[name] = value
+	def update(self, o):
+		for k, v in o.iteritems():
+			self[k] = v
+
+	def __repr__(self):
+		return repr(dict(self.iteritems()))
 

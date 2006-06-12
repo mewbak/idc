@@ -3,6 +3,7 @@
 
 import aterm.factory
 import aterm.types
+import aterm.terms
 
 from transf import base
 from transf import exception
@@ -101,14 +102,13 @@ class Var(base.Transformation):
 	
 	def apply(self, term, ctx):
 		try:
-			value = ctx[self.name]
+			val = ctx[self.name]
 		except KeyError:
 			raise exception.Failure('undeclared variable', self.name)
+		if isinstance(val, aterm.terms.Term):
+			return val
 		else:
-			if value is None:
-				raise exception.Failure('undefined variable', self.name)
-			else:
-				return value
+			raise exception.Failure('undefined variable', self.name)
 
 
 class Annos(base.Transformation):
@@ -123,6 +123,8 @@ class Annos(base.Transformation):
 	
 class Pattern(base.Transformation):
 
+	# TODO: Parse patterns into the above classes
+
 	def __init__(self, pattern):
 		base.Transformation.__init__(self)
 		if isinstance(pattern, basestring):
@@ -134,7 +136,7 @@ class Pattern(base.Transformation):
 		# FIXME: avoid the dict copy
 		kargs = {}
 		for name, value in ctx.iteritems():
-			if value is not None:
+			if isinstance(value, aterm.terms.Term):
 				kargs[name] = value
 		return self.pattern.make(term, **kargs)
 

@@ -100,7 +100,7 @@ SetCtrlFlow = lambda flows: annotation.Set(ctrlFlowAnno, flows)
 #######################################################################
 # Flow Traversal
 
-setNext = scope.Set('next')
+setNext = match.VarUpdate('next')
 GetTerminalNodeId = lambda id: arith.NegInt(id)
 
 markStmtFlow = base.Proxy()

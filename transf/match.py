@@ -176,14 +176,28 @@ class Var(base.Transformation):
 
 	def apply(self, term, ctx):
 		try:
-			value = ctx[self.name]
+			res = ctx.setdefault(self.name, term)
 		except KeyError:
-			raise exception.Failure('undefined variable', self.name)
+			raise exception.Failure('undeclared variable', self.name)
+		if res is term or res.isEquivalent(term):
+			return term
 		else:
-			if value is None:
-				ctx[self.name] = term
-			elif not value.isEquivalent(term):
-				raise exception.Failure('variable mismatch', self.name, value, term)
+			raise exception.Failure('variable mismatch', self.name, res, term)
+
+
+class VarUpdate(base.Transformation):
+	
+	# XXX: this class is somewhat displace here...
+	
+	def __init__(self, name):
+		base.Transformation.__init__(self)
+		self.name = name
+
+	def apply(self, term, ctx):
+		try:
+			ctx[self.name] = term
+		except KeyError:
+			raise exception.Failure('undeclared variable', self.name)
 		return term
 
 
@@ -216,18 +230,13 @@ class Pattern(base.Transformation):
 		match = self.pattern.match(term)
 		if not match:
 			raise exception.Failure('pattern mismatch', self.pattern, term)
-
 		for name, value in match.kargs.iteritems():
 			try:
-				prev_value = ctx[name]
+				res = ctx.setdefault(name, value)
 			except KeyError:
 				raise exception.Failure('undeclared variable', name)
-			else:
-				if prev_value is None:
-					ctx[name] = value
-				elif not value.isEquivalent(prev_value):
-					raise exception.Failure
-					
+			if not (res is value or res.isEquivalent(value)):
+				raise exception.Failure('variable mismatch', name, res, value)
 		return term
 
 
