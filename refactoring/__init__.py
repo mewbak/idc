@@ -96,3 +96,30 @@ class TestCase(unittest.TestCase):
 			result = self.refactoring.apply(term, args)
 			
 			self.failUnlessEqual(result, expectedResult)
+			
+
+def main(cls):
+	import aterm.factory
+	import sys
+	import ir.pprint
+	import box
+	factory = aterm.factory.Factory()
+	if len(sys.argv) < 1:
+		sys.exit(1)
+	term = factory.readFromTextFile(file(sys.argv[1], 'rt'))
+	args = factory.parse('[' + ','.join(sys.argv[2:]) + ']')
+
+	sys.stdout.write('*** BEFORE ***\n')
+	box.write(
+		ir.pprint.module(term), 
+		box.AnsiTextFormatter(sys.stdout)
+	)
+
+	refactoring = cls()
+	term = refactoring.apply(term, args)
+	
+	sys.stdout.write('*** AFTER ***\n')
+	box.write(
+		ir.pprint.module(term), 
+		box.AnsiTextFormatter(sys.stdout)
+	)

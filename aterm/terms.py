@@ -204,7 +204,7 @@ class Integer(Literal):
 	type = types.INT
 
 	def __init__(self, factory, value, annotations = None):
-		if not isinstance(value, int):
+		if not isinstance(value, (int, long)):
 			raise TypeError('value is not an integer: %r' % value)
 		Literal.__init__(self, factory, value, annotations)
 

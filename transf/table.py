@@ -83,6 +83,25 @@ class Set(_Base, _operate.BinaryMixin):
 		return term
 
 
+class Del(_Base, _operate.UnaryMixin):
+	'''Delete an element of the table.'''
+
+	# XXX: shouldn't this be a nullary op?
+	
+	def __init__(self, name, operand):
+		_Base.__init__(self, name)
+		_operate.UnaryMixin.__init__(self, operand)
+	
+	def apply(self, term, ctx):
+		tbl = self._get_table(ctx)
+		key = self.operand.apply(term, ctx)
+		try:
+			del tbl[key]
+		except KeyError:
+			raise exception.Failure('key not found', self.name, key)
+		return term
+
+
 class Clear(_Base):
 	'''Clear the table.'''
 	

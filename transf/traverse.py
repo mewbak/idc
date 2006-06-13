@@ -194,7 +194,7 @@ def Filter(operand):
 
 
 def FilterR(operand):
-	return Map(operand, ConsFilter)
+	return Map(operand, ConsFilterR)
 
 
 def Fetch(operand):
@@ -270,3 +270,10 @@ def InnerMost(operand):
 	innermost.subject = BottomUp(combine.Try(operand & innermost))
 	return innermost
 
+def AllTD(operand):
+	'''Apply a transformation to all subterms, but stops recursing 
+	as soon as it finds a subterm to which the transformation succeeds.
+	'''
+	alltd = base.Proxy()
+	alltd.subject = operand | All(alltd)
+	return alltd

@@ -7,6 +7,7 @@ import inspect
 import os.path
 import time
 
+import aterm.terms
 from transf import exception
 from transf import base
 from transf import _operate
@@ -51,7 +52,11 @@ def dump_context(log, ctx):
 	for name, value in ctx.iteritems():
 		log.write("\t%s = " % name)
 		try:
-			value.writeToTextFile(log)
+			if isinstance(value, aterm.terms.Term):
+				value.writeToTextFile(log)
+			else:
+				log.write(repr(value))
+				log.write('\n')
 		except:
 			log.write('<error>')
 		log.write("\n")

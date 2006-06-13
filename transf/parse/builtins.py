@@ -20,9 +20,11 @@ builtins = {
 
 	"map": traverse.Map,
 	"filter": traverse.Filter,
+	"filterr": traverse.FilterR,
 	"all": traverse.All,
 	"one": traverse.One,
 	"some": traverse.Some,
+	"alltd": traverse.AllTD,
 	
 	"foldr": unify.Foldr,
 
