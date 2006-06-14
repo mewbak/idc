@@ -47,6 +47,8 @@ tokens {
 	INT;
 	REAL;
 	VAR;
+	LID;
+	UID;
 	WILDCARD = "_";
 	IDENT = "id";
 	FAIL = "fail";
@@ -119,57 +121,51 @@ CHAR
 	| ~('"'|'\\')
 	;
 
-protected
-ID_ATOM
-	: ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-	;
-
 ID
 options { testLiterals = true; }
-	: ID_ATOM ( '.' ID_ATOM )*
+	: 
+		( 'a'..'z' ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+			{ $setType(LID) }
+		| 'A'..'Z' ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+			{ $setType(UID) }
+		| '_'
+			{ $setType(WILDCARD) }
+			( ('a'..'z'|'A'..'Z'|'0'..'9'|'_')+ 
+				{ $setType(ID) } 
+			)?
+		)
+		(
+			( '.' ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* )+
+				{ $setType(ID) }
+		)?
 	;
 	
 LPAREN: '(';
 RPAREN: ')';
-
 LSQUARE: '[';
 RSQUARE: ']';
-
 LCURLY: '{';
 RCURLY: '}';
-
 LANGLE: '<';
 RANGLE: '>';
+RSLASH: '\\';
+LSLASH: '/';
 
 COMMA: ',';
-
 QUEST: '?';
-
+BANG: '!';
 COLON: ':';
-
 STAR: '*';
-
 PLUS: '+';
-
 INTO: "->";
+SEMI: ';';
+CARET: '^';
+VERT: '|';
+TILDE: '~';
+AT: '@';
+EQUAL: '=';
 
 APPLY_MATCH: "=>";
-
-SEMI: ';';
-
-CARET: '^';
-
-BANG: '!';
-
-VERT: '|';
-
-RSLASH: '\\';
-
-TILDE: '~';
-
-AT: '@';
-
-EQUAL: '=';
 
 
 class parser extends Parser;
@@ -191,6 +187,7 @@ tokens {
 	ANON;
 	TRANSF;
 	BUILD_APPLY;
+	MERGE;
 }
 
 tgrammar
@@ -229,7 +226,7 @@ transf_atom
 	;
 
 defn
-	: ID EQUAL! transf
+	: id EQUAL! transf
 	;
 
 defn_list
@@ -238,6 +235,8 @@ defn_list
 
 id
 	: ID
+	| l:LID { #l.setType(ID) }
+	| u:UID { #u.setType(ID) }
 	| w:WHERE { #w.setType(ID) }
 	;
 
@@ -245,8 +244,21 @@ transf_application
 	: transf_atom ( APPLY_MATCH^ term )*
 	;
 
+transf_merge
+	: transf_application 
+		( RSLASH rule_names LSLASH! ( LSLASH rule_names RSLASH! )? transf_application 
+			{ ## = #(#[MERGE,"MERGE"], ##) } 
+		| LSLASH rule_names RSLASH! ( RSLASH rule_names LSLASH! )? transf_application
+			{ ## = #(#[MERGE,"MERGE"], ##) } 
+		)?
+	;
+
+rule_names
+	: id // TODO: have it id_list
+	;
+	
 transf_composition
-	: transf_application ( SEMI^ transf_application )*
+	: transf_merge ( SEMI^ transf_merge )*
 	;
 
 transf_choice
@@ -309,22 +321,17 @@ term_atom
 	| LSQUARE! term_list RSQUARE!
 	| term_args
 		{ ## = #(#[APPL,"APPL"], #[CONS,""], ##) }
-	| i:ID 
-        ( { #i.getText()[0].isupper() }?
-        	{ #i.setType(STR) } 
-        	term_opt_args 
+	| u:UID 
+       	{ #u.setType(STR) } 
+       	term_opt_args 
+		{ ## = #(#[APPL,"APPL"], ##) }
+	| l:LID
+       	{ #l.setType(VAR) } 
+       	( term_args 
 			{ ## = #(#[APPL,"APPL"], ##) }
-        | 
-        	{ #i.setType(VAR) } 
-        	( term_args 
-				{ ## = #(#[APPL,"APPL"], ##) }
-        	//| AT! term
-        	| 
-        	)
-        )
+       	//| AT! term
+       	)?
 	| WILDCARD ( term_args { ## = #(#[APPL,"APPL"], ##) } )?
-	| LANGLE! transf RANGLE!
-		{ ## = #(#[TRANSF,"TRANSF"], ##) }
 	;
 
 term
@@ -332,6 +339,11 @@ term
 		( LCURLY! term_list RCURLY!
 			{ ## = #(#[ANNOS,"ANNOS"], ##) }
 		)?
+	| QUEST^ term
+	| BANG^ term
+	| TILDE^ term
+	| LANGLE! transf RANGLE!
+		{ ## = #(#[TRANSF,"TRANSF"], ##) }
 	;
 
 term_implicit_wildcard
@@ -367,7 +379,7 @@ term_opt_wildcard
 	;
 
 id_list
-	: ( ID ( COMMA! ID )* )?
+	: ( id ( COMMA! id )* )?
 	;
 
 
@@ -437,12 +449,7 @@ transf returns [ret]
                 ret = txn(*args) 
         }
 	  )
-	| #( SCOPE
-		{ vars = [] } 
-		( v:ID { vars.append(#v.getText()) } )*
-		COLON
-		ret=transf 
-	  )
+	| #( SCOPE vars=id_list COLON ret=transf )
 		{
             if vars:
                 ret = transf.scope.Local(ret, vars)
@@ -491,6 +498,24 @@ transf returns [ret]
 		)* IN t=transf
 	  )
 	  	{ ret = transf.scope.Let(t, **vars) }
+	| #( MERGE l=transf 
+			{ unames = [] }
+			{ inames = [] }
+		( LSLASH ids=id_list 
+			{ inames.extend(ids) }
+		| RSLASH ids=id_list
+			{ unames.extend(ids) }
+		)* r=transf
+	 ) 
+		{ ret = transf.table.Merge(l, r, unames, inames) }
+	;
+
+id_list returns [ret]
+	: 
+			{ ret = [] }
+		( i:ID 
+			{ ret.append(#i.getText()) }
+		)*
 	;
 	
 match_term returns [ret]

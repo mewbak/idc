@@ -2,6 +2,7 @@
 
 
 from transf import exception
+from transf import context
 from transf import base
 from transf import _operate
 
@@ -9,7 +10,8 @@ from transf import _operate
 class Table(dict):
 	'''A table is mapping of terms to terms.'''
 	
-	pass
+	def copy(self):
+		return Table(self.iteritems())
 	
 
 class New(base.Transformation):
@@ -32,22 +34,24 @@ class New(base.Transformation):
 		return term
 
 
+def _get_table_from_context(name, ctx):
+	# XXX: should we raise assertion errors here?
+	try:
+		tbl = ctx[name]
+	except KeyError:
+		raise exception.Failure('undeclared table', name)
+	if isinstance(tbl, Table):
+		return tbl
+	if tbl is None:
+		raise exception.Failure('undefined table', name)
+	raise exception.Failure('not a table', name)
+
+	
 class _Base(base.Transformation):
 	
 	def __init__(self, name):
 		base.Transformation.__init__(self)
 		self.name = name
-		
-	def _get_table(self, ctx):
-		try:
-			tbl = ctx[self.name]
-		except KeyError:
-			raise exception.Failure('undeclared table', self.name)
-		if isinstance(tbl, Table):
-			return tbl
-		if tbl is None:
-			raise exception.Failure('undefined table', self.name)
-		raise exception.Failure('not a table', self.name)
 			
 	
 class Get(_Base, _operate.UnaryMixin):
@@ -60,7 +64,7 @@ class Get(_Base, _operate.UnaryMixin):
 		_operate.UnaryMixin.__init__(self, operand)
 	
 	def apply(self, term, ctx):
-		tbl = self._get_table(ctx)
+		tbl = _get_table_from_context(self.name, ctx)
 		key = self.operand.apply(term, ctx)
 		try:
 			return tbl[key]
@@ -76,7 +80,7 @@ class Set(_Base, _operate.BinaryMixin):
 		_operate.BinaryMixin.__init__(self, loperand, roperand)
 	
 	def apply(self, term, ctx):
-		tbl = self._get_table(ctx)
+		tbl = _get_table_from_context(self.name, ctx)
 		key = self.loperand.apply(term, ctx)
 		val = self.roperand.apply(term, ctx)
 		tbl[key] = val
@@ -93,7 +97,7 @@ class Del(_Base, _operate.UnaryMixin):
 		_operate.UnaryMixin.__init__(self, operand)
 	
 	def apply(self, term, ctx):
-		tbl = self._get_table(ctx)
+		tbl = _get_table_from_context(self.name, ctx)
 		key = self.operand.apply(term, ctx)
 		try:
 			del tbl[key]
@@ -106,9 +110,56 @@ class Clear(_Base):
 	'''Clear the table.'''
 	
 	def apply(self, term, ctx):
-		tbl = self._get_table(ctx)
+		tbl = _get_table_from_context(self.name, ctx)
 		tbl.clear()
 		return term
 
 
-# TODO: write union and intersection operators
+def _table_union(l, r):
+	t = l.copy()
+	t.update(r)
+	return t
+
+
+def _table_intersection(l, r):
+	t = {}
+	for k, v in r.iteritems():
+		if k in l:
+			t[k] = v
+	return t
+
+
+class Merge(_operate.Binary):
+	
+	# TODO: support merging multiple tables
+	
+	def __init__(self, loperand, roperand, unames, inames):
+		_operate.Binary.__init__(self, loperand, roperand)
+		self.unames = unames
+		self.inames = inames
+	
+	def apply(self, term, ctx):
+		# copy tables
+		names = self.unames + self.inames
+		lctx = context.Context(names, ctx)
+		rctx = context.Context(names, ctx)
+		for name in names:
+			tbl = _get_table_from_context(name, ctx)
+			lctx[name] = tbl.copy()			
+			rctx[name] = tbl.copy()
+
+		# apply transformations
+		term = self.loperand.apply(term, lctx)
+		term = self.roperand.apply(term, rctx)
+
+		# merge tables
+		for name in self.unames:			
+			ltbl = _get_table_from_context(name, lctx)
+			rtbl = _get_table_from_context(name, rctx)
+			ctx[name] = _table_union(ltbl, rtbl)
+		for name in self.unames:			
+			ltbl = _get_table_from_context(name, lctx)
+			rtbl = _get_table_from_context(name, rctx)
+			ctx[name] = _table_intersection(ltbl, rtbl)
+		
+		return term

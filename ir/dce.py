@@ -10,7 +10,10 @@ setNeededVars = parse.Transf('''
 	alltd(?Sym(<setNeededVar>))
 ''')
 setAllUnneededVars = table.Clear('nv')
-isVarNeeded = debug.Dump() & table.Get('nv', base.ident)
+isVarNeeded = table.Get('nv', base.ident)
+isVarNeeded = debug.Trace('isVarNeeded', isVarNeeded)
+
+JoinNeededVars = lambda l,r: table.Merge(l, r, ['nv'], [])
 
 dceStmt = base.Proxy()
 dceStmts = base.Proxy()
@@ -23,10 +26,10 @@ dceAssign = parse.Transf('''
 			~Assign(_, _, <setNeededVars>)
 		else
 			!NoStmt
-		end 
+		end
 	} +
 	~Assign(_, <setNeededVars>, <setNeededVars>)
-''') & debug.Dump()
+''')
 
 dceLabel = parse.Transf('''
 	?Label(*)
@@ -36,17 +39,34 @@ dceReturn = parse.Transf('''
 	?Ret(*) ;
 	setAllUnneededVars ;
 	~Ret(_, <setNeededVars>)
-	;debug.Dump()
+''')
+
+elimIf = parse.Rule('''
+	If(cond,NoStmt,NoStmt) -> Assign(Void,NoExpr,cond) |
+	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
+''')
+
+dceIf = parse.Transf('''
+	?If(*) ;
+	JoinNeededVars(
+		~If(_, <dceStmt>, _),
+		~If(_, _, <dceStmt>)
+	) ;
+	try(elimIf) ;
+	~If(<setNeededVars>, _, _)
+''')
+
+elimBlock = parse.Rule('''
+	Block([]) -> NoStmt
 ''')
 
 dceBlock = parse.Transf('''
-	~Block(<dceStmts>)
+	~Block(<dceStmts>) ;
+	try(elimBlock)
 ''')
 
 dceFuncDef = parse.Transf('''
-	?FuncDef(*) ;
-	setAllUnneededVars ;
-	~FuncDef(_, _, _, <dceStmt>)
+	~FuncDef(_, _, _, <setAllUnneededVars; dceStmt>)
 ''')
 
 dceStmt.subject = parse.Transf('''
@@ -54,6 +74,7 @@ dceStmt.subject = parse.Transf('''
 	dceLabel +
 	dceReturn +
 	dceBlock +
+	dceIf +
 	dceFuncDef
 ''')
 

@@ -568,6 +568,8 @@ class TestParse(TestMixin, unittest.TestCase):
 		'?1 < !2 + !3 + !4',
 		'?1 + !2 + !3 + !4',
 		'switch !x case ?1: !A case ?2: !B otherwise: !C end',
+		'!1 / a \\ !2',
+		'!1 / a \\ \\ b / !2',
 	]
 	
 	def testAST(self):
@@ -578,15 +580,16 @@ class TestParse(TestMixin, unittest.TestCase):
 			except antlr.ANTLRException, ex:
 				self.fail(msg = "%s failed: %s" % (input, ex))
 			ast = parser.getAST()
+			#print ast.toStringTree()
 	
 	def testParse(self):
 		for input in self.parseTestCases:
-			#print input
+			print input
 			try:
 				output = repr(parse.Transf(input))
 			except antlr.ANTLRException, ex:
 				self.fail(msg = "%s failed: %s" % (input, ex))
-			#print output
+			print output
 
 
 if __name__ == '__main__':

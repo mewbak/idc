@@ -87,7 +87,7 @@ class Lexer(antlr.TokenStream):
 	def __init__(self, buf, pos = 0, filename = None):
 		self.buf = buf
 		self.pos = pos
-		self.line = 0
+		self.lineno = 0
 		self.linepos = pos
 		self.filename = filename
 	
@@ -95,7 +95,7 @@ class Lexer(antlr.TokenStream):
 		while True:
 			# save state
 			pos = self.pos
-			line = self.line
+			line = self.lineno
 			col = self.pos - self.linepos
 			
 			type, text, endpos = self.tokenizer.next(self.buf, pos)

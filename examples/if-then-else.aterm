@@ -3,8 +3,7 @@ Module(
 		Label("main"),
 		If(
 			Binary(
-				Gt(
-					Int(32, Signed)), 
+				Gt(Int(32, Signed)), 
 				Sym("ecx"), 
 				Lit(Int(32, Signed), 0),
 			),
@@ -15,10 +14,10 @@ Module(
 			),
 			Assign(
 				Int(32, Signed), 
-				Sym("eax"),
+				Sym("ecx"),
 				Lit(Int(32, Signed), 0)
 			),
 		),
-		Ret(Void, NoExpr)
+		Ret(Int(32,Signed), Sym("eax"))
 	]
 )
