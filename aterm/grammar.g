@@ -1,4 +1,4 @@
-// Grammar for term parsing
+// Aterm parser
 
 
 header "parser.__init__" {
@@ -13,8 +13,25 @@ options {
 class parser extends Parser;
 
 options {
-	importVocab = lexer;
 	defaultErrorHandler = false;
+}
+
+tokens {
+	INT;
+	REAL;
+	STR;
+	CONS;
+	WILDCARD;
+	VAR;
+	LPAREN;
+	RPAREN;
+	LSQUARE;
+	RSQUARE;
+	LCURLY;
+	RCURLY;
+	COMMA;
+	STAR;
+	ASSIGN;
 }
 
 all returns [res]
