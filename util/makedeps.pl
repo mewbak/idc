@@ -43,4 +43,4 @@ print "all: " . join(" ", @all) . "\n\n";
 print "clean: clean-antlr\n\n";
 
 print "clean-antlr:\n";
-print "\t\@\$(RM) " . join(" ", @all) . "\n\n";
+print "\t-\$(RM) " . join(" ", @all) . "\n\n";

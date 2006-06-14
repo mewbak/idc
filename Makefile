@@ -35,7 +35,7 @@ all:
 
 all: ssl/pentium.py
 
-%.py: %.ssl util/sslc/sslc.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py util/sslc/compiler.py
+%.py: %.ssl util/sslc/sslc.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py util/sslc/compiler.py aterm/parser.py
 	$(PYTHON) util/sslc/sslc.py -o $@ $<
 
 
@@ -114,10 +114,10 @@ dist: all doc
 # Clean the generated files
 
 sweep:
-	@$(RM) $(shell find -iname '*.py[oc]' -or -iname '*.prof' -or -iname '*.log')
+	-$(RM) $(shell find -iname '*.py[oc]' -or -iname '*.prof' -or -iname '*.log')
 
 clean:
-	@$(RM) .deps.mak
+	-$(RM) .deps.mak
 
 .PHONY: clean
 
