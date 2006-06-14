@@ -28,9 +28,9 @@ class New(base.Transformation):
 		try:
 			res = ctx.setdefault(self.name, tbl)
 		except KeyError:
-			raise exception.Failure('undeclared table', self.name)
+			raise exception.Fatal('undeclared table', self.name)
 		if res is not tbl:
-			raise exception.Failure('attempt to redefine table', self.name)
+			raise exception.Fatal('attempt to redefine table', self.name)
 		return term
 
 
@@ -39,12 +39,12 @@ def _get_table_from_context(name, ctx):
 	try:
 		tbl = ctx[name]
 	except KeyError:
-		raise exception.Failure('undeclared table', name)
+		raise exception.Fatal('undeclared table', name)
 	if isinstance(tbl, Table):
 		return tbl
 	if tbl is None:
-		raise exception.Failure('undefined table', name)
-	raise exception.Failure('not a table', name)
+		raise exception.Fatal('undefined table', name)
+	raise exception.Fatal('not a table', name)
 
 	
 class _Base(base.Transformation):
@@ -122,7 +122,7 @@ def _table_union(l, r):
 
 
 def _table_intersection(l, r):
-	t = {}
+	t = Table()
 	for k, v in r.iteritems():
 		if k in l:
 			t[k] = v

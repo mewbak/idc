@@ -1,8 +1,8 @@
 '''Exception classes.'''
 
 
-class Failure(Exception):
-	'''Transformation failed to apply.'''
+class Base(Exception):
+	'''Base class for all exceptions.'''
 
 	def __str__(self):
 		args = self.args
@@ -10,3 +10,15 @@ class Failure(Exception):
 			return ': '.join((str(args[0]), ', '.join([str(arg) for arg in args[1:]])))
 		else:
 			return Exception.__str__(self)
+
+
+class Failure(Base):
+	'''Transformation failed to apply.'''
+
+	pass
+
+
+class Fatal(Base):
+	'''Unrecoverable error during transformation.'''
+	
+	pass

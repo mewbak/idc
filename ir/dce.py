@@ -4,16 +4,54 @@
 from transf import *
 
 
-setUnneededVar = table.Del('nv', base.ident)
-setNeededVar = table.Set('nv', base.ident, base.ident)
+setLocalVar = table.Set('local', base.ident, base.ident)
+# FIXME: this is machine dependent -- we should search the locally declared vars
+setLocalVars = parse.Transf('''
+	where(<map(setLocalVar)> [
+		"eax", "ebx", "ecx", "edx",
+		"esi", "edi", "ebp", "esp",
+		"ax", "bx", "cx", "dx",
+		"si", "di", "bp", "sp",
+		"ah", "bh", "ch", "dh",
+		"al", "bl", "cl", "dl",
+		"NF", "ZF", "AF", "PF",
+		"CF", "OF", "DF", "IF",
+		"FP", "SKIP", "RPT", "FLF",
+		"C1", "C2", "FZF"
+	])
+''')
+setLocalVars = debug.Trace('setLocalVars', setLocalVars)
+
+def isTempVar(term, ctx):
+	if term.value.startswith('tmp'):
+		return term
+	raise exception.Failure
+isTempVar = match.aStr & base.Adaptor(isTempVar)
+
+clearLocalVars = table.Clear('local')
+isVarLocal = isTempVar | table.Get('local', base.ident)
+
+setUnneededVar = table.Del('needed', base.ident)
+setNeededVar = table.Set('needed', base.ident, base.ident)
+
 setNeededVars = parse.Transf('''
 	alltd(?Sym(<setNeededVar>))
 ''')
-setAllUnneededVars = table.Clear('nv')
-isVarNeeded = table.Get('nv', base.ident)
+
+setAllUnneededVars = table.Clear('needed')
+def setAllNeededVars(term, ctx):
+	local = ctx['local']
+	for name in local:
+		ctx['needed'][name] = name
+	return term
+setAllNeededVars = base.Adaptor(setAllNeededVars)
+
+
+isVarNeeded = table.Get('needed', base.ident) | combine.Not(isVarLocal)
 isVarNeeded = debug.Trace('isVarNeeded', isVarNeeded)
 
-JoinNeededVars = lambda l,r: table.Merge(l, r, ['nv'], [])
+JoinNeededVars = lambda l,r: table.Merge(l, r, ['needed'], [])
+
 
 dceStmt = base.Proxy()
 dceStmts = base.Proxy()
@@ -31,14 +69,25 @@ dceAssign = parse.Transf('''
 	~Assign(_, <setNeededVars>, <setNeededVars>)
 ''')
 
+dceAsm = parse.Transf('''
+	?Asm(*) ;
+	setAllNeededVars
+''')
+
 dceLabel = parse.Transf('''
 	?Label(*)
 ''')
 
-dceReturn = parse.Transf('''
+dceBranch = parse.Transf('''
+	?Branch(*) ;
+	setAllNeededVars
+''')
+
+dceRet = parse.Transf('''
 	?Ret(*) ;
 	setAllUnneededVars ;
-	~Ret(_, <setNeededVars>)
+	debug.Dump(); ~Ret(_, <setNeededVars>) ;
+	debug.Dump()
 ''')
 
 elimIf = parse.Rule('''
@@ -66,13 +115,20 @@ dceBlock = parse.Transf('''
 ''')
 
 dceFuncDef = parse.Transf('''
-	~FuncDef(_, _, _, <setAllUnneededVars; dceStmt>)
+	~FuncDef(_, _, _, <
+		setLocalVars; 
+		setAllUnneededVars; 
+		dceStmt; 
+		clearLocalVars
+	>)
 ''')
 
 dceStmt.subject = parse.Transf('''
 	dceAssign +
+	dceAsm +
 	dceLabel +
-	dceReturn +
+	dceBranch +
+	dceRet +
 	dceBlock +
 	dceIf +
 	dceFuncDef
@@ -87,7 +143,8 @@ dceModule = parse.Transf('''
 ''')
 
 dce = scope.Local(
-	table.New('nv') &
+	table.New('needed') &
+	table.New('local') &
 	dceModule,
-	['nv']
+	['needed', 'local']
 )
