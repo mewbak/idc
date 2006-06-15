@@ -30,7 +30,7 @@ atomStmtNames = [
 # names of compound statements
 compoundStmtNames = [
 	'Block',
-	'Funcdef',
+	'FuncDef',
 	'If',
 	'Module',
 	'While',
@@ -76,3 +76,23 @@ exprNames = [
 ]
 
 matchExpr = matchApplName(exprNames)
+
+
+#######################################################################
+# Types
+
+typeNames = [
+	'Void'
+	'Bool'
+	'Int',
+	'Float',
+	'Char',
+	'Pointer',
+	'Array',
+	'Compound',
+	'Union',
+	'Func',
+	'Blob',
+]
+
+matchType = matchApplName(typeNames)

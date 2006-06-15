@@ -6,4 +6,8 @@ from ir.common import *
 
 
 # Only annotate term applications
-annotate = path.Annotate(match.anAppl)
+annotate = path.Annotate(matchApplName(
+	stmtNames +
+	exprNames +
+	typeNames
+))

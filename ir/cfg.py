@@ -24,8 +24,7 @@ setStmtId = annotation.Set(stmtIdAnno, arith.Count('stmtid'))
 markStmtsIds = scope.Let(
 	traverse.TopDown(combine.Try(matchStmt & setStmtId)),
 	stmtid = build.zero
-) & debug.Dump()
-
+)
 
 
 #######################################################################

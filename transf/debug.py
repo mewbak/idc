@@ -132,7 +132,13 @@ class Traceback(_operate.Unary):
 				#print file, lnum, func
 				#print args, varargs, varkw
 				#print locals
-				#print locals['self'].__class__.__name__,
+				print "********************************************"
+				try:
+					print locals['self'].__class__.__name__,
+					print repr(locals['term'])[:40]
+					dump_context(self.log, locals['ctx'])
+				except:
+					pass
 			
 			print
 			
