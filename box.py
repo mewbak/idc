@@ -181,6 +181,9 @@ sym = Tag('type', 'symbol')
 def Path(operand):
 	return Tag('path', transf.path.get, operand ) | operand
 
+def reprz(term, ctx):
+	return term.factory.makeStr(str(term))
+reprz = transf.base.Adaptor(reprz)
 
 def escape(term, ctx):
 	s = str(term.value)

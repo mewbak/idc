@@ -244,7 +244,7 @@ makeNodeLabel = parse.Rule('''
 		-> <ir.pprint.stmtKern>
 |	n(*) 
 		-> n
-''') & renderBox
+''') & renderBox & box.escape
 
 makeNodeShape = parse.Rule('''
 	If(cond,_,_)
@@ -261,10 +261,13 @@ makeNodeShape = parse.Rule('''
 		-> "box"
 ''')
 
+makeNodeUrl = (path.get & box.reprz | build.empty ) & box.escape
+
 makeNodeAttrs \
 	= build.List([
-		makeAttr("label", makeNodeLabel & box.escape),
-		makeAttr("shape", makeNodeShape)
+		makeAttr("label", makeNodeLabel),
+		makeAttr("shape", makeNodeShape),
+		makeAttr("URL", makeNodeUrl),
 	])
 
 makeEdgeLabel \

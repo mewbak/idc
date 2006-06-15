@@ -30,4 +30,18 @@ class ViewFactory:
 		raise NotImplementedError
 
 
-# TODO: write a simple main to test views
+def main(cls):
+	'''Simple main function to test views.'''
+	
+	import sys
+	import gtk
+	import aterm.factory
+	import ui.document
+	
+	factory = aterm.factory.Factory()
+	term = factory.readFromTextFile(sys.stdin)
+	model = ui.document.Document()
+	model.term.set(term)
+	view = cls(model)
+	view.connect('destroy', gtk.main_quit)
+	gtk.main()

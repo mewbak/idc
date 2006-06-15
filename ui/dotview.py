@@ -3,6 +3,8 @@
 
 import sys
 import os
+import re
+import tempfile
 
 import gtk
 import gtk.gdk
@@ -16,11 +18,73 @@ DOT = 'dot'
 FORMAT = 'png'
 
 
+class Area:
+	
+	def __init__(self, url):
+		self.url = url
+	
+	def hit(self, x, y):
+		raise NotImplementedError
+
+
+class RectArea(Area):
+	
+	def __init__(self, url, points):
+		Area.__init__(self, url)
+		(self.x1, self.y1), (self.x2, self.y2) = points
+
+	def hit(self, x, y):
+		return self.x1 <= x <= self.x2 and self.y1 <= y <= self.y2
+
+
+class Imap:
+	"""Imagemap parsing and click detection.
+	
+	See http://hoohoo.ncsa.uiuc.edu/docs/tutorials/imagemapping.html and 
+	http://hoohoo.ncsa.uiuc.edu/docs/tutorials/imagemap.txt for implementation 
+	details.
+	"""
+	
+	types = {
+		'rect': RectArea,
+	}
+	
+	def __init__(self):
+		self.default_url = None
+		self.areas = []
+	
+	def read(self, fp):
+		for line in fp:
+			if line.startswith('#'):
+				continue
+			try:
+				parts = line.split()
+				type, url = parts[:2]
+				points = [tuple(map(int, point.split(','))) for point in parts[2:]]
+				if type == 'default':
+					self.default_url = url
+				else:
+					cls = self.types[type]
+					self.areas.append(cls(url, points))
+			except KeyError:
+				pass
+			except:
+				raise
+
+	def hit(self, x, y):
+		for area in self.areas:
+			if area.hit(x, y):
+				return area.url
+		return self.default_url
+		
+
 class DotWindow(gtk.Window):
 	
 	# TODO: add zoom/pan as in http://mirageiv.berlios.de/
-	# TODO: use maps to detect clicks in nodes as in http://hoohoo.ncsa.uiuc.edu/docs/tutorials/imagemapping.html
-	
+
+	hand_cursor = gtk.gdk.Cursor(gtk.gdk.HAND2)
+	regular_cursor = gtk.gdk.Cursor(gtk.gdk.XTERM)
+
 	def __init__(self):
 		gtk.Window.__init__(self)
 
@@ -38,7 +102,16 @@ class DotWindow(gtk.Window):
 			
 		self.image = gtk.Image()
 		eventbox.add(self.image)
-
+		
+		self.imap = None
+		
+		eventbox.set_above_child(True)
+		eventbox.add_events(gtk.gdk.BUTTON_RELEASE_MASK)
+		#eventbox.connect("button-press-event", self.on_eventbox_button_press)
+		eventbox.connect("event-after", self.on_eventbox_button_press)
+		eventbox.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
+		eventbox.connect("motion-notify-event", self.on_eventbox_motion_notify)
+		
 		self.show_all()
 	
 	def write_dotcode(self, writer_cb, *args):
@@ -49,7 +122,14 @@ class DotWindow(gtk.Window):
 		pixbuf_loader.connect('area_prepared', self.on_pixbuf_loader_area_prepared)
 		pixbuf_loader.connect('area_updated', self.on_pixbuf_loader_area_updated)
 	
-		dotin, dotout = os.popen2([DOT, '-T' + FORMAT], 'rw')
+		mapfd, mapname = tempfile.mkstemp('.map')
+		os.close(mapfd)
+		
+		dotin, dotout = os.popen2([
+			DOT, 
+			'-Timap', '-o' + mapname,
+			'-T' + FORMAT
+		], 'rw')
 
 		writer_cb(dotin, *args)
 		dotin.close()
@@ -59,8 +139,12 @@ class DotWindow(gtk.Window):
 			if not buf:
 				break
 			pixbuf_loader.write(buf)
-			
 		dotout.close()
+		
+		self.imap = Imap()
+		self.imap.read(file(mapname, 'rt'))
+		os.unlink(mapname)
+		
 		pixbuf_loader.close()
 	
 	def set_dotcode(self, dotcode):
@@ -75,6 +159,45 @@ class DotWindow(gtk.Window):
 
 	def on_pixbuf_loader_area_updated(self, pixbuf_loader, x, y, width, height):
 		self.image.queue_draw()
+	
+	def on_eventbox_button_press(self, eventbox, event):
+		if event.type != gtk.gdk.BUTTON_RELEASE:
+			return False
+		if event.button != 1:
+			return False
+		x, y = int(event.x), int(event.y)
+		#print x, y
+		url = self.get_url(x, y)
+		if url is not None:
+			self.on_url_clicked(url)
+		return False
+
+	def on_eventbox_motion_notify(self, eventbox, event):
+		x, y = int(event.x), int(event.y)
+		if self.get_url(x, y) is not None:
+			eventbox.window.set_cursor(self.hand_cursor)
+		else:
+			eventbox.window.set_cursor(self.regular_cursor)
+		return False
+		
+	def get_url(self, x, y):
+		imgwidth, imgheight = self.image.window.get_size()
+		pixbuf = self.image.get_pixbuf()
+		pixwidth = pixbuf.get_width()
+		pixheight = pixbuf.get_height()
+	
+		# NOTE: we assume were 0.5 alignment and 0 padding
+		x -= (imgwidth - pixwidth) / 2
+		y -= (imgheight - pixheight) / 2
+		assert 0 <= x <= imgwidth
+		assert 0 <= y <= imgheight
+
+		if self.imap is not None:
+			return self.imap.hit(x, y)
+		return None
+		
+	def on_url_clicked(self, url):
+		pass
 
 
 class DotView(DotWindow, view.View):
@@ -101,6 +224,16 @@ class DotView(DotWindow, view.View):
 		model = self.model
 
 		model.term.detach(self.on_term_update)
+	
+	def on_url_clicked(self, url):
+		model = self.model
+		term = model.term.get()
+		factory = term.factory
+		path = factory.parse(url)
+		self.on_path_clicked(path)
+	
+	def on_path_clicked(self, path):
+		self.model.selection.set((path, path))
 		
 
 class CfgView(DotView):
@@ -111,21 +244,12 @@ class CfgView(DotView):
 		self.set_graph(graph)
 
 
-if __name__ == '__m ain__':
+if __name__ == '__ma in__':
 	win = DotWindow()
 	win.set_dotcode(sys.stdin.read())
-	win.widget.connect('destroy', gtk.main_quit)
-	gtk.main()
-
-if __name__ == '__main__':
-	import sys 
-	import aterm.factory
-	
-	factory = aterm.factory.Factory()
-	term = factory.readFromTextFile(sys.stdin)
-	graph = ir.cfg.render(term)
-	
-	win = DotWindow()
-	win.set_graph(graph)
 	win.connect('destroy', gtk.main_quit)
 	gtk.main()
+
+
+if __name__ == '__main__':
+	view.main(CfgView)

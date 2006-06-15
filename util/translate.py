@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '.
 
 import aterm.factory 
 import box
+import ir.path
 import ir.pprint
 import machine.pentium
 
@@ -49,6 +50,8 @@ def translate(fpin, fpout, verbose = True):
 		sys.stderr.write('\n')	
 
 		sys.stderr.write('\n')	
+
+	term = ir.path.annotate(term)
 
 	term.writeToTextFile(fpout)
 
