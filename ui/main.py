@@ -175,7 +175,6 @@ class MainApp(glade.GladeApp):
 		for tag in iter.get_tags():
 			path = tag.get_data('path')
 			if path is not None:
-				path = self.document.factory.parse(path)
 				return path
-		return False
+		return None
 

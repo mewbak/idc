@@ -126,7 +126,10 @@ class Writer(walker.Walker):
 	
 	def writeApplT(self, name, value, box, mode):
 		name = self._str(name)
-		value = self._str(value)
+		try:
+			value = self._str(value)
+		except TypeError:
+			pass
 		self.formatter.handle_tag_start(name, value)
 		self.write(box, mode)
 		self.formatter.handle_tag_end(name)

@@ -23,7 +23,7 @@ from box import commas
 
 reprz = base.Adaptor(lambda term, ctx: term.factory.makeStr(str(term)))
 
-Path = lambda operand: box.Tag('path', annotation.Get('Path') & reprz, operand ) | operand
+Path = lambda operand: box.Tag('path', annotation.Get('Path'), operand ) | operand
 
 
 #######################################################################
