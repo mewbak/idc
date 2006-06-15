@@ -72,13 +72,13 @@ test-asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py examples
 # Generate reference documentation
 
 doc: all
-	rm -rf html
+	rm -rf doc/html
 	epydoc \
 		--css blue \
 		--no-private \
+		-o doc/html \
 		aterm \
 		transf \
-		path \
 		walker \
 		box \
 		#ir \
