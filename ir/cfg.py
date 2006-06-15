@@ -7,70 +7,10 @@ import box
 
 from transf import *
 
+from ir.common import *
 import ir.traverse
 import ir.pprint
 import lang.dot
-
-
-#######################################################################
-# Utilities
-
-class Count(base.Transformation):
-
-	def __init__(self, name):
-		base.Transformation.__init__(self)
-		self.name = name
-
-	def apply(self, term, ctx):
-		try:
-			value = int(ctx[self.name])
-		except TypeError:
-			raise exception.Failure
-		except KeyError:
-			value = 0
-		
-		value += 1
-		
-		term = term.factory.makeInt(value)
-		
-		ctx[self.name] =  term
-		return term
-
-
-reduceStmts = parse.Transf('''
-{ stmts:
-	( ?Block(stmts)
-	+ ?If(_, *stmts)
-	+ ?While(_, *stmts)
-	+ ?FuncDef(_,_,_,*stmts)
-	+ ?Module(stmts)
-	) 
-	; !stmts
-	+ ![]
-}
-''')
-
-#######################################################################
-# Statement matching
-
-matchStmtName \
-	= match.Str('VarDef') \
-	| match.Str('FuncDef') \
-	| match.Str('Assign') \
-	| match.Str('Asm') \
-	| match.Str('If') \
-	| match.Str('While') \
-	| match.Str('Ret)') \
-	| match.Str('Label') \
-	| match.Str('Branch') \
-	| match.Str('Block') \
-	| match.Str('Break') \
-	| match.Str('Continue') \
-	| match.Str('NoStmt') \
-	| match.Str('Ret') \
-	| match.Str('Module')
-
-matchStmt = match.Appl(matchStmtName, base.ident)
 
 
 #######################################################################
@@ -79,26 +19,23 @@ matchStmt = match.Appl(matchStmtName, base.ident)
 stmtIdAnno = 'StmtId'
 
 getStmtId = annotation.Get(stmtIdAnno)
-SetStmtId = lambda id: annotation.Set(stmtIdAnno, id)
-setStmtId = SetStmtId(Count('stmtid'))
+setStmtId = annotation.Set(stmtIdAnno, arith.Count('stmtid'))
 
 markStmtsIds = scope.Let(
 	traverse.TopDown(combine.Try(matchStmt & setStmtId)),
 	stmtid = build.zero
-)
+) & debug.Dump()
 
 
 
 #######################################################################
 # Branches & Labels
 
-matchLabel = match.Appl(matchStmtName, base.ident)
-
 makeLabelRef = parse.Rule('''
 	Label(name) -> [name, <getStmtId>]
 ''')
 
-makeLabelTable = unify.CollectAll(matchLabel & makeLabelRef)
+makeLabelTable = unify.CollectAll(makeLabelRef)
 
 setLabelRef = rewrite.Pattern(
 	"Label(name)",
