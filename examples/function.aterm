@@ -1,0 +1,19 @@
+Module(
+	[
+		FuncDef(
+			Void,
+			"main", 
+			[],
+			Block(
+				[
+					Assign(
+						Int(32, Signed), 
+						Sym("eax"),
+						Lit(Int(32, Signed), 1)
+					),
+					Ret(Void, NoExpr)
+				]
+			)
+		)
+	]
+)
