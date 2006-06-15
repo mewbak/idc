@@ -58,3 +58,7 @@ class TestCase(refactoring.TestCase):
 		('[Sym("a"),Sym("c")]', '["a", "b"]', '[Sym("b"),Sym("c")]'),
 		('C(Sym("a"),Sym("c"))', '["a", "b"]', 'C(Sym("b"),Sym("c"))'),
 	]
+
+
+if __name__ == '__main__':
+	refactoring.main(Rename)

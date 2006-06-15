@@ -1,26 +1,66 @@
-'''Path to sub-terms in an aterm.
+'''Path transformations.
+
+A path is a term comprehending a list of integer indexes which indicate the
+position of a term relative to the root term. The indexes are listed orderly
+from the leaves to the root.
 '''
 
 
 import aterm.factory
 import aterm.visitor
+
+from transf import exception
+from transf import base
+from transf import build
 import transf
 
 
 _factory = aterm.factory.Factory()
 _path = _factory.parse('Path(_)')
 
-class Annotator(aterm.visitor.IncrementalVisitor):
-	'''Annotate the term and sub-terms with their relative path.'''
 
-	def __call__(self, term, path = None):
-		if path is None:
-			path = term.factory.makeNil()
-		return self.visit(term, path, 0)
-	
+def reverse_path(path):
+	res = _factory.makeNil()
+	for index in path:
+		res = _factory.makeCons(index, res)
+	return res
+
+
+
+def common_subpath(path1, path2):
+	path1 = reverse_path(path1)
+	path2 = reverse_path(path2)
+	res = _factory.makeNil()
+	while path1 and path2 and path1.head == path2.head:
+		res = _factory.makeCons(path1.head)
+	return res
+
+
+class Annotator(aterm.visitor.IncrementalVisitor):
+	'''Visitor which recursively annotates the terms and all subterms with their 
+	path.'''
+
+	def annotate(cls, term, root = None, func = None):
+		annotator = cls(func)
+		if root is None:
+			root = term.factory.makeNil()
+		return annotator.visit(term, root, 0)
+	annotate = classmethod(annotate)
+		
+	def __init__(self, func = None):
+		super(Annotator, self).__init__()
+		if func is not None:
+			self.callback = func
+
+	def callback(self, term):
+		return True
+
 	def visit(self, term, path, index):
 		term = super(Annotator, self).visit(term, path, index)
-		return term.setAnnotation(_path, _path.make(path))
+		if self.callback(term):
+			return term.setAnnotation(_path, _path.make(path))
+		else:
+			return term
 		
 	def visitTerm(self, term, path, index):
 		return term
@@ -40,112 +80,170 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 		# no need to annotate arg lists
 		return super(Annotator, self).visit(term, path, index)
 
-annotate = Annotator()
+
+class Annotate(base.Transformation):
+	'''Transformation which annotates the path of terms and subterms for which the 
+	supplied transformation succeeds.'''
+
+	def __init__(self, operand = None, root = None):
+		base.Transformation.__init__(self)
+		if operand is None:
+			self.operand = base.ident
+		else:
+			self.operand = operand
+		if root is None:
+			self.root = build.nil
+		elif isinstance(root, aterm.terms.Term):
+			self.root = build.Term(root)
+		else:
+			self.root = root
+		
+	def apply(self, term, ctx):
+		root = self.root.apply(term, ctx)
+		def func(term):
+			try:
+				self.operand.apply(term, ctx)
+			except exception.Failure:
+				return False
+			else:
+				return True
+		return Annotator.annotate(term, root, func)
 
 
-class IndexFetch(transf.base.Transformation, aterm.visitor.Visitor):
-	'''Fetch a subterm.'''
+annotate = Annotate(base.ident, build.nil)
 
-	def __init__(self, index):
-		transf.base.Transformation.__init__(self)
-		aterm.visitor.Visitor.__init__(self)
-		self.index = index
+
+class Projector(aterm.visitor.Visitor):
+	'''Visitor which projects a subterm along a path.'''
+
+	def project(cls, term, path):
+		projector = cls()
+		return projector.visit(term, reverse_path(path), 0)
+	project = classmethod(project)
+
+	def visit(self, term, path, index):
+		if not path:
+			return term
+		else:
+			return super(Projector, self).visit(term, path, index)
+	
+	def visitTerm(self, term, path, index):
+		raise TypeError('not a term list or application', term)
+	
+	def visitNil(self, term, path, index):
+		raise IndexError('index out of range', index)
+		
+	def visitCons(self, term, path, index):
+		if index == path.head.value:
+			return self.visit(term.head, path.tail, 0)
+		else:
+			return self.visit(term.tail, path, index + 1)
+
+	def visitAppl(self, term, path, index):
+		return self.visit(term.args, path, index)
+
+
+class Project(base.Transformation):
+	'''Projects a subterm along a path.'''
+
+	def __init__(self, path):
+		base.Transformation.__init__(self)
+		if isinstance(path, aterm.terms.Term):
+			self.path = build.Term(path)
+		else:
+			self.path = path
 
 	def apply(self, term, ctx):
-		return self.visit(term, 0)
+		path = self.path.apply(term, ctx)
+		return Projector.project(term, path)
 	
-	def visitTerm(self, term, index):
-		raise TypeError('not a term list or application: %r' % term)
-	
-	def visitNil(self, term, index):
-		raise IndexError('index out of range')
-		
-	def visitCons(self, term, index):
-		if index == self.index:
-			return term.getHead()
-		else:
-			return self.visit(term.getTail(), index + 1)
-
-	def visitAppl(self, term, index):
-		return self.visit(term.getArgs(), index)
-
-
-def PathFetch(path):
-	'''Transformation which fetchs sub-term with the specified path.'''
-	result = transf.base.ident
-	for index in path:
-		result = IndexFetch(int(index)) & result
-	return result
-
 
 def fetch(term, path):
 	'''Fetches the sub-term with the specified path.'''
-	return PathFetch(path)(term)
+	return Project(path)(term)
 
 
-class Index(transf.base.Transformation, aterm.visitor.IncrementalVisitor):
+class Transformer(aterm.visitor.IncrementalVisitor):
 
-	def __init__(self, operand, index):
-		transf.base.Transformation.__init__(self)
-		aterm.visitor.IncrementalVisitor.__init__(self)
-		self.operand = operand
-		self.index = index
+	def transform(cls, term, path, func):
+		transformer = cls(func)
+		return transformer.visit(term, reverse_path(path), 0)
+	transform = classmethod(transform)
 		
-	def apply(self, term, ctx):
-		return self.visit(term, ctx, 0)
-	
-	def visitTerm(self, term, ctx, index):
-		raise TypeError('not a term list or application: %r' % term)
-	
-	def visitNil(self, term, ctx, index):
-		raise IndexError('index out of range')
-	
-	def visitHead(self, term, ctx, index):
-		if index == self.index:
-			return self.operand(term, ctx)
-		else:
-			return term
-	
-	def visitTail(self, term, ctx, index):
-		if index < self.index:
-			return self.visit(term, ctx, index + 1)
-		else:
-			return term
+	def __init__(self, func):
+		super(Transformer, self).__init__()
+		self.callback = func
 
-	def visitName(self, term, ctx, index):
+	def visit(self, term, path, index):
+		if not path:
+			return self.callback(term)
+		else:
+			return super(Transformer, self).visit(term, path, index)
+	
+	def visitTerm(self, term, path, index):
+		raise TypeError('not a term list or application', term)
+	
+	def visitNil(self, term, path, index):
+		raise IndexError('index out of range', index)
+		
+	def visitHead(self, term, path, index):
+		if index == path.head.value:
+			return self.visit(term, path.tail, 0)
+		else:
+			return term
+		
+	def visitTail(self, term, path, index):
+		if index == path.head.value:
+			return term
+		else:
+			return self.visit(term, path, index + 1)
+	
+	def visitName(self, term, path, index):
 		return term
-
-	def visitArgs(self, term, ctx, index):
-		return self.visit(term, ctx, index)
-
-
-def Path(transformation, path):
-	'''Apply a transformation only on the specified path.'''
-	result = transformation
-	for index in path:
-		result = Index(result, int(index))
-	return result
+	
+	def visitArgs(self, term, path, index):
+		return self.visit(term, path, 0)
 
 
-class _Splitter(aterm.visitor.Visitor):
+class SubTerm(base.Transformation):
+	'''Projects a subterm along a path.'''
+
+	def __init__(self, operand, path):
+		base.Transformation.__init__(self)
+		self.operand = operand
+		if isinstance(path, aterm.terms.Term):
+			self.path = build.Term(path)
+		else:
+			self.path = path
+
+	def apply(self, term, ctx):
+		path = self.path.apply(term, ctx)
+		func = lambda term: self.operand.apply(term, ctx)
+		return Transformer.transform(term, path, func)
+	
+
+class Splitter(aterm.visitor.Visitor):
 	'''Splits a list term in two lists.'''
 
+	def split(cls, term, index):
+		splitter = cls(index)
+		return splitter.visit(term, 0)
+	split = classmethod(split)
+		
 	def __init__(self, index):
+		super(Splitter, self).__init__()
 		'''The argument is the index of the first element of the second list.'''
 		self.index = index
 
-	def __call__(self, term):
-		return self.visit(term, 0)
-	
 	def visitTerm(self, term, index):
-		raise TypeError('not a term list: %r' % term)
+		raise TypeError('not a term list', term)
 	
 	def visitNil(self, term, index):
 		if index == self.index:
 			return term.factory.makeNil(), term
 		else:
 			raise IndexError('index out of range')
-		
+
 	def visitCons(self, term, index):
 		if index == self.index:
 			return term.factory.makeNil(), term
@@ -154,19 +252,17 @@ class _Splitter(aterm.visitor.Visitor):
 			return term.factory.makeCons(term.getHead(), head, term.getAnnotations()), tail
 
 
-def split(term, index):
-	'''Split a term list in two.'''
-	return _Splitter(index)(term)
+split = Splitter.split
 
 
-class Range(transf.base.Transformation):
+class Range(base.Transformation):
 	'''Apply a transformation on a subterm range.'''
 
 	def __init__(self, operand, start, end):
 		'''Start and end indexes specify the subterms that will be transformed, 
 		inclusively.
 		'''
-		transf.base.Transformation.__init__(self)
+		base.Transformation.__init__(self)
 		self.operand = operand
 		if start > end:
 			raise ValueError('start index %r greater than end index %r' % (start, end))
@@ -191,6 +287,6 @@ def PathRange(transformation, start, end):
 	result = Range(result, start[0], end[0])
 	if start[1:] != end[1]:
 		raise ValueError('start and end path tails differ: %r, %r' % start, end)
-	result = Path(result, start)
+	result = SubTerm(result, start)
 	return result
 

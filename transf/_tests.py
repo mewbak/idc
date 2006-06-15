@@ -59,7 +59,7 @@ class TestMixin:
 				msg = "not a term: %s -> %s (!= %s)" % (term, result, expectedResult)
 			)
 			
-			self.failUnlessEqual(result, expectedResult, 
+			self.failUnless(expectedResult.isEqual(result), 
 				msg = "%s -> %s (!= %s)" %(term, result, expectedResult)
 			)
 
@@ -592,21 +592,9 @@ class TestParse(TestMixin, unittest.TestCase):
 			print output
 
 
-class TestPath(unittest.TestCase):
+class TestPath(TestMixin, unittest.TestCase):
 	
-	def setUp(self):
-		self.factory = aterm.factory.Factory()
-
-	def parseArgs(self, args):
-		return [self.factory.parse(value) for value in args]
-	
-	def parseKargs(self, kargs):
-		res = {}
-		for name, value in kargs.iteritems():
-			res[name] = self.factory.parse(value)
-		return res
-	
-	annotatorTestCases = [
+	annotateTestCases = [
 		('1', '1{Path([])}'),
 		('[1,2]', '[1{Path([0])},2{Path([1])}]{Path([])}'),
 		('C(1,2)', 'C(1{Path([0])},2{Path([1])}){Path([])}'),
@@ -617,16 +605,7 @@ class TestPath(unittest.TestCase):
 	]
 	
 	def testAnnotate(self):
-		for termStr, expectedResultStr in self.annotatorTestCases:
-			term = self.factory.parse(termStr)
-			expectedResult = self.factory.parse(expectedResultStr)
-			
-			result = path.annotate(term)
-			
-			self.failUnlessEqual(result, expectedResult)
-			
-			self.failUnless(result.isEquivalent(term))
-			self.failUnless(term.isEquivalent(result))
+		self._testTransf(path.annotate, self.annotateTestCases)
 
 	def checkTransformation(self, metaTransf, testCases):
 		for termStr, pathStr, expectedResultStr in testCases:
@@ -652,9 +631,9 @@ class TestPath(unittest.TestCase):
 		('A([B,C],[D,E])', '[1,1]', 'E'),
 	]
 
-	def testFetch(self):
+	def testProject(self):
 		self.checkTransformation(
-			path.PathFetch, 
+			path.Project, 
 			self.fetchTestCases
 		)
 	
@@ -670,9 +649,9 @@ class TestPath(unittest.TestCase):
 		('A([B,C],[D,E])', '[1,0]', 'A([B,X(C)],[D,E])'),
 	]	
 	
-	def testPath(self):
+	def testSubTerm(self):
 		self.checkTransformation(
-			lambda _path: path.Path(rewrite.Pattern('x', 'X(x)'), _path),
+			lambda p: path.SubTerm(rewrite.Pattern('x', 'X(x)'), p),
 			self.pathTestCases
 		)
 
