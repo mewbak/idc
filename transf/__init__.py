@@ -42,12 +42,13 @@ from transf import traverse
 from transf import unify
 from transf import sugar
 
-from transf import annotation
-
 from transf import arith
 from transf import lists
 from transf import strings
 from transf import table
+
+from transf import annotation
+from transf import path
 
 from transf import debug
 

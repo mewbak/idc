@@ -10,7 +10,7 @@ import ir.check
 import ir.pprint
 
 
-class TestCase(unittest.TestCase):
+class TestPrettyPrint(unittest.TestCase):
 	
 	def setUp(self):
 		self.factory = aterm.factory.Factory()
@@ -54,7 +54,7 @@ class TestCase(unittest.TestCase):
 		'stmt': [
 			('Label("label")', 'label:'),
 			('Asm("ret",[])', 'asm("ret");'),
-			('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);'),
+			('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1000)])', 'asm("mov", ax, 1000);'),
 			('FuncDef(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),
 		],
 		

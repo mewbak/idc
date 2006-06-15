@@ -2,8 +2,8 @@
 
 
 import refactoring
-import path
 import transf
+from transf import path
 
 
 class Rename(refactoring.Refactoring):

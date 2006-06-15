@@ -2,7 +2,6 @@
 
 
 import refactoring
-import path
 import transf
 from transf import *
 from ir.transfs import *

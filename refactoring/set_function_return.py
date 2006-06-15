@@ -3,7 +3,7 @@
 
 import refactoring
 import transf
-import path
+from transf import path
 import ir.transfs
 
 

@@ -46,7 +46,6 @@ TESTOPTS = -v
 tests: \
 	test-aterm \
 	test-transf \
-	test-path \
 	test-box \
 	test-ir \
 	test-refactoring

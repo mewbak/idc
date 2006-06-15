@@ -7,7 +7,7 @@ import observer
 
 import aterm.factory
 import ir.pprint
-import path
+from transf import path
 import box
 
 
