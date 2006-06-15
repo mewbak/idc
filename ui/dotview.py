@@ -235,6 +235,10 @@ class DotView(DotWindow, view.View):
 
 class CfgView(DotView):
 
+	def __init__(self, model):
+		DotView.__init__(self, model)
+		self.set_title('Control Flow Graph')
+		
 	def on_term_update(self, term):
 		term = term.get()
 		graph = ir.cfg.render(term)

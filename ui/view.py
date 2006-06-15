@@ -36,11 +36,11 @@ def main(cls):
 	import sys
 	import gtk
 	import aterm.factory
-	import ui.document
+	import ui.model
 	
 	factory = aterm.factory.Factory()
 	term = factory.readFromTextFile(sys.stdin)
-	model = ui.document.Document()
+	model = ui.model.Model()
 	model.term.set(term)
 	view = cls(model)
 	view.connect('destroy', gtk.main_quit)

@@ -16,7 +16,7 @@ import glade
 
 import box
 import ir.pprint
-import document
+import model
 import refactoring
 
 from ui import textbuffer
@@ -30,18 +30,18 @@ class MainApp(glade.GladeApp):
 	def __init__(self):
 		glade.GladeApp.__init__(self, "main.glade", "main_window")
 		
-		self.document = document.Document()
-		self.document.term.attach(self.on_term_update)
+		self.model = model.Model()
+		self.model.term.attach(self.on_term_update)
 		
 		self.refactoring_factory = refactoring.Factory()
 		
 		if len(sys.argv) > 1:
 			self.open(sys.argv[1])
 		else:
-			self.document.new()
+			self.model.new()
 
 	def on_new_activate(self, event):
-		self.document.new()
+		self.model.new()
 	
 	def on_open_activate(self, event):
 		path = self.run_open_dialog(
@@ -59,9 +59,9 @@ class MainApp(glade.GladeApp):
 	def open(self, path):
 		if path is not None:
 			if path.endswith('.s'):
-				self.document.open_asm(path)
+				self.model.open_asm(path)
 			if path.endswith('.aterm'):
-				self.document.open_ir(path)
+				self.model.open_ir(path)
 
 	def on_save_activate(self, event):
 		# FIXME: implement this
@@ -81,9 +81,9 @@ class MainApp(glade.GladeApp):
 		
 		if path is not None:
 			if path.endswith('.aterm'):
-				self.document.save_ir(path)
+				self.model.save_ir(path)
 			if path.endswith('.c'):
-				self.document.export_c(path)
+				self.model.export_c(path)
 
 	def on_term_update(self, term):
 		term = term.get()
@@ -97,10 +97,10 @@ class MainApp(glade.GladeApp):
 		self.quit()
 
 	def on_viewterm_activate(self, event):
-		termview.TermView(self.document)
+		termview.TermView(self.model)
 
 	def on_viewcfg_activate(self, event):
-		dotview.CfgView(self.document)
+		dotview.CfgView(self.model)
 
 	def on_main_window_destroy(self, event):
 		self.quit()
@@ -121,11 +121,11 @@ class MainApp(glade.GladeApp):
 				x, y = textview.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, int(event.x), int(event.y))
 				iter = textview.get_iter_at_location(x, y)
 				path = self.get_path_at_iter(iter)
-				self.document.selection.set((path, path))
+				self.model.selection.set((path, path))
 			else:
 				start = self.get_path_at_iter(start)
 				end = self.get_path_at_iter(end)
-				self.document.selection.set((start, end))
+				self.model.selection.set((start, end))
 			
 		return False
 
@@ -134,8 +134,8 @@ class MainApp(glade.GladeApp):
 		
 		popup = gtk.Menu()
 		
-		term = self.document.term.get()
-		selection = self.document.selection.get()
+		term = self.model.term.get()
+		selection = self.model.selection.get()
 		
 		for refactoring in self.refactoring_factory.refactorings.itervalues():
 			menuitem = gtk.MenuItem(refactoring.name())
@@ -162,12 +162,12 @@ class MainApp(glade.GladeApp):
 		
 		# Ask user input
 		args = refactoring.input(
-			self.document.term.get(), 
-			self.document.selection.get(),
+			self.model.term.get(), 
+			self.model.selection.get(),
 			inputter.Inputter()
 		)
 		
-		self.document.apply_refactoring(refactoring, args)
+		self.model.apply_refactoring(refactoring, args)
 		
 	def get_path_at_iter(self, iter):
 		for tag in iter.get_tags():

@@ -1,6 +1,6 @@
-"""Document data model."""
+"""Data model."""
 
-# TODO: move this module into a UI-independent package
+# TODO: move this module into a UI-independent package?
 
 
 import observer
@@ -37,8 +37,8 @@ class SelectionState(observer.State):
 		self.reset()
 
 
-class Document:
-	"""Document data model."""
+class Model:
+	"""Data model."""
 	
 	def __init__(self):
 		self.factory = aterm.factory.Factory()
