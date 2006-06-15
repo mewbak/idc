@@ -98,7 +98,7 @@ class TermSet(base.Transformation):
 		try:
 			build_transf = self.transfs[term]
 		except KeyError:
-			raise exceptions.Failure('term not in set', term)
+			raise exception.Failure('term not in set', term)
 		else:
 			return build_transf.apply(term, ctx)
 			

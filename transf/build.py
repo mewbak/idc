@@ -50,6 +50,8 @@ def Real(value):
 def Str(value):
 	return _Term(_factory.makeStr(value))
 
+empty = Str("")
+
 
 _nil = _factory.makeNil()
 

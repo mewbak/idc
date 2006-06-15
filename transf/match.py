@@ -73,6 +73,25 @@ class Term(base.Transformation):
 			raise exception.Failure('term mismatch', self.term, term)
 
 
+class TermSet(base.Transformation):
+	
+	def __init__(self, *terms):
+		base.Transformation.__init__(self)
+		self.terms = {}
+		for term in terms:
+			if isinstance(term, basestring):
+				term = _factory.parse(term)
+			else:
+				assert isinstance(term, aterm.terms.Term)
+			self.terms[term] = None
+		
+	def apply(self, term, ctx):
+		if term in self.terms:
+			return term
+		else:
+			raise exception.Failure('term not in set', term)
+
+
 class Lit(base.Transformation):
 
 	def __init__(self, type, value):
@@ -87,7 +106,7 @@ class Lit(base.Transformation):
 
 
 def Int(value):
-	'''base.Transformation which matches an integer term with the given value.'''
+	'''Transformation which matches an integer term with the given value.'''
 	return Lit(aterm.types.INT, value)
 
 zero = Int(0)
@@ -98,17 +117,21 @@ four = Int(4)
 	
 
 def Real(value):
-	'''base.Transformation which matches a real term with the given value.'''
+	'''Transformation which matches a real term with the given value.'''
 	return Lit(aterm.types.REAL, value)
 
 
 def Str(value):
-	'''base.Transformation which matches a string term with the given value.'''
+	'''Transformation which matches a string term with the given value.'''
 	return Lit(aterm.types.STR, value)
 	
 
+def StrSet(*values):
+	return TermSet(*[_factory.makeStr(value) for value in values])
+	
+
 class Nil(base.Transformation):
-	'''base.Transformation which matches an empty list term.'''
+	'''Transformation which matches an empty list term.'''
 
 	def apply(self, term, ctx):
 		if term.type != aterm.types.LIST or not term.isEmpty():
@@ -119,7 +142,7 @@ nil = Nil()
 
 
 class Cons(base.Transformation):
-	'''base.Transformation which matches a list construction term.'''
+	'''Transformation which matches a list construction term.'''
 	
 	def __init__(self, head, tail):
 		'''Takes as argument the transformations to be applied to the list 
