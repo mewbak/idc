@@ -2,12 +2,10 @@
 '''
 
 
-from transf import base
-from transf import combine
-from transf import strings
-from transf import annotation
-from transf import parse
-from transf import debug
+import math
+
+from transf import *
+from transf import _operate
 
 import ir.traverse
 from ir.traverse import UP, DOWN
@@ -31,10 +29,7 @@ Path = lambda operand: box.Tag('path', annotation.Get('Path') & reprz, operand )
 #######################################################################
 # Int Literals
 
-import math
-import sys
-
-def entropy(seq, states):
+def _entropy(seq, states):
 	state_freqs = dict.fromkeys(states, 0)
 	for state in seq:
 		state_freqs[state] += 1
@@ -47,12 +42,16 @@ def entropy(seq, states):
 	return entropy
 
 def intrepr(term, ctx):
+	'''Represent integers, choosing the most suitable (lowest entropy) 
+	representation.
+	'''
+	
 	val = term.value
 
 	d = "%d" % abs(val)
 	x = "%x" % abs(val)
-	sd = entropy(d, "0123456789")
-	sx = entropy(x, "0123456789abcdef")
+	sd = _entropy(d, "0123456789")
+	sx = _entropy(x, "0123456789abcdef")
 	if sx < sd:
 		rep = hex(val)
 	else:
@@ -349,7 +348,7 @@ if __name__ == '__main__':
 		('FuncDef(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),	
 		('Assign(Void,Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('Assign(Blob(32{Path([0,0,1,0])}){Path([0,1,0])},Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
-		('If(Binary(Eq(Int(32,"Signed")),Binary(BitOr(32),Binary(BitXor(32),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),Branch(Sym(".L4")),NoStmt)', ''),
+		('If(Binary(Eq(Int(32,Signed)),Binary(BitOr(32),Binary(BitXor(32),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),Branch(Sym(".L4")),NoStmt)', ''),
 	]
 	
 	for inputStr, output in stmtTestCases:
