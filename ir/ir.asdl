@@ -5,60 +5,49 @@
 --
 -- NOTE: ASDL's five builtin types are identifier, int, string, object, bool
 
-mod
+module
 	= Module(stmt*)
 
 stmt
-	= VarDef(type, string name, expr value)
-	| FuncDef(type, string name, type* args)
-	| Assign(type, expr dest, expr src)
-	| If(expr cond, stmt, stmt)
-	| While(expr, cond, stmt)
-	| Ret(type, expr value)
+	= Assign(type, expr dest, expr src)
 	| Label(string name)
 	| Branch(expr label)
-	| Block(stmt*)
 	| Break
 	| Continue
-	| Nil
+	| Block(stmt*)
+	| If(expr cond, stmt, stmt)
+	| While(expr, cond, stmt)
+	| Ret(type, optExpr value)
+	| VarDef(type, string name, expr value)
+	| FuncDef(type, string name, type* args)
 	| Asm(string opcode, expr* operands) 
-
-type
-	= Void
-	| Bool
-	| Int(int size, sign)
-	| Float(int size)
-	| Char(int size)
-	| Pointer(type)
-	| Func(type, type*)
-	| Array(type)
-	| Compound(type*)
-	| Union(type*)
-	
-sign
-	= Signed
-	| Unsigned
+	| NoStmt
 
 expr
 	= True
 	| False
-	| Literal(type, object value)
+	| Lit(type, object value)
 	| Sym(string name)
 	| Cast(type, expr)
-	| Unary(unaryOp op, expr)
-	| Binary(binaryOp op, expr, expr
+	| Unary(unOp, expr)
+	| Binary(binOp, expr, expr)
 	| Cond(expr cond, expr, expr)
 	| Call(expr func, expr* params)
+	| Cast(type, expr)
 	| Addr(expr)
-	| Reference(expr)
+	| Ref(expr)
+	
+optExpr
+	= expr
+	| NoExpr
 
 
-unaryOp
+unOp
 	= Not
 	| BitNot(int size)
 	| Neg(type)
 
-binaryOp
+binOp
 	= And
 	| Or
 	| BitAnd(int size)
@@ -78,3 +67,20 @@ binaryOp
 	| Gt(type)
 	| GtEq(type)
 
+type
+	= Void
+	| Bool
+	| Int(int size, sign)
+	| Float(int size)
+	| Char(int size)
+	| Pointer(type)
+	| Array(type)
+	| Compound(type*)
+	| Union(type*)
+	| Func(type, type*)
+	| Blob(size)
+	
+sign
+	= Signed
+	| Unsigned
+	| Unknown
