@@ -274,7 +274,7 @@ expr returns [res]
                 res = self.factory.make("Binary(RShift(32),expr,Lit(Int(32,Signed),bits))", expr=res, bits=min(r, l))
             res = self.factory.make("Binary(BitAnd(32),expr,Lit(Int(32,Signed),mask))", 
             	expr = res, 
-            	mask = (1 << abs(l - r)) - 1
+            	mask = (1 << (abs(l - r) + 1)) - 1
             )
 		}
 		| l=expr r=expr
@@ -283,7 +283,7 @@ expr returns [res]
             l = ir.Expr(l)
             r = ir.Expr(r)
             
-            res = (e >> r) & (1 << (l - r) - 1)
+            res = (e >> r) & ((1 << (l - r + 1)) - 1)
             
             res = res.term
 		}
