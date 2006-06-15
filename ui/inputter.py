@@ -8,33 +8,35 @@ import glade
 # TODO: Generate dialog windows directly from term representation
 
 
-class TextDialog(glade.GladeWindow):
-	
-	def __init__(self):
-		glade.GladeWindow.__init__(self, "inputter.glade", "textdialog")
-	
-	def aon_okbutton_clicked(self, *args):
-		print "OK!"
-		self.widget.destroy()
-		
-	def aon_cancelbutton_clicked(self, *args):
-		print "Cancel!"
-		self.widget.destroy()
-
-
 class Inputter:
 	
 	def inputStr(self, title="", text=""):
-		dialog = TextDialog()
-		dialog.textlabel.set_text(text)
-		response = dialog.widget.run()
+		parent = None
+		dialog = gtk.Dialog(
+			title,
+			parent,
+			gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+			(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
+			gtk.STOCK_OK, gtk.RESPONSE_OK)
+		)
+		dialog.set_default_response(gtk.RESPONSE_OK)
+		
+  		textlabel = gtk.Label(text)
+  		dialog.vbox.pack_start(textlabel)
+  		
+  		textentry = gtk.Entry()
+  		textentry.set_activates_default(True)
+  		dialog.vbox.add(textentry)
 
+		dialog.show_all()
+		
+		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
-			result = dialog.textentry.get_text()
+			result = textentry.get_text()
 		else:
 			result = None
 		
-		dialog.widget.destroy()
+		dialog.destroy()
 		return result
 		
 
@@ -42,4 +44,4 @@ if __name__ == '__main__':
 	import os
 	os.chdir('..')
 	inputter = Inputter()
-	print inputter.inputStr("", "Question?")
+	print inputter.inputStr("Title", "Question?")
