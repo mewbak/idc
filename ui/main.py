@@ -19,10 +19,10 @@ import ir.pprint
 import document
 import refactoring
 
-from ui import inspector
 from ui import textbuffer
-from ui import inputter
+from ui import termview
 from ui import dotview
+from ui import inputter
 
 
 class MainApp(glade.GladeApp):
@@ -39,8 +39,6 @@ class MainApp(glade.GladeApp):
 			self.open(sys.argv[1])
 		else:
 			self.document.new()
-
-		self.inspector_window = None
 
 	def on_new_activate(self, event):
 		self.document.new()
@@ -99,7 +97,7 @@ class MainApp(glade.GladeApp):
 		self.quit()
 
 	def on_viewterm_activate(self, event):
-		inspector.InspectorView(self.document)
+		termview.TermView(self.document)
 
 	def on_viewcfg_activate(self, event):
 		dotview.CfgView(self.document)

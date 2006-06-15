@@ -212,14 +212,11 @@ class DotView(DotWindow, view.View):
 			self.on_term_update(model.term)
 
 	def get_name(self, name):
-		return 'Inspector View'
+		return 'Dot View'
 		
 	def on_term_update(self, term):
 		pass
 
-	def on_inspector_window_destroy(self, event):
-		self.destroy()
-	
 	def destroy(self):
 		model = self.model
 

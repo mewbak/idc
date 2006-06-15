@@ -1,10 +1,9 @@
-"""Aterm inspector window."""
+"""Aterm inspector view."""
 
 
 import gtk
 import gobject
 
-from ui import glade
 from ui import view
 
 import aterm.types
@@ -202,13 +201,22 @@ class TermTreeModel(gtk.GenericTreeModel):
 		return node.parent()
 
 
-class InspectorWindow(glade.GladeWindow):
+class TermWindow(gtk.Window):
 
 	def __init__(self):
-		glade.GladeWindow.__init__(self, "inspector.glade", "inspector_window")
-				
-		treeview = self.treeview
+		gtk.Window.__init__(self)
 
+		self.set_title('Term Inspector')
+		self.set_default_size(320, 480)
+
+		scrolled_window = gtk.ScrolledWindow()
+		self.add(scrolled_window)
+		scrolled_window.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+		
+		self.treeview = treeview = gtk.TreeView()
+		scrolled_window.add(self.treeview)
+		treeview.set_enable_search(False)
+		
 		renderer = gtk.CellRendererText()
 		column = gtk.TreeViewColumn("Term", renderer, text=0)
 		treeview.append_column(column)
@@ -222,6 +230,8 @@ class InspectorWindow(glade.GladeWindow):
 		treeview.append_column(column)
 
 		self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+
+		self.show_all()
 
 	def set_term(self, term):
 		treeview = self.treeview
@@ -240,10 +250,10 @@ class InspectorWindow(glade.GladeWindow):
 
 		
 
-class InspectorView(InspectorWindow, view.View):
+class TermView(TermWindow, view.View):
 	
 	def __init__(self, model):
-		InspectorWindow.__init__(self)
+		TermWindow.__init__(self)
 		view.View.__init__(self, model)
 		
 		model.term.attach(self.on_term_update)
@@ -275,9 +285,6 @@ class InspectorView(InspectorWindow, view.View):
 			self.treeview.scroll_to_cell(start)
 			#self.treeview.set_cursor(start)
 	
-	def on_inspector_window_destroy(self, event):
-		self.destroy()
-	
 	def destroy(self):
 		model = self.model
 
@@ -286,14 +293,5 @@ class InspectorView(InspectorWindow, view.View):
 		
 
 if __name__ == '__main__':
-	import sys 
-	import aterm.factory
-	
-	factory = aterm.factory.Factory()
-	term = factory.readFromTextFile(sys.stdin)
-
-	win = InspectorWindow()
-	win.set_term(term)
-	win.widget.connect('destroy', gtk.main_quit)
-	gtk.main()
+	view.main(TermView)
 
