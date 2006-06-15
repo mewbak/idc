@@ -12,7 +12,7 @@ import aterm.visitor
 from transf import exception
 from transf import base
 from transf import build
-import transf
+from transf import annotation
 
 
 _factory = aterm.factory.Factory()
@@ -111,6 +111,9 @@ class Annotate(base.Transformation):
 
 
 annotate = Annotate(base.ident, build.nil)
+
+
+get = annotation.Get('Path')
 
 
 class Projector(aterm.visitor.Visitor):

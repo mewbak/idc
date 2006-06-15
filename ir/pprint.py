@@ -16,14 +16,12 @@ from box import kw
 from box import lit
 from box import sym
 from box import commas
+from box import Path
 
 
 #######################################################################
 # Path annotation
 
-reprz = base.Adaptor(lambda term, ctx: term.factory.makeStr(str(term)))
-
-Path = lambda operand: box.Tag('path', annotation.Get('Path'), operand ) | operand
 
 
 #######################################################################

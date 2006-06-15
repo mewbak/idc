@@ -178,6 +178,9 @@ const = Tag('type', 'constant')
 string = Tag('type', 'string')
 sym = Tag('type', 'symbol')
 
+def Path(operand):
+	return Tag('path', transf.path.get, operand ) | operand
+
 
 def escape(term, ctx):
 	s = str(term.value)
