@@ -14,10 +14,8 @@ setLocalVars = parse.Transf('''
 		"si", "di", "bp", "sp",
 		"ah", "bh", "ch", "dh",
 		"al", "bl", "cl", "dl",
-		"NF", "ZF", "AF", "PF",
-		"CF", "OF", "DF", "IF",
-		"FP", "SKIP", "RPT", "FLF",
-		"C1", "C2", "FZF"
+		"nf", "zf", "af", "pf",
+		"cf", "of", "df", "if"
 	])
 ''')
 setLocalVars = debug.Trace('setLocalVars', setLocalVars)
@@ -86,8 +84,7 @@ dceBranch = parse.Transf('''
 dceRet = parse.Transf('''
 	?Ret(*) ;
 	setAllUnneededVars ;
-	debug.Dump(); ~Ret(_, <setNeededVars>) ;
-	debug.Dump()
+	~Ret(_, <setNeededVars>)
 ''')
 
 elimIf = parse.Rule('''
@@ -104,6 +101,7 @@ dceIf = parse.Transf('''
 	try(elimIf) ;
 	~If(<setNeededVars>, _, _)
 ''')
+
 
 elimBlock = parse.Rule('''
 	Block([]) -> NoStmt
@@ -123,6 +121,11 @@ dceFuncDef = parse.Transf('''
 	>)
 ''')
 
+# If none of the above applies, assume all vars are needed
+dceDefault = parse.Transf('''
+	setAllNeededVars
+''')
+
 dceStmt.subject = parse.Transf('''
 	dceAssign +
 	dceAsm +
@@ -131,7 +134,8 @@ dceStmt.subject = parse.Transf('''
 	dceRet +
 	dceBlock +
 	dceIf +
-	dceFuncDef
+	dceFuncDef + 
+	dceDefault
 ''')
 
 dceStmts.subject = parse.Transf('''

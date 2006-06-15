@@ -109,7 +109,8 @@ specification
     ;
 
 part
-	: #( INSTR iname:NAME iparams=param_list ibody=r:rtl )
+	: #( REGDECL ("INTEGER"|"FLOAT") ( register_decl )+ )
+	| #( INSTR iname:NAME iparams=param_list ibody=r:rtl )
 		{
             tmpnames = self.collect_temps(#r)
             
@@ -137,6 +138,28 @@ part
 	| .
 		// ignore
     ;
+
+register_decl
+	: r:REG_ID ( LSQUARE s=num RSQUARE )? INDEX id=num
+		( "COVERS" REG_ID TO REG_ID
+		| "SHARES" REG_ID AT LSQUARE s=num TO e=num RSQUARE
+		)?
+		{ self.registers[#r.getText()] = s }
+	|	
+		LSQUARE 
+			{ rs = [] } 
+		( r2:REG_ID 
+			{ rs.append(#r2.getText()) } 
+		)+ 
+		RSQUARE 
+		LSQUARE s=num RSQUARE 
+		INDEX sid=num ( TO eid=num )?
+			{
+                for r in rs:
+                    self.registers[r] = s
+			}
+	;
+
 
 param_list! returns [res]
 	: #( COMMA { res = [] } ( n:NAME { res.append(n.getText()) } )* )
@@ -184,11 +207,16 @@ rt returns [res]
                     type = "Bool"
                 else:
                     type = "Blob(size)"
+            sign=self.factory.parse(sign)
+            type=self.factory.make(type, size=size, sign=sign)
+            self.sign = sign
+            self.size = size
+            self.type = type
 		}
 		lv=lvalue e=expr )
 		{
             res = [self.factory.make("Assign(_,_,_)",
-                self.factory.make(type, size=size, sign=self.factory.parse(sign)),
+                type,
                 lv,
                 e)
             ]
@@ -200,7 +228,7 @@ rt returns [res]
 var returns [res]
 		{ res = self.factory.make("Sym(\"UNKNOWN\")") }
 	: r:REG_ID
-		{ res = self.factory.make("Sym(_)", #r.getText()[1:]) }
+		{ res = self.factory.make("Sym(_)", #r.getText()[1:].lower()) }
 	| #( ri:REG_IDX i=expr )
 		{ raise SemanticException(#ri, "register indexes not supported") }
 	| #( mi:MEM_IDX i=expr )
@@ -232,20 +260,21 @@ num returns [res]
 expr returns [res]
 		{ res = self.factory.make("Sym(\"UNSUPPORTED_EXPR\")") }
 	: n:NUM
-		{ res = self.factory.make("Lit(Int(32,Signed),_)", int(#n.getText())) }
+		{ res = self.factory.make("Lit(Int(sign,size),_)", int(#n.getText()), size=self.size, sign=self.sign) }
 	| f:FLOATNUM
-		{ res = self.factory.make("Lit(Float(32),_)", float(#f.getText())) }
+		{ res = self.factory.make("Lit(Float(size),_)", float(#f.getText()), size=self.size) }
 	| v=var 
 		{ res = v }
 	| #( AT e=expr 
 		( ( num num ) => l=num r=num 
 		{
+            // FIXME: don't use hardcoded sizes
             res = e
             if l != 0:
                 res = self.factory.make("Binary(RShift(32),expr,Lit(Int(32,Signed),bits))", expr=res, bits=min(r, l))
             res = self.factory.make("Binary(BitAnd(32),expr,Lit(Int(32,Signed),mask))", 
-            	expr=res, 
-            	mask= 1 << (abs(l-r)+1) - 1
+            	expr = res, 
+            	mask = (1 << abs(l - r)) - 1
             )
 		}
 		| l=expr r=expr
@@ -254,7 +283,7 @@ expr returns [res]
             l = ir.Expr(l)
             r = ir.Expr(r)
             
-            res = (e >> r) & (1 << (l - r + 1) - 1)
+            res = (e >> r) & (1 << (l - r) - 1)
             
             res = res.term
 		}
@@ -273,14 +302,14 @@ expr returns [res]
 		{ res = self.factory.make("Cast(Int(size,Unsigned),expr)", expr=e, size=n) }
 	| #( S_E e=expr )
 		// FIXME: handle type and size correctly
-		{ res = self.factory.make("Cast(Int(size,Signed),expr)", expr=e, size=32) }
+		{ res = self.factory.make("Cast(Int(size,Signed),expr)", expr=e, size=self.size) }
 	| #( t:. args=expr_list )
 		{
             //print "%d:%d" % (#o.getLine(), #o.getColumn())
             typ = #t.getType()
             if typ in opTable:
                 op = opTable[typ]
-                op = self.factory.make(op, type="Int", size=32, sign=self.factory.parse("Signed"))
+                op = self.factory.make(op, type=self.type, size=self.size, sign=self.sign)
                 if len(args) == 1:
                     res = self.factory.make("Unary(_,_)", op, *args)
                 elif len(args) == 2:

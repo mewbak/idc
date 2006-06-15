@@ -51,10 +51,15 @@ class SetFunctionReturn(refactoring.Refactoring):
 		txn = transf.parse.Transf('''
 			alltd(
 				~FuncDef(<typ>, <name>, _, 
-					<alltd(~Ret(<typ>,<!Sym(<ret>)>))>
-				)
+					<alltd(~Ret(<typ>, <!Sym(<ret>)>))>
+				) 
+			) ;
+			alltd(
+				?Assign(Void, NoExpr, Call(Sym(<name>),*)) ;
+				~Assign(<typ>, <!Sym(<ret>)>, *)
 			)
 		''')
+		#txn = transf.debug.Trace('txn', txn)
 		return txn(term)
 
 

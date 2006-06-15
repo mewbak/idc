@@ -259,6 +259,7 @@ tokens {
 	LOOKUP_OP;
 	RTL;
 	BUILTIN;
+	REGDECL;
 }
 
 start
@@ -293,7 +294,8 @@ const_expr
 	;
 
 registers_decl
-	: ("INTEGER"^| "FLOAT"^) register_decl (COMMA! register_decl)*
+	: ("INTEGER"| "FLOAT") register_decl (COMMA! register_decl)*
+		{ ## = #(#[REGDECL,"REGDECL"], ##) }
 	;
 
 register_decl
@@ -302,7 +304,7 @@ register_decl
 		( "COVERS" REG_ID TO REG_ID
 		| "SHARES" REG_ID AT LSQUARE num TO num RSQUARE
 		)?
-	| LSQUARE! register_list RSQUARE! LSQUARE num RSQUARE INDEX num (TO num)?
+	| LSQUARE register_list RSQUARE LSQUARE num RSQUARE INDEX num (TO num)?
 	;
 
 register_list

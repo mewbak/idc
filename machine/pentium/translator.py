@@ -13,9 +13,6 @@ sslTranslationTable = {
 	"xorl": "XOR.RMOD",
 	"leal": "LEA.OD",
 	"imull": "IMUL.OD",
-	"idivb": "IDIV",
-	"idivw": "IDIV.AX",
-	"idivl": "IDIV.EAX",
 	"pushl": "PUSH.OD",
 	"popl": "POP.OD",
 	"leave": "LEAVE",
@@ -55,12 +52,18 @@ class SslLookup(transf.base.Transformation):
 		return term.factory.make(pattern, **kargs)	
 
 
+simplifyExpr = transf.parse.Rule('''
+	BitNot(1) -> Not
+|	BitOr(1) -> Or
+|	BitAnd(1) -> And
+''')
+
 simplifyStmt = transf.parse.Rule('''
 	Assign(type, dst, Cond(cond, src, dst))
 		-> If(cond, Assign(type, dst, src), NoStmt)
 	
 |	Assign(type, dst, Cond(cond, src, dst))
-		-> If(Unary(Bool,Not,cond), Assign(type, dst, src), NoStmt)
+		-> If(Unary(Not, cond), Assign(type, dst, src), NoStmt)
 		
 |	Assign(_, Sym("pc"), expr)
 		-> Branch(Addr(expr))
@@ -76,8 +79,7 @@ simplifyStmt = transf.parse.Rule('''
 		-> expr
 ''')
 
-#simplify = transf.traverse.Map(transf.combine.Repeat(simplify))
-simplify = transf.traverse.InnerMost(simplifyStmt)
+simplify = transf.traverse.InnerMost(simplifyExpr | simplifyStmt)
 
 sslLookup = SslLookup() & simplify
 #sslLookup = transf.debug.Trace('sslLookup', sslLookup)
@@ -87,6 +89,8 @@ stmts = transf.base.Proxy()
 doStmt = transf.parse.Rule('''
 	Asm("ret", [])
 		-> [Ret(Void, NoExpr)]
+|	Asm("call", [Ref(addr)])
+		-> [Assign(Void, NoExpr, Call(addr,[]))]
 |	Asm(*)	
 		-> <sslLookup>
 |	_ 

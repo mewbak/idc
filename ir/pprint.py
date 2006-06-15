@@ -29,6 +29,42 @@ Path = lambda operand: box.Tag('path', annotation.Get('Path') & reprz, operand )
 
 
 #######################################################################
+# Int Literals
+
+import math
+import sys
+
+def entropy(seq, states):
+	state_freqs = dict.fromkeys(states, 0)
+	for state in seq:
+		state_freqs[state] += 1
+	entropy = 0
+	nstates = len(seq)
+	for freq in state_freqs.itervalues():
+		prob = float(freq)/nstates
+		if prob:
+			entropy -= prob*math.log(prob)
+	return entropy
+
+def intrepr(term, ctx):
+	val = term.value
+
+	d = "%d" % abs(val)
+	x = "%x" % abs(val)
+	sd = entropy(d, "0123456789")
+	sx = entropy(x, "0123456789abcdef")
+	if sx < sd:
+		rep = hex(val)
+	else:
+		rep = str(val)
+	
+	return term.factory.makeStr(rep)
+intrepr = base.Adaptor(intrepr)	
+
+intlit = intrepr & box.const
+
+
+#######################################################################
 # Types
 
 sign = parse.Rule('''
@@ -145,6 +181,8 @@ exprUp = parse.Rule('''
 		-> "FALSE"
 |	True 
 		-> "TRUE"
+|	Lit(_, value)
+		-> <<intlit> value>
 |	Lit(type, value)
 		-> <<lit> value>
 |	Sym(name)
@@ -196,13 +234,23 @@ expr = ir.traverse.Expr(
 
 stmt = base.Proxy()
 
+stmts = parse.Transf('''
+	!V( <map(stmt)> ) 
+''')
+
 stmtKern = Path(parse.Rule('''
-	Assign(_, dst, src)
+	Assign(Void, NoExpr, src)
+		-> H([ <<expr>src> ])
+|	Assign(_, dst, src)
 		-> H([ <<expr>dst>, " ", <<op>"=">, " ", <<expr>src> ])
 |	If(cond, _, _)
 		-> H([ <<kw>"if">, "(", <<expr>cond>, ")" ])
 |	While(cond, _)
 		-> H([ <<kw>"while">, "(", <<expr>cond>, ")" ])
+|	VarDef(type, name, NoExpr)
+		-> H([ <<type>type>, " ", name ])
+|	VarDef(type, name, val)
+		-> H([ <<type>type>, " ", name, "=", <<expr>val> ])
 |	FuncDef(type, name, args, body)
 		-> H([ <<type>type>, " ", name, "(", <<commas> args>, ")" ])
 |	Label(name)
@@ -242,7 +290,7 @@ stmt.subject = Path(parse.Rule('''
 |	Block( stmts )
 		-> V([
 			D("{"), 
-				V( <<map(stmt)>stmts> ), 
+				<<stmts>stmts>, 
 			D("}")
 		])
 |	FuncDef(_, _, _, body)
@@ -259,7 +307,7 @@ stmt.subject = Path(parse.Rule('''
 module = Path(parse.Rule('''
 	Module(stmts)
 		-> V([ 
-			I(V( <<map(stmt)>stmts> )) 
+			I( <<stmts>stmts> ) 
 		])
 '''))
 
