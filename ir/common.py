@@ -5,6 +5,13 @@ from transf import *
 
 
 #######################################################################
+# Utils
+
+def matchApplName(names):
+	return match.Appl(match.StrSet(*names), base.ident)
+	
+
+#######################################################################
 # Statements
 
 # names of non-comound statements
@@ -29,20 +36,11 @@ compoundStmtNames = [
 	'While',
 ]
 
-matchStmt = match.Appl(
-	match.StrSet(*(atomStmtNames + compoundStmtNames)),
-	base.ident
-)
+stmtNames = atomStmtNames + compoundStmtNames
 
-matchAtomStmt = match.Appl(
-	match.StrSet(*atomStmtNames),
-	base.ident
-)
-
-matchCompoundStmt = match.Appl(
-	match.StrSet(*compoundStmtNames),
-	base.ident
-)
+matchAtomStmt = matchApplName(atomStmtNames)
+matchCompoundStmt = matchApplName(compoundStmtNames)
+matchStmt = matchApplName(stmtNames)
 
 # list a statement's sub-statements
 reduceStmts = parse.Transf('''
@@ -58,3 +56,23 @@ reduceStmts = parse.Transf('''
 }
 ''')
 
+
+#######################################################################
+# Expressions
+
+exprNames = [
+	'True'
+	'False'
+	'Lit',
+	'Sym',
+	'Cast',
+	'Unary',
+	'Binary',
+	'Cond',
+	'Call',
+	'Cast',
+	'Addr',
+	'Ref',
+]
+
+matchExpr = matchApplName(exprNames)

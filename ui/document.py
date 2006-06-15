@@ -6,8 +6,8 @@
 import observer
 
 import aterm.factory
+import ir.path
 import ir.pprint
-from transf import path
 import box
 
 
@@ -17,7 +17,8 @@ class TermState(observer.State):
 	"""Intermediate representation of the program using aterms."""
 	
 	def set(self, value):
-		value = path.annotate(value)
+		# Always keep an annotated term
+		value = ir.path.annotate(value)
 		observer.State.set(self, value)
 
 
