@@ -31,7 +31,9 @@ class SelectionState(observer.State):
 		term.attach(self.on_term_update)
 		
 	def reset(self):
-		self.set((None, None))
+		factory = aterm.factory.Factory()
+		path = factory.makeNil()
+		self.set((path, path))
 		
 	def on_term_update(self, program):
 		self.reset()

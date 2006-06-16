@@ -161,15 +161,12 @@ class DotWindow(gtk.Window):
 		self.image.queue_draw()
 	
 	def on_eventbox_button_press(self, eventbox, event):
-		if event.type != gtk.gdk.BUTTON_RELEASE:
-			return False
-		if event.button != 1:
+		if event.type not in (gtk.gdk.BUTTON_PRESS, gtk.gdk.BUTTON_RELEASE):
 			return False
 		x, y = int(event.x), int(event.y)
-		#print x, y
 		url = self.get_url(x, y)
 		if url is not None:
-			self.on_url_clicked(url)
+			return self.on_url_clicked(url, event)
 		return False
 
 	def on_eventbox_motion_notify(self, eventbox, event):
@@ -196,8 +193,8 @@ class DotWindow(gtk.Window):
 			return self.imap.hit(x, y)
 		return None
 		
-	def on_url_clicked(self, url):
-		pass
+	def on_url_clicked(self, url, event):
+		return False
 
 
 class DotView(DotWindow, view.View):
@@ -223,16 +220,23 @@ class DotView(DotWindow, view.View):
 		model = self.model
 		model.term.detach(self.on_term_update)
 	
-	def on_url_clicked(self, url):
+	def on_url_clicked(self, url, event):
 		model = self.model
 		term = model.term.get()
 		factory = term.factory
 		path = factory.parse(url)
-		self.on_path_clicked(path)
+		return self.on_path_clicked(path, event)
 	
-	def on_path_clicked(self, path):
-		self.model.selection.set((path, path))
-	
+	def on_path_clicked(self, path, event):
+		if event.type == gtk.gdk.BUTTON_RELEASE and event.button == 1:
+			self.model.selection.set((path, path))
+		if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+			self.model.selection.set((path, path))
+			from ui.menus import PopupMenu
+			popupmenu = PopupMenu(self.model)
+			popupmenu.popup( None, None, None, event.button, event.time)			
+		return True
+
 
 class CfgView(DotView):
 
