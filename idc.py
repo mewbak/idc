@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-from ui.main import MainApp
+
+from ui.mainapp import MainApp
+
 
 if __name__ == '__main__':
 	app = MainApp()

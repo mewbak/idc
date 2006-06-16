@@ -11,12 +11,9 @@ import gtk
 import locale
 locale.setlocale(locale.LC_ALL,'')
 
-import box
-import ir.pprint
-import model
-
-from ui.menus import RefactorMenu, ViewMenu, PopupMenu
-from ui import textbuffer
+from ui.model import Model
+from ui.menus import RefactorMenu, ViewMenu
+from ui.boxview import BoxView
 
 
 class MainApp(gtk.Window):
@@ -49,15 +46,13 @@ class MainApp(gtk.Window):
 		# Create the toplevel window
 		gtk.Window.__init__(self)
 		
-		window = self
+		self.model = Model()
 		
+		window = self
 		window.connect('destroy', self.on_window_destroy)
 		window.set_default_size(640, 480)
 		vbox = gtk.VBox()
 		window.add(vbox)
-
-		window = self
-		
 
 		self.set_title('Interactive Decompiler')
 
@@ -103,16 +98,11 @@ class MainApp(gtk.Window):
 		#toolbar = uimanager.get_widget('/Toolbar')
 		#vbox.pack_start(toolbar, False)
 
-		textview = gtk.TextView()
-		textview.connect("event", self.on_textview_button_press)
-		vbox.pack_start(textview)
-		self.textview = textview
+		boxview = BoxView(self.model)
+		vbox.pack_start(boxview)
 
 		window.show_all()
 
-		self.model = model.Model()
-		self.model.term.attach(self.on_term_update)
-		
 		if len(sys.argv) > 1:
 			self.open(sys.argv[1])
 		else:
@@ -176,14 +166,6 @@ class MainApp(gtk.Window):
 			if path.endswith('.c'):
 				self.model.export_c(path)
 
-	def on_term_update(self, term):
-		term = term.get()
-		boxes = ir.pprint.module(term)
-		buffer = self.textview.get_buffer()
-		formatter = textbuffer.TextBufferFormatter(buffer)
-		writer = box.Writer(formatter)
-		writer.write(boxes)
-
 	def on_quit(self, action):
 		self.quit()
 
@@ -201,42 +183,6 @@ class MainApp(gtk.Window):
 		aboutdialog.run()
 		aboutdialog.destroy()
 		
-	def on_textview_button_press(self, textview, event):
-		'''Update the selection paths.'''
-		
-		buffer = textview.get_buffer()
-					
-		if \
-				(event.type == gtk.gdk.BUTTON_RELEASE and event.button == 1) or \
-				(event.type == gtk.gdk.BUTTON_PRESS and event.button == 3) :
-			
-			try:
-				start, end = buffer.get_selection_bounds()
-			except ValueError:
-				# If there is nothing selected, None is return
-				x, y = textview.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, int(event.x), int(event.y))
-				iter = textview.get_iter_at_location(x, y)
-				path = self.get_path_at_iter(iter)
-				self.model.selection.set((path, path))
-			else:
-				start = self.get_path_at_iter(start)
-				end = self.get_path_at_iter(end)
-				self.model.selection.set((start, end))
-		
-		if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
-			popupmenu = PopupMenu(self.model)
-			popupmenu.popup( None, None, None, event.button, event.time)
-			return True
-		
-		return False
-		
-	def get_path_at_iter(self, iter):
-		for tag in iter.get_tags():
-			path = tag.get_data('path')
-			if path is not None:
-				return path
-		return None
-
 	def run_open_dialog(self, title = None, parent = None, filters = None, folder = None):
 		"""Display a file open dialog."""
 
