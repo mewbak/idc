@@ -24,8 +24,8 @@ class RefactorMenu(gtk.Menu):
 			self.append(menuitem)
 
 	def on_menuitem_realize(self, menuitem, refactoring):
-		term = self.model.term.get()
-		selection = self.model.selection.get()
+		term = self.model.get_term()
+		selection = self.model.get_selection()
 		if refactoring.applicable(term, selection):
 			menuitem.set_state(gtk.STATE_NORMAL)
 		else:
@@ -34,8 +34,8 @@ class RefactorMenu(gtk.Menu):
 	def on_menuitem_activate(self, menuitem, refactoring):
 		# Ask user input
 		args = refactoring.input(
-			self.model.term.get(), 
-			self.model.selection.get(),
+			self.model.get_term(), 
+			self.model.get_selection(),
 			inputter.Inputter()
 		)
 		

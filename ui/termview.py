@@ -256,25 +256,24 @@ class TermView(TermWindow, view.View):
 		TermWindow.__init__(self)
 		view.View.__init__(self, model)
 		
-		model.term.attach(self.on_term_update)
-		model.selection.attach(self.on_selection_update)
+		model.connect('notify::term', self.on_term_update)
+		model.connect('notify::selection', self.on_selection_update)
 			
 		self.connect('destroy', self.on_window_destroy)
 		
-		if model.term.get() is not None:
+		if model.get_term() is not None:
 			self.on_term_update(model.term)
-		if model.selection.get() is not None:
+		if model.get_selection() is not None:
 			self.on_selection_update(model.selection)
 
 	def get_name(self, name):
 		return 'Inspector View'
 		
 	def on_term_update(self, term):
-		term = term.get()
 		self.set_term(term)
 
 	def on_selection_update(self, selection):
-		start, end = selection.get()
+		start, end = selection
 		
 		start = self.get_path(start)
 		end = self.get_path(end)
@@ -288,8 +287,8 @@ class TermView(TermWindow, view.View):
 	
 	def on_window_destroy(self, event):
 		model = self.model
-		model.term.detach(self.on_term_update)
-		model.selection.detach(self.on_selection_update)
+		model.disconnect('notify::term', self.on_term_update)
+		model.disconnect('notify::selection', self.on_selection_update)
 		
 
 class TermViewFactory(view.ViewFactory):

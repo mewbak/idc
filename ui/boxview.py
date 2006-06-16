@@ -122,11 +122,10 @@ class BoxBuffer(gtk.TextBuffer):
 		self.model = model
 		self.range = None
 		self.path_range = {}
-		model.term.attach(self.on_term_update)
-		model.selection.attach(self.on_selection_update)
+		model.connect('notify::term', self.on_term_update)
+		model.connect('notify::selection', self.on_selection_update)
 		
 	def on_term_update(self, term):
-		term = term.get()
 		boxes = ir.pprint.module(term)
 		self.set_text("")
 		self.range = None
@@ -136,7 +135,7 @@ class BoxBuffer(gtk.TextBuffer):
 		self.place_cursor(self.get_start_iter())
 	
 	def on_selection_update(self, selection):
-		start, end = selection.get()
+		start, end = selection
 		if start or end:
 			# TODO: this is often unnecessary
 			try:
@@ -185,12 +184,13 @@ class BoxView(gtk.TextView):
 		if event.type == gtk.gdk.BUTTON_RELEASE and event.button == 1:
 			start = buffer.get_path_at_iter(start)
 			end = buffer.get_path_at_iter(end)
-			self.model.selection.set((start, end))
+			self.model.set_selection((start, end))
 			return False
 
 		if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
 			x, y = textview.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, int(event.x), int(event.y))
 			iter = textview.get_iter_at_location(x, y)
+			#print start.get_offset(), end.get_offset()
 			if iter.in_range(start, end):
 				# user clicked inside the selected range
 				start = buffer.get_path_at_iter(start)
@@ -198,7 +198,7 @@ class BoxView(gtk.TextView):
 			else:
 				# user clicked outside the selected range
 				path = buffer.get_path_at_iter(iter)
-				self.model.selection.set((path, path))
+				self.model.set_selection((path, path))
 
 			popupmenu = PopupMenu(self.model)
 			popupmenu.popup( None, None, None, event.button, event.time)

@@ -46,7 +46,7 @@ def main(cls):
 	factory = aterm.factory.Factory()
 	term = factory.readFromTextFile(sys.stdin)
 	model = ui.model.Model()
-	model.term.set(term)
+	model.set_term(term)
 	view = cls(model)
 	view.connect('destroy', gtk.main_quit)
 	gtk.main()

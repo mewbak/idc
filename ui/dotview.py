@@ -203,11 +203,11 @@ class DotView(DotWindow, view.View):
 		DotWindow.__init__(self)
 		view.View.__init__(self, model)
 	
-		model.term.attach(self.on_term_update)
+		model.connect('notify::term', self.on_term_update)
 
 		self.connect('destroy', self.on_window_destroy)
 		
-		if model.term.get() is not None:
+		if model.get_term() is not None:
 			self.on_term_update(model.term)
 
 	def get_name(self, name):
@@ -218,20 +218,20 @@ class DotView(DotWindow, view.View):
 
 	def on_window_destroy(self, event):
 		model = self.model
-		model.term.detach(self.on_term_update)
+		model.disconnect('notify::term', self.on_term_update)
 	
 	def on_url_clicked(self, url, event):
 		model = self.model
-		term = model.term.get()
+		term = model.get_term()
 		factory = term.factory
 		path = factory.parse(url)
 		return self.on_path_clicked(path, event)
 	
 	def on_path_clicked(self, path, event):
 		if event.type == gtk.gdk.BUTTON_RELEASE and event.button == 1:
-			self.model.selection.set((path, path))
+			self.model.set_selection((path, path))
 		if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
-			self.model.selection.set((path, path))
+			self.model.set_selection((path, path))
 			from ui.menus import PopupMenu
 			popupmenu = PopupMenu(self.model)
 			popupmenu.popup( None, None, None, event.button, event.time)			
@@ -245,7 +245,6 @@ class CfgView(DotView):
 		self.set_title('Control Flow Graph')
 		
 	def on_term_update(self, term):
-		term = term.get()
 		graph = ir.cfg.render(term)
 		self.set_graph(graph)
 
