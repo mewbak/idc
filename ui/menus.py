@@ -73,3 +73,27 @@ class ViewMenu(gtk.Menu):
 	def on_menuitem_activate(self, menuitem, viewfactory):
 		viewfactory.create(self.model)
 
+
+def PopupMenu(model):
+	
+	menu = gtk.Menu()
+	
+	#menuitem = gtk.MenuItem()
+	#menuitem.show()
+	#menu.prepend(menuitem)
+
+	menuitem = gtk.MenuItem("View")
+	viewmenu = ViewMenu(model)
+	menuitem.set_submenu(viewmenu)
+	menuitem.show()
+	menu.prepend(menuitem)
+
+	menuitem = gtk.MenuItem("Refactor")
+	refactormenu = RefactorMenu(model)
+	menuitem.set_submenu(refactormenu)
+	menuitem.show()
+	menu.prepend(menuitem)
+	
+	return menu
+
+		

@@ -18,7 +18,7 @@ import box
 import ir.pprint
 import model
 
-from ui.menus import RefactorMenu, ViewMenu
+from ui.menus import RefactorMenu, ViewMenu, PopupMenu
 from ui import textbuffer
 
 
@@ -127,29 +127,13 @@ class MainApp(glade.GladeApp):
 				start = self.get_path_at_iter(start)
 				end = self.get_path_at_iter(end)
 				self.model.selection.set((start, end))
-			
+		
+		if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+			popupmenu = PopupMenu(self.model)
+			popupmenu.popup( None, None, None, event.button, event.time)
+			return True
+		
 		return False
-
-	def on_textview_populate_popup(self, textview, menu):
-		'''Populate the textview popup menu.'''
-
-		menuitem = gtk.MenuItem()
-		menuitem.show()
-		menu.prepend(menuitem)
-
-		menuitem = gtk.MenuItem("View")
-		viewmenu = ViewMenu(self.model)
-		menuitem.set_submenu(viewmenu)
-		menuitem.show()
-		menu.prepend(menuitem)
-
-		menuitem = gtk.MenuItem("Refactor")
-		refactormenu = RefactorMenu(self.model)
-		menuitem.set_submenu(refactormenu)
-		menuitem.show()
-		menu.prepend(menuitem)
-
-		return True
 		
 	def get_path_at_iter(self, iter):
 		for tag in iter.get_tags():
