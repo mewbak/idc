@@ -258,6 +258,8 @@ class TermView(TermWindow, view.View):
 		
 		model.term.attach(self.on_term_update)
 		model.selection.attach(self.on_selection_update)
+			
+		self.connect('destroy', self.on_window_destroy)
 		
 		if model.term.get() is not None:
 			self.on_term_update(model.term)
@@ -277,7 +279,6 @@ class TermView(TermWindow, view.View):
 		start = self.get_path(start)
 		end = self.get_path(end)
 		
-		print start, end  
 		if start is not None and end is not None:
 			tree_selection = self.treeview.get_selection()
 			tree_selection.unselect_all()
@@ -285,12 +286,23 @@ class TermView(TermWindow, view.View):
 			self.treeview.scroll_to_cell(start)
 			#self.treeview.set_cursor(start)
 	
-	def destroy(self):
+	def on_window_destroy(self, event):
 		model = self.model
-
 		model.term.detach(self.on_term_update)
 		model.selection.detach(self.on_selection_update)
 		
+
+class TermViewFactory(view.ViewFactory):
+	
+	def get_name(self):
+		return 'Term'
+	
+	def can_create(self, model):
+		return True
+	
+	def create(self, model):
+		return TermView(model)
+	
 
 if __name__ == '__main__':
 	view.main(TermView)

@@ -1,32 +1,37 @@
-'''View support.
-'''
+'''View abstraction and discovery.'''
 
 
 class View:
+	'''Base class for model views.'''
 	
 	def __init__(self, model):
 		self.model = model
 	
 	def get_name(self):
+		'''Get the name of this view.'''
 		raise NotImplementedError
 	
 	def destroy(self):
+		'''Destroy this view.'''
 		raise NotImplementedError
 
 
 class ViewFactory:
-	"""Base class for model views."""
+	'''Base class for model views factories.'''
 
 	def __init__(self):
 		pass
 	
 	def get_name(self):
+		'''The name of the created views.'''
 		raise NotImplementedError
 
-	def is_applicable(self, model):
+	def can_create(self, model):
+		'''Whether a view can be created for this model.'''
 		raise NotImplementedError
 
 	def create(self, model):
+		'''Create a view for this model.'''
 		raise NotImplementedError
 
 

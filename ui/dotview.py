@@ -189,8 +189,8 @@ class DotWindow(gtk.Window):
 		# NOTE: we assume were 0.5 alignment and 0 padding
 		x -= (imgwidth - pixwidth) / 2
 		y -= (imgheight - pixheight) / 2
-		assert 0 <= x <= imgwidth
-		assert 0 <= y <= imgheight
+		#assert 0 <= x <= imgwidth
+		#assert 0 <= y <= imgheight
 
 		if self.imap is not None:
 			return self.imap.hit(x, y)
@@ -207,6 +207,8 @@ class DotView(DotWindow, view.View):
 		view.View.__init__(self, model)
 	
 		model.term.attach(self.on_term_update)
+
+		self.connect('destroy', self.on_window_destroy)
 		
 		if model.term.get() is not None:
 			self.on_term_update(model.term)
@@ -217,9 +219,8 @@ class DotView(DotWindow, view.View):
 	def on_term_update(self, term):
 		pass
 
-	def destroy(self):
+	def on_window_destroy(self, event):
 		model = self.model
-
 		model.term.detach(self.on_term_update)
 	
 	def on_url_clicked(self, url):
@@ -231,7 +232,7 @@ class DotView(DotWindow, view.View):
 	
 	def on_path_clicked(self, path):
 		self.model.selection.set((path, path))
-		
+	
 
 class CfgView(DotView):
 
@@ -244,6 +245,18 @@ class CfgView(DotView):
 		graph = ir.cfg.render(term)
 		self.set_graph(graph)
 
+
+class CfgViewFactory(view.ViewFactory):
+	
+	def get_name(self):
+		return 'Control Flow Graph'
+	
+	def can_create(self, model):
+		return True
+	
+	def create(self, model):
+		return CfgView(model)
+	
 
 if __name__ == '__ma in__':
 	win = DotWindow()

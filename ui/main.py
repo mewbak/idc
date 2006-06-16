@@ -18,10 +18,8 @@ import box
 import ir.pprint
 import model
 
-from ui import refactormenu
+from ui.menus import RefactorMenu, ViewMenu
 from ui import textbuffer
-from ui import termview
-from ui import dotview
 
 
 class MainApp(glade.GladeApp):
@@ -38,7 +36,10 @@ class MainApp(glade.GladeApp):
 		else:
 			self.model.new()
 		
-		self.refactor.set_submenu(refactormenu.RefactorMenu(self.model))
+		refactormenu = RefactorMenu(self.model)
+		self.refactor_menu.set_submenu(refactormenu)
+		viewmenu = ViewMenu(self.model)
+		self.view_menu.set_submenu(viewmenu)
 
 	def on_new_activate(self, event):
 		self.model.new()
@@ -137,14 +138,14 @@ class MainApp(glade.GladeApp):
 		menu.prepend(menuitem)
 
 		menuitem = gtk.MenuItem("View")
-		#viewmenu = self.view_menu_menu
-		#viewmenu.detach()
-		#menuitem.set_submenu(viewmenu)
+		viewmenu = ViewMenu(self.model)
+		menuitem.set_submenu(viewmenu)
 		menuitem.show()
 		menu.prepend(menuitem)
 
 		menuitem = gtk.MenuItem("Refactor")
-		menuitem.set_submenu(refactormenu.RefactorMenu(self.model))
+		refactormenu = RefactorMenu(self.model)
+		menuitem.set_submenu(refactormenu)
 		menuitem.show()
 		menu.prepend(menuitem)
 
