@@ -6,6 +6,7 @@
 import observer
 
 import aterm.factory
+import aterm.terms
 import ir.path
 import ir.pprint
 import box
@@ -18,6 +19,7 @@ class TermState(observer.State):
 	
 	def set(self, value):
 		# Always keep an annotated term
+		assert isinstance(value, aterm.terms.Term)
 		value = ir.path.annotate(value)
 		observer.State.set(self, value)
 
@@ -29,6 +31,12 @@ class SelectionState(observer.State):
 		observer.State.__init__(self)
 		self.reset()
 		term.attach(self.on_term_update)
+		
+	def set(self, value):
+		start, end = value
+		assert isinstance(start, aterm.terms.Term)
+		assert isinstance(end, aterm.terms.Term)
+		observer.State.set(self, value)
 		
 	def reset(self):
 		factory = aterm.factory.Factory()

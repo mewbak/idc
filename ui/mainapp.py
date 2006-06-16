@@ -5,6 +5,7 @@
 # - http://www.pygtk.org/pygtk2reference/
 
 import sys
+import os.path
 
 import gtk
 
@@ -94,12 +95,24 @@ class MainApp(gtk.Window):
 		menubar = uimanager.get_widget('/MenuBar')
 		vbox.pack_start(menubar, False)
 
+		refactormenu = RefactorMenu(self.model)
+		uimanager.get_widget('/MenuBar/RefactorMenu').set_submenu(refactormenu)
+		viewmenu = ViewMenu(self.model)
+		uimanager.get_widget('/MenuBar/ViewMenu').set_submenu(viewmenu)
+
 		# Create a Toolbar
 		#toolbar = uimanager.get_widget('/Toolbar')
 		#vbox.pack_start(toolbar, False)
 
+		scrolled_window = gtk.ScrolledWindow()
+		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		vbox.pack_start(scrolled_window)
+		
 		boxview = BoxView(self.model)
-		vbox.pack_start(boxview)
+		scrolled_window.add(boxview)
+
+		statusbar = gtk.Statusbar()
+		vbox.pack_start(statusbar, False, False, 0)
 
 		window.show_all()
 
@@ -107,11 +120,6 @@ class MainApp(gtk.Window):
 			self.open(sys.argv[1])
 		else:
 			self.model.new()
-		
-		refactormenu = RefactorMenu(self.model)
-		uimanager.get_widget('/MenuBar/RefactorMenu').set_submenu(refactormenu)
-		viewmenu = ViewMenu(self.model)
-		uimanager.get_widget('/MenuBar/ViewMenu').set_submenu(viewmenu)
 
 	def main(self):
 		"""Enter main loop."""

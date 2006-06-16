@@ -9,7 +9,6 @@ import gtk
 import gtk.glade
 
 import gettext
-import os.path
 
 
 class GladeWindow:
