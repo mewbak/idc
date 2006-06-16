@@ -2,7 +2,6 @@
 
 
 import gtk
-import glade
 
 
 # TODO: Generate dialog windows directly from term representation
