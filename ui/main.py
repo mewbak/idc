@@ -17,12 +17,11 @@ import glade
 import box
 import ir.pprint
 import model
-import refactoring
 
+from ui import refactormenu
 from ui import textbuffer
 from ui import termview
 from ui import dotview
-from ui import inputter
 
 
 class MainApp(glade.GladeApp):
@@ -33,12 +32,13 @@ class MainApp(glade.GladeApp):
 		self.model = model.Model()
 		self.model.term.attach(self.on_term_update)
 		
-		self.refactoring_factory = refactoring.Factory()
 		
 		if len(sys.argv) > 1:
 			self.open(sys.argv[1])
 		else:
 			self.model.new()
+		
+		self.refactor.set_submenu(refactormenu.RefactorMenu(self.model))
 
 	def on_new_activate(self, event):
 		self.model.new()
@@ -131,43 +131,24 @@ class MainApp(glade.GladeApp):
 
 	def on_textview_populate_popup(self, textview, menu):
 		'''Populate the textview popup menu.'''
-		
-		popup = gtk.Menu()
-		
-		term = self.model.term.get()
-		selection = self.model.selection.get()
-		
-		for refactoring in self.refactoring_factory.refactorings.itervalues():
-			menuitem = gtk.MenuItem(refactoring.name())
-			if refactoring.applicable(term, selection):
-				menuitem.connect("activate", self.on_menuitem_activate, refactoring)
-			else:
-				menuitem.set_state(gtk.STATE_INSENSITIVE)
-			menuitem.show()
-			popup.append(menuitem)
-	
+
 		menuitem = gtk.MenuItem()
 		menuitem.show()
 		menu.prepend(menuitem)
 
-		menuitem = gtk.MenuItem("Refactor")
-		menuitem.set_submenu(popup)
+		menuitem = gtk.MenuItem("View")
+		#viewmenu = self.view_menu_menu
+		#viewmenu.detach()
+		#menuitem.set_submenu(viewmenu)
 		menuitem.show()
 		menu.prepend(menuitem)
-		
-		return True
 
-	def on_menuitem_activate(self, menu, refactoring):
-		print refactoring.name()
-		
-		# Ask user input
-		args = refactoring.input(
-			self.model.term.get(), 
-			self.model.selection.get(),
-			inputter.Inputter()
-		)
-		
-		self.model.apply_refactoring(refactoring, args)
+		menuitem = gtk.MenuItem("Refactor")
+		menuitem.set_submenu(refactormenu.RefactorMenu(self.model))
+		menuitem.show()
+		menu.prepend(menuitem)
+
+		return True
 		
 	def get_path_at_iter(self, iter):
 		for tag in iter.get_tags():
