@@ -1,6 +1,8 @@
 """Custom aterm lexer."""
 
 
+import os
+import mmap
 import re
 
 import antlr
@@ -84,7 +86,31 @@ class Lexer(antlr.TokenStream):
 	
 	newline_re = re.compile(r'\r\n?|\n')
 	
-	def __init__(self, buf, pos = 0, filename = None):
+	def __init__(self, buf = None, pos = 0, filename = None, fp = None):
+		if fp is not None:
+			try:
+				fileno = fp.fileno()
+			except AttributeError:
+				# read whole file into memory
+				buf = fp.read()
+				pos = 0
+			else:
+				# map the whole file into memory
+				curpos = os.lseek(fileno, 0, 0)
+				length = os.lseek(fileno, 0, 2)
+				os.lseek(fileno, curpos, 0)
+				# length must not be zero
+				if length:
+					buf = mmap.mmap(fileno, length, access = mmap.ACCESS_READ)
+				else:
+					buf = ""
+			
+			if filename is None:
+				try:
+					filename = fp.name
+				except AttributeError:
+					filename = None
+
 		self.buf = buf
 		self.pos = pos
 		self.lineno = 0

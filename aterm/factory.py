@@ -104,16 +104,15 @@ class Factory(object):
 			msg += repr(value)
 			raise TypeError(msg)
 
-	def _parse(self, buf, pos = 0, filename = None):
+	def _parse(self, lexer):
 		'''Creates a new term by parsing a string.'''
 		
 		from aterm.lexer import Lexer
 		from aterm.parser import Parser
 		from antlr import ANTLRException
 
+		parser = Parser(lexer, factory = self)
 		try:
-			lexer = Lexer(buf, pos, filename)
-			parser = Parser(lexer, factory = self)
 			return parser.aterm()
 		except ANTLRException, ex:
 			raise exceptions.ParseException(str(ex))
@@ -121,27 +120,9 @@ class Factory(object):
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
 
-		try:
-			fileno = fp.fileno()
-		except AttributeError:
-			# read whole file into memory
-			buf = fp.read()
-			pos = 0
-		else:
-			# map the whole file into memory
-			import os
-			import mmap
-			pos = os.lseek(fileno, 0, 0)
-			length = os.lseek(fileno, 0, 2)
-			os.lseek(fileno, pos, 0)
-			buf = mmap.mmap(fileno, length, access = mmap.ACCESS_READ)
-			
-		try:
-			filename = fp.name
-		except AttributeError:
-			filename = None
-			
-		return self._parse(buf, pos, filename)
+		from aterm.lexer import Lexer
+		lexer = Lexer(buf, fp = fp)
+		return self._parse(lexer)
 
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
@@ -151,7 +132,9 @@ class Factory(object):
 		except KeyError:
 			pass
 		
-		result = self._parse(buf)
+		from aterm.lexer import Lexer
+		lexer = Lexer(buf)
+		result = self._parse(lexer)
 		
 		if len(self.parseCache) > self.MAX_PARSE_CACHE_LEN:
 			# TODO: use a LRU cache policy
