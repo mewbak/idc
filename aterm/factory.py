@@ -121,7 +121,7 @@ class Factory(object):
 		'''Creates a new term by parsing from a text stream.'''
 
 		from aterm.lexer import Lexer
-		lexer = Lexer(buf, fp = fp)
+		lexer = Lexer(fp = fp)
 		return self._parse(lexer)
 
 	def parse(self, buf):

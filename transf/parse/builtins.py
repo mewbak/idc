@@ -13,6 +13,7 @@ from transf import arith
 builtins = {
 	"id": base.ident,
 	"fail": base.fail,
+	"proxy": base.Proxy,
 	
 	"try": combine.Try,
 	"not": combine.Not,

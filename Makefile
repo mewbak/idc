@@ -81,8 +81,8 @@ doc: all
 		transf \
 		walker \
 		box \
-		#ir \
-		#ui
+		ui \
+		#ir
 
 .PHONY: doc
 

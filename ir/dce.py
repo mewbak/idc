@@ -54,7 +54,8 @@ JoinNeededVars = lambda l,r: table.Merge(l, r, ['needed'], [])
 dceStmt = base.Proxy()
 dceStmts = base.Proxy()
 
-dceAssign = parse.Transf('''
+parse.Transfs('''
+dceAssign = 
 	{x:
 		?Assign(_, Sym(x), _) ;
 		if <isVarNeeded> x then
@@ -65,34 +66,29 @@ dceAssign = parse.Transf('''
 		end
 	} +
 	~Assign(_, <setNeededVars>, <setNeededVars>)
-''')
 
-dceAsm = parse.Transf('''
+dceAsm = 
 	?Asm(*) ;
 	setAllNeededVars
-''')
 
-dceLabel = parse.Transf('''
+dceLabel = 
 	?Label(*)
-''')
 
-dceBranch = parse.Transf('''
+dceBranch = 
 	?Branch(*) ;
 	setAllNeededVars
-''')
 
-dceRet = parse.Transf('''
+dceRet = 
 	?Ret(*) ;
 	setAllUnneededVars ;
 	~Ret(_, <setNeededVars>)
-''')
 
-elimIf = parse.Rule('''
+elimIf = {
 	If(cond,NoStmt,NoStmt) -> Assign(Void,NoExpr,cond) |
 	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
-''')
+}
 
-dceIf = parse.Transf('''
+dceIf = 
 	?If(*) ;
 	JoinNeededVars(
 		~If(_, <dceStmt>, _),
@@ -100,29 +96,25 @@ dceIf = parse.Transf('''
 	) ;
 	try(elimIf) ;
 	~If(<setNeededVars>, _, _)
-''')
 
-
-elimBlock = parse.Rule('''
+elimBlock = {
 	Block([]) -> NoStmt
-''')
+}
 
-dceBlock = parse.Transf('''
+dceBlock = 
 	~Block(<dceStmts>) ;
 	try(elimBlock)
-''')
 
-dceFuncDef = parse.Transf('''
+dceFuncDef = 
 	~FuncDef(_, _, _, <
 		setLocalVars; 
 		setAllUnneededVars; 
 		dceStmt; 
 		clearLocalVars
 	>)
-''')
 
 # If none of the above applies, assume all vars are needed
-dceDefault = parse.Transf('''
+dceDefault = 
 	setAllNeededVars
 ''')
 
@@ -139,7 +131,10 @@ dceStmt.subject = parse.Transf('''
 ''')
 
 dceStmts.subject = parse.Transf('''
-	filterr(try(dceStmt) ; not(?NoStmt))
+	filterr(
+		try(dceStmt) ; 
+		not(?NoStmt)
+	)
 ''')
 
 dceModule = parse.Transf('''

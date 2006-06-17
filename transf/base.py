@@ -120,4 +120,11 @@ class Proxy(Transformation):
 		return self.subject.apply(term, ctx)
 
 
-
+def Rec(Def):
+	'''Recursive transformation.
+	
+	@param Def: transformation factory whose single argument is its own definition.
+	'''
+	rec = Proxy()
+	rec.subject = Def(rec)
+	return rec

@@ -10,7 +10,7 @@ except ImportError:
 
 from transf.parse.lexer import Lexer
 from transf.parse.parser import Parser
-from transf.parse.compiler import Walker
+from transf.parse.translator import Walker as Translator
 
 
 __all__ = [
@@ -27,11 +27,20 @@ def _parser(buf):
 	return parser
 
 
-def _walker():
+def _translator():
 	'''Generate a walker passing the caller's caller namespace.'''
 	caller = sys._getframe(2)
-	walker = Walker(globals=caller.f_globals, locals=caller.f_locals)
-	return walker
+	translator = Translator(globals=caller.f_globals, locals=caller.f_locals)
+	return translator
+
+
+def Transfs(buf):
+	'''Parse transformation definitions from a string.'''
+	parser = _parser(buf)
+	parser.transf_defs()
+	ast = parser.getAST()
+	translator = _translator()
+	translator.transf_defs(ast)
 
 
 def Transf(buf):
@@ -39,17 +48,27 @@ def Transf(buf):
 	parser = _parser(buf)
 	parser.transf()
 	ast = parser.getAST()
-	walker = _walker()
-	txn = walker.transf(ast)
+	translator = _translator()
+	txn = translator.transf(ast)
+	return txn
+
+
+def Rules(buf):
+	'''Parse rules definitions from a string.'''
+	parser = _parser(buf)
+	parser.rule_defs()
+	ast = parser.getAST()
+	translator = _translator()
+	txn = translator.transf_defs(ast)
 	return txn
 
 
 def Rule(buf):
 	'''Parse a transformation rule from a string.'''
 	parser = _parser(buf)
-	parser.rule_def()
+	parser.rule_set()
 	ast = parser.getAST()
-	walker = _walker()
-	txn = walker.transf(ast)
+	translator = _translator()
+	txn = translator.transf(ast)
 	return txn
 

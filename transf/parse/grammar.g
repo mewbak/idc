@@ -25,9 +25,10 @@ header {
         __repr__ = __str__
 }
 
-header "compiler.__init__" {
+header "translator.__init__" {
     self.globals = kwargs.get("globals", {})
     self.locals = kwargs.get("locals", {})
+    self.stack = []
 }
 
 
@@ -59,6 +60,7 @@ tokens {
 	LET = "let";
 	IN = "in";
 	WHERE = "where";
+	REC = "rec";
 	SWITCH = "switch";
 	CASE = "case";
 	OTHERWISE = "otherwise";
@@ -190,12 +192,24 @@ tokens {
 	MERGE;
 }
 
-tgrammar
-	: transf EOF!
+transf_spec : transf_defs EOF!	;
+//rules_spec : rule_defs EOF!	;
+
+transf_defs
+	: ( transf_def )* EOF!
 	;
 
-rgrammar
-	: rule_def EOF!
+rule_defs
+	: ( rule_def )* EOF!
+	;
+
+transf_def
+	: i:id EQUAL^ transf
+		{ print #i.getText() }
+	;
+
+rule_def
+	: id EQUAL^ rule_set
 	;
 
 transf_atom
@@ -209,10 +223,10 @@ transf_atom
 	| LCURLY!
 		( ( id_list COLON ) => id_list COLON transf
 			{ ## = #(#[SCOPE,"SCOPE"], ##) } 
-		| anon_rule
+		| rule_set
 		) RCURLY!
 	| LPAREN!
-		( ( term INTO ) => rule_def 
+		( ( term INTO ) =>  rule
 		| transf
 		) RPAREN!
 	| LANGLE! transf RANGLE! term
@@ -223,21 +237,7 @@ transf_atom
 		( CASE transf COLON! transf )* 
 		( OTHERWISE COLON! transf )? 
 	  END!
-	;
-
-defn
-	: id EQUAL! transf
-	;
-
-defn_list
-	: defn ( COMMA! defn )*
-	;
-
-id
-	: ID
-	| l:LID { #l.setType(ID) }
-	| u:UID { #u.setType(ID) }
-	| w:WHERE { #w.setType(ID) }
+	| REC^ id COLON! transf_atom
 	;
 
 transf_application
@@ -280,6 +280,21 @@ transf_list
 	: ( transf ( COMMA! transf )* )?
 	;
 
+defn
+	: id EQUAL! transf
+	;
+
+defn_list
+	: defn ( COMMA! defn )*
+	;
+
+id
+	: ID
+	| l:LID { #l.setType(ID) }
+	| u:UID { #u.setType(ID) }
+	| w:WHERE { #w.setType(ID) }
+	;
+
 term_arg_list
 	: ( term ( COMMA! term )* )?
 	;
@@ -294,9 +309,9 @@ anon_rule
 		{ ## = #(#[ANON,"ANON"], ##) }
 	;
 
-rule_def
+rule_set
 	: anon_rule 
-		( VERT! rule_def 
+		( VERT! rule_set
 			{ ## = #(#[PLUS,"PLUS"], ##) }
 		)?
 	;
@@ -383,22 +398,29 @@ id_list
 	;
 
 
-class compiler extends TreeParser;
+class translator extends TreeParser;
 
 options {
 	defaultErrorHandler = false;
 }
 
 {
-    def bind_transf_name(self, name):
-        // TODO: handle caller global and local namespaces
+    // XXX: too much python voodoo
     
+    def bind_transf_name(self, name):
         // lookup in the builtins module
         from transf.parse.builtins import builtins
         try:
             return builtins[name]
         except KeyError:
             pass
+        
+        // lookup in the symbol stack
+        for i in range(len(self.stack) - 1, -1, -1):
+            try:
+                return self.stack[i][name]
+            except KeyError:
+                pass
         
         // lookup in the caller namespace
         try:
@@ -413,7 +435,20 @@ options {
             pass
         
         return None
+    
+    def define_transf_name(self, name, value):
+        // define transf in the local namespace
+        eval(compile(name + " = _", "", "single"), {"_": value}, self.locals)
 }
+
+transf_defs
+	: ( transf_def )+
+	;
+	
+transf_def
+	: #( EQUAL n=id t=transf )
+		{ self.define_transf_name(n, t) }
+	;
 
 transf returns [ret]
 	: IDENT
@@ -508,16 +543,16 @@ transf returns [ret]
 		)* r=transf
 	 ) 
 		{ ret = transf.table.Merge(l, r, unames, inames) }
+	| #( REC 
+			{ ret = transf.base.Proxy() }
+		r=id 
+			{ self.stack.append({r: ret}) }
+		t=transf
+			{ self.stack.pop() }
+			{ ret.subject = t }
+	  )
 	;
 
-id_list returns [ret]
-	: 
-			{ ret = [] }
-		( i:ID 
-			{ ret.append(#i.getText()) }
-		)*
-	;
-	
 match_term returns [ret]
 	: i:INT 
 		{ ret = transf.match.Int(int(#i.getText())) }
@@ -616,3 +651,11 @@ traverse_term returns [ret]
 		{ ret = txn }
 	;
 
+id_list returns [ret]
+	: { ret = [] } ( i=id  { ret.append(i) } )*
+	;
+
+id returns [ret]
+	: i:ID
+		{ ret = #i.getText() }
+	;

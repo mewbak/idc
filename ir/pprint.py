@@ -64,20 +64,21 @@ intlit = intrepr & box.const
 #######################################################################
 # Types
 
-sign = parse.Rule('''
+parse.Transfs('''
+sign = {
 	Signed -> <<kw> "signed">
 |	Unsigned -> <<kw> "unsigned">
-''')
+}
 
-size = parse.Rule('''
+size = {
 	8 -> <<kw> "char">
 |	16 -> H([ <<kw> "short">, " ", <<kw> "int"> ])
 |	32 -> <<kw> "int">
 |	64 -> H([ <<kw> "long">, " ", <<kw> "int"> ])
 |	n -> H([ "int", <<strings.ToStr> n> ])
-''')
+}
 
-typeUp = parse.Rule('''
+type = rec type : {
 	Int(size, sign)
 		-> H([ <<sign> sign>, " ", <<size> size> ])
 |	Float(32)
@@ -87,20 +88,16 @@ typeUp = parse.Rule('''
 |	Char(size)
 		-> <<kw> "char">
 |	Pointer(size, type) 
-		-> H([ type, " ", <<op> "*"> ])
+		-> H([ <<type> type>, " ", <<op> "*"> ])
 |	Array(type)
-		-> H([ type, "[", "]" ])
+		-> H([ <<type> type>, "[", "]" ])
 |	Void
 		-> <<kw> "void">
 |	Blob(size)
 		-> H([ "blob", <<strings.ToStr> size> ])
 |	_ -> "???"
+}
 ''')
-
-type = ir.traverse.Type(
-	Wrapper = UP(typeUp)
-)
-
 
 #######################################################################
 # Operator precendence.
