@@ -38,7 +38,7 @@ makeLabelTable = unify.CollectAll(makeLabelRef)
 
 setLabelRef = rewrite.Pattern(
 	"Label(name)",
-	table.Set('lbls', build.Var('name'), getStmtId)
+	getStmtId & table.Set('lbls', build.Var('name'))
 )
 
 setLabelTable = base.Proxy()
@@ -51,12 +51,14 @@ setLabelTable.subject = parse.Transf('''
 	)
 ''')
 
-LabelTable = lambda operand: scope.Local(
-	table.New('lbls') & setLabelTable & operand,
-	['lbls']
+LabelTable = lambda operand: scope.Local2(
+	(
+		('lbls', table.Table),
+	),
+	setLabelTable & operand,
 )
 
-LookupLabel = lambda name: table.Get('lbls', name)
+LookupLabel = lambda name: name & table.Get('lbls')
 
 
 #######################################################################
@@ -71,7 +73,7 @@ SetCtrlFlow = lambda flows: annotation.Set(ctrlFlowAnno, flows)
 #######################################################################
 # Flow Traversal
 
-setNext = match.VarUpdate('next')
+setNext = traverse.Var('next')
 GetTerminalNodeId = lambda id: arith.NegInt(id)
 
 markStmtFlow = base.Proxy()
@@ -345,6 +347,8 @@ removeInGraph = parse.Transf('''
 collectPoints = unify.CollectAll(matchPointShapeNode)
 
 def simplifyPoints(term, ctx):
+		return term
+		# FIXME: update this
 		noStmts = collectPoints.apply(term, ctx)
 		print noStmts
 		for src, dst in noStmts:

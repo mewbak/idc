@@ -2,42 +2,51 @@
 
 
 from transf import context
+from transf import variable
 from transf import _operate
 
 
 class _Local(_operate.Unary):
 	
-	def __init__(self, operand, names):
+	def __init__(self, vars, operand):
 		_operate.Unary.__init__(self, operand)
-		self.names = names
+		self.vars = vars
 		
 	def apply(self, term, ctx):
-		ctx = context.Context(self.names, ctx)
+		vars = [(name, factory()) for name, factory in self.vars]
+		ctx = context.Context(vars, ctx)
 		return self.operand.apply(term, ctx)
+
 
 def Local(operand, names = None):
 	'''Introduces a new variable scope before the transformation.'''
 	if not names:
 		return operand
-	return _Local(operand, names)
-	
+	vars = [(name, variable.Term) for name in names]
+	return _Local(vars, operand)
+
+
+def Local2(vars, operand):
+	if not vars:
+		return operand
+	return _Local(vars, operand)
+
 
 class _Let(_operate.Unary):
 	
-	def __init__(self, operand, defs):
+	def __init__(self, defs, operand):
 		_operate.Unary.__init__(self, operand)
 		self.defs = defs
 		
 	def apply(self, term, ctx):
-		new_ctx = context.Context(self.defs.keys(), ctx)
-		for name, transf in self.defs.iteritems():
-			new_ctx[name] = transf.apply(term, ctx)
-		return self.operand.apply(term, new_ctx)
+		vars = [(name, variable.Term(transf.apply(term, ctx))) for name, transf in self.defs.iteritems()]
+		ctx = context.Context(vars, ctx)
+		return self.operand.apply(term, ctx)
 
 def Let(operand, **defs):
 	if not defs:
 		return operand
-	return _Let(operand, defs)
+	return _Let(defs, operand)
 
 
 class Dynamic(_operate.Unary):

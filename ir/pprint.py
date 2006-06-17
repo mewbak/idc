@@ -200,7 +200,7 @@ exprUp = parse.Rule('''
 Expr = lambda traverse: parse.Transf('''
 	Path(
 		let 
-			pprec = !prec + !99, # parent precedence
+			pprec = !prec, # parent precedence
 			prec = exprPrec
 		in
 			traverse ;
@@ -216,12 +216,13 @@ Expr = lambda traverse: parse.Transf('''
 	)
 	''')
 
-expr = ir.traverse.Expr(
+pexpr = ir.traverse.Expr(
 	type = type, 
 	op = oper,
 	Wrapper = Expr
 )
 
+expr = scope.Let(pexpr, prec = build.zero)
 
 #######################################################################
 # Statements

@@ -49,7 +49,7 @@ def dump_term(log, term):
 
 def dump_context(log, ctx):
 	log.write("Context:\n")
-	for name, value in ctx.iteritems():
+	for name, value in ctx:
 		log.write("\t%s = " % name)
 		try:
 			if isinstance(value, aterm.terms.Term):

@@ -157,6 +157,17 @@ class Appl(base.Transformation):
 			return term
 
 
+class Var(base.Transformation):
+	
+	def __init__(self, name):
+		base.Transformation.__init__(self)
+		self.name = name
+
+	def apply(self, term, ctx):
+		var = ctx.get(self.name)
+		return var.traverse(term)
+
+
 class Annos(base.Transformation):
 	
 	def __init__(self, annos):

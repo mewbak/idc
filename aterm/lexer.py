@@ -136,7 +136,7 @@ class Lexer(antlr.TokenStream):
 					msg += "'%s'" % text
 				else:
 					msg += "0x%X" % text
-				ex = RecognitionException(msg, self.filename, line, col)
+				ex = antlr.RecognitionException(msg, self.filename, line, col)
 				raise antlr.TokenStreamRecognitionException(ex)
 			else:
 				break

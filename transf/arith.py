@@ -5,6 +5,7 @@ import aterm
 
 from transf import exception
 from transf import base
+from transf import variable
 from transf import _operate
 from transf import project
 
@@ -99,26 +100,18 @@ Leq = LeqInt
 add = Add(project.first, project.second)
 
 
-class Count(base.Transformation):
+class Count(variable.Transformation):
 
 	def __init__(self, name):
 		base.Transformation.__init__(self)
 		self.name = name
 
 	def apply(self, term, ctx):
-		try:
-			value = int(ctx[self.name])
-		except TypeError:
-			raise exception.Failure
-		except KeyError:
-			value = 0
-		
+		var = ctx[self.name]
+		value = int(var.term)
 		value += 1
-		
-		term = term.factory.makeInt(value)
-		
-		ctx[self.name] =  term
-		return term
+		var.term = term.factory.makeInt(value)
+		return var.term
 
 
 

@@ -9,6 +9,7 @@ from transf import match
 from transf import build
 from transf import traverse
 from transf import project
+from transf import debug
 
 
 def Set(label, *values):

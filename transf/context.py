@@ -1,8 +1,19 @@
-'''Support for transformation context.'''
+'''Transformation contexts.'''
+
+__docformat__ = 'epytext'
+
+
+from transf import exception
 
 
 class Anonymous(str):
-	'''Anonymous variable -- a string with an unique hash.'''
+	'''Anonymous variable name. 
+	
+	This class is a string with singleton properties, i.e., it has an unique hash,
+	and it is equal to no object other than itself. Instances of this class can be
+	used in replacement of regular string to ensure no name collisions will ocurr,
+	effectivly providing means to anonymous variables.
+	'''
 	
 	__slots__ = []
 	
@@ -13,99 +24,51 @@ class Anonymous(str):
 		return self is other
 
 
-class Context(dict):
-	'''Transformation context -- a nested dictionary.'''
+class Context(object):
+	'''Transformation context.
 	
-	__slots__ = ['_p']
+	Contexts are nested dictionaries of named variables. During variable lookup,
+	variables not found in the local scope are search recursively in the ancestor
+	contexts.
+	'''
 	
-	def __init__(self, keys = None, parent = None):
-		dict.__init__(self)
-		if keys:
-			for k in keys:
-				dict.__setitem__(self, k, None)
-		self._p = parent
+	__slots__ = ['vars', 'parent']
 	
-	def __contains__(self, k):
-		if dict.__contains__(self, k):
-			return True
-		elif self._p is not None:
-			return k in self._p
-		else:
-			return False
-	
-	def __getitem__(self, k):
-		if dict.__contains__(self, k):
-			return dict.__getitem__(self, k)
-		elif self._p is not None:
-			return self._p[k]
-		else:
-			raise KeyError
-	
-	def __len__(self):
-		return len(self.keys())
-
-	def __setitem__(self, k, v):
-		if dict.__contains__(self, k):
-			dict.__setitem__(self, k, v)
-		elif self._p is not None:
-			self._p[k] = v
-		else:
-			raise KeyError(k)
-	
-	def __delitem__(self, k):
-		if dict.__contains__(self, k):
-			dict.__setitem__(self, k, None)
-		elif self._p is not None:
-			del self._p[k]
-		else:
-			raise KeyError(k)
-	
-	def setdefault(self, k, v):
-		try:
-			r = dict.__getitem__(self, k)
-		except KeyError:
-			if self._p is not None:
-				return self._p.setdefault(k, v)
-			else:
-				raise KeyError(k)
-		else:
-			if r is None:
-				dict.__setitem__(self, k, v)
-				return v
-			else:
-				return r
+	def __init__(self, vars = (), parent = None):
+		'''Create a new context.
 		
-	def items(self):
-		return list(self.iteritems())
-
-	def keys(self):
-		return list(self.iterkeys())
-
-	def values(self):
-		return list(self.itervalues())
-
-	def iteritems(self):
-		for k, v in dict.iteritems(self):
-			yield k, v
-		if self._p is not None:
-			for k, v in self._p.iteritems():
-				if not dict.__contains__(self, k):
-					yield k, v
-
-	def iterkeys(self):
-		for k, v in self.iteritems():
-			yield k
-
-	__iter__ = iterkeys
+		@param vars: a sequence/iterator of (name, variable) pairs.
+		@param parent: optional parent context.
+		'''
+		self.vars = dict(vars)
+		self.parent = parent
 	
-	def itervalues(self):
-		for k, v in self.iteritems():
-			yield v
+	def get(self, name):
+		'''Lookup the variable with this name.'''
+		try:
+			return self.vars[name]
+		except KeyError:
+			if self.parent is not None:
+				return self.parent.get(name)
+			else:
+				raise exception.Fatal('undeclared variable', name)
 	
-	def update(self, o):
-		for k, v in o.iteritems():
-			self[k] = v
-
+	__getitem__ = get
+	
+	def iter(self):
+		'''Iterate over all variables defined in this context.
+		'''
+		if self.parent is not None:
+			for name, var in self.parent:
+				if name not in self.vars:
+					yield name, var
+		for name, var in self.vars.iteritems():
+			yield name, var
+		raise StopIteration
+	
+	__iter__ = iter
+	
 	def __repr__(self):
-		return repr(dict(self.iteritems()))
+		return repr(self.vars)
 
+empty = Context()

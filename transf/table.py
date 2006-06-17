@@ -1,137 +1,108 @@
 '''Hash table transformations.'''
 
 
+import aterm.factory
+
 from transf import exception
 from transf import context
+from transf import variable
 from transf import base
 from transf import _operate
 
 
-class Table(dict):
+_factory = aterm.factory.Factory()
+
+
+class Table(variable.Variable):
 	'''A table is mapping of terms to terms.'''
 	
+	def __init__(self, terms = ()):
+		variable.Variable.__init__(self)
+		self.terms = dict(terms)
+	
 	def copy(self):
-		return Table(self.iteritems())
+		return Table(self.terms)
 	
-
-class New(base.Transformation):
-	'''Create a new table in the context.
-	The name must be declared in the context.
-	'''
-
-	def __init__(self, name):
-		base.Transformation.__init__(self)
-		self.name = name
-	
-	def apply(self, term, ctx):
-		tbl = Table()
-		try:
-			res = ctx.setdefault(self.name, tbl)
-		except KeyError:
-			raise exception.Fatal('undeclared table', self.name)
-		if res is not tbl:
-			raise exception.Fatal('attempt to redefine table', self.name)
+	def set(self, key, term):
+		self.terms[key] = term
 		return term
+	
+	def get(self, key):
+		try:
+			return self.terms[key]
+		except KeyError:
+			raise exception.Failure("term not in table", term)
+	
+	def pop(self, key):
+		try:
+			return self.terms.pop(key)
+		except KeyError:
+			raise exception.Failure("term not in table", term)
+	
+	def clear(self):
+		self.terms.clear()
+		
+	def match(self, term):
+		self.get(term)
+		return term
+	
+	def build(self):
+		return _factory.makeList(self.terms.iterkeys())
+		
+	def traverse(self, term):
+		return self.get(term)
+	
+	def add(self, other):
+		self.terms.update(other.terms)
+
+	def sub(self, other):
+		for key in self.terms.iteritems():
+			if key not in other.terms:
+				del self.terms[key]
 
 
-def _get_table_from_context(name, ctx):
-	# XXX: should we raise assertion errors here?
-	try:
-		tbl = ctx[name]
-	except KeyError:
-		raise exception.Fatal('undeclared table', name)
-	if isinstance(tbl, Table):
-		return tbl
-	if tbl is None:
-		raise exception.Fatal('undefined table', name)
-	raise exception.Fatal('not a table', name)
-
-	
-class _Base(base.Transformation):
-	
-	def __init__(self, name):
-		base.Transformation.__init__(self)
-		self.name = name
-			
-	
-class Get(_Base, _operate.UnaryMixin):
+class Get(variable.Transformation):
 	'''Get an element of the table.'''
 
-	# XXX: shouldn't this be a nullary op?
-	
-	def __init__(self, name, operand):
-		_Base.__init__(self, name)
-		_operate.UnaryMixin.__init__(self, operand)
-	
 	def apply(self, term, ctx):
-		tbl = _get_table_from_context(self.name, ctx)
-		key = self.operand.apply(term, ctx)
-		try:
-			return tbl[key]
-		except KeyError:
-			raise exception.Failure('key not found', self.name, key)
+		tbl = ctx.get(self.name)
+		return tbl.get(term)
 
 
-class Set(_Base, _operate.BinaryMixin):
+class Set(variable.Transformation):
 	'''Set an element of the table.'''
-	
-	def __init__(self, name, loperand, roperand):
-		_Base.__init__(self, name)
-		_operate.BinaryMixin.__init__(self, loperand, roperand)
-	
+
+	def __init__(self, name, key):
+		variable.Transformation.__init__(self, name)
+		self.key = key
+
 	def apply(self, term, ctx):
-		tbl = _get_table_from_context(self.name, ctx)
-		key = self.loperand.apply(term, ctx)
-		val = self.roperand.apply(term, ctx)
-		tbl[key] = val
-		return term
+		tbl = ctx.get(self.name)
+		key = self.key.apply(term, ctx)
+		return tbl.set(key, term)
 
 
-class Del(_Base, _operate.UnaryMixin):
-	'''Delete an element of the table.'''
+class Del(variable.Transformation):
+	'''Pop an element of the table.'''
 
-	# XXX: shouldn't this be a nullary op?
-	
-	def __init__(self, name, operand):
-		_Base.__init__(self, name)
-		_operate.UnaryMixin.__init__(self, operand)
-	
 	def apply(self, term, ctx):
-		tbl = _get_table_from_context(self.name, ctx)
-		key = self.operand.apply(term, ctx)
-		try:
-			del tbl[key]
-		except KeyError:
-			raise exception.Failure('key not found', self.name, key)
-		return term
+		tbl = ctx.get(self.name)
+		return tbl.pop(term)
 
 
-class Clear(_Base):
+class Clear(variable.Transformation):
 	'''Clear the table.'''
 	
 	def apply(self, term, ctx):
-		tbl = _get_table_from_context(self.name, ctx)
+		tbl = ctx.get(self.name)
 		tbl.clear()
 		return term
 
 
-def _table_union(l, r):
-	t = l.copy()
-	t.update(r)
-	return t
-
-
-def _table_intersection(l, r):
-	t = Table()
-	for k, v in r.iteritems():
-		if k in l:
-			t[k] = v
-	return t
-
-
-class Merge(_operate.Binary):
-	
-	# TODO: support merging multiple tables
+class Join(_operate.Binary):
+	'''Transformation composition which joins (unites/intersects) tables in 
+	the process.
+	'''
 	
 	def __init__(self, loperand, roperand, unames, inames):
 		_operate.Binary.__init__(self, loperand, roperand)
@@ -141,25 +112,39 @@ class Merge(_operate.Binary):
 	def apply(self, term, ctx):
 		# copy tables
 		names = self.unames + self.inames
-		lctx = context.Context(names, ctx)
-		rctx = context.Context(names, ctx)
-		for name in names:
-			tbl = _get_table_from_context(name, ctx)
-			lctx[name] = tbl.copy()			
-			rctx[name] = tbl.copy()
+		
+		# duplicate tables
+		lvars = []
+		rvars = []
+		utbls = []
+		itbls = []
+		for name in self.unames:
+			tbl = ctx.get(name)
+			ltbl = tbl.copy()
+			rtbl = tbl.copy()
+			utbls.append((tbl, ltbl, rtbl))
+		for name in self.inames:
+			tbl = ctx.get(name)
+			ltbl = tbl.copy()
+			rtbl = tbl.copy()
+			itbls.append((tbl, ltbl, rtbl))
 
 		# apply transformations
+		lctx = context.Context(lvars, ctx)
 		term = self.loperand.apply(term, lctx)
+		rctx = context.Context(rvars, ctx)
 		term = self.roperand.apply(term, rctx)
 
-		# merge tables
-		for name in self.unames:			
-			ltbl = _get_table_from_context(name, lctx)
-			rtbl = _get_table_from_context(name, rctx)
-			ctx[name] = _table_union(ltbl, rtbl)
-		for name in self.unames:			
-			ltbl = _get_table_from_context(name, lctx)
-			rtbl = _get_table_from_context(name, rctx)
-			ctx[name] = _table_intersection(ltbl, rtbl)
+		# join the tables
+		for tbl, ltbl, rtbl in self.utbls:
+			# unite
+			tbl.clear()
+			tbl.add(ltbl)
+			tbl.add(rtbl)
+		for tbl, ltbl, rtbl in self.itbls:
+			# intersect
+			tbl.clear()
+			tbl.add(ltbl)
+			tbl.sub(rtbl)
 		
 		return term

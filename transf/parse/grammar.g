@@ -213,7 +213,7 @@ tokens {
 	ANON;
 	TRANSF;
 	BUILD_APPLY;
-	MERGE;
+	JOIN;
 }
 
 transf_spec : transf_defs EOF!	;
@@ -270,9 +270,9 @@ transf_application
 transf_merge
 	: transf_application 
 		( RSLASH rule_names LSLASH! ( LSLASH rule_names RSLASH! )? transf_application 
-			{ ## = #(#[MERGE,"MERGE"], ##) } 
+			{ ## = #(#[JOIN,"JOIN"], ##) } 
 		| LSLASH rule_names RSLASH! ( RSLASH rule_names LSLASH! )? transf_application
-			{ ## = #(#[MERGE,"MERGE"], ##) } 
+			{ ## = #(#[JOIN,"JOIN"], ##) } 
 		)?
 	;
 
@@ -555,12 +555,12 @@ transf returns [ret]
 	  )
 	| #( LET 
 			{ vars = {} }
-		( n:ID v=transf
-			{ vars[#n.getText()] = v }
+		( n=id v=transf
+			{ vars[n] = v }
 		)* IN t=transf
 	  )
 	  	{ ret = transf.scope.Let(t, **vars) }
-	| #( MERGE l=transf 
+	| #( JOIN l=transf 
 			{ unames = [] }
 			{ inames = [] }
 		( LSLASH ids=id_list 
@@ -569,7 +569,7 @@ transf returns [ret]
 			{ unames.extend(ids) }
 		)* r=transf
 	 ) 
-		{ ret = transf.table.Merge(l, r, unames, inames) }
+		{ ret = transf.table.Join(l, r, unames, inames) }
 	| #( REC 
 			{ ret = transf.base.Proxy() }
 		r=id 
@@ -582,7 +582,6 @@ transf returns [ret]
 
 arg returns [ret]
 	: o:OBJ
-		{ print #o.getText() }
 		{ ret = eval(#o.getText(), self.globals, self.locals) }
 	| ret=transf
 	;

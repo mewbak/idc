@@ -31,7 +31,7 @@ class Transformation(object):
 		if isinstance(term, basestring):
 			term = _factory.parse(term)
 		if ctx is None:
-			ctx = context.Context()
+			ctx = context.empty
 		return self.apply(term, ctx)
 
 	def apply(self, term, ctx):
@@ -118,6 +118,9 @@ class Proxy(Transformation):
 		if self.subject is None:
 			raise ValueError('subject transformation not specified')
 		return self.subject.apply(term, ctx)
+
+	def __repr__(self):
+		return '<%s ...>' % (self.__class__.__name__,)
 
 
 def Rec(Def):
