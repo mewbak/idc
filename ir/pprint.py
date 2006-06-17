@@ -5,7 +5,6 @@
 import math
 
 from transf import *
-from transf import _operate
 
 import ir.traverse
 from ir.traverse import UP, DOWN
@@ -222,7 +221,7 @@ pexpr = ir.traverse.Expr(
 	Wrapper = Expr
 )
 
-expr = scope.Let(pexpr, prec = build.zero)
+expr = scope.Let(pexpr, prec = build.Int(99))
 
 #######################################################################
 # Statements

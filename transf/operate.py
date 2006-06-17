@@ -1,4 +1,4 @@
-'''Base class for transformations operators.'''
+'''Base classes for transformations operators.'''
 
 
 from transf import base

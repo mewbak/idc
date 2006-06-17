@@ -7,7 +7,7 @@ import aterm.terms
 
 from transf import base
 from transf import exception
-from transf import _operate
+from transf import operate
 from transf import _helper
 
 
@@ -84,7 +84,7 @@ def Cons(head, tail):
 def List(elms, tail = None):
 	if tail is None:
 		tail = nil
-	return _operate.Nary(iter(elms), Cons, tail)
+	return operate.Nary(iter(elms), Cons, tail)
 
 
 class _Appl(base.Transformation):

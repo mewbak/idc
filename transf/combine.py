@@ -6,10 +6,10 @@ __docformat__ = 'epytext'
 
 from transf import exception
 from transf import base
-from transf import _operate
+from transf import operate
 
 
-class _Not(_operate.Unary):
+class _Not(operate.Unary):
 
 	__slots__ = []
 	
@@ -30,7 +30,7 @@ def Not(operand):
 	return _Not(operand)
 
 
-class _Try(_operate.Unary):
+class _Try(operate.Unary):
 	'''Attempt a transformation, otherwise return the term unmodified.'''
 	
 	__slots__ = []
@@ -49,7 +49,7 @@ def Try(operand):
 	return _Try(operand)
 
 
-class _Where(_operate.Unary):
+class _Where(operate.Unary):
 
 	__slots__ = []
 	
@@ -66,7 +66,7 @@ def Where(operand):
 	return _Where(operand)
 
 
-class _Composition(_operate.Binary):
+class _Composition(operate.Binary):
 
 	__slots__ = []
 	
@@ -85,7 +85,7 @@ def Composition(loperand, roperand):
 	return _Composition(loperand, roperand)
 	
 
-class _Choice(_operate.Binary):
+class _Choice(operate.Binary):
 
 	__slots__ = []
 	
@@ -108,7 +108,7 @@ def Choice(loperand, roperand):
 	return _Choice(loperand, roperand)
 	
 
-class _GuardedChoice(_operate.Ternary):
+class _GuardedChoice(operate.Ternary):
 
 	__slots__ = []
 	
@@ -136,7 +136,7 @@ def GuardedChoice(operand1, operand2, operand3):
 	return _GuardedChoice(operand1, operand2, operand3)
 
 
-class _IfThen(_operate.Binary):
+class _IfThen(operate.Binary):
 
 	__slots__ = []
 	
@@ -160,7 +160,7 @@ def IfThen(loperand, roperand):
 	return _IfThen(loperand, roperand)
 
 
-class _IfThenElse(_operate.Ternary):
+class _IfThenElse(operate.Ternary):
 
 	__slots__ = []
 	

@@ -10,7 +10,7 @@ import aterm.visitor
 
 from transf import exception
 from transf import base
-from transf import _operate
+from transf import operate
 from transf import match
 from transf import build
 from transf import scope
@@ -121,7 +121,7 @@ def PatternSeq(seq, locals = None):
 		l = None
 	else:
 		l = []
-	rules = _operate.Nary(seq, 
+	rules = operate.Nary(seq, 
 		lambda (m, b), r: Pattern(m, b, l) | r,
 		base.fail
 	)

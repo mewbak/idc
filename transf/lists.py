@@ -6,7 +6,7 @@ See also U{http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-unstable-latest/m
 
 from transf import exception
 from transf import base
-from transf import _operate
+from transf import operate
 from transf import match
 from transf import build
 from transf import project
@@ -16,7 +16,7 @@ from transf import unify
 length = unify.Count(base.ident)
 
 
-class _Concat2(_operate.Binary):
+class _Concat2(operate.Binary):
 	
 	def apply(self, term, ctx):
 		head = self.loperand.apply(term, ctx)
@@ -37,7 +37,7 @@ def Concat2(loperand, roperand):
 
 def Concat(*operands):
 	'''Concatenates several lists.'''
-	return _operate.Nary(operands, Concat2, build.nil)
+	return operate.Nary(operands, Concat2, build.nil)
 
 concat = unify.Foldr(build.nil, Concat2)
 

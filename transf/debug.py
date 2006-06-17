@@ -10,7 +10,7 @@ import time
 import aterm.terms
 from transf import exception
 from transf import base
-from transf import _operate
+from transf import operate
 
 
 #############################################################################
@@ -80,10 +80,10 @@ class Dump(base.Transformation):
 		return term
 
 
-class Trace(_operate.Unary):
+class Trace(operate.Unary):
 
 	def __init__(self, name, operand, log=None):
-		_operate.Unary.__init__(self, operand)
+		operate.Unary.__init__(self, operand)
 		if log is None:
 			self.log = sys.stderr
 		else:
@@ -110,10 +110,10 @@ class Trace(_operate.Unary):
 		return term
 
 
-class Traceback(_operate.Unary):
+class Traceback(operate.Unary):
 
 	def __init__(self, operand, log=None):
-		_operate.Unary.__init__(self, operand)
+		operate.Unary.__init__(self, operand)
 		if log is None:
 			self.log = sys.stderr
 		else:

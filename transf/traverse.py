@@ -5,7 +5,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
-from transf import _operate
+from transf import operate
 from transf import combine
 from transf import match
 from transf import _helper
@@ -120,7 +120,7 @@ def List(elms, tail = None):
 	'''
 	if tail is None:
 		tail = match.nil
-	return _operate.Nary(iter(elms), Cons, tail)
+	return operate.Nary(iter(elms), Cons, tail)
 	
 
 class Appl(base.Transformation):

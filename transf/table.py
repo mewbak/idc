@@ -7,7 +7,7 @@ from transf import exception
 from transf import context
 from transf import variable
 from transf import base
-from transf import _operate
+from transf import operate
 
 
 _factory = aterm.factory.Factory()
@@ -99,13 +99,13 @@ class Clear(variable.Transformation):
 		return term
 
 
-class Join(_operate.Binary):
+class Join(operate.Binary):
 	'''Transformation composition which joins (unites/intersects) tables in 
 	the process.
 	'''
 	
 	def __init__(self, loperand, roperand, unames, inames):
-		_operate.Binary.__init__(self, loperand, roperand)
+		operate.Binary.__init__(self, loperand, roperand)
 		self.unames = unames
 		self.inames = inames
 	

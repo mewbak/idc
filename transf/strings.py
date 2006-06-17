@@ -5,7 +5,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
-from transf import _operate
+from transf import operate
 from transf import combine
 from transf import build
 from transf import unify
@@ -20,7 +20,7 @@ class ToStr(base.Transformation):
 			raise exception.Failure('not a literal term', term)
 
 
-class _Concat2(_operate.Binary):
+class _Concat2(operate.Binary):
 	
 	def apply(self, term, ctx):
 		head = self.loperand.apply(term, ctx)

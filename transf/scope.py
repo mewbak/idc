@@ -3,13 +3,13 @@
 
 from transf import context
 from transf import variable
-from transf import _operate
+from transf import operate
 
 
-class _Local(_operate.Unary):
+class _Local(operate.Unary):
 	
 	def __init__(self, vars, operand):
-		_operate.Unary.__init__(self, operand)
+		operate.Unary.__init__(self, operand)
 		self.vars = vars
 		
 	def apply(self, term, ctx):
@@ -32,10 +32,10 @@ def Local2(vars, operand):
 	return _Local(vars, operand)
 
 
-class _Let(_operate.Unary):
+class _Let(operate.Unary):
 	
 	def __init__(self, defs, operand):
-		_operate.Unary.__init__(self, operand)
+		operate.Unary.__init__(self, operand)
 		self.defs = defs
 		
 	def apply(self, term, ctx):
@@ -49,7 +49,7 @@ def Let(operand, **defs):
 	return _Let(defs, operand)
 
 
-class Dynamic(_operate.Unary):
+class Dynamic(operate.Unary):
 	'''Introduces a dynamic scope around a transformation, allowing them
 	to be called outside the original scope, while preserving the original 
 	context.
@@ -59,7 +59,7 @@ class Dynamic(_operate.Unary):
 	'''
 	
 	def __init__(self, operand, ctx):
-		_operate.Unary.__init__(self, operand)
+		operate.Unary.__init__(self, operand)
 		self.ctx = ctx
 		
 	def apply(self, term, ctx):

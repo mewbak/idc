@@ -4,7 +4,7 @@
 
 from transf import exception
 from transf import base
-from transf import _operate
+from transf import operate
 
 
 # XXX: lot of this code can be reused in tables
@@ -50,11 +50,11 @@ class _Base(base.Transformation):
 		raise exception.Failure('not a table', self.name)
 			
 	
-class Apply(_Base, _operate.UnaryMixin):
+class Apply(_Base, operate.UnaryMixin):
 	
 	def __init__(self, name, operand):
 		_Base.__init__(self, name)
-		_operate.UnaryMixin.__init__(self, operand)
+		operate.UnaryMixin.__init__(self, operand)
 	
 	def apply(self, term, ctx):
 		tbl = self._get_table(ctx)
@@ -67,11 +67,11 @@ class Apply(_Base, _operate.UnaryMixin):
 		raise exception.Failure('failed to apply dynamic rule', self.name, term)
 
 
-class Def(_Base, _operate.BinaryMixin):
+class Def(_Base, operate.BinaryMixin):
 	
 	def __init__(self, name, loperand, roperand):
 		_Base.__init__(self, name)
-		_operate.BinaryMixin.__init__(self, loperand, roperand)
+		operate.BinaryMixin.__init__(self, loperand, roperand)
 	
 	def apply(self, term, ctx):
 		tbl = self._get_table(ctx)
@@ -81,11 +81,11 @@ class Def(_Base, _operate.BinaryMixin):
 		return term
 
 
-class Undef(_Base, _operate.UnaryMixin):
+class Undef(_Base, operate.UnaryMixin):
 	
 	def __init__(self, name, operand):
 		_Base.__init__(self, name)
-		_operate.UnaryMixin.__init__(self, operand)
+		operate.UnaryMixin.__init__(self, operand)
 	
 	def apply(self, term, ctx):
 		tbl = self._get_table(ctx)
@@ -102,11 +102,11 @@ class Clear(_Base):
 		return term
 
 
-class _Merge(_Base, _operate.BinaryMixin):
+class _Merge(_Base, operate.BinaryMixin):
 	
 	def __init__(self, name, loperand, roperand, merge):
 		_Base.__init__(self, name)
-		_operate.BinaryMixin.__init__(self, loperand, roperand)
+		operate.BinaryMixin.__init__(self, loperand, roperand)
 		self.merge = merge
 	
 	def apply(self, term, ctx):
