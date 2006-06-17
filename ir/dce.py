@@ -51,10 +51,11 @@ isVarNeeded = debug.Trace('isVarNeeded', isVarNeeded)
 JoinNeededVars = lambda l,r: table.Merge(l, r, ['needed'], [])
 
 
-dceStmt = base.Proxy()
-dceStmts = base.Proxy()
-
 parse.Transfs('''
+
+dceStmt = proxy
+dceStmts = proxy
+
 dceAssign = 
 	{x:
 		?Assign(_, Sym(x), _) ;
@@ -116,9 +117,8 @@ dceFuncDef =
 # If none of the above applies, assume all vars are needed
 dceDefault = 
 	setAllNeededVars
-''')
 
-dceStmt.subject = parse.Transf('''
+dceStmt.subject = 
 	dceAssign +
 	dceAsm +
 	dceLabel +
@@ -128,22 +128,19 @@ dceStmt.subject = parse.Transf('''
 	dceIf +
 	dceFuncDef + 
 	dceDefault
-''')
 
-dceStmts.subject = parse.Transf('''
+dceStmts.subject = 
 	filterr(
 		try(dceStmt) ; 
 		not(?NoStmt)
 	)
-''')
 
-dceModule = parse.Transf('''
+dceModule = 
 	~Module(<dceStmts>)
-''')
 
-dce = scope.Local(
-	table.New('needed') &
-	table.New('local') &
-	dceModule,
-	['needed', 'local']
-)
+dce = {needed, local:
+	table.New(`"needed"`) ;
+	table.New(`"local"`) ;
+	dceModule
+}
+''')

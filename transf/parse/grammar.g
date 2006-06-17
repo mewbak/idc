@@ -141,7 +141,31 @@ options { testLiterals = true; }
 				{ $setType(ID) }
 		)?
 	;
-	
+
+PYSTR
+options {generateAmbigWarnings = false;}
+    : "'''" (options {greedy = false;}: ESC | EOL | . )* "'''"
+    | "\"\"\"" (options {greedy = false;}: ESC | EOL | . )* "\"\"\""
+	| '\'' ( ESC | ~'\'' )* '\''
+	| '"' ( ESC | ~'"' )* '"'
+	;
+
+protected
+ESC
+    : '\\' ( EOL | . )
+    ;
+
+OBJ
+	: 
+		'`'! 
+		( COMMENT
+		| PYSTR
+		| EOL
+		| ~'`'
+		)*
+		'`'!
+	;
+
 LPAREN: '(';
 RPAREN: ')';
 LSQUARE: '[';
@@ -205,7 +229,6 @@ rule_defs
 
 transf_def
 	: i:id EQUAL^ transf
-		{ print #i.getText() }
 	;
 
 rule_def
@@ -218,7 +241,7 @@ transf_atom
 	| QUEST^ term
 	| BANG^ term
 	| TILDE^ term
-	| id ( LPAREN! transf_list ( VERT term_arg_list )? RPAREN! )?
+	| id ( LPAREN! arg_list RPAREN! )?
 			{ ## = #(#[CALL,"CALL"], ##) }
 	| LCURLY!
 		( ( id_list COLON ) => id_list COLON transf
@@ -295,10 +318,15 @@ id
 	| w:WHERE { #w.setType(ID) }
 	;
 
-term_arg_list
-	: ( term ( COMMA! term )* )?
+arg_list
+	: ( arg ( COMMA! arg )* )?
 	;
 
+arg
+	: OBJ
+	| transf
+	;
+	
 rule
 	: term INTO! term ( WHERE transf )?
 		{ ## = #(#[RULE,"RULE"], ##) }
@@ -467,16 +495,15 @@ transf returns [ret]
 		{ ret = transf.combine.Choice(l, r) }
 	| #( LANGLE l=transf m=transf r=transf )
 		{ ret = transf.combine.GuardedChoice(l, m, r) }
-	| #( CALL i:ID
+	| #( CALL n=id
 		{ args = [] } 
-		( a=transf { args.append(a) } )*
+		( a=arg { args.append(a) } )*
 		// TODO: handle term args
 		{
-            name = #i.getText()
-            txn = self.bind_transf_name(name)
+            txn = self.bind_transf_name(n)
             if txn is None:
                 ret = None
-                raise SemanticException(#i, "could not find %s" % name)
+                raise SemanticException(#i, "could not find %s" % n)
             if isinstance(txn, transf.base.Transformation):
                 // TODO: check args
                 ret = txn
@@ -553,6 +580,13 @@ transf returns [ret]
 	  )
 	;
 
+arg returns [ret]
+	: o:OBJ
+		{ print #o.getText() }
+		{ ret = eval(#o.getText(), self.globals, self.locals) }
+	| ret=transf
+	;
+	
 match_term returns [ret]
 	: i:INT 
 		{ ret = transf.match.Int(int(#i.getText())) }
