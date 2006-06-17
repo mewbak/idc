@@ -4,7 +4,7 @@
 from transf import *
 
 
-setLocalVar = table.Set('local', base.ident, base.ident)
+setLocalVar = table.Set('local', base.ident)
 # FIXME: this is machine dependent -- we should search the locally declared vars
 setLocalVars = parse.Transf('''
 	where(<map(setLocalVar)> [
@@ -27,10 +27,10 @@ def isTempVar(term, ctx):
 isTempVar = match.aStr & base.Adaptor(isTempVar)
 
 clearLocalVars = table.Clear('local')
-isVarLocal = isTempVar | table.Get('local', base.ident)
+isVarLocal = isTempVar | table.Get('local')
 
-setUnneededVar = table.Del('needed', base.ident)
-setNeededVar = table.Set('needed', base.ident, base.ident)
+setUnneededVar = table.Del('needed')
+setNeededVar = table.Set('needed', base.ident)
 
 setNeededVars = parse.Transf('''
 	alltd(?Sym(<setNeededVar>))
@@ -45,10 +45,10 @@ def setAllNeededVars(term, ctx):
 setAllNeededVars = base.Adaptor(setAllNeededVars)
 
 
-isVarNeeded = table.Get('needed', base.ident) | combine.Not(isVarLocal)
+isVarNeeded = table.Get('needed') | combine.Not(isVarLocal)
 isVarNeeded = debug.Trace('isVarNeeded', isVarNeeded)
 
-JoinNeededVars = lambda l,r: table.Merge(l, r, ['needed'], [])
+JoinNeededVars = lambda l,r: table.Join(l, r, ['needed'], [])
 
 
 parse.Transfs('''
@@ -137,10 +137,12 @@ dceStmts.subject =
 
 dceModule = 
 	~Module(<dceStmts>)
-
-dce = {needed, local:
-	table.New(`"needed"`) ;
-	table.New(`"local"`) ;
-	dceModule
-}
 ''')
+
+dce = scope.Local2(
+	(
+		('needed', table.Table),
+		('local', table.Table),
+	),
+	dceModule
+)

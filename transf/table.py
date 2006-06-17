@@ -31,13 +31,13 @@ class Table(variable.Variable):
 		try:
 			return self.terms[key]
 		except KeyError:
-			raise exception.Failure("term not in table", term)
+			raise exception.Failure("term not in table", key)
 	
 	def pop(self, key):
 		try:
 			return self.terms.pop(key)
 		except KeyError:
-			raise exception.Failure("term not in table", term)
+			raise exception.Failure("term not in table", key)
 	
 	def clear(self):
 		self.terms.clear()
@@ -136,12 +136,12 @@ class Join(_operate.Binary):
 		term = self.roperand.apply(term, rctx)
 
 		# join the tables
-		for tbl, ltbl, rtbl in self.utbls:
+		for tbl, ltbl, rtbl in utbls:
 			# unite
 			tbl.clear()
 			tbl.add(ltbl)
 			tbl.add(rtbl)
-		for tbl, ltbl, rtbl in self.itbls:
+		for tbl, ltbl, rtbl in itbls:
 			# intersect
 			tbl.clear()
 			tbl.add(ltbl)

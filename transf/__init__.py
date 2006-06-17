@@ -31,6 +31,7 @@ __docformat__ = 'epytext'
 
 from transf import exception
 from transf import base
+from transf import variable
 from transf import scope
 
 from transf import combine

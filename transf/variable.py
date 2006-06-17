@@ -55,9 +55,10 @@ class Term(Variable):
 		if it is undefined.'''
 		if self.term is None:
 			self.term = term
-		elif self.term != term:
-			raise exception.Failure('variable mismatch', self.term)
-		return term
+		elif self.term == term:
+			return term
+		else:
+			raise exception.Failure('variable mismatch', term, self.term)
 	
 	def build(self):
 		'''Returns this variable term, if defined.'''

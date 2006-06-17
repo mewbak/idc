@@ -347,14 +347,17 @@ removeInGraph = parse.Transf('''
 collectPoints = unify.CollectAll(matchPointShapeNode)
 
 def simplifyPoints(term, ctx):
-		return term
 		# FIXME: update this
 		noStmts = collectPoints.apply(term, ctx)
 		print noStmts
 		for src, dst in noStmts:
-			new_ctx = transf.context.Context(['src', 'dst'], ctx)
-			new_ctx['src'] = src
-			new_ctx['dst'] = dst
+			new_ctx = transf.context.Context(
+				(
+					('src', variable.Term(src)),
+					('dst', variable.Term(dst)),
+				), 
+				ctx
+			)
 			print src, "INTO", dst
 			term = removeInGraph.apply(term, new_ctx)
 		return term

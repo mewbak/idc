@@ -90,6 +90,9 @@ class Term(object):
 		else:
 			return False
 
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
 	def match(self, other):
 		'''Matches this term pattern against a string or term.'''
 		if isinstance(other, basestring):
@@ -180,7 +183,7 @@ class Term(object):
 		return fp.getvalue()
 	
 	def __repr__(self):
-		return '<term ' + str(self) + '>'
+		return '<Term %s>' % (str(self),)
 
 
 class Literal(Term):
