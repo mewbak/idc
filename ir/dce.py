@@ -18,7 +18,7 @@ setLocalVars = parse.Transf('''
 		"cf", "of", "df", "if"
 	])
 ''')
-setLocalVars = debug.Trace('setLocalVars', setLocalVars)
+setLocalVars = debug.Trace(setLocalVars, 'setLocalVars')
 
 def isTempVar(term, ctx):
 	if term.value.startswith('tmp'):
@@ -48,7 +48,7 @@ setAllNeededVars = base.Adaptor(setAllNeededVars)
 
 
 isVarNeeded = table.Get('needed') | combine.Not(isVarLocal)
-isVarNeeded = debug.Trace('isVarNeeded', isVarNeeded)
+isVarNeeded = debug.Trace(isVarNeeded, 'isVarNeeded')
 
 JoinNeededVars = lambda l,r: table.Join(l, r, ['needed'], [])
 

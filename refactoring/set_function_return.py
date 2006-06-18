@@ -59,7 +59,7 @@ class SetFunctionReturn(refactoring.Refactoring):
 				~Assign(<typ>, <!Sym(<ret>)>, *)
 			)
 		''')
-		#txn = transf.debug.Trace('txn', txn)
+		#txn = transf.debug.Trace(txn, 'txn')
 		return txn(term)
 
 

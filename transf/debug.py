@@ -13,6 +13,9 @@ from transf import base
 from transf import operate
 
 
+log = sys.stderr
+
+
 #############################################################################
 # Automatically start the debugger on an exception.
 # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/65287
@@ -36,90 +39,85 @@ def excepthook(type, value, tb):
 #sys.excepthook = excepthook
 
 
+class DebugMixin(object):
 
-def dump_term(log, term):
-	log.write("Term:\n")
-	log.write("\n\t")
-	try:
-		term.writeToTextFile(log)
-	except:
-		log.write('<error>')
-	log.write("\n")
+	def dump_line(self, filename, lineno):
+		log.write('  File "%s", line %d\n' % (filename, lineno))
 
-
-def dump_context(log, ctx):
-	log.write("Context:\n")
-	for name, value in ctx:
-		log.write("\t%s = " % name)
-		try:
-			if isinstance(value, aterm.terms.Term):
-				value.writeToTextFile(log)
-			else:
-				log.write(repr(value))
-				log.write('\n')
-		except:
-			log.write('<error>')
-		log.write("\n")
-
-class Dump(base.Transformation):
+	def dump_term(self, term):
+		log.write('    term = %r\n' % term)
+		
+	def dump_context(self, ctx):
+		log.write('    ctx = {')
+		sep = ''
+		for name, var in ctx:
+			sep = '\n    '
+			log.write('\n      %r: %r,' % (name, var))
+		log.write(sep + '}\n')
 	
-	def __init__(self, log=None):
+	
+class Dump(base.Transformation, DebugMixin):
+	'''Dump the current term and context.'''
+	
+	def __init__(self):
 		base.Transformation.__init__(self)
-		if log is None:
-			self.log = sys.stderr
-		else:
-			self.log = log
-		caller = sys._getframe(1)
-		self.filename = os.path.abspath(caller.f_code.co_filename)
-		self.lineno = caller.f_lineno
-	
-	def apply(self, term, ctx):
-		self.log.write('File "%s", line %d\n' % (self.filename, self.lineno))
-		dump_term(self.log, term)
-		dump_context(self.log, ctx)
-		return term
-
-
-class Trace(operate.Unary):
-
-	def __init__(self, name, operand, log=None):
-		operate.Unary.__init__(self, operand)
-		if log is None:
-			self.log = sys.stderr
-		else:
-			self.log = log
-		self.name = name
-
-	def short_repr(self, term, trunc=40):
-		r = repr(term)
-		if len(r) > trunc:
-			r = r[:trunc] + "..."
-		return r
-	
-	def apply(self, term, ctx):
-		self.log.write('=> Entering %s: %s\n' % (self.name, self.short_repr(term)))
-		#dump_term(self.log, term)
-		start = time.clock()
-		success = False
 		try:
-			term = self.operand.apply(term, ctx)
-			success = True
+			caller = inspect.currentframe().f_back
+			self.filename = os.path.basename(caller.f_code.co_filename)
+			self.lineno = caller.f_lineno
 		finally:
-			end = time.clock()
-			delta = end - start
-			self.log.write('<= Leaving %s (%.03fs): %s\n' % (self.name, delta, success and self.short_repr(term) or "FAILURE"))
-		#dump_term(self.log, term)
+			del caller
+	
+	def apply(self, term, ctx):
+		self.dump_line(self.filename, self.lineno)
+		self.dump_term(ctx)
+		self.dump_context(ctx)
 		return term
 
 
-class Traceback(operate.Unary):
+class Trace(operate.Unary, DebugMixin):
 
-	def __init__(self, operand, log=None):
+	def __init__(self, operand, name=None):
 		operate.Unary.__init__(self, operand)
-		if log is None:
-			self.log = sys.stderr
+		self.time = False
+		
+		if name is None:
+			try:
+				caller = inspect.currentframe().f_back
+				filename = os.path.basename(caller.f_code.co_filename)
+				lineno = caller.f_lineno
+			finally:
+				del caller
+			self.name = '%s:%d' % (filename, lineno)
 		else:
-			self.log = log
+			self.name = name
+
+
+	def apply(self, term, ctx):
+		log.write('=> %20s: %r\n' % (self.name, term))
+		try:
+			try:
+				start = time.clock()
+				try:
+					term = self.operand.apply(term, ctx)
+				finally:
+					end = time.clock()
+			except Exception, ex:
+				result = repr(ex)
+				raise
+			else:
+				result = repr(term)
+				return term
+		finally:
+			delta = end - start
+			#log.write('<= %20s (%.03fs): %s\n' % (self.name, delta, result))
+			log.write('<= %20s: %s\n' % (self.name, result))
+
+
+class Traceback(operate.Unary, DebugMixin):
+
+	def __init__(self, operand):
+		operate.Unary.__init__(self, operand)
 
 	def apply(self, term, ctx):
 		try:
@@ -130,29 +128,14 @@ class Traceback(operate.Unary):
 			for frame, file, lineno, func, lines, index in records:
 				file = file and os.path.abspath(file) or '?'
 				args, varargs, varkw, locals = inspect.getargvalues(frame)
-				
-				#print file, lnum, func
-				#print args, varargs, varkw
-				#print locals
-				print "********************************************"
+				print locals['self'].__class__.__name__,
+				self.dump_source(file, lineno)
 				try:
-					print locals['self'].__class__.__name__,
-					print repr(locals['term'])[:40]
-					dump_context(self.log, locals['ctx'])
+					self.dump_term(locals['term'])
+					self.dump_context(locals['ctx'])
 				except:
 					pass
-			
-			print
-			
-			print e_type, e_value
-			frame, file, lineno, func, lines, index = records[-1]
-			
-			term = locals['term']
-			ctx = locals['ctx']
-			
-			dump_term(self.log, term)
-			dump_context(self.log, ctx)
-			raise #exception.Failure
+			raise
 
 
 if __name__ == '__main__':

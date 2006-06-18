@@ -424,4 +424,34 @@ class TextWriter(Writer):
 			self.visit(pattern)
 
 
+class AbbrevTextWriter(TextWriter):
+	
+	def __init__(self, fp, depth):
+		super(AbbrevTextWriter, self).__init__(fp)
+		self.depth = depth
+
+	def visitCons(self, term, inside_list = False):
+		if not inside_list:
+			self.fp.write('[')
+			
+		if self.depth > 1:
+			self.depth -= 1
+			head = term.head
+			self.visit(head)
+			self.depth += 1
+			tail = term.tail
+			last = tail.type == types.NIL
+			if not last:
+				self.fp.write(",")
+				self.visit(tail, inside_list = True)		
+		else:
+			self.fp.write('...')
+			
+		if not inside_list:
+			self.fp.write(']')
+			self.writeAnnotations(term)
+
+		
+	
+
 # TODO: implement a XML writer

@@ -116,6 +116,7 @@ class TestTerm(unittest.TestCase):
 			self.failUnlessEqual(_term.getLength(), length)
 			self.failUnlessEqual(str(_term), termStr)
 			self.failIfMutable(_term)
+			print repr(_term)
 	
 	applTestCases = [
 		('C', '"C"', 0),

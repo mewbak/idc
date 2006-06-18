@@ -25,7 +25,7 @@ markStmtsIds = scope.Let2((
 		('stmtid', build.zero),
 	),
 	traverse.TopDown(
-		combine.Try((matchModule | matchStmt) & debug.Trace('setStmtId', setStmtId)),
+		combine.Try((matchModule | matchStmt) & setStmtId),
 		stop = stopStmts
 	),
 )
@@ -43,7 +43,7 @@ makeLabelTable = unify.CollectAll(makeLabelRef)
 setLabelRef = rewrite.Pattern(
 	"Label(name)",
 #	getStmtId & table.Set('lbls', build.Var('name'))
-	build.List((build.Var('name'), getStmtId)) & debug.Dump() & variable.Set('lbls')
+	build.List((build.Var('name'), getStmtId)) & variable.Set('lbls')
 )
 
 setLabelTable = base.Proxy()
@@ -357,6 +357,7 @@ removeInGraph = parse.Transf('''
 collectPoints = unify.CollectAll(matchPointShapeNode)
 
 def simplifyPoints(term, ctx):
+	# TODO: optimize this with tables
 	noStmts = collectPoints.apply(term, ctx)
 	print noStmts
 	for src, dst in noStmts:
@@ -396,8 +397,8 @@ if __name__ == '__main__':
 
 		print "* Marking statements"
 		term = markStmtsIds (term)
-		print term
-		print
+		#print term
+		#print
 		
 		print "* Marking flow"
 		term = markFlow (term)

@@ -82,7 +82,7 @@ simplifyStmt = transf.parse.Rule('''
 simplify = transf.traverse.InnerMost(simplifyExpr | simplifyStmt)
 
 sslLookup = SslLookup() & simplify
-#sslLookup = transf.debug.Trace('sslLookup', sslLookup)
+#sslLookup = transf.debug.Trace(sslLookup, 'sslLookup')
 
 transf.parse.Transfs('''
 reg32Names = ![

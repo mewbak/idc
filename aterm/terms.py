@@ -183,7 +183,17 @@ class Term(object):
 		return fp.getvalue()
 	
 	def __repr__(self):
-		return '<Term %s>' % (str(self),)
+		try:
+			from cStringIO import StringIO
+		except ImportError:
+			from StringIO import StringIO
+		fp = StringIO()
+		writer = _helpers.AbbrevTextWriter(fp, 2)
+		try:
+			writer.visit(self)
+		except:
+			fp.write('...<error>')
+		return '<Term %s>' % (fp.getvalue(),)
 
 
 class Literal(Term):
