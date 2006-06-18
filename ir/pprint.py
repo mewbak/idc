@@ -65,8 +65,9 @@ intlit = intrepr & box.const
 
 parse.Transfs('''
 sign = {
-	Signed -> <<kw> "signed">
-|	Unsigned -> <<kw> "unsigned">
+	Signed -> H([ <<kw> "signed">, " " ])
+|	Unsigned -> H([ <<kw> "unsigned"> , " " ])
+|	Unknown -> ""
 }
 
 size = {
@@ -78,8 +79,12 @@ size = {
 }
 
 type = rec type : {
-	Int(size, sign)
-		-> H([ <<sign> sign>, " ", <<size> size> ])
+	Void
+		-> <<kw> "void">
+|	Bool
+		-> <<kw> "bool">
+|	Int(size, sign)
+		-> H([ <<sign> sign>, <<size> size> ])
 |	Float(32)
 		-> <<kw> "float">
 |	Float(64)
@@ -90,8 +95,6 @@ type = rec type : {
 		-> H([ <<type> type>, " ", <<op> "*"> ])
 |	Array(type)
 		-> H([ <<type> type>, "[", "]" ])
-|	Void
-		-> <<kw> "void">
 |	Blob(size)
 		-> H([ "blob", <<strings.ToStr> size> ])
 |	_ -> "???"

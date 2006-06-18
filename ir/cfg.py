@@ -189,6 +189,9 @@ let this = getStmtId in
 +	?Branch
 		< SetCtrlFlow({ _(Sym(name)) -> [<LookupLabel(!name)>] } + ![])
 		; where(!this; setNext)
++	?VarDef
+		< SetCtrlFlow(![next])
+		; where(!this; setNext)
 +	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
@@ -263,6 +266,8 @@ makeNodeShape = parse.Rule('''
 |	Block
 		-> "point"
 |	NoStmt
+		-> "point"
+|	VarDef(_, _, NoExpr)
 		-> "point"
 |	_
 		-> "box"

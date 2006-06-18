@@ -84,6 +84,38 @@ simplify = transf.traverse.InnerMost(simplifyExpr | simplifyStmt)
 sslLookup = SslLookup() & simplify
 #sslLookup = transf.debug.Trace('sslLookup', sslLookup)
 
+transf.parse.Transfs('''
+reg32Names = ![
+	"eax", "ebx", "ecx", "edx",
+	"esi", "edi", "ebp", "esp"
+]
+
+reg16Names = ![
+	"ax", "bx", "cx", "dx",
+	"si", "di", "bp", "sp"
+]
+
+reg8Names = ![
+	"ah", "bh", "ch", "dh",
+	"al", "bl", "cl", "dl"
+]
+
+flagNames = ![
+	"nf", "zf", "af", "pf",
+	"cf", "of", "df", "if"
+]
+
+declReg32 = !VarDef(Int(32,Unknown),<id>,NoExpr)
+declFlag = !VarDef(Bool,<id>,NoExpr)
+
+stmtsPreambule =
+	concat(
+		reg32Names ; map(declReg32) ; debug.Dump(),
+		flagNames ; map(declFlag)
+	)
+
+''')
+
 stmts = transf.base.Proxy()
 
 doStmt = transf.parse.Rule('''
@@ -108,7 +140,7 @@ stmts.subject = transf.traverse.Map(stmt) & transf.lists.concat
 #stmt.subject = transf.debug.Trace('stmt', stmt.subject)
 
 module = ir.traverse.Module(
-	stmts=stmts, 
+	stmts = transf.lists.Concat2(transf.debug.Dump() & stmtsPreambule, stmts), 
 )
 
 

@@ -225,10 +225,10 @@ def Join(sep):
 			Prefix(sep)
 		)
 
+hbox = transf.build.Str('H')
 
-commas \
-	= transf.build.Appl(
-		'H', 
-		[Join(transf.build.Str(', '))]
-	)
+def HBox(boxes):
+	return transf.build.Appl(hbox, transf.build.List((boxes,)))
 
+commas = HBox(Join(transf.build.Str(', ')))
+spaces = HBox(Join(transf.build.Str(' ')))

@@ -341,7 +341,7 @@ options {
     
         // lookup in the transf module
         try:
-            return getattr(transf, name)
+            return eval(name, transf.__dict__)
         except AttributeError:
             pass
         
@@ -382,7 +382,7 @@ transf returns [ret]
 		{ ret = transf.combine.Choice(l, r) }
 	| #( LANGLE l=transf m=transf r=transf )
 		{ ret = transf.combine.GuardedChoice(l, m, r) }
-	| #( CALL n=id
+	| #( CALL n=i:id
 		{ args = [] } 
 		( a=arg { args.append(a) } )*
 		// TODO: handle term args
