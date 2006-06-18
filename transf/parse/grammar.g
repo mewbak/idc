@@ -241,10 +241,12 @@ transf
 	: transf_expr
 	;
 
-transf_term
+transf_prefix
 	: QUEST^ term
 	| BANG^ term
 	| TILDE^ term
+	| EQUAL^ LID
+	| LSLASH^ LID
 	;
 
 transf_method
@@ -258,7 +260,7 @@ transf_method
 transf_atom
 	: IDENT
 	| FAIL
-	| transf_term
+	| transf_prefix
 	| transf_method
 	| id ( LPAREN! arg_list RPAREN! )?
 		{ ## = #(#[CALL,"CALL"], ##) }
@@ -386,7 +388,7 @@ term_atom
 	| term_appl
 	| term_var
 	| WILDCARD
-	| transf_term
+	| transf_prefix
 		{ ## = #(#[TRANSF,"TRANSF"], ##) }
 	| transf_method
 		{ ## = #(#[TRANSF,"TRANSF"], ##) }
@@ -523,6 +525,10 @@ transf returns [ret]
 		{ ret = b }
 	| #( TILDE t=traverse_term )
 		{ ret = t }
+	| #( EQUAL n=id )
+		{ ret = transf.variable.Set(n) }
+	| #( LSLASH n=id )
+		{ ret = transf.variable.Unset(n) }
 	| #( SEMI l=transf r=transf )
 		{ ret = transf.combine.Composition(l, r) }
 	| #( PLUS l=transf r=transf )

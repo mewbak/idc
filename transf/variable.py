@@ -157,7 +157,7 @@ class Wrap(Operation):
 		@param operands: operand transformations whose result will be passed to the 
 		operation
 		'''
-		Transformation.__init__(self, name)
+		Operation.__init__(self, name)
 		self.method = method
 		self.operands = operands
 	
