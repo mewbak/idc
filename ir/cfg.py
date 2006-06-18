@@ -86,16 +86,16 @@ markStmtsFlow = base.Proxy()
 
 markStmtFlow.subject = parse.Transf('''
 let this = getStmtId in
-	?Assign(*)
+	?Assign
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?Label(*)
++	?Label
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?Asm(*) 
++	?Asm 
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?If(*)
++	?If
 		< { true, false: 
 			~_(_, 
 				<let next=!next in markStmtFlow; where(!next => true) end>, 
@@ -104,33 +104,33 @@ let this = getStmtId in
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
 		}
 		; where(!this; setNext)
-+	?While(*)
++	?While
 		< { true, false:
 			where(!next => false)
 			; ~_(_, <markStmtsFlow; where(!next => true)>)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
 		}
 		; where(!this; setNext)
-+	?NoStmt(*)
++	?NoStmt
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?Continue(*) 
++	?Continue 
 		< SetCtrlFlow(![cont])
 		; where(!this; setNext)
-+	?Break(*) 
++	?Break 
 		< SetCtrlFlow(![brek])
 		; where(!this; setNext)
-+	?Ret(*) 
++	?Ret 
 		< SetCtrlFlow(![retn])
 		; where(!this; setNext)
-+	?Branch(*)
++	?Branch
 		< SetCtrlFlow({ _(Sym(name)) -> [<lists.Lookup(!name,!lbls)>] } + ![])
 		; where(!this; setNext)
-+	?Block(*)
++	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?FuncDef(*)
++	?FuncDef
 		< let 
 			next = !next,
 			retn = GetTerminalNodeId(!this),
@@ -149,16 +149,16 @@ end
 
 markStmtFlow.subject = parse.Transf('''
 let this = getStmtId in
-	?Assign(*)
+	?Assign
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?Label(*)
++	?Label
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?Asm(*) 
++	?Asm 
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?If(*)
++	?If
 		< { true, false: 
 			~_(_, 
 				<let next=!next in markStmtFlow; where(!next => true) end>, 
@@ -167,33 +167,33 @@ let this = getStmtId in
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
 		}
 		; where(!this; setNext)
-+	?While(*)
++	?While
 		< { true, false:
 			where(!next => false)
 			; ~_(_, <markStmtsFlow; where(!next => true)>)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
 		}
 		; where(!this; setNext)
-+	?NoStmt(*)
++	?NoStmt
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?Continue(*) 
++	?Continue 
 		< SetCtrlFlow(![cont])
 		; where(!this; setNext)
-+	?Break(*) 
++	?Break 
 		< SetCtrlFlow(![brek])
 		; where(!this; setNext)
-+	?Ret(*) 
++	?Ret 
 		< SetCtrlFlow(![retn])
 		; where(!this; setNext)
-+	?Branch(*)
++	?Branch
 		< SetCtrlFlow({ _(Sym(name)) -> [<LookupLabel(!name)>] } + ![])
 		; where(!this; setNext)
-+	?Block(*)
++	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?FuncDef(*)
++	?FuncDef
 		< let 
 			next = !next,
 			retn = GetTerminalNodeId(!this),
@@ -213,7 +213,7 @@ end
 markStmtsFlow.subject = traverse.MapR(markStmtFlow)
 
 markModuleFlow = parse.Transf('''
-	?Module(*)
+	?Module
 		; let
 			next = !0,
 			retn = !0,
@@ -258,13 +258,13 @@ makeNodeShape = parse.Rule('''
 		-> "diamond"
 |	While(cond,_)
 		-> "diamond"
-|	Module(*)
+|	Module
 		-> "point"
-|	Block(*)
+|	Block
 		-> "point"
 |	NoStmt
 		-> "point"
-|	_ 
+|	_
 		-> "box"
 ''')
 
@@ -303,7 +303,7 @@ makeNode = build._.Node(
 	makeNodeEdges
 )
 
-hasTerminalNode = match.Pattern('FuncDef(*)')
+hasTerminalNode = match.Pattern('FuncDef')
 
 makeTerminalNode = hasTerminalNode & build._.Node(
 	GetTerminalNodeId(getStmtId), 

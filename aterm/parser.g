@@ -16,24 +16,6 @@ options {
 	defaultErrorHandler = false;
 }
 
-tokens {
-	INT;
-	REAL;
-	STR;
-	CONS;
-	WILDCARD;
-	VAR;
-	LPAREN;
-	RPAREN;
-	LSQUARE;
-	RSQUARE;
-	LCURLY;
-	RCURLY;
-	COMMA;
-	STAR;
-	ASSIGN;
-}
-
 all returns [res]
 	: res=aterm EOF
 	;
@@ -72,13 +54,13 @@ term returns [res]
 		)?
 	| 
 		vname:VAR
-		(
-			{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
-		| ASSIGN pattern=aterm
+		( ASSIGN pattern=aterm
 			{ res = self.factory.makeVar(vname.getText(), pattern) }
-		| LPAREN args=aterms RPAREN
-			{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
-			{ res = self.factory.makeAppl(res, args) }
+		|
+				{ res = self.factory.makeVar(vname.getText(), self.factory.makeWildcard()) }
+			( LPAREN args=aterms RPAREN
+				{ res = self.factory.makeAppl(res, args) }
+			)?
 		)
 	;
 

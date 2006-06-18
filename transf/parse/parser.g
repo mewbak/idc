@@ -40,7 +40,7 @@ options {
 class parser extends Parser;
 
 options {
-	k=3;
+	k=2;
 	buildAST = true;
 	defaultErrorHandler = false;
 }
@@ -51,32 +51,6 @@ tokens {
 	ID; UID; LID;
 	OBJ;
 	
-	IDENT; FAIL;
-	IF; THEN; ELSE;
-	END;
-	LET; IN;
-	WHERE;
-	REC;
-	SWITCH; CASE; OTHERWISE;
-	
-	LPAREN;	RPAREN;
-	LSQUARE; RSQUARE;
-	LCURLY; RCURLY;
-	LANGLE; RANGLE;
-	RSLASH; LSLASH;
-	
-	COMMA;
-	QUEST; BANG; TILDE; CARET;
-	COLON;
-	STAR;
-	PLUS;
-	MINUS;
-	INTO;
-	SEMI;
-	VERT;
-	AT;
-	EQUAL;
-	
 	APPLY_MATCH;
 	CALL;
 	RULE;
@@ -86,6 +60,7 @@ tokens {
 	BUILD_APPLY;
 	JOIN;
 	VARMETHOD;
+	UNDEF;
 }
 
 transf_defs
@@ -274,7 +249,7 @@ term_var
 	;
 
 term_sym
-	: term_name term_implicit_nil
+	: term_name term_undefined
 		{ ## = #(#[APPL,"APPL"], ##) }
 	;
 	
@@ -290,6 +265,11 @@ term_appl
 	
 term_args
 	: LPAREN! term_list RPAREN!
+	;
+
+term_undefined
+	:
+		{ ## = #(#[UNDEF,"UNDEF"]) }
 	;
 
 term_anno
@@ -522,6 +502,8 @@ match_term returns [ret]
 	  )
 	| #( ANNOS t=match_term a=match_term )
 		{ ret = t & transf.match.Annos(a) }
+	| UNDEF 
+		{ ret = transf.base.ident }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;
@@ -544,6 +526,7 @@ collect_term_vars[vars]
                 vars.append(name)
         }
 	| #( ANNOS collect_term_vars[vars] collect_term_vars[vars] )
+	| UNDEF 
 	| TRANSF
 	;
 
@@ -566,6 +549,8 @@ build_term returns [ret]
 		{ ret = transf.build.Var(#v.getText()) }
 	| #( ANNOS t=build_term a=build_term )
 		{ ret = t & transf.build.Annos(a) }
+	| UNDEF 
+		{ ret = transf.build.nil }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;
@@ -589,6 +574,8 @@ traverse_term returns [ret]
 		{ ret = transf.traverse.Var(#v.getText()) }
 	| #( ANNOS t=traverse_term a=traverse_term )
 		{ ret = t & transf.traverse.Annos(a) }
+	| UNDEF 
+		{ ret = transf.base.ident }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;

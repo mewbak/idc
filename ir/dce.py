@@ -71,18 +71,18 @@ dceAssign =
 	~Assign(_, <setNeededVars>, <setNeededVars>)
 
 dceAsm = 
-	?Asm(*) ;
+	?Asm ;
 	setAllNeededVars
 
 dceLabel = 
-	?Label(*)
+	?Label
 
 dceBranch = 
-	?Branch(*) ;
+	?Branch ;
 	setAllNeededVars
 
 dceRet = 
-	?Ret(*) ;
+	?Ret ;
 	setAllUnneededVars ;
 	~Ret(_, <setNeededVars>)
 
@@ -92,7 +92,7 @@ elimIf = {
 }
 
 dceIf = 
-	?If(*) ;
+	?If ;
 	JoinNeededVars(
 		~If(_, <dceStmt>, _),
 		~If(_, _, <dceStmt>)

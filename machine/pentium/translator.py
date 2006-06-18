@@ -91,7 +91,7 @@ doStmt = transf.parse.Rule('''
 		-> [Ret(Void, NoExpr)]
 |	Asm("call", [Ref(addr)])
 		-> [Assign(Void, NoExpr, Call(addr,[]))]
-|	Asm(*)	
+|	Asm	
 		-> <sslLookup>
 |	_ 
 		-> [_]

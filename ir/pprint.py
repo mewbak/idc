@@ -104,27 +104,27 @@ type = rec type : {
 # See http://www.difranco.net/cop2220/op-prec.htm
 
 opPrec = parse.Rule('''
-	Not(*) -> 1
-|	BitNot(*) -> 1
-|	Neg(*) -> 1
-|	And(*) -> 10 		
-|	Or(*) -> 11 		
-|	BitAnd(*) -> 7 		
-|	BitOr(*) -> 9 		
-|	BitXor(*) -> 8 		
-|	LShift(*) -> 4 		
-|	RShift(*) -> 4 		
-|	Plus(*) -> 3 		
-|	Minus(*) -> 3 		
-|	Mult(*) -> 2 		
-|	Div(*) -> 2 		
-|	Mod(*) -> 2 		
-|	Eq(*) -> 6 
-|	NotEq(*) -> 6 
-|	Lt(*) -> 5 
-|	LtEq(*) -> 5 
-|	Gt(*) -> 5 
-|	GtEq(*) -> 5 	
+	Not -> 1
+|	BitNot -> 1
+|	Neg -> 1
+|	And -> 10 		
+|	Or -> 11 		
+|	BitAnd -> 7 		
+|	BitOr -> 9 		
+|	BitXor -> 8 		
+|	LShift -> 4 		
+|	RShift -> 4 		
+|	Plus -> 3 		
+|	Minus -> 3 		
+|	Mult -> 2 		
+|	Div -> 2 		
+|	Mod -> 2 		
+|	Eq -> 6 
+|	NotEq -> 6 
+|	Lt -> 5 
+|	LtEq -> 5 
+|	Gt -> 5 
+|	GtEq -> 5 	
 ''')
 
 exprPrec = parse.Rule('''
@@ -262,7 +262,7 @@ stmtKern = Path(parse.Rule('''
 '''))
 
 stmt.subject = Path(parse.Rule('''
-	Assign(*)
+	Assign
 		-> H([ <stmtKern>, ";" ])
 |	If(_, true, NoStmt)
 		-> V([
@@ -292,7 +292,7 @@ stmt.subject = Path(parse.Rule('''
 			<stmtKern>,
 				I( <<stmt>body> )
 		]))
-|	Label(*)
+|	Label
 		-> D( <stmtKern> )
 |	_
 		-> H([ <stmtKern>, ";" ])
