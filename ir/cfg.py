@@ -21,9 +21,13 @@ stmtIdAnno = 'StmtId'
 getStmtId = annotation.Get(stmtIdAnno)
 setStmtId = annotation.Set(stmtIdAnno, arith.Count('stmtid'))
 
-markStmtsIds = scope.Let(
-	traverse.TopDown(combine.Try(matchStmt & setStmtId)),
-	stmtid = build.zero
+markStmtsIds = scope.Let2((
+		('stmtid', build.zero),
+	),
+	traverse.TopDown(
+		combine.Try((matchModule | matchStmt) & debug.Trace('setStmtId', setStmtId)),
+		stop = stopStmts
+	),
 )
 
 
@@ -348,24 +352,24 @@ removeInGraph = parse.Transf('''
 collectPoints = unify.CollectAll(matchPointShapeNode)
 
 def simplifyPoints(term, ctx):
-		# FIXME: update this
-		noStmts = collectPoints.apply(term, ctx)
-		print noStmts
-		for src, dst in noStmts:
-			new_ctx = transf.context.Context(
-				(
-					('src', variable.Term(src)),
-					('dst', variable.Term(dst)),
-				), 
-				ctx
-			)
-			print src, "INTO", dst
-			term = removeInGraph.apply(term, new_ctx)
-		return term
+	noStmts = collectPoints.apply(term, ctx)
+	print noStmts
+	for src, dst in noStmts:
+		new_ctx = transf.context.Context(
+			(
+				('src', variable.Term(src)),
+				('dst', variable.Term(dst)),
+			), 
+			ctx
+		)
+		print src, "INTO", dst
+		term = removeInGraph.apply(term, new_ctx)
+	return term
 
 simplifyPoints = base.Adaptor(simplifyPoints)
 
 simplifyGraph = simplifyPoints
+
 
 #######################################################################
 
@@ -387,8 +391,8 @@ if __name__ == '__main__':
 
 		print "* Marking statements"
 		term = markStmtsIds (term)
-		#print term
-		#print
+		print term
+		print
 		
 		print "* Marking flow"
 		term = markFlow (term)

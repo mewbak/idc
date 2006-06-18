@@ -12,6 +12,12 @@ def matchApplName(names):
 	
 
 #######################################################################
+# Module
+
+matchModule = match.Appl(match.Str('Module'), base.ident)
+
+
+#######################################################################
 # Statements
 
 # names of non-comound statements
@@ -56,6 +62,7 @@ reduceStmts = parse.Transf('''
 }
 ''')
 
+stopStmts = combine.Not(matchModule | matchCompoundStmt | match.aList)
 
 #######################################################################
 # Expressions

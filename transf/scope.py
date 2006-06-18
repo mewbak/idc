@@ -39,11 +39,16 @@ class _Let(operate.Unary):
 		self.defs = defs
 		
 	def apply(self, term, ctx):
-		vars = [(name, variable.Term(transf.apply(term, ctx))) for name, transf in self.defs.iteritems()]
+		vars = [(name, variable.Term(transf.apply(term, ctx))) for name, transf in self.defs]
 		ctx = context.Context(vars, ctx)
 		return self.operand.apply(term, ctx)
 
 def Let(operand, **defs):
+	if not defs:
+		return operand
+	return _Let(defs.items(), operand)
+
+def Let2(defs, operand):
 	if not defs:
 		return operand
 	return _Let(defs, operand)

@@ -100,12 +100,14 @@ class Trace(operate.Unary):
 		self.log.write('=> Entering %s: %s\n' % (self.name, self.short_repr(term)))
 		#dump_term(self.log, term)
 		start = time.clock()
+		success = False
 		try:
 			term = self.operand.apply(term, ctx)
+			success = True
 		finally:
 			end = time.clock()
 			delta = end - start
-			self.log.write('<= Leaving %s (%.03fs): %s\n' % (self.name, delta, self.short_repr(term)))
+			self.log.write('<= Leaving %s (%.03fs): %s\n' % (self.name, delta, success and self.short_repr(term) or "FAILURE"))
 		#dump_term(self.log, term)
 		return term
 
