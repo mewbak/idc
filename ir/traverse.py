@@ -74,16 +74,16 @@ def Stmt(stmts = None, expr = None, type = None, Wrapper = None):
 		stmts = traverse.Map(stmt)
 		
 	stmt.subject = parse.Transf('''
-		~VarDef(<type>, _, <expr>) +
-		~FuncDef(<type>, _, _, <stmt>) +
+		~Var(<type>, _, <expr>) +
+		~Func(<type>, _, _, <stmts>) +
 		~Assign(<type>, <expr>, <expr>) +
 		~Asm(_, <map(expr)>) +
 		~Block(<stmts>) +
-		~FuncDef(<type>, _, _, <stmt>) +
+		~Func(<type>, _, _, <stmt>) +
 		~If(<expr>, <stmt>, <stmt>) +
 		~While(<expr>, <stmt>) +
 		~Ret(<type>, <expr>) +
-		~Branch(<expr>) +
+		~Jump(<expr>) +
 		id
 	''')
 	

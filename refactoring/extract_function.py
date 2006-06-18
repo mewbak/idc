@@ -38,7 +38,7 @@ class ExtractFunction(refactoring.Refactoring):
 		name, = args
 		txn = transf.rewrite.Pattern(
 			"[Label(name),*rest]",
-			"[FuncDef(Void,name,[],Block(rest))]",
+			"[Func(Void,name,[],rest)]",
 		)
 		txn = transf.traverse.Appl(
 			'Module',
@@ -64,12 +64,10 @@ class TestCase(refactoring.TestCase):
 			'["main"]',
 			'''
 			Module([
-				FuncDef(Void,"main",[],
-					Block([
-						Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-						Ret(Int(32,Signed),Sym("eax"))
-					])
-				)
+				Func(Void,"main",[],[
+					Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+					Ret(Int(32,Signed),Sym("eax"))
+				])
 			])
 			'''
 		),
@@ -87,12 +85,10 @@ class TestCase(refactoring.TestCase):
 			'''
 			Module([
 				Asm("pre",[]),
-				FuncDef(Void,"main",[],
-					Block([
-						Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-						Ret(Int(32,Signed),Sym("eax"))
-					])
-				),
+				Func(Void,"main",[],[
+					Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+					Ret(Int(32,Signed),Sym("eax"))
+				]),
 				Asm("post",[]),
 			])
 			'''

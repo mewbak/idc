@@ -1,24 +1,22 @@
 Module([
-	FuncDef(Int(32,Signed), "main", [],
-		Block([
-			If(
-				Binary(
-					Gt(Int(32, Signed)), 
-					Sym("ecx"), 
-					Lit(Int(32, Signed), 0),
-				),
-				Assign(
-					Int(32, Signed), 
-					Sym("eax"),
-					Lit(Int(32, Signed), 1)
-				),
-				Assign(
-					Int(32, Signed), 
-					Sym("ecx"),
-					Lit(Int(32, Signed), 0)
-				),
+	Func(Int(32,Signed), "main", [], [
+		If(
+			Binary(
+				Gt(Int(32, Signed)), 
+				Sym("ecx"), 
+				Lit(Int(32, Signed), 0),
 			),
-			Ret(Int(32,Signed), Sym("eax"))
-		])
-	)
+			Assign(
+				Int(32, Signed), 
+				Sym("eax"),
+				Lit(Int(32, Signed), 1)
+			),
+			Assign(
+				Int(32, Signed), 
+				Sym("ecx"),
+				Lit(Int(32, Signed), 0)
+			),
+		),
+		Ret(Int(32,Signed), Sym("eax"))
+	])
 ])

@@ -244,15 +244,15 @@ stmtKern = Path(parse.Rule('''
 		-> H([ <<kw>"if">, "(", <<expr>cond>, ")" ])
 |	While(cond, _)
 		-> H([ <<kw>"while">, "(", <<expr>cond>, ")" ])
-|	VarDef(type, name, NoExpr)
+|	Var(type, name, NoExpr)
 		-> H([ <<type>type>, " ", name ])
-|	VarDef(type, name, val)
+|	Var(type, name, val)
 		-> H([ <<type>type>, " ", name, "=", <<expr>val> ])
-|	FuncDef(type, name, args, body)
+|	Func(type, name, args, stmts)
 		-> H([ <<type>type>, " ", name, "(", <<commas> args>, ")" ])
 |	Label(name)
 		-> H([ name, ":" ])
-|	Branch(label)
+|	Jump(label)
 		-> H([ <<kw>"goto">, " ", <<expr>label> ])
 |	Ret(_, NoExpr)
 		-> H([ <<kw>"return"> ])
@@ -290,10 +290,11 @@ stmt.subject = Path(parse.Rule('''
 				<<stmts>stmts>, 
 			D("}")
 		])
-|	FuncDef(_, _, _, body)
+|	Func(_, _, _, stmts)
 		-> D(V([
-			<stmtKern>,
-				I( <<stmt>body> )
+			H([ <stmtKern>, "{" ]),
+				I(V([ <<stmts>stmts> ])),
+			"}"
 		]))
 |	Label
 		-> D( <stmtKern> )
@@ -343,10 +344,10 @@ if __name__ == '__main__':
 		('Label("label")', 'label:\n'),
 		('Asm("ret",[])', 'asm("ret");\n'),
 		('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);\n'),
-		('FuncDef(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),	
+		('Func(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),	
 		('Assign(Void,Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('Assign(Blob(32{Path([0,0,1,0])}){Path([0,1,0])},Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
-		('If(Binary(Eq(Int(32,Signed)),Binary(BitOr(32),Binary(BitXor(32),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),Branch(Sym(".L4")),NoStmt)', ''),
+		('If(Binary(Eq(Int(32,Signed)),Binary(BitOr(32),Binary(BitXor(32),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),Jump(Sym(".L4")),NoStmt)', ''),
 	]
 	
 	for inputStr, output in stmtTestCases:

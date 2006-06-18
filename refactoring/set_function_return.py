@@ -18,7 +18,7 @@ class SetFunctionReturn(refactoring.Refactoring):
 			return None
 
 		selected_term = path.fetch(term, start)
-		mo = selected_term.rmatch("FuncDef(_,name,*)")
+		mo = selected_term.rmatch("Func(_,name,*)")
 		if mo:
 			print mo.kargs
 			return mo.kargs['name']
@@ -50,7 +50,7 @@ class SetFunctionReturn(refactoring.Refactoring):
 		
 		txn = transf.parse.Transf('''
 			alltd(
-				~FuncDef(<typ>, <name>, _, 
+				~Func(<typ>, <name>, _, 
 					<alltd(~Ret(<typ>, <!Sym(<ret>)>))>
 				) 
 			) ;

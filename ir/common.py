@@ -24,10 +24,10 @@ matchModule = match.Appl(match.Str('Module'), base.ident)
 atomStmtNames = [
 	'Asm',
 	'Assign',
-	'VarDef',
+	'Var',
 	'Ret',
 	'Label',
-	'Branch',
+	'Jump',
 	'Break',
 	'Continue',
 	'NoStmt'
@@ -36,7 +36,7 @@ atomStmtNames = [
 # names of compound statements
 compoundStmtNames = [
 	'Block',
-	'FuncDef',
+	'Func',
 	'If',
 	'Module',
 	'While',
@@ -55,7 +55,7 @@ reduceStmts = parse.Transf('''
 		?Block(stmts) +
 		?If(_, *stmts) +
 		?While(_, *stmts) +
-		?FuncDef(_,_,_,*stmts) +
+		?Func(_,_,_,stmts) +
 		?Module(stmts)
 	) ; !stmts +
 	![]

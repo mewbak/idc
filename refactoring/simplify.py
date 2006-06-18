@@ -25,7 +25,7 @@ class Rename(refactoring.Refactoring):
 				'If(Not(cond), Assign(type,dst,src),NoStmt)'),
 		
 			('Assign(_,Sym("pc"),expr)', 
-				'Branch(Addr(expr))'),
+				'Jump(Addr(expr))'),
 			
 			('Cond(cond,Lit(Int(_,_),1),Lit(Int(_,_),0))',
 				'cond'),
@@ -49,7 +49,7 @@ class TestCase(refactoring.TestCase):
 		
 	applyTestCases = [
 			('Assign(Blob(32),Sym("pc"),Ref(Sym("label")))', '[]',
-				'Branch(Sym("label"))'),	
+				'Jump(Sym("label"))'),	
 			('Assign(Blob(32),Sym("pc"),Cond(Sym("flag"),Ref(Sym("label")),Sym("pc")))', '[]',
-				'If(Sym("flag"),Branch(Sym("label")),NoStmt)'),		
+				'If(Sym("flag"),Jump(Sym("label")),NoStmt)'),		
 	]

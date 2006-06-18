@@ -55,7 +55,7 @@ class TestPrettyPrint(unittest.TestCase):
 			('Label("label")', 'label:'),
 			('Asm("ret",[])', 'asm("ret");'),
 			('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1000)])', 'asm("mov", ax, 1000);'),
-			('FuncDef(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),
+			('Func(Void,"main",[],[])', 'void main()\n{\n}\n'),
 		],
 		
 		

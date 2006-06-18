@@ -77,8 +77,8 @@ dceAsm =
 dceLabel = 
 	?Label
 
-dceBranch = 
-	?Branch ;
+dceJump = 
+	?Jump ;
 	setAllNeededVars
 
 dceRet = 
@@ -108,11 +108,11 @@ dceBlock =
 	~Block(<dceStmts>) ;
 	try(elimBlock)
 
-dceFuncDef = 
-	~FuncDef(_, _, _, <
+dceFunc = 
+	~Func(_, _, _, <
 		setLocalVars; 
 		setAllUnneededVars; 
-		dceStmt; 
+		dceStmts; 
 		clearLocalVars
 	>)
 
@@ -124,11 +124,11 @@ dceStmt.subject =
 	dceAssign +
 	dceAsm +
 	dceLabel +
-	dceBranch +
+	dceJump +
 	dceRet +
 	dceBlock +
 	dceIf +
-	dceFuncDef + 
+	dceFunc + 
 	dceDefault
 
 dceStmts.subject = 

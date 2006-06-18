@@ -32,7 +32,7 @@ markStmtsIds = scope.Let2((
 
 
 #######################################################################
-# Branches & Labels
+# Jumpes & Labels
 
 makeLabelRef = parse.Rule('''
 	Label(name) -> [name, <getStmtId>]
@@ -123,21 +123,21 @@ let this = getStmtId in
 +	?Ret 
 		< SetCtrlFlow(![retn])
 		; where(!this; setNext)
-+	?Branch
++	?Jump
 		< SetCtrlFlow({ _(Sym(name)) -> [<lists.Lookup(!name,!lbls)>] } + ![])
 		; where(!this; setNext)
 +	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?FuncDef
++	?Func
 		< let 
 			next = !next,
 			retn = GetTerminalNodeId(!this),
 			brek = !0,
 			cont = !0
 		in
-			~_(_, _, _, <markStmtFlow>)
+			~_(_, _, _, <markStmtsFlow>)
 			; SetCtrlFlow(![next])
 		end
 		# where(!next; setNext)
@@ -186,24 +186,24 @@ let this = getStmtId in
 +	?Ret 
 		< SetCtrlFlow(![retn])
 		; where(!this; setNext)
-+	?Branch
++	?Jump
 		< SetCtrlFlow({ _(Sym(name)) -> [<LookupLabel(!name)>] } + ![])
 		; where(!this; setNext)
-+	?VarDef
++	?Var
 		< SetCtrlFlow(![next])
 		; where(!this; setNext)
 +	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
 		; where(!this; setNext)
-+	?FuncDef
++	?Func
 		< let 
 			next = !next,
 			retn = GetTerminalNodeId(!this),
 			brek = !0,
 			cont = !0
 		in 
-			LabelTable(~_(_, _, _, <markStmtFlow>))
+			LabelTable(~_(_, _, _, <markStmtsFlow>))
 			; SetCtrlFlow(![next])
 		end
 		# where(!next; setNext)
@@ -267,7 +267,7 @@ makeNodeShape = parse.Rule('''
 		-> "point"
 |	NoStmt
 		-> "point"
-|	VarDef(_, _, NoExpr)
+|	Var(_, _, NoExpr)
 		-> "point"
 |	_
 		-> "box"
@@ -308,7 +308,7 @@ makeNode = build._.Node(
 	makeNodeEdges
 )
 
-hasTerminalNode = match.Pattern('FuncDef')
+hasTerminalNode = match.Pattern('Func')
 
 makeTerminalNode = hasTerminalNode & build._.Node(
 	GetTerminalNodeId(getStmtId), 

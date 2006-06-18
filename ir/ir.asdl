@@ -6,23 +6,26 @@
 -- NOTE: ASDL's five builtin types are identifier, int, string, object, bool
 
 module
-	= Module(stmt*)
 
 stmt
-	= Assign(type, expr dest, expr src)
+	= Asm(string opcode, expr* operands) 
+	| Assign(type, optExpr dest, expr src)
 	| Label(string name)
-	| Branch(expr label)
+	| Jump(expr label)
 	| Break
 	| Continue
 	| Block(stmt*)
 	| If(expr cond, stmt, stmt)
 	| While(expr, cond, stmt)
 	| Ret(type, optExpr value)
-	| VarDef(type, string name, expr value)
-	| FuncDef(type, string name, type* args)
-	| Asm(string opcode, expr* operands) 
+	| Var(type, string name, optExpr value)
+	| Func(type, string name, arg*, stmt body)
+	| Module(stmt*)
 	| NoStmt
 
+arg
+	= Arg(type, name)
+	
 expr
 	= True
 	| False
@@ -40,7 +43,6 @@ expr
 optExpr
 	= expr
 	| NoExpr
-
 
 unOp
 	= Not
@@ -77,7 +79,7 @@ type
 	| Array(type)
 	| Compound(type*)
 	| Union(type*)
-	| Func(type, type*)
+	| FuncPointer(type, type*)
 	| Blob(size)
 	
 sign

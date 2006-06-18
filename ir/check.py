@@ -43,7 +43,7 @@ type.subject = transf.parse.Transf('''
 	?Float( <size> ) +
 	?Char( <size> ) +
 	?Pointer( <size>, <types> ) +
-	?Func( <type>, <types> ) +
+	?FuncPointer( <type>, <types> ) +
 	?Array( <type> ) +
 	?Compound( <types> ) +
 	?Union( <types> ) +
@@ -109,8 +109,8 @@ arg = transf.parse.Transf('''
 stmt = transf.base.Proxy()
 stmts = transf.traverse.Map(stmt)
 stmt.subject = transf.parse.Transf('''
-	?VarDef( <type> , <name> , <optExpr> ) +
-	?FuncDef( <type> , <name> , <map(arg)>, <stmt> ) +
+	?Var( <type> , <name> , <optExpr> ) +
+	?Func( <type> , <name> , <map(arg)>, <stmts> ) +
 	?Assign( <type> , <optExpr> , <expr> ) +
 	?If( <expr> , <stmt> , <stmt> ) +
 	?While( <expr> , <stmt> ) +
@@ -118,7 +118,7 @@ stmt.subject = transf.parse.Transf('''
 	?Ret( <type> , <optExpr> ) +
 	?Label( <name> ) +
 	?Asm( <name> , <exprs> ) +
-	?Branch( <addr> ) +
+	?Jump( <addr> ) +
 	?Break +
 	?Continue +
 	?NoStmt

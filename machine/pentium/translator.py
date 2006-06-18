@@ -66,7 +66,7 @@ simplifyStmt = transf.parse.Rule('''
 		-> If(Unary(Not, cond), Assign(type, dst, src), NoStmt)
 		
 |	Assign(_, Sym("pc"), expr)
-		-> Branch(Addr(expr))
+		-> Jump(Addr(expr))
 
 |	Cond(cond,Lit(Int(_,_),1),Lit(Int(_,_),0))
 		-> cond
@@ -105,8 +105,8 @@ flagNames = ![
 	"cf", "of", "df", "if"
 ]
 
-declReg32 = !VarDef(Int(32,Unknown),<id>,NoExpr)
-declFlag = !VarDef(Bool,<id>,NoExpr)
+declReg32 = !Var(Int(32,Unknown),<id>,NoExpr)
+declFlag = !Var(Bool,<id>,NoExpr)
 
 stmtsPreambule =
 	concat(
