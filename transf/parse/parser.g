@@ -15,7 +15,7 @@ header {
             antlr.SemanticException.__init__(self)
             self.node = node
             self.msg = msg
-
+           
         def __str__(self):
             line = self.node.getLine()
             col  = self.node.getColumn()
@@ -37,168 +37,6 @@ options {
 }
 
 
-class lexer extends Lexer;
-
-options {
-	k = 2;
-	testLiterals = false;
-}
-
-tokens {
-	INT;
-	REAL;
-	VAR;
-	LID;
-	UID;
-	WILDCARD = "_";
-	IDENT = "id";
-	FAIL = "fail";
-	IF = "if";
-	THEN = "then";
-	ELSE = "else";
-	END = "end";
-	LET = "let";
-	IN = "in";
-	WHERE = "where";
-	REC = "rec";
-	SWITCH = "switch";
-	CASE = "case";
-	OTHERWISE = "otherwise";
-	VARMETHOD;
-}
-
-protected
-EOL
-	:
-		( '\r'
-			( ( '\n' ) => '\n' 
-			|
-			)
-		| '\n'
-		)
-		{ $newline }
-	;
-	
-// Whitespace -- ignored
-WS	
-	: ( ' ' | '\t' | '\f' | EOL )+ 
-		{ $setType(SKIP); }
-	;
-
-// TODO: handle comments terminated by EOF
-COMMENT
-    : 
-		"#" 
-		( ~('\n'|'\r') )*
-		( EOL )
-			{ $setType(SKIP); }
-	;
-
-REAL_OR_INT
-	:
-		{ $setType(INT); }
-		// sign
-		('-')?
-		// fraction
-		( ('0'..'9')+ ( '.' ('0'..'9')* { $setType(REAL); } )?
-		| '.' ('0'..'9')+ { $setType(REAL); }
-		)
-		// exponent
-		( ('e'|'E') ('-'|'+')? ('0'..'9')+ { $setType(REAL); } )?
-	;
-
-STR
-	: '"'! ( CHAR )* '"'!
-	;
-
-protected
-CHAR
-	:
-		'\\'!
-		( 'n' { $setText("\n"); }
-		| 'r' { $setText("\r"); }
-		| 't' { $setText("\t"); }
-		| '"' { $setText("\""); }
-		| ~('n'|'r'|'t'|'"')
-		)
-	| ~('"'|'\\')
-	;
-
-ID
-options { testLiterals = true; }
-	: 
-		( 'a'..'z' ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-			{ $setType(LID) }
-		| 'A'..'Z' ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-			{ $setType(UID) }
-		| '_'
-			{ $setType(WILDCARD) }
-			( ('a'..'z'|'A'..'Z'|'0'..'9'|'_')+ 
-				{ $setType(ID) } 
-			)?
-		)
-		( ( '.' ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* )+
-				{ $setType(ID) }
-		| '-' ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
-				{ $setType(VARMETHOD) }
-		|
-		)
-	;
-
-protected
-PYSTR
-options {generateAmbigWarnings = false;}
-    : "'''" (options {greedy = false;}: ESC | EOL | . )* "'''"
-    | "\"\"\"" (options {greedy = false;}: ESC | EOL | . )* "\"\"\""
-	| '\'' ( ESC | ~'\'' )* '\''
-	| '"' ( ESC | ~'"' )* '"'
-	;
-
-protected
-ESC
-    : '\\' ( EOL | . )
-    ;
-
-OBJ
-	: 
-		'`'! 
-		( COMMENT
-		| PYSTR
-		| EOL
-		| ~'`'
-		)*
-		'`'!
-	;
-
-LPAREN: '(';
-RPAREN: ')';
-LSQUARE: '[';
-RSQUARE: ']';
-LCURLY: '{';
-RCURLY: '}';
-LANGLE: '<';
-RANGLE: '>';
-RSLASH: '\\';
-LSLASH: '/';
-
-COMMA: ',';
-QUEST: '?';
-BANG: '!';
-COLON: ':';
-STAR: '*';
-PLUS: '+';
-MINUS: '-';
-INTO: "->";
-SEMI: ';';
-CARET: '^';
-VERT: '|';
-TILDE: '~';
-AT: '@';
-EQUAL: '=';
-
-APPLY_MATCH: "=>";
-
-
 class parser extends Parser;
 
 options {
@@ -208,10 +46,38 @@ options {
 }
 
 tokens {
-	APPL;
-	NIL;
-	CONS;
-	ANNOS;
+	INT; REAL; STR; NIL; CONS; APPL; VAR; WILDCARD; ANNOS;
+	
+	ID; UID; LID;
+	OBJ;
+	
+	IDENT; FAIL;
+	IF; THEN; ELSE;
+	END;
+	LET; IN;
+	WHERE;
+	REC;
+	SWITCH; CASE; OTHERWISE;
+	
+	LPAREN;	RPAREN;
+	LSQUARE; RSQUARE;
+	LCURLY; RCURLY;
+	LANGLE; RANGLE;
+	RSLASH; LSLASH;
+	
+	COMMA;
+	QUEST; BANG; TILDE; CARET;
+	COLON;
+	STAR;
+	PLUS;
+	MINUS;
+	INTO;
+	SEMI;
+	VERT;
+	AT;
+	EQUAL;
+	
+	APPLY_MATCH;
 	CALL;
 	RULE;
 	SCOPE;
@@ -219,6 +85,7 @@ tokens {
 	TRANSF;
 	BUILD_APPLY;
 	JOIN;
+	VARMETHOD;
 }
 
 transf_defs
@@ -245,8 +112,8 @@ transf_prefix
 	: QUEST^ term
 	| BANG^ term
 	| TILDE^ term
-	| EQUAL^ LID
-	| LSLASH^ LID
+	| EQUAL^ (PLUS | MINUS)? LID (LPAREN! arg_list RPAREN!)?
+	| CARET^ LID
 	;
 
 transf_method
@@ -376,6 +243,10 @@ term
 		: term_anno
 			{ ## = #(#[ANNOS,"ANNOS"], ##) }
 		)?
+//	| transf_prefix
+	//	{ ## = #(#[TRANSF,"TRANSF"], ##) }
+	| transf_method
+		{ ## = #(#[TRANSF,"TRANSF"], ##) }
 	;
 
 term_atom
@@ -388,10 +259,6 @@ term_atom
 	| term_appl
 	| term_var
 	| WILDCARD
-	| transf_prefix
-		{ ## = #(#[TRANSF,"TRANSF"], ##) }
-	| transf_method
-		{ ## = #(#[TRANSF,"TRANSF"], ##) }
 	| LANGLE! transf RANGLE!
 		{ ## = #(#[TRANSF,"TRANSF"], ##) }
 	;
@@ -527,7 +394,7 @@ transf returns [ret]
 		{ ret = t }
 	| #( EQUAL n=id )
 		{ ret = transf.variable.Set(n) }
-	| #( LSLASH n=id )
+	| #( CARET n=id )
 		{ ret = transf.variable.Unset(n) }
 	| #( SEMI l=transf r=transf )
 		{ ret = transf.combine.Composition(l, r) }
@@ -735,6 +602,6 @@ id returns [ret]
 		{ ret = #i.getText() }
 	| l:LID
 		{ ret = #l.getText() }
-	| u:LID
+	| u:UID
 		{ ret = #u.getText() }
 	;

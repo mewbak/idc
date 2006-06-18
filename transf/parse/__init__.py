@@ -21,8 +21,7 @@ __all__ = [
 
 def _parser(buf):
 	'''Generate a parser for a string buffer.'''
-	fp = StringIO.StringIO(buf)
-	lexer = Lexer(fp)
+	lexer = Lexer(buf)
 	parser = Parser(lexer)
 	return parser
 

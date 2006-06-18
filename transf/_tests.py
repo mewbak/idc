@@ -570,8 +570,9 @@ class TestParse(TestMixin, unittest.TestCase):
 		'switch !x case ?1: !A case ?2: !B otherwise: !C end',
 		'!1 / a \\ !2',
 		'!1 / a \\ \\ b / !2',
-		'a-get(!1)',
-		'~a-get(!1)',
+		'=a',
+		#'+=a',
+		#'-=a',
 	]
 	
 	def testAST(self):
