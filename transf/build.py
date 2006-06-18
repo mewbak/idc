@@ -5,8 +5,9 @@ import aterm.factory
 import aterm.types
 import aterm.terms
 
-from transf import base
 from transf import exception
+from transf import base
+from transf import variable
 from transf import operate
 from transf import _helper
 
@@ -109,15 +110,7 @@ def Appl(name, args):
 	return _Appl(name, args)
 
 
-class Var(base.Transformation):
-	
-	def __init__(self, name):
-		base.Transformation.__init__(self)
-		self.name = name
-	
-	def apply(self, term, ctx):
-		var = ctx.get(self.name)
-		return var.build()
+Var = variable.Build
 
 
 class Annos(base.Transformation):

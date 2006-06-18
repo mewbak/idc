@@ -5,6 +5,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
+from transf import variable
 from transf import operate
 from transf import combine
 from transf import match
@@ -157,15 +158,7 @@ class Appl(base.Transformation):
 			return term
 
 
-class Var(base.Transformation):
-	
-	def __init__(self, name):
-		base.Transformation.__init__(self)
-		self.name = name
-
-	def apply(self, term, ctx):
-		var = ctx.get(self.name)
-		return var.traverse(term)
+Var = variable.Traverse
 
 
 class Annos(base.Transformation):

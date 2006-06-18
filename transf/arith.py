@@ -100,11 +100,7 @@ Leq = LeqInt
 add = Add(project.first, project.second)
 
 
-class Count(variable.Transformation):
-
-	def __init__(self, name):
-		base.Transformation.__init__(self)
-		self.name = name
+class Count(variable.Operation):
 
 	def apply(self, term, ctx):
 		var = ctx[self.name]

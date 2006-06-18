@@ -39,7 +39,7 @@ makeLabelTable = unify.CollectAll(makeLabelRef)
 setLabelRef = rewrite.Pattern(
 	"Label(name)",
 #	getStmtId & table.Set('lbls', build.Var('name'))
-	getStmtId & variable.Wrap('lbls', 'set', build.Var('name'))
+	build.List((build.Var('name'), getStmtId)) & debug.Dump() & variable.Set('lbls')
 )
 
 setLabelTable = base.Proxy()
@@ -74,7 +74,7 @@ SetCtrlFlow = lambda flows: annotation.Set(ctrlFlowAnno, flows)
 #######################################################################
 # Flow Traversal
 
-setNext = traverse.Var('next')
+setNext = variable.Set('next')
 GetTerminalNodeId = lambda id: arith.NegInt(id)
 
 markStmtFlow = base.Proxy()

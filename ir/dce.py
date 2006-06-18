@@ -4,7 +4,7 @@
 from transf import *
 
 
-setLocalVar = table.Set('local', base.ident)
+setLocalVar = build.List((base.ident, base.ident)) & variable.Set('local')
 # FIXME: this is machine dependent -- we should search the locally declared vars
 setLocalVars = parse.Transf('''
 	where(<map(setLocalVar)> [
@@ -30,7 +30,9 @@ clearLocalVars = table.Clear('local')
 isVarLocal = isTempVar | table.Get('local')
 
 setUnneededVar = table.Del('needed')
+#setUnneededVar = build.List((base.ident,)) & variable.Set('needed')
 setNeededVar = table.Set('needed', base.ident)
+#setNeededVar = build.List((base.ident,base.ident)) & variable.Set('needed')
 
 setNeededVars = parse.Transf('''
 	alltd(?Sym(<setNeededVar>))

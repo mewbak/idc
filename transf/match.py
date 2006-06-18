@@ -7,6 +7,7 @@ import aterm.terms
 
 from transf import exception
 from transf import base
+from transf import variable
 from transf import operate
 from transf import _helper
 
@@ -191,15 +192,7 @@ class Appl(base.Transformation):
 			return term
 
 
-class Var(base.Transformation):
-	
-	def __init__(self, name):
-		base.Transformation.__init__(self)
-		self.name = name
-
-	def apply(self, term, ctx):
-		var = ctx.get(self.name)
-		return var.match(term)
+Var = variable.Match
 
 
 class Annos(base.Transformation):
