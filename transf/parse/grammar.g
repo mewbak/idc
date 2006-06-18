@@ -64,6 +64,7 @@ tokens {
 	SWITCH = "switch";
 	CASE = "case";
 	OTHERWISE = "otherwise";
+	VARMETHOD;
 }
 
 protected
@@ -136,12 +137,15 @@ options { testLiterals = true; }
 				{ $setType(ID) } 
 			)?
 		)
-		(
-			( '.' ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* )+
+		( ( '.' ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* )+
 				{ $setType(ID) }
-		)?
+		| '-' ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')* 
+				{ $setType(VARMETHOD) }
+		|
+		)
 	;
 
+protected
 PYSTR
 options {generateAmbigWarnings = false;}
     : "'''" (options {greedy = false;}: ESC | EOL | . )* "'''"
@@ -183,6 +187,7 @@ BANG: '!';
 COLON: ':';
 STAR: '*';
 PLUS: '+';
+MINUS: '-';
 INTO: "->";
 SEMI: ';';
 CARET: '^';
@@ -216,9 +221,6 @@ tokens {
 	JOIN;
 }
 
-transf_spec : transf_defs EOF!	;
-//rules_spec : rule_defs EOF!	;
-
 transf_defs
 	: ( transf_def )* EOF!
 	;
@@ -235,14 +237,31 @@ rule_def
 	: id EQUAL^ rule_set
 	;
 
+transf
+	: transf_expr
+	;
+
+transf_term
+	: QUEST^ term
+	| BANG^ term
+	| TILDE^ term
+	;
+
+transf_method
+	: v:VARMETHOD! ( LPAREN! arg_list RPAREN!)?
+		{
+            n, m = #v.getText().split('-')
+            ## = #(#[VARMETHOD,"VARMETHOD"], #[ID,n], #[ID,m], ##) 
+		}
+	;
+
 transf_atom
 	: IDENT
 	| FAIL
-	| QUEST^ term
-	| BANG^ term
-	| TILDE^ term
+	| transf_term
+	| transf_method
 	| id ( LPAREN! arg_list RPAREN! )?
-			{ ## = #(#[CALL,"CALL"], ##) }
+		{ ## = #(#[CALL,"CALL"], ##) }
 	| LCURLY!
 		( ( id_list COLON ) => id_list COLON transf
 			{ ## = #(#[SCOPE,"SCOPE"], ##) } 
@@ -269,17 +288,13 @@ transf_application
 
 transf_merge
 	: transf_application 
-		( RSLASH rule_names LSLASH! ( LSLASH rule_names RSLASH! )? transf_application 
+		( RSLASH id_list LSLASH! ( LSLASH id_list RSLASH! )? transf_application 
 			{ ## = #(#[JOIN,"JOIN"], ##) } 
-		| LSLASH rule_names RSLASH! ( RSLASH rule_names LSLASH! )? transf_application
+		| LSLASH id_list RSLASH! ( RSLASH id_list LSLASH! )? transf_application
 			{ ## = #(#[JOIN,"JOIN"], ##) } 
 		)?
 	;
 
-rule_names
-	: id // TODO: have it id_list
-	;
-	
 transf_composition
 	: transf_merge ( SEMI^ transf_merge )*
 	;
@@ -293,10 +308,6 @@ transf_choice
 
 transf_expr
 	: transf_choice
-	;
-
-transf
-	: transf_expr
 	;
 
 transf_list
@@ -357,45 +368,68 @@ debug_term
 	;
 */
 
+term
+	: term_atom 
+		( options { warnWhenFollowAmbig=false; }
+		: term_anno
+			{ ## = #(#[ANNOS,"ANNOS"], ##) }
+		)?
+	;
+
 term_atom
 	: INT
 	| REAL
 	| STR
 	| LSQUARE! term_list RSQUARE!
-	| term_args
-		{ ## = #(#[APPL,"APPL"], #[CONS,""], ##) }
-	| u:UID 
-       	{ #u.setType(STR) } 
-       	term_opt_args 
-		{ ## = #(#[APPL,"APPL"], ##) }
-	| l:LID
-       	{ #l.setType(VAR) } 
-       	( term_args 
-			{ ## = #(#[APPL,"APPL"], ##) }
-       	//| AT! term
-       	)?
-	| WILDCARD ( term_args { ## = #(#[APPL,"APPL"], ##) } )?
-	;
-
-term
-	: term_atom 
-		( LCURLY! term_list RCURLY!
-			{ ## = #(#[ANNOS,"ANNOS"], ##) }
-		)?
-	| QUEST^ term
-	| BANG^ term
-	| TILDE^ term
+	| term_sym
+	| term_tuple
+	| term_appl
+	| term_var
+	| WILDCARD
+	| transf_term
+		{ ## = #(#[TRANSF,"TRANSF"], ##) }
+	| transf_method
+		{ ## = #(#[TRANSF,"TRANSF"], ##) }
 	| LANGLE! transf RANGLE!
 		{ ## = #(#[TRANSF,"TRANSF"], ##) }
+	;
+
+term_name
+	: u:UID
+		{ ## = #(#[STR,#u.getText()]) }
+	;
+
+term_var
+	: l:LID
+		{ ## = #(#[VAR,#l.getText()]) }
+	;
+
+term_sym
+	: term_name term_implicit_nil
+		{ ## = #(#[APPL,"APPL"], ##) }
+	;
+	
+term_tuple
+	: term_args
+		{ ## = #(#[APPL,"APPL"], #[STR,""], ##) }
+	;
+	
+term_appl
+	: ( term_name | term_var | WILDCARD ) term_args
+		{ ## = #(#[APPL,"APPL"], ##) }
+	;
+	
+term_args
+	: LPAREN! term_list RPAREN!
+	;
+
+term_anno
+	: LCURLY! term_list RCURLY!
 	;
 
 term_implicit_wildcard
 	:
 		{ ## = #(#[WILDCARD,"_"]) }
-	;
-
-term_args
-	: LPAREN! term_list RPAREN!
 	;
 
 term_opt_args
@@ -578,8 +612,14 @@ transf returns [ret]
 			{ self.stack.pop() }
 			{ ret.subject = t }
 	  )
+	| #( VARMETHOD v=id m=id a=arg_list )
+		{ ret = transf.variable.Wrap(v, m, *a) }
 	;
 
+arg_list returns [ret]
+	: { ret = [] } ( a=arg  { ret.append(a) } )*
+	;
+	
 arg returns [ret]
 	: o:OBJ
 		{ ret = eval(#o.getText(), self.globals, self.locals) }
@@ -672,12 +712,8 @@ traverse_term returns [ret]
 		{ ret = transf.traverse.Appl(n, a) }
 	| w:WILDCARD 
 		{ ret = transf.base.ident }
-	| #( v:VAR // TODO: handle sub-patterns
-		{ ret = transf.match.Var(#v.getText()) }
-		( p=match_term
-			{ ret = transf.combine.composition(p, ret) }
-		)?
-	  )
+	| v:VAR
+		{ ret = transf.traverse.Var(#v.getText()) }
 	| #( ANNOS t=traverse_term a=traverse_term )
 		{ ret = t & transf.traverse.Annos(a) }
 	| #( TRANSF txn=transf )
@@ -691,4 +727,8 @@ id_list returns [ret]
 id returns [ret]
 	: i:ID
 		{ ret = #i.getText() }
+	| l:LID
+		{ ret = #l.getText() }
+	| u:LID
+		{ ret = #u.getText() }
 	;

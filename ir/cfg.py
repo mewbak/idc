@@ -38,7 +38,8 @@ makeLabelTable = unify.CollectAll(makeLabelRef)
 
 setLabelRef = rewrite.Pattern(
 	"Label(name)",
-	getStmtId & table.Set('lbls', build.Var('name'))
+#	getStmtId & table.Set('lbls', build.Var('name'))
+	getStmtId & variable.Wrap('lbls', 'set', build.Var('name'))
 )
 
 setLabelTable = base.Proxy()

@@ -187,7 +187,7 @@ def Anno(anno):
 	return Annos(One(anno))
 
 
-_ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, match.Var, match.Pattern)
+_ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, Var, match.Pattern)
 
 
 def Map(operand, Cons = Cons):

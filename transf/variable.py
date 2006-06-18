@@ -91,7 +91,7 @@ class Wrap(Transformation):
 	wrap variable operations as transformations.
 	'''
 	
-	def __init__(self, name, operation, *operands):
+	def __init__(self, name, method, *operands):
 		'''Creates a new variable wrapper.
 		
 		@param name: variable name
@@ -110,7 +110,8 @@ class Wrap(Transformation):
 		except AttributeError:
 			raise exception.Fatal('unsupported operation', var, self.method)
 		args = [operand.apply(term, ctx) for operand in self.operands] + [term]
-		term = method(args)
-		if result is None:
+		print method, args
+		res = method(*args)
+		if res is None:
 			return term
-		return result
+		return res
