@@ -55,46 +55,10 @@ class Variable(object):
 		raise exception.Fatal('unsupported operation')
 		
 
-# TODO: define a factory?
-	
-
-class Term(Variable):
-	'''Term variable.'''
-	
-	__slots__ = ['term']
-	
-	def __init__(self, term = None):
-		Variable.__init__(self)
-		self.term = term
-
-	def set(self, term):
-		self.term = term
-	
-	def unset(self):
-		self.term = None
-		
-	def match(self, term):
-		'''Match the term against this variable value, setting it,
-		if it is undefined.'''
-		if self.term is None:
-			self.term = term
-		elif self.term != term:
-			raise exception.Failure('variable mismatch', term, self.term)
-	
-	def build(self):
-		'''Returns this variable term, if defined.'''
-		if self.term is None:
-			raise exception.Failure('undefined variable')
-		else:
-			return self.term
-
-	def traverse(self, term):
-		'''Same as match.'''
-		self.match(term)
-		return term
-		
-	def __repr__(self):
-		return '<%s.%s %r>' % (__name__, self.__class__.__name__, self.term)
+class Constructor(object):
+	'''Used by L{scope.With} to instantiate variables.'''
+	def __init__(self):
+		pass
 
 
 class Operation(base.Transformation):
@@ -115,12 +79,14 @@ class Set(Operation):
 		var.set(term)
 		return term
 
+
 class Unset(Operation):	
 	'''Calls L{Variable.unset}.'''
 	def apply(self, term, ctx):
 		var = ctx.get(self.name)
 		var.unset()
 		return term
+
 
 class Match(Operation):	
 	'''Calls L{Variable.match}.'''
@@ -129,11 +95,13 @@ class Match(Operation):
 		var.match(term)
 		return term
 
+
 class Build(Operation):	
 	'''Calls L{Variable.build}.'''
 	def apply(self, term, ctx):
 		var = ctx.get(self.name)
 		return var.build()
+
 
 class Traverse(Operation):	
 	'''Calls L{Variable.traverse}.'''
@@ -173,3 +141,4 @@ class Wrap(Operation):
 		if res is None:
 			return term
 		return res
+

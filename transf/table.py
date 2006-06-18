@@ -1,4 +1,4 @@
-'''Hash table transformations.'''
+'''Hash table variable.'''
 
 
 import aterm.factory
@@ -79,14 +79,35 @@ class Table(variable.Variable):
 		return '<%s.%s %r>' % (__name__, self.__class__.__name__, self.terms)
 
 
+class New(variable.Constructor):
+	'''Creates an empty table variable.'''
+	def create(self, term, ctx):
+		return Table()
+
+new = New()
+
+
+class Copy(variable.Constructor):
+	'''Creates a table variable copied from other table variable.'''
+	def __init__(self, name):
+		variable.Constructor.__init__(self)
+		self.name = name
+	def create(self, term, ctx):
+		var = ctx.get(self.name)
+		return var.copy()
+
+
 def Get(name):
 	return variable.Traverse(name)
+
 
 def Set(name, key):
 	return combine.Where(build.List((key, base.ident)) & variable.Set(name))
 
+
 def Del(name):
 	return combine.Where(build.List((base.ident,)) & variable.Set(name))
+
 
 def Clear(name):
 	return variable.Unset(name)
@@ -141,3 +162,5 @@ class Join(operate.Binary):
 			tbl.sub(rtbl)
 		
 		return term
+
+

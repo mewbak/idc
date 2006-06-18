@@ -124,6 +124,7 @@ transf_atom
 		( OTHERWISE COLON! transf )? 
 	  END!
 	| REC^ id COLON! transf_atom
+	| WITH^ var_def_list IN transf END!
 	;
 
 transf_application
@@ -166,6 +167,27 @@ defn_list
 	: defn ( COMMA! defn )*
 	;
 
+var_def_list
+	: var_def (COMMA! var_def )*
+	;
+
+var_def
+	: var constructor
+	;
+
+constructor
+	: ( EQUAL! transf )?
+		{ ## = #(#[TERM,"TERM"], ##) }
+	| LSQUARE! RSQUARE! ( EQUAL! var )?
+		{ ## = #(#[TABLE,"TABLE"], ##) }
+	| LPAREN! RPAREN! ( EQUAL! transf )?
+		{ ## = #(#[DYNAMIC,"DYNAMIC"], ##) }
+	;
+
+var
+	: LID
+	;
+
 id
 	: ID
 	| l:LID { #l.setType(ID) }
@@ -179,6 +201,7 @@ arg_list
 
 arg
 	: OBJ
+	| PRIME^ term_var
 	| transf
 	;
 	
@@ -467,6 +490,8 @@ transf returns [ret]
 	  )
 	| #( VARMETHOD v=id m=id a=arg_list )
 		{ ret = transf.variable.Wrap(v, m, *a) }
+	| #( WITH v=var_def_list IN t=transf )
+		{ ret = transf.scope.With(v, t) }
 	;
 
 arg_list returns [ret]
@@ -476,7 +501,35 @@ arg_list returns [ret]
 arg returns [ret]
 	: o:OBJ
 		{ ret = eval(#o.getText(), self.globals, self.locals) }
+	| PRIME v:VAR
+		{ ret = #v.getText() }
 	| ret=transf
+	;
+
+var_def_list returns [ret]
+	: { ret = [] } ( v=var_def { ret.append(v) } )*
+	;
+	
+var_def returns [ret]
+	: v=var c=constructor
+		{ ret = (v, c) }
+	;
+
+constructor returns [ret]
+	: #( TERM 
+		( t=transf 
+			{ ret = transf.term.Transf(t) }
+		|
+			{ ret = transf.term.new }
+		)
+	  )
+	| #( TABLE
+		( v=var
+			{ ret = transf.table.Copy(v) }
+		|
+			{ ret = transf.table.new }
+		)
+	 )
 	;
 	
 match_term returns [ret]
@@ -591,4 +644,9 @@ id returns [ret]
 		{ ret = #l.getText() }
 	| u:UID
 		{ ret = #u.getText() }
+	;
+	
+var returns [ret]
+	: l:LID
+		{ ret = #l.getText() }
 	;

@@ -40,11 +40,10 @@ makeLabelRef = parse.Rule('''
 
 makeLabelTable = unify.CollectAll(makeLabelRef)
 
-setLabelRef = rewrite.Pattern(
-	"Label(name)",
-#	getStmtId & table.Set('lbls', build.Var('name'))
-	build.List((build.Var('name'), getStmtId)) & variable.Set('lbls')
-)
+setLabelRef = parse.Transf('''
+	{Label(name) -> [name, <getStmtId>] } ; =lbls
+''')
+
 
 setLabelTable = base.Proxy()
 setLabelTables = traverse.Map(setLabelTable)
@@ -308,7 +307,7 @@ makeNode = build._.Node(
 	makeNodeEdges
 )
 
-hasTerminalNode = match.Pattern('Func')
+hasTerminalNode = match.Appl('Func', base.ident)
 
 makeTerminalNode = hasTerminalNode & build._.Node(
 	GetTerminalNodeId(getStmtId), 
@@ -334,45 +333,33 @@ makeGraph = build._.Graph(makeNodes)
 #######################################################################
 # Graph Simplification
 
-matchPointShapeAttr = parse.Transf('''
+parse.Transfs('''
+
+matchPointShapeAttr = 
 	?Attr("shape", "point")
-''')
 
-matchPointShapeNode = parse.Rule('''
+findPointNode = {
 	Node(src, <one(matchPointShapeAttr)>, [Edge(dst, _)]) -> [src, dst]
+} ; =point
+
+findPointNodes
+	= map(try(findPointNode))
+
+replaceEdge = 
+	~Edge(<~point>, _)
+
+removePointNode = 
+	~Node(<not(?point)>, _, <map(try(replaceEdge))>)
+
+removePointNodes = 
+	filter(removePointNode)
+
+simplifyPoints =
+	with point[] in
+		~Graph(<findPointNodes; removePointNodes>)
+	end
+
 ''')
-
-replaceEdge = parse.Transf('''
-	~Edge(<?src;!dst>, _)
-''')
-
-removeInNode = parse.Transf('''
-	~Node(<not(?src)>, _, <map(try(replaceEdge))>)
-''')
-
-removeInGraph = parse.Transf('''
-	~Graph(<filter(removeInNode)>)
-''')
-
-collectPoints = unify.CollectAll(matchPointShapeNode)
-
-def simplifyPoints(term, ctx):
-	# TODO: optimize this with tables
-	noStmts = collectPoints.apply(term, ctx)
-	print noStmts
-	for src, dst in noStmts:
-		new_ctx = transf.context.Context(
-			(
-				('src', variable.Term(src)),
-				('dst', variable.Term(dst)),
-			), 
-			ctx
-		)
-		print src, "INTO", dst
-		term = removeInGraph.apply(term, new_ctx)
-	return term
-
-simplifyPoints = base.Adaptor(simplifyPoints)
 
 simplifyGraph = simplifyPoints
 
@@ -385,7 +372,7 @@ render = markFlow & makeGraph & simplifyGraph
 # Example
 
 
-if __name__ == '__main__':
+def main():
 	import aterm.factory
 	import sys
 	factory = aterm.factory.Factory()
@@ -427,3 +414,6 @@ if __name__ == '__main__':
 		win.connect('destroy', gtk.main_quit)
 		gtk.main()
 
+
+if __name__ == '__main__':
+	main()

@@ -571,8 +571,8 @@ class TestParse(TestMixin, unittest.TestCase):
 		'!1 / a \\ !2',
 		'!1 / a \\ \\ b / !2',
 		'=a',
-		#'+=a',
-		#'-=a',
+		#'/a',
+		'with a, b=!1, c[], d[] = e in id end',
 	]
 	
 	def testAST(self):

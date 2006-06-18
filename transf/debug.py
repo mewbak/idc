@@ -103,7 +103,7 @@ class Trace(operate.Unary, DebugMixin):
 				finally:
 					end = time.clock()
 			except Exception, ex:
-				result = repr(ex)
+				result = str(ex)
 				raise
 			else:
 				result = repr(term)

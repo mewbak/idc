@@ -2,7 +2,7 @@
 
 
 from transf import context
-from transf import variable
+from transf import term
 from transf import operate
 
 
@@ -22,7 +22,7 @@ def Local(operand, names = None):
 	'''Introduces a new variable scope before the transformation.'''
 	if not names:
 		return operand
-	vars = [(name, variable.Term) for name in names]
+	vars = [(name, term.Term) for name in names]
 	return _Local(vars, operand)
 
 
@@ -38,10 +38,10 @@ class _Let(operate.Unary):
 		operate.Unary.__init__(self, operand)
 		self.defs = defs
 		
-	def apply(self, term, ctx):
-		vars = [(name, variable.Term(transf.apply(term, ctx))) for name, transf in self.defs]
+	def apply(self, trm, ctx):
+		vars = [(name, term.Term(transf.apply(trm, ctx))) for name, transf in self.defs]
 		ctx = context.Context(vars, ctx)
-		return self.operand.apply(term, ctx)
+		return self.operand.apply(trm, ctx)
 
 def Let(operand, **defs):
 	if not defs:
@@ -52,6 +52,25 @@ def Let2(defs, operand):
 	if not defs:
 		return operand
 	return _Let(defs, operand)
+
+
+class _With(operate.Unary):
+	
+	def __init__(self, vars, operand):
+		operate.Unary.__init__(self, operand)
+		self.vars = vars
+		print repr(self.vars)
+		
+	def apply(self, term, ctx):
+		vars = [(name, constructor.create(term, ctx)) for name, constructor in self.vars]
+		ctx = context.Context(vars, ctx)
+		return self.operand.apply(term, ctx)
+
+
+def With(vars, operand):
+	if not vars:
+		return operand
+	return _With(vars, operand)
 
 
 class Dynamic(operate.Unary):

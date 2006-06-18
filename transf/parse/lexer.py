@@ -7,14 +7,16 @@ import antlrre
 from transf.parse import parser
 
 
-#PYSTR
-#	: "'''" ESC | EOL | .  "'''"
-#	| '"""' ESC | EOL | .  '"""'
-#	| "'" ( ESC | ~'\'' )* "'"
-#	| '"' ( ESC | ~'"' )* '"'
-#	;
+pystr = \
+	r"'''(?:\\.|.)*?'''|" \
+	r'"""(?:\\.|.)*?"""|' \
+	r'"(?:\\.|.)*?"|' \
+	r"'(?:\\.|.)*?'"
 
-#pycode = '`'! ( COMMENT | PYSTR | ~'`' )* '`'!
+pycomm = \
+	r'#[^\r\n]*'
+
+pyobj = '`(?:' + pycomm + '|' + pystr + '|[^`]*)`'
 
 
 _tokenizer = antlrre.Tokenizer(
@@ -47,7 +49,9 @@ _tokenizer = antlrre.Tokenizer(
 		(parser.LID, r'[a-z][a-zA-Z0-9_]*', True), 
 
 		(parser.APPLY_MATCH, r'=>', False),
-		(parser.INTO, r'->', False)
+		(parser.INTO, r'->', False),
+
+		(parser.OBJ, pyobj, False),
 	],
 
 	# symbols table
@@ -92,6 +96,7 @@ _tokenizer = antlrre.Tokenizer(
 		"let": parser.LET,
 		"in": parser.IN,
 		"where": parser.WHERE,
+		"with": parser.WITH,
 		"rec": parser.REC,
 		"switch": parser.SWITCH,
 		"case": parser.CASE,
