@@ -29,14 +29,14 @@ def _getStrHandler(walker, term, prefix):
 def _getLitHandler(walker, term, prefix):
 	return getattr(walker, prefix + 'Lit'), (term.value,)
 
+def _getNilHandler(walker, term, prefix):
+	return getattr(walker, prefix + 'Nil'), ()
+
+def _getConsHandler(walker, term, prefix):
+	return getattr(walker, prefix + 'Cons'), (term.head, term.tail)
+
 def _getListHandler(walker, term, prefix):
-	try:
-		if term:
-			return getattr(walker, prefix + 'Cons'), (term.head, term.tail)
-		else:
-			return getattr(walker, prefix + 'Nil'), ()
-	except AttributeError:
-		return _getHandler(walker, prefix + 'List'), (term,)
+	return _getHandler(walker, prefix + 'List'), (term,)
 
 def _getApplHandler(walker, term, prefix):
 	try:
@@ -51,7 +51,8 @@ _getHandlersTable = {
 	aterm.types.INT: (_getIntHandler, _getLitHandler, _getTermHandler),
 	aterm.types.REAL: (_getRealHandler, _getLitHandler, _getTermHandler),
 	aterm.types.STR: (_getStrHandler, _getLitHandler, _getTermHandler),
-	aterm.types.LIST: (_getListHandler, _getTermHandler),
+	aterm.types.NIL: (_getNilHandler, _getListHandler, _getTermHandler),
+	aterm.types.CONS: (_getConsHandler, _getListHandler, _getTermHandler),
 	aterm.types.APPL: (_getApplHandler, _getTermHandler),
 }
 

@@ -22,7 +22,7 @@ class Type(base.Transformation):
 		self.type = type
 
 	def apply(self, term, ctx):
-		if term.type != self.type:
+		if not term.type & self.type:
 			raise exception.Failure
 		return term
 
@@ -135,7 +135,7 @@ class Nil(base.Transformation):
 	'''Transformation which matches an empty list term.'''
 
 	def apply(self, term, ctx):
-		if term.type != aterm.types.LIST or not term.isEmpty():
+		if term.type != aterm.types.NIL:
 			raise exception.Failure
 		return term
 

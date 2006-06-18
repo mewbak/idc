@@ -19,13 +19,11 @@ class Comparator(visitor.Visitor):
 
 	def visitNil(self, term, other):
 		return \
-			types.LIST == other.type and \
-			other.isEmpty()
+			types.NIL == other.type
 
 	def visitCons(self, term, other):
 		return \
-			types.LIST == other.type and \
-			not other.isEmpty() and \
+			types.CONS == other.type and \
 			self.visit(term.head, other.head) and \
 			self.visit(term.tail, other.tail)
 
@@ -389,7 +387,7 @@ class TextWriter(Writer):
 		head = term.head
 		self.visit(head)
 		tail = term.tail
-		last = tail.type == types.LIST and tail.isEmpty()
+		last = tail.type == types.NIL
 		if not last:
 			self.fp.write(",")
 			self.visit(tail, inside_list = True)		

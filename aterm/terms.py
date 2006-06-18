@@ -258,8 +258,6 @@ class List(Term):
 
 	__slots__ = []
 	
-	type = types.LIST
-	
 	def isEmpty(self):	
 		raise NotImplementedError
 	
@@ -301,6 +299,8 @@ class Nil(List):
 	'''Empty list term.'''
 	
 	__slots__ = []
+
+	type = types.NIL
 	
 	def __init__(self, factory, annotations = None):
 		List.__init__(self, factory, annotations)
@@ -341,6 +341,8 @@ class Cons(List):
 	'''Concatenated list term.'''
 	
 	__slots__ = ['head', 'tail']
+	
+	type = types.CONS
 	
 	def __init__(self, factory, head, tail = None, annotations = None):
 		List.__init__(self, factory, annotations)

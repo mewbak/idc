@@ -82,7 +82,7 @@ class SubTerms(base.Transformation):
 	def apply(self, term, ctx):
 		if term.type == aterm.types.APPL:
 			return term.args
-		if term.type == aterm.types.LIST:
+		if term.type & aterm.types.LIST:
 			return term
 		return build._nil
 

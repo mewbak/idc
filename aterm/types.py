@@ -1,11 +1,21 @@
 '''Term types constants.'''
 
 
-INT = 1
-REAL = 2
-STR = 3
-LIST = 4
-APPL = 5
-WILDCARD = 6
-VAR = 7
+INT = 0x01
+REAL = 0x02
+STR = 0x04
+
+LIT = INT | REAL | STR
+
+NIL = 0x08
+CONS = 0x10
+
+LIST = NIL | CONS
+
+APPL = 0x20
+
+WILDCARD = 0x40
+VAR = 0x80
+
+PLACEHOLDER = WILDCARD | VAR
 

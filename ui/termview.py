@@ -35,7 +35,7 @@ class TermTreeIter:
 	def _children(self):
 		term = self.head
 		type = term.getType()
-		if type == aterm.types.LIST:
+		if type & aterm.types.LIST:
 			return term
 		elif type == aterm.types.APPL:
 			return term.getArgs()

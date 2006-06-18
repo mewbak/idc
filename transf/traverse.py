@@ -218,7 +218,7 @@ class _Subterms(base.Transformation):
 	def apply(self, term, ctx):
 		if term.type == aterm.types.APPL:
 			return self.appl.apply(term, ctx)
-		elif term.type == aterm.types.LIST:
+		elif term.type & aterm.types.LIST:
 			return self.list.apply(term, ctx)
 		else:
 			return self.lit.apply(term, ctx)
