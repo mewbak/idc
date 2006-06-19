@@ -139,7 +139,9 @@ class TermTreeModel(gtk.GenericTreeModel):
 				return str(term.getValue())
 			elif type == aterm.types.STR:
 				return repr(term.getValue())
-			elif type == aterm.types.LIST:
+			elif type == aterm.types.NIL:
+				return '[]'
+			elif type == aterm.types.CONS:
 				return '[...]'
 			elif type == aterm.types.APPL:
 				return term.getName().getValue()
@@ -156,14 +158,16 @@ class TermTreeModel(gtk.GenericTreeModel):
 				return 'REAL'
 			elif type == aterm.types.STR:
 				return 'STR'
-			elif type == aterm.types.LIST:
+			elif type & aterm.types.LIST:
 				return 'LIST'
 			elif type == aterm.types.APPL:
 				return 'APPL'
 			elif type == aterm.types.WILDCARD:
 				return 'WILDCARD'
-			else:
+			elif type == aterm.types.VAR:
 				return 'VAR'
+			else:
+				return '?'
 		elif column == 2:
 			return ', '.join([str(anno) for anno in term.getAnnotations()])
 		else:

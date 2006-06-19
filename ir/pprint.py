@@ -19,11 +19,6 @@ from box import Path
 
 
 #######################################################################
-# Path annotation
-
-
-
-#######################################################################
 # Int Literals
 
 def _entropy(seq, states):
@@ -235,7 +230,7 @@ stmts = parse.Transf('''
 	!V( <Map(stmt)> ) 
 ''')
 
-stmtKern = Path(parse.Rule('''
+stmtKern = parse.Rule('''
 	Assign(Void, NoExpr, src)
 		-> H([ <<expr>src> ])
 |	Assign(_, dst, src)
@@ -262,7 +257,7 @@ stmtKern = Path(parse.Rule('''
 		-> ""
 |	Asm(opcode, operands) 
 		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<Map(expr)>operands>]>, ")" ])
-'''))
+''')
 
 stmt.subject = Path(parse.Rule('''
 	Assign
