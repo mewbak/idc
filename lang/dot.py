@@ -8,7 +8,7 @@ import transf
 import box
 
 
-ppId = transf.strings.ToStr
+ppId = transf.strings.tostr
 
 ppAttr = transf.parse.Rule('''
 		Attr(name, value) 

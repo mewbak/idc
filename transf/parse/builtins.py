@@ -13,6 +13,6 @@ from transf.unify import *
 
 from transf.lists import *
 
-from transf.strings import ToStr
+from transf.strings import tostr
 
 from transf.arith import *

@@ -235,7 +235,7 @@ markFlow = markStmtsIds & markModuleFlow
 #######################################################################
 # Graph Generation
 
-makeNodeId = strings.ToStr()
+makeNodeId = strings.tostr
 
 makeAttr = lambda name, value: build._.Attr(name, value)
 

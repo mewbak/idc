@@ -19,6 +19,8 @@ class ToStr(base.Transformation):
 		except AttributeError:
 			raise exception.Failure('not a literal term', term)
 
+tostr = ToStr()
+
 
 class _Concat2(operate.Binary):
 	

@@ -46,20 +46,17 @@ options {
 }
 
 tokens {
-	INT; REAL; STR; NIL; CONS; APPL; VAR; WILDCARD; ANNOS;
+	NIL; CONS; APPL; VAR; UNDEF; ANNOS;
 	
-	ID; UID; LID;
-	OBJ;
+	TRANSF;
+	FACTORY;
 	
-	CALL;
 	RULE;
 	SCOPE;
 	ANON;
-	TRANSF;
 	BUILD_APPLY;
 	JOIN;
 	VARMETHOD;
-	UNDEF;
 }
 
 transf_defs
@@ -71,7 +68,7 @@ rule_defs
 	;
 
 transf_def
-	: i:id EQUAL^ transf
+	: id EQUAL^ transf
 	;
 
 rule_def
@@ -103,8 +100,12 @@ transf_atom
 	| FAIL
 	| transf_prefix
 	| transf_method
-	| id ( LPAREN! arg_list RPAREN! )?
-		{ ## = #(#[CALL,"CALL"], ##) }
+	| id 
+		( LPAREN! arg_list RPAREN!
+			{ ## = #(#[FACTORY,"FACTORY"], ##) }
+		|
+			{ ## = #(#[INSTANCE,"INSTANCE"], ##) }
+		)
 	| LCURLY!
 		( ( id_list COLON ) => id_list COLON transf
 			{ ## = #(#[SCOPE,"SCOPE"], ##) } 
@@ -340,7 +341,7 @@ options {
 {
     // XXX: too much python voodoo
     
-    def bind_transf_name(self, name):
+    def bind_name(self, name):
         // lookup in the symbol stack
         for i in range(len(self.stack) - 1, -1, -1):
             try:
@@ -371,7 +372,7 @@ options {
         
         return None
     
-    def define_transf_name(self, name, value):
+    def define_name(self, name, value):
         // define transf in the local namespace
         eval(compile(name + " = _", "", "single"), {"_": value}, self.locals)
 }
@@ -382,7 +383,7 @@ transf_defs
 	
 transf_def
 	: #( EQUAL n=id t=transf )
-		{ self.define_transf_name(n, t) }
+		{ self.define_name(n, t) }
 	;
 
 transf returns [ret]
@@ -406,22 +407,29 @@ transf returns [ret]
 		{ ret = transf.combine.Choice(l, r) }
 	| #( LANGLE l=transf m=transf r=transf )
 		{ ret = transf.combine.GuardedChoice(l, m, r) }
-	| #( CALL n=i:id
-		{ args = [] } 
-		( a=arg { args.append(a) } )*
-		// TODO: handle term args
+	| #( INSTANCE n=i:id )
 		{
-            txn = self.bind_transf_name(n)
+            ret = None
+            txn = self.bind_name(n)
             if txn is None:
-                ret = None
                 raise SemanticException(#i, "could not find %s" % n)
-            if isinstance(txn, transf.base.Transformation):
-                // TODO: check args
-                ret = txn
-            else:
-                ret = txn(*args) 
+            if not isinstance(txn, transf.base.Transformation):
+                raise SemanticException(#i, "%s is not a transformation" % n)
+            ret = txn
         }
-	  )
+	| #( FACTORY n=f:id a=arg_list )
+		{
+            ret = None
+            Txn = self.bind_name(n)
+            if Txn is None:
+                raise SemanticException(#f, "could not find %s" % n)
+            if not callable(Txn):
+                raise SemanticException(#f, "%s is not callable" % n)
+            txn = Txn(*a)
+            if not isinstance(txn, transf.base.Transformation):
+                raise SemanticException(#f, "%s did not return a transformation" % n)
+            ret = txn
+        }
 	| #( SCOPE vars=id_list COLON ret=transf )
 		{
             if vars:

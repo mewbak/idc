@@ -75,7 +75,7 @@ size = {
 |	16 -> H([ <<kw> "short">, " ", <<kw> "int"> ])
 |	32 -> <<kw> "int">
 |	64 -> H([ <<kw> "long">, " ", <<kw> "int"> ])
-|	n -> H([ "int", <<strings.ToStr> n> ])
+|	n -> H([ "int", <<strings.tostr> n> ])
 }
 
 type = rec type : {
@@ -96,7 +96,7 @@ type = rec type : {
 |	Array(type)
 		-> H([ <<type> type>, "[", "]" ])
 |	Blob(size)
-		-> H([ "blob", <<strings.ToStr> size> ])
+		-> H([ "blob", <<strings.tostr> size> ])
 |	_ -> "???"
 }
 ''')
