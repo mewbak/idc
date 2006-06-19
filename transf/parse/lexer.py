@@ -121,4 +121,7 @@ class Lexer(antlrre.TokenStream):
 			text = text.replace('\\n', '\n')
 			text = text.replace('\\t', '\t')
 			text = text.replace('\\', '')
+		elif type == parser.OBJ:
+			self.countLines(pos, endpos)
+			text = text[1:-1]
 		return type, text

@@ -55,6 +55,9 @@ JoinNeededVars = lambda l,r: table.Join(l, r, ['needed'], [])
 
 parse.Transfs('''
 
+isVarNeeded = ?needed + not(isVarLocal)
+isVarNeeded = debug.Trace(isVarNeeded, `'isVarNeeded'`)
+
 dceStmt = proxy
 dceStmts = proxy
 
@@ -139,12 +142,10 @@ dceStmts.subject =
 
 dceModule = 
 	~Module(<dceStmts>)
+
+dce =
+	with needed[], local[] in
+		dceModule
+	end
 ''')
 
-dce = scope.Local2(
-	(
-		('needed', table.Table),
-		('local', table.Table),
-	),
-	dceModule
-)
