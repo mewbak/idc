@@ -12,7 +12,7 @@ from transf import combine
 from transf import build
 
 
-_factory = aterm.factory.Factory()
+_factory = aterm.factory.factory
 
 
 class Table(variable.Variable):

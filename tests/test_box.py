@@ -12,7 +12,7 @@ import transf._tests
 class TestWriter(unittest.TestCase):
 	
 	def setUp(self):
-		self.factory = aterm.factory.Factory()
+		self.factory = aterm.factory.factory
 
 	def parseArgs(self, args):
 		return [self.factory.parse(value) for value in args]

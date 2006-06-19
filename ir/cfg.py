@@ -374,7 +374,7 @@ render = markFlow & makeGraph & simplifyGraph
 def main():
 	import aterm.factory
 	import sys
-	factory = aterm.factory.Factory()
+	factory = aterm.factory.factory
 	for arg in sys.argv[1:]:
 		print "* Reading aterm"
 		term = factory.readFromTextFile(file(arg, 'rt'))

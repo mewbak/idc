@@ -21,8 +21,8 @@ class _Singleton(type):
 
 
 class Factory(object):
-	'''An Factory is responsible for make new Terms, either by parsing 
-	from string or stream, or via one the of the "make" methods.'''
+	'''This class is responsible for make new terms, either by parsing 
+	from strings or streams, or via one the of the "make" methods.'''
 
 	__metaclass__ = _Singleton
 	
@@ -169,3 +169,4 @@ class Factory(object):
 		return _pattern.make(*_args, **_kargs)
 
 
+factory = Factory()

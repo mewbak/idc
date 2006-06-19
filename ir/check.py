@@ -133,7 +133,7 @@ if __name__ == '__main__':
 	import aterm.factory
 	import sys
 	
-	factory = aterm.factory.Factory()
+	factory = aterm.factory.factory
 	
 	for arg in sys.argv[1:]:
 		term = factory.readFromTextFile(file(arg, 'rt'))

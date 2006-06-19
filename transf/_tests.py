@@ -43,7 +43,7 @@ class TestMixin:
 	]
 
 	def setUp(self):
-		self.factory = aterm.factory.Factory()
+		self.factory = aterm.factory.factory
 
 	def _testTransf(self, transf, testCases):
 		for termStr, expectedResultStr in testCases:

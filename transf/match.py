@@ -12,7 +12,7 @@ from transf import operate
 from transf import _helper
 
 
-_factory = aterm.factory.Factory()
+_factory = aterm.factory.factory
 
 
 class Type(base.Transformation):

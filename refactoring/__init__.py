@@ -82,7 +82,7 @@ class TestCase(unittest.TestCase):
 	cls = Refactoring
 	
 	def setUp(self):
-		self.factory = aterm.factory.Factory()
+		self.factory = aterm.factory.factory
 		self.refactoring = self.cls()
 	
 	applyTestCases = []
@@ -103,7 +103,7 @@ def main(cls):
 	import sys
 	import ir.pprint
 	import box
-	factory = aterm.factory.Factory()
+	factory = aterm.factory.factory
 	if len(sys.argv) < 1:
 		sys.exit(1)
 	term = factory.readFromTextFile(file(sys.argv[1], 'rt'))

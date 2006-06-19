@@ -1,14 +1,14 @@
 '''Base transformation classes.'''
 
 
-import aterm.terms
 import aterm.factory
+import aterm.terms
 
 from transf import exception
 from transf import context
 
 
-_factory = aterm.factory.Factory()
+_factory = aterm.factory.factory
 
 
 class Transformation(object):

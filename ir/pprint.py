@@ -322,7 +322,7 @@ if __name__ == '__main__':
 
 	print commas('[1,2,3]')
 
-	factory = aterm.factory.Factory()
+	factory = aterm.factory.factory
 	
 	exprTestCases = [
 		('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Sym("x"))', '1 + x\n'),

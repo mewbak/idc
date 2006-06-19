@@ -15,7 +15,7 @@ import ir.pprint
 import machine.pentium
 
 
-factory = aterm.factory.Factory()
+factory = aterm.factory.factory
 
 
 def pretty_print(term):

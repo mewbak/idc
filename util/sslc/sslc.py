@@ -34,7 +34,7 @@ def sslc(fpin, fpout, debug = False):
 		sys.stderr.write("\n")
 		sys.stderr.write("*** AST end ***\n")
 
-	factory = aterm.factory.Factory()
+	factory = aterm.factory.factory
 
 	compiler = Compiler(factory, fpout, debug = debug)
 	compiler.start(ast)

@@ -43,7 +43,7 @@ def main(cls):
 	import aterm.factory
 	import ui.model
 	
-	factory = aterm.factory.Factory()
+	factory = aterm.factory.factory
 	term = factory.readFromTextFile(sys.stdin)
 	model = ui.model.Model()
 	model.set_term(term)

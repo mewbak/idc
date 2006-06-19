@@ -10,7 +10,7 @@ import antlr
 
 sys.path.insert(0,'util/sslc')
 
-from aterm import Factory
+from aterm.factory import factory
 from lexer import Lexer
 from parser import Parser
 
@@ -18,8 +18,6 @@ from parser import Parser
 class TestCase(unittest.TestCase):
 	
 	def setUp(self):
-		self.factory = Factory()
-
 		self.filenames = [os.path.join('ssl', file) for file in os.listdir('ssl') if file.endswith('.ssl')]
 
 	def testLexer(self):
@@ -35,7 +33,7 @@ class TestCase(unittest.TestCase):
 	def testParser(self):
 		for filename in self.filenames:
 			lexer = Lexer(file(filename, 'rt'))
-			parser = Parser(lexer, factory=self.factory)
+			parser = Parser(lexer, factory=factory)
 			parser.setFilename(filename)
 			parser.start()
 			parser.getAST()

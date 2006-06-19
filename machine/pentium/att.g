@@ -4,9 +4,8 @@ import sys
 
 header "att_parser.__main__" {
     from att_lexer import Lexer
-    from aterm import Factory
+    from aterm.factory import factory
     
-    factory = Factory()
     lexer = Lexer()
     parser = Parser(lexer, factory = factory)
     term = parser.start()

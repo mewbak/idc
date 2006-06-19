@@ -8,7 +8,7 @@ import ir.pprint
 import box
 
 
-_factory = aterm.factory.Factory()
+_factory = aterm.factory.factory
 
 
 class Model:

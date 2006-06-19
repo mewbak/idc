@@ -15,7 +15,7 @@ from transf import build
 from transf import annotation
 
 
-_factory = aterm.factory.Factory()
+_factory = aterm.factory.factory
 _path = _factory.parse('Path(_)')
 
 

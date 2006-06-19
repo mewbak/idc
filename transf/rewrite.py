@@ -16,7 +16,7 @@ from transf import build
 from transf import scope
 
 
-_factory = aterm.factory.Factory()
+_factory = aterm.factory.factory
 
 
 class _VarCollector(aterm.visitor.Visitor):
