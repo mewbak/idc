@@ -5,6 +5,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
+from transf import util
 from transf import build
 
 
@@ -50,7 +51,7 @@ def Nth(n):
 
 def Fetch(operand):
 	from transf import debug
-	fetch = base.Proxy()
+	fetch = util.Proxy()
 	fetch.subject = head & operand | tail & fetch
 	return fetch
 

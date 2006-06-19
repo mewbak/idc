@@ -482,7 +482,7 @@ transf returns [ret]
 	 ) 
 		{ ret = transf.table.Join(l, r, unames, inames) }
 	| #( REC 
-			{ ret = transf.base.Proxy() }
+			{ ret = transf.util.Proxy() }
 		r=id 
 			{ self.stack.append({r: ret}) }
 		t=transf

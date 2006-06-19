@@ -3,6 +3,8 @@
 
 from transf.base import *
 
+from transf.util import *
+
 from transf.combine import *
 
 from transf.traverse import *

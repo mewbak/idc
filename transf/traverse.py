@@ -5,6 +5,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
+from transf import util
 from transf import variable
 from transf import operate
 from transf import combine
@@ -184,7 +185,7 @@ _ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, Var, match.Pat
 
 
 def Map(operand, Cons = Cons):
-	map = base.Proxy()
+	map = util.Proxy()
 	map.subject = match.nil | Cons(operand, map)
 	return map
 
@@ -202,7 +203,7 @@ def FilterR(operand):
 
 
 def Fetch(operand):
-	fetch = base.Proxy()
+	fetch = util.Proxy()
 	fetch.subject = Cons(operand, base.ident) | Cons(base.ident, fetch)
 	return fetch
 
@@ -231,7 +232,7 @@ def All(operand):
 
 def One(operand):
 	'''Applies a transformation to exactly one direct subterm of a term.'''
-	one = base.Proxy()
+	one = util.Proxy()
 	one.subject = _Subterms(
 		Cons(operand, base.ident) | Cons(base.ident, one), 
 		base.fail
@@ -241,7 +242,7 @@ def One(operand):
 
 def Some(operand):
 	'''Applies a transformation to as many direct subterms of a term, but at list one.'''
-	some = base.Proxy()
+	some = util.Proxy()
 	some.subject = _Subterms(
 		Cons(operand, Map(combine.Try(operand))) | Cons(base.ident, some),
 		base.fail
@@ -250,7 +251,7 @@ def Some(operand):
 
 
 def DownUp(down = None, up = None, stop = None):
-	downup = base.Proxy()
+	downup = util.Proxy()
 	downup.subject = All(downup)
 	if stop is not None:
 		downup.subject = stop | downup.subject
@@ -270,7 +271,7 @@ def BottomUp(operand, stop = None):
 
 
 def InnerMost(operand):
-	innermost = base.Proxy()
+	innermost = util.Proxy()
 	innermost.subject = BottomUp(combine.Try(operand & innermost))
 	return innermost
 
@@ -278,6 +279,6 @@ def AllTD(operand):
 	'''Apply a transformation to all subterms, but stops recursing 
 	as soon as it finds a subterm to which the transformation succeeds.
 	'''
-	alltd = base.Proxy()
+	alltd = util.Proxy()
 	alltd.subject = operand | All(alltd)
 	return alltd

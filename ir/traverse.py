@@ -3,6 +3,7 @@
 
 
 from transf import base
+from transf import util
 from transf import strings
 from transf import parse
 from transf import traverse
@@ -21,7 +22,7 @@ def DOWNUP(down, up):
 def Type(Wrapper = None):
 	'''Create a type traverser.'''
 
-	type = base.Proxy()
+	type = util.Proxy()
 	type.subject = parse.Transf('''
 		~Pointer(_, <type>) +
 		~Array(<type>) +
@@ -42,7 +43,7 @@ def Expr(type = None, op = None, Wrapper = None):
 	if op is None:
 		op = base.ident
 		
-	expr = base.Proxy()
+	expr = util.Proxy()
 	expr.subject = parse.Transf('''
 		~Lit(<type>, _) +
 		~Cast(<type>, <expr>) +
@@ -64,7 +65,7 @@ def Expr(type = None, op = None, Wrapper = None):
 def Stmt(stmts = None, expr = None, type = None, Wrapper = None):
 	'''Create a statement traverser.'''
 	
-	stmt = base.Proxy()
+	stmt = util.Proxy()
 	
 	if expr is None:
 		expr = base.ident

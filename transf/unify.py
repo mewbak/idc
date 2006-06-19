@@ -4,6 +4,7 @@
 import aterm
 
 from transf import base
+from transf import util
 from transf import combine
 from transf import match
 from transf import build
@@ -16,7 +17,7 @@ from transf import arith
 def Foldr(tail, Cons, operand=None):
 	if operand is None:
 		operand = base.ident
-	foldr = base.Proxy()
+	foldr = util.Proxy()
 	foldr.subject \
 		= match.nil & tail \
 		| Cons(
@@ -60,7 +61,7 @@ def CollectAll(operand, Union = None, reduce = None):
 	'''
 	if Union is None:
 		from transf.lists import Concat as Union
-	collect = base.Proxy()
+	collect = util.Proxy()
 	crush = Crush(build.nil, Union, collect)
 	if reduce is not None:
 		crush = combine.Try(reduce) & crush
@@ -73,7 +74,7 @@ def CollectAll(operand, Union = None, reduce = None):
 
 def CountAll(operand):
 	'''Count the number of occorrences in all subterms.'''
-	count = base.Proxy()
+	count = util.Proxy()
 	count.subject = arith.AddInt(
 		_CountOne(operand), 
 		Crush(

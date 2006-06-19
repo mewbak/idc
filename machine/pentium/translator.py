@@ -116,7 +116,7 @@ stmtsPreambule =
 
 ''')
 
-stmts = transf.base.Proxy()
+stmts = transf.util.Proxy()
 
 doStmt = transf.parse.Rule('''
 	Asm("ret", [])

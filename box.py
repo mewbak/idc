@@ -183,7 +183,7 @@ def Path(operand):
 
 def reprz(term, ctx):
 	return term.factory.makeStr(str(term))
-reprz = transf.base.Adaptor(reprz)
+reprz = transf.util.Adaptor(reprz)
 
 def escape(term, ctx):
 	s = str(term.value)
@@ -193,7 +193,7 @@ def escape(term, ctx):
 	s = s.replace('\n', '\\n')
 	s = '"' + s + '"'
 	return term.factory.makeStr(s)
-escape = transf.base.Adaptor(escape)
+escape = transf.util.Adaptor(escape)
 
 
 def lit(term, ctx):
@@ -207,7 +207,7 @@ def lit(term, ctx):
 		term = escape.apply(term, ctx)
 		return string.apply(term, ctx)
 	raise transf.exception.Failure
-lit = transf.base.Adaptor(lit)
+lit = transf.util.Adaptor(lit)
 
 
 def Prefix(sep):

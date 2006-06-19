@@ -55,7 +55,7 @@ def intrepr(term, ctx):
 		rep = str(val)
 	
 	return term.factory.makeStr(rep)
-intrepr = base.Adaptor(intrepr)	
+intrepr = util.Adaptor(intrepr)	
 
 intlit = intrepr & box.const
 
@@ -229,7 +229,7 @@ expr = scope.Let(pexpr, prec = build.Int(99))
 #######################################################################
 # Statements
 
-stmt = base.Proxy()
+stmt = util.Proxy()
 
 stmts = parse.Transf('''
 	!V( <Map(stmt)> ) 

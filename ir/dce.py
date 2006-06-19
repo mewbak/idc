@@ -24,7 +24,7 @@ def isTempVar(term, ctx):
 	if term.value.startswith('tmp'):
 		return term
 	raise exception.Failure
-isTempVar = match.aStr & base.Adaptor(isTempVar)
+isTempVar = match.aStr & util.Adaptor(isTempVar)
 
 clearLocalVars = table.Clear('local')
 isVarLocal = isTempVar | table.Get('local')
@@ -44,7 +44,7 @@ def setAllNeededVars(term, ctx):
 	for name in local:
 		ctx['needed'][name] = name
 	return term
-setAllNeededVars = base.Adaptor(setAllNeededVars)
+setAllNeededVars = util.Adaptor(setAllNeededVars)
 
 
 isVarNeeded = table.Get('needed') | combine.Not(isVarLocal)

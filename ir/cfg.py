@@ -45,7 +45,7 @@ setLabelRef = parse.Transf('''
 ''')
 
 
-setLabelTable = base.Proxy()
+setLabelTable = util.Proxy()
 setLabelTables = traverse.Map(setLabelTable)
 setLabelTable.subject = parse.Transf('''
 	Where(
@@ -79,8 +79,8 @@ SetCtrlFlow = lambda flows: annotation.Set(ctrlFlowAnno, flows)
 
 GetTerminalNodeId = lambda id: arith.NegInt(id)
 
-markStmtFlow = base.Proxy()
-markStmtsFlow = base.Proxy()
+markStmtFlow = util.Proxy()
+markStmtsFlow = util.Proxy()
 
 markStmtFlow.subject = parse.Transf('''
 let this = getStmtId in
@@ -240,7 +240,7 @@ makeNodeId = strings.ToStr()
 makeAttr = lambda name, value: build._.Attr(name, value)
 
 renderBox \
-	= base.Adaptor(lambda term, ctx: term.factory.makeStr(box.stringify(term))) \
+	= util.Adaptor(lambda term, ctx: term.factory.makeStr(box.stringify(term))) \
 	| build.Str("???")
 
 makeNodeLabel = parse.Rule('''
