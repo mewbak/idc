@@ -59,7 +59,6 @@ class _With(operate.Unary):
 	def __init__(self, vars, operand):
 		operate.Unary.__init__(self, operand)
 		self.vars = vars
-		print repr(self.vars)
 		
 	def apply(self, term, ctx):
 		vars = [(name, constructor.create(term, ctx)) for name, constructor in self.vars]

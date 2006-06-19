@@ -51,7 +51,6 @@ tokens {
 	ID; UID; LID;
 	OBJ;
 	
-	APPLY_MATCH;
 	CALL;
 	RULE;
 	SCOPE;
@@ -112,7 +111,7 @@ transf_atom
 		| rule_set
 		) RCURLY!
 	| LPAREN!
-		( ( term INTO ) =>  rule
+		( ( term RARROW ) =>  rule
 		| transf
 		) RPAREN!
 	| LANGLE! transf RANGLE! term
@@ -128,7 +127,7 @@ transf_atom
 	;
 
 transf_application
-	: transf_atom ( APPLY_MATCH^ term )*
+	: transf_atom ( RDARROW^ var )?
 	;
 
 transf_merge
@@ -206,7 +205,7 @@ arg
 	;
 	
 rule
-	: term INTO! term ( WHERE transf )?
+	: term RARROW! term ( WHERE transf )?
 		{ ## = #(#[RULE,"RULE"], ##) }
 	;
 
@@ -441,8 +440,8 @@ transf returns [ret]
             if vars:
                 ret = transf.scope.Local(ret, vars)
         }
-	| #( APPLY_MATCH t=transf m=match_term )
-		{ ret = transf.combine.Composition(t, m) }
+	| #( RDARROW t=transf v=id )
+		{ ret = transf.combine.Where(transf.combine.Composition(t, transf.variable.Set(v))) }
 	| #( BUILD_APPLY t=transf b=build_term )
 		{ ret = transf.combine.Composition(b, t) }
 	| #( IF c=transf t=transf 

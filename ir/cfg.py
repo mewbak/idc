@@ -77,7 +77,6 @@ SetCtrlFlow = lambda flows: annotation.Set(ctrlFlowAnno, flows)
 #######################################################################
 # Flow Traversal
 
-setNext = variable.Set('next')
 GetTerminalNodeId = lambda id: arith.NegInt(id)
 
 markStmtFlow = base.Proxy()
@@ -87,48 +86,48 @@ markStmtFlow.subject = parse.Transf('''
 let this = getStmtId in
 	?Assign
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Label
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Asm 
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?If
 		< { true, false: 
 			~_(_, 
-				<let next=!next in markStmtFlow; where(!next => true) end>, 
-				<let next=!next in markStmtFlow; where(!next => false) end>
+				<let next=!next in markStmtFlow; !next => true end>, 
+				<let next=!next in markStmtFlow; !next => false end>
 			)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
 		}
-		; where(!this; setNext)
+		; !this => next
 +	?While
 		< { true, false:
-			where(!next => false)
-			; ~_(_, <markStmtsFlow; where(!next => true)>)
+			!next => false
+			; ~_(_, <markStmtsFlow; !next => true>)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
 		}
-		; where(!this; setNext)
+		; !this => next
 +	?NoStmt
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Continue 
 		< SetCtrlFlow(![cont])
-		; where(!this; setNext)
+		; !this => next
 +	?Break 
 		< SetCtrlFlow(![brek])
-		; where(!this; setNext)
+		; !this => next
 +	?Ret 
 		< SetCtrlFlow(![retn])
-		; where(!this; setNext)
+		; !this => next
 +	?Jump
 		< SetCtrlFlow({ _(Sym(name)) -> [<lists.Lookup(!name,!lbls)>] } + ![])
-		; where(!this; setNext)
+		; !this => next
 +	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Func
 		< let 
 			next = !next,
@@ -139,10 +138,10 @@ let this = getStmtId in
 			~_(_, _, _, <markStmtsFlow>)
 			; SetCtrlFlow(![next])
 		end
-		# where(!next; setNext)
+		# !next => next
 +	
 		SetCtrlFlow({ n(*) -> [next{Cond(n)}] })
-		; where(!this; setNext)
+		; !this => next
 end
 ''')
 
@@ -150,51 +149,51 @@ markStmtFlow.subject = parse.Transf('''
 let this = getStmtId in
 	?Assign
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Label
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Asm 
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?If
 		< { true, false: 
 			~_(_, 
-				<let next=!next in markStmtFlow; where(!next => true) end>, 
-				<let next=!next in markStmtFlow; where(!next => false) end>
+				<let next=!next in markStmtFlow; !next => true end>, 
+				<let next=!next in markStmtFlow; !next => false end>
 			)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
 		}
-		; where(!this; setNext)
+		; !this => next
 +	?While
 		< { true, false:
-			where(!next => false)
-			; ~_(_, <markStmtsFlow; where(!next => true)>)
+			!next => false
+			; ~_(_, <markStmtsFlow; !next => true>)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
 		}
-		; where(!this; setNext)
+		; !this => next
 +	?NoStmt
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Continue 
 		< SetCtrlFlow(![cont])
-		; where(!this; setNext)
+		; !this => next
 +	?Break 
 		< SetCtrlFlow(![brek])
-		; where(!this; setNext)
+		; !this => next
 +	?Ret 
 		< SetCtrlFlow(![retn])
-		; where(!this; setNext)
+		; !this => next
 +	?Jump
 		< SetCtrlFlow({ _(Sym(name)) -> [<LookupLabel(!name)>] } + ![])
-		; where(!this; setNext)
+		; !this => next
 +	?Var
 		< SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
-		; where(!this; setNext)
+		; !this => next
 +	?Func
 		< let 
 			next = !next,
@@ -205,10 +204,10 @@ let this = getStmtId in
 			LabelTable(~_(_, _, _, <markStmtsFlow>))
 			; SetCtrlFlow(![next])
 		end
-		# where(!next; setNext)
+		# !next => next
 +	
 		SetCtrlFlow({ n(*) -> [next{Cond(n)}] })
-		; where(!this; setNext)
+		; !this => next
 end
 ''')
 
