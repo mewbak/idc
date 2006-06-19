@@ -45,20 +45,6 @@ options {
 	defaultErrorHandler = false;
 }
 
-tokens {
-	NIL; CONS; APPL; VAR; UNDEF; ANNOS;
-	
-	TRANSF;
-	FACTORY;
-	
-	RULE;
-	SCOPE;
-	ANON;
-	BUILD_APPLY;
-	JOIN;
-	VARMETHOD;
-}
-
 transf_defs
 	: ( transf_def )* EOF!
 	;
@@ -67,8 +53,15 @@ rule_defs
 	: ( rule_def )* EOF!
 	;
 
+meta_def
+	: id_list COLON transf EOF!
+	;
+
 transf_def
-	: id EQUAL^ transf
+	: id EQUAL! transf
+		{ ## = #(#[TRANSF_DEF,"TRANSF_DEF"], ##) }
+	| id LPAREN! id_list RPAREN! EQUAL transf	
+		{ ## = #(#[TRANSF_FAC_DEF,"TRANSF_FAC_DEF"], ##) }
 	;
 
 rule_def
@@ -101,10 +94,10 @@ transf_atom
 	| transf_prefix
 	| transf_method
 	| id 
-		( LPAREN! arg_list RPAREN!
-			{ ## = #(#[FACTORY,"FACTORY"], ##) }
-		|
-			{ ## = #(#[INSTANCE,"INSTANCE"], ##) }
+		( 
+			{ ## = #(#[TRANSF,"TRANSF"], ##) }
+		| LPAREN! arg_list RPAREN!
+			{ ## = #(#[TRANSF_FAC,"TRANSF_FAC"], ##) }
 		)
 	| LCURLY!
 		( ( id_list COLON ) => id_list COLON transf
@@ -332,6 +325,27 @@ id_list
 	;
 
 
+{
+class Meta:
+    """A parsed transformation factory."""
+
+    def __init__(self, globals, locals, args, ast):
+        self.globals = globals
+        self.locals = locals
+        self.args = args
+        self.ast = ast
+    
+    def __call__(self, *args):
+        if len(args) != len(self.args):
+            raise TypeError("%d arguments required (%d given)" % (len(self.args), len(args)))
+        translator = Walker(
+            globals = self.globals,
+            locals = self.locals,
+        )
+        translator.stack.append(dict(zip(self.args, args)))
+        return translator.transf(self.ast)
+}
+
 class translator extends TreeParser;
 
 options {
@@ -382,10 +396,28 @@ transf_defs
 	;
 	
 transf_def
-	: #( EQUAL n=id t=transf )
+	: #( TRANSF_DEF n=id t=transf )
 		{ self.define_name(n, t) }
+	| #( TRANSF_FAC_DEF n=id a=id_list EQUAL T=meta[a] )
+	    { self.define_name(n, T) }
 	;
 
+meta_def returns [ret]
+	: a=id_list COLON ret=meta[a]
+	;
+	
+meta[a] returns [ret]
+	: t:.
+		{ 
+           ret = Meta(
+               self.globals,
+               self.locals,
+               a,
+               #t,
+           )
+        }
+	;
+	
 transf returns [ret]
 	: IDENT
 		{ ret = transf.base.ident }
@@ -407,7 +439,7 @@ transf returns [ret]
 		{ ret = transf.combine.Choice(l, r) }
 	| #( LANGLE l=transf m=transf r=transf )
 		{ ret = transf.combine.GuardedChoice(l, m, r) }
-	| #( INSTANCE n=i:id )
+	| #( TRANSF n=i:id )
 		{
             ret = None
             txn = self.bind_name(n)
@@ -417,7 +449,7 @@ transf returns [ret]
                 raise SemanticException(#i, "%s is not a transformation" % n)
             ret = txn
         }
-	| #( FACTORY n=f:id a=arg_list )
+	| #( TRANSF_FAC n=f:id a=arg_list )
 		{
             ret = None
             Txn = self.bind_name(n)

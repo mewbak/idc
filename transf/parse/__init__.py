@@ -71,3 +71,14 @@ def Rule(buf):
 	txn = translator.transf(ast)
 	return txn
 
+
+def Meta(buf):
+	'''Parse a meta transformation from a string.'''
+	parser = _parser(buf)
+	parser.meta_def()
+	ast = parser.getAST()
+	translator = _translator()
+	txn = translator.meta_def(ast)
+	return txn
+
+

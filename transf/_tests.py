@@ -79,9 +79,11 @@ class TestCombine(TestMixin, unittest.TestCase):
 
 	def testIdent(self):
 		self._testTransf(ident, self.identTestCases)
+		self._testTransf(parse.Transf('id'), self.identTestCases)
 
 	def testFail(self):
 		self._testTransf(fail, self.failTestCases)
+		self._testTransf(parse.Transf('fail'), self.failTestCases)
 	
 	unaryTestCases = [
 		[0], [1], [2],
@@ -145,26 +147,31 @@ class TestCombine(TestMixin, unittest.TestCase):
 		func = lambda x, y: x or y
 		self._testCombination(combine._Choice, 2, func)
 		self._testCombination(combine.Choice, 2, func)
+		self._testCombination(parse.Meta('x, y: x + y'), 2, func)
 		
 	def testComposition(self):
 		func = lambda x, y: x and y and max(x, y) or 0
 		self._testCombination(combine._Composition, 2, func)
 		self._testCombination(combine.Composition, 2, func)
+		self._testCombination(parse.Meta('x, y: x ; y'), 2, func)
 
 	def testGuardedChoice(self):
 		func = lambda x, y, z: (x and y and max(x, y) or 0) or (not x and z)
 		self._testCombination(combine._GuardedChoice, 3, func)
 		self._testCombination(combine.GuardedChoice, 3, func)
+		self._testCombination(parse.Meta('x, y, z: x < y + z'), 3, func)
 
 	def testIfThen(self):
 		func = lambda x, y: (x and y) or (not x)
 		self._testCombination(combine._IfThen, 2, func)
 		self._testCombination(combine.IfThen, 2, func)
+		self._testCombination(parse.Meta('x, y: if x then y end'), 2, func)
 		
 	def testIfThenElse(self):
 		func = lambda x, y, z: (x and y) or (not x and z)
 		self._testCombination(combine._IfThenElse, 3, func)
 		self._testCombination(combine.IfThenElse, 3, func)
+		self._testCombination(parse.Meta('x, y, z: if x then y else z end'), 3, func)
 
 
 class TestMatch(TestMixin, unittest.TestCase):
@@ -181,30 +188,39 @@ class TestMatch(TestMixin, unittest.TestCase):
 					
 	def testInt(self):
 		self._testMatchTransf(match.Int(1), '1')
+		self._testMatchTransf(parse.Transf('?1'), '1')
 
 	def testReal(self):
 		self._testMatchTransf(match.Real(0.1), '0.1')
+		self._testMatchTransf(parse.Transf('?0.1'), '0.1')
 
 	def testStr(self):
 		self._testMatchTransf(match.Str("a"), '"a"')
+		self._testMatchTransf(parse.Transf('?"a"'), '"a"')
 
 	def testNil(self):
 		self._testMatchTransf(match.nil, '[]')
+		self._testMatchTransf(parse.Transf('?[]'), '[]')
 	
 	def testCons(self):
 		self._testMatchTransf(match.Cons(match.Int(1),match.nil), '[1]')
+		self._testMatchTransf(parse.Transf('?[1]'), '[1]')
 	
 	def testList(self):
 		self._testMatchTransf(match.List([match.Int(1),match.Int(2)]), '[1,2]')
 		self._testMatchTransf(match._[()], '[]')
 		self._testMatchTransf(match._[1], '[1]')
 		self._testMatchTransf(match._[1,2], '[1,2]')
+		self._testMatchTransf(parse.Transf('?[1,2]'), '[1,2]')
 	
 	def testAppl(self):
 		self._testMatchTransf(match.Appl(match.Str("C"),match.nil), 'C')
 		self._testMatchTransf(match._.C(), 'C')
 		self._testMatchTransf(match._.C(1), 'C(1)')
 		self._testMatchTransf(match._.C(1,2), 'C(1,2)')
+		self._testMatchTransf(parse.Transf('?C()'), 'C')
+		self._testMatchTransf(parse.Transf('?C(1)'), 'C(1)')
+		self._testMatchTransf(parse.Transf('?C(1,2)'), 'C(1,2)')
 
 
 class TestRewrite(TestMixin, unittest.TestCase):
