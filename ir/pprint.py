@@ -207,7 +207,7 @@ Expr = lambda traverse: parse.Transf('''
 		in
 			traverse ;
 			exprUp ;
-			if gt(!prec, !pprec) then
+			if Gt(!prec, !pprec) then
 				!H([ "(", <id>, ")" ])
 				#!H([ "(GT:", <id>, ")" ])
 			else
@@ -232,7 +232,7 @@ expr = scope.Let(pexpr, prec = build.Int(99))
 stmt = base.Proxy()
 
 stmts = parse.Transf('''
-	!V( <map(stmt)> ) 
+	!V( <Map(stmt)> ) 
 ''')
 
 stmtKern = Path(parse.Rule('''
@@ -261,7 +261,7 @@ stmtKern = Path(parse.Rule('''
 |	NoStmt
 		-> ""
 |	Asm(opcode, operands) 
-		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<map(expr)>operands>]>, ")" ])
+		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<Map(expr)>operands>]>, ")" ])
 '''))
 
 stmt.subject = Path(parse.Rule('''

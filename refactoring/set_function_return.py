@@ -49,12 +49,12 @@ class SetFunctionReturn(refactoring.Refactoring):
 		ret = transf.build.Term(ret)
 		
 		txn = transf.parse.Transf('''
-			alltd(
+			AllTD(
 				~Func(<typ>, <name>, _, 
-					<alltd(~Ret(<typ>, <!Sym(<ret>)>))>
+					<AllTD(~Ret(<typ>, <!Sym(<ret>)>))>
 				) 
 			) ;
-			alltd(
+			AllTD(
 				?Assign(Void, NoExpr, Call(Sym(<name>),*)) ;
 				~Assign(<typ>, <!Sym(<ret>)>, *)
 			)

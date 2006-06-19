@@ -42,6 +42,8 @@ def Concat(*operands):
 concat = unify.Foldr(build.nil, Concat2)
 
 
+def MapCat(operand):
+	return traverse.Map(operand, Cons = Concat2)
 
 class Lookup(base.Transformation):
 	

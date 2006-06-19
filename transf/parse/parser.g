@@ -341,13 +341,6 @@ options {
     // XXX: too much python voodoo
     
     def bind_transf_name(self, name):
-        // lookup in the builtins module
-        from transf.parse.builtins import builtins
-        try:
-            return builtins[name]
-        except KeyError:
-            pass
-        
         // lookup in the symbol stack
         for i in range(len(self.stack) - 1, -1, -1):
             try:
@@ -361,9 +354,18 @@ options {
         except NameError:
             pass
     
+        // lookup in the builtins module
+        from transf.parse import builtins
+        try:
+            return getattr(builtins, name)
+        except AttributeError:
+            pass
+
         // lookup in the transf module
         try:
             return eval(name, transf.__dict__)
+        except NameError:
+            pass
         except AttributeError:
             pass
         

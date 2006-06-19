@@ -16,7 +16,7 @@ ppAttr = transf.parse.Rule('''
 ''')
 
 ppAttrs = transf.parse.Transf('''
-		!H([ "[", <map(ppAttr); box.commas>, "]" ])
+		!H([ "[", <Map(ppAttr); box.commas>, "]" ])
 ''')
 
 ppNode = transf.parse.Rule('''
@@ -33,7 +33,7 @@ ppNodeEdge = transf.parse.Rule('''
 
 ppNodeEdges = transf.parse.Rule('''
 		Node(src, _, edges) 
-			-> <<map(ppNodeEdge)> edges>
+			-> <<Map(ppNodeEdge)> edges>
 ''')
 
 ppEdges = transf.traverse.Map(ppNodeEdges) & transf.lists.concat

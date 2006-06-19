@@ -110,7 +110,7 @@ stmt = transf.base.Proxy()
 stmts = transf.traverse.Map(stmt)
 stmt.subject = transf.parse.Transf('''
 	?Var( <type> , <name> , <optExpr> ) +
-	?Func( <type> , <name> , <map(arg)>, <stmts> ) +
+	?Func( <type> , <name> , <Map(arg)>, <stmts> ) +
 	?Assign( <type> , <optExpr> , <expr> ) +
 	?If( <expr> , <stmt> , <stmt> ) +
 	?While( <expr> , <stmt> ) +

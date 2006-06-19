@@ -78,7 +78,7 @@ class Ident(Transformation):
 	def apply(self, term, ctx):
 		return term
 
-ident = Ident()
+id = ident = Ident()
 
 
 class Fail(Transformation):

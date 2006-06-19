@@ -49,7 +49,7 @@ def Expr(type = None, op = None, Wrapper = None):
 		~Unary(<op>, <expr>) +
 		~Binary(<op>, <expr>, <expr>) +
 		~Cond(<expr>, <expr>, <expr>) +
-		~Call(<expr>, <map(expr)>) +
+		~Call(<expr>, <Map(expr)>) +
 		~Addr(<expr>) +
 		~Ref(<expr>) +
 		id
@@ -77,7 +77,7 @@ def Stmt(stmts = None, expr = None, type = None, Wrapper = None):
 		~Var(<type>, _, <expr>) +
 		~Func(<type>, _, _, <stmts>) +
 		~Assign(<type>, <expr>, <expr>) +
-		~Asm(_, <map(expr)>) +
+		~Asm(_, <Map(expr)>) +
 		~Block(<stmts>) +
 		~Func(<type>, _, _, <stmt>) +
 		~If(<expr>, <stmt>, <stmt>) +

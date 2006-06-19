@@ -48,7 +48,7 @@ setLabelRef = parse.Transf('''
 setLabelTable = base.Proxy()
 setLabelTables = traverse.Map(setLabelTable)
 setLabelTable.subject = parse.Transf('''
-	where(
+	Where(
 		setLabelRef
 		+ reduceStmts
 		; setLabelTables
@@ -338,20 +338,20 @@ matchPointShapeAttr =
 	?Attr("shape", "point")
 
 findPointNode = {
-	Node(src, <one(matchPointShapeAttr)>, [Edge(dst, _)]) -> [src, dst]
+	Node(src, <One(matchPointShapeAttr)>, [Edge(dst, _)]) -> [src, dst]
 } ; =point
 
 findPointNodes
-	= map(try(findPointNode))
+	= Map(Try(findPointNode))
 
 replaceEdge = 
 	~Edge(<~point>, _)
 
 removePointNode = 
-	~Node(<not(?point)>, _, <map(try(replaceEdge))>)
+	~Node(<Not(?point)>, _, <Map(Try(replaceEdge))>)
 
 removePointNodes = 
-	filter(removePointNode)
+	Filter(removePointNode)
 
 simplifyPoints =
 	with point[] in

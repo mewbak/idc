@@ -7,7 +7,7 @@ from transf import *
 setLocalVar = build.List((base.ident, base.ident)) & variable.Set('local')
 # FIXME: this is machine dependent -- we should search the locally declared vars
 setLocalVars = parse.Transf('''
-	where(<map(setLocalVar)> [
+	Where(<Map(setLocalVar)> [
 		"eax", "ebx", "ecx", "edx",
 		"esi", "edi", "ebp", "esp",
 		"ax", "bx", "cx", "dx",
@@ -35,7 +35,7 @@ setNeededVar = table.Set('needed', base.ident)
 #setNeededVar = build.List((base.ident,base.ident)) & variable.Set('needed')
 
 setNeededVars = parse.Transf('''
-	alltd(?Sym(<setNeededVar>))
+	AllTD(?Sym(<setNeededVar>))
 ''')
 
 setAllUnneededVars = table.Clear('needed')
@@ -55,11 +55,11 @@ JoinNeededVars = lambda l,r: table.Join(l, r, ['needed'], [])
 
 parse.Transfs('''
 
-isVarNeeded = ?needed + not(isVarLocal)
+isVarNeeded = ?needed + Not(isVarLocal)
 isVarNeeded = debug.Trace(isVarNeeded, `'isVarNeeded'`)
 
-dceStmt = proxy
-dceStmts = proxy
+dceStmt = Proxy()
+dceStmts = Proxy()
 
 dceAssign = 
 	{x:
@@ -100,7 +100,7 @@ dceIf =
 		~If(_, <dceStmt>, _),
 		~If(_, _, <dceStmt>)
 	) ;
-	try(elimIf) ;
+	Try(elimIf) ;
 	~If(<setNeededVars>, _, _)
 
 elimBlock = {
@@ -109,7 +109,7 @@ elimBlock = {
 
 dceBlock = 
 	~Block(<dceStmts>) ;
-	try(elimBlock)
+	Try(elimBlock)
 
 dceFunc = 
 	~Func(_, _, _, <
@@ -135,9 +135,9 @@ dceStmt.subject =
 	dceDefault
 
 dceStmts.subject = 
-	filterr(
-		try(dceStmt) ; 
-		not(?NoStmt)
+	FilterR(
+		Try(dceStmt) ; 
+		Not(?NoStmt)
 	)
 
 dceModule = 

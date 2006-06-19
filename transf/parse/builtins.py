@@ -1,41 +1,16 @@
-'''Builtin lookup table.'''
+'''Builtin namespace.'''
 
 
-from transf import base
-from transf import combine
-from transf import traverse
-from transf import unify
-from transf import lists
-from transf import strings
-from transf import arith
+from transf.base import *
 
+from transf.combine import *
 
-builtins = {
-	"id": base.ident,
-	"fail": base.fail,
-	"proxy": base.Proxy,
-	
-	"try": combine.Try,
-	"not": combine.Not,
-	"where": combine.Where,
+from transf.traverse import *
 
-	"map": traverse.Map,
-	"filter": traverse.Filter,
-	"filterr": traverse.FilterR,
-	"all": traverse.All,
-	"one": traverse.One,
-	"some": traverse.Some,
-	"alltd": traverse.AllTD,
-	
-	"foldr": unify.Foldr,
+from transf.unify import *
 
-	"concat": lists.Concat,
-	
-	"str": strings.ToStr,
-	
-	"neg": arith.Neg,
-	"add": arith.Add,
-	"sub": arith.Sub,
-	"gt": arith.Gt,
+from transf.lists import *
 
-}
+from transf.strings import ToStr
+
+from transf.arith import *
