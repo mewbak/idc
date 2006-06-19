@@ -292,7 +292,8 @@ stmt.subject = Path(parse.Rule('''
 		])
 |	Func(_, _, _, stmts)
 		-> D(V([
-			H([ <stmtKern>, "{" ]),
+			<stmtKern>, 
+			"{",
 				I(V([ <<stmts>stmts> ])),
 			"}"
 		]))

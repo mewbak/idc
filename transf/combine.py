@@ -181,3 +181,35 @@ def IfThenElse(operand1, operand2, operand3):
 		return IfThen(operand1, operand2)
 	return _IfThenElse(operand1, operand2, operand3)
 
+
+def Switch(cond, cases, otherwise = None):
+	'''Sugar around L{IfThenElse}.'''
+	
+	from transf import context
+	from transf import scope
+	from transf import match
+	from transf import build
+	
+	if otherwise is None:
+		otherwise = base.fail
+	
+	if cond is not base.ident:		
+		tmp_nam = context.Anonymous('switch')
+		match_tmp = match.Var(tmp_nam)
+		build_tmp = build.Var(tmp_nam)	
+		return scope.Local(
+			match_tmp & cond & operate.Nary(
+				iter(cases), 
+				lambda (case, action), rest: \
+					IfThenElse(case, build_tmp & action, rest),
+				build_tmp & otherwise
+			),
+			[tmp_nam]
+		)
+	else:
+		operate.Nary(
+			iter(cases), 
+			lambda (case, action), rest: \
+				IfThenElse(case, action, rest),
+			otherwise
+		)

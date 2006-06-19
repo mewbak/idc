@@ -41,7 +41,6 @@ from transf import build
 from transf import rewrite
 from transf import traverse
 from transf import unify
-from transf import sugar
 
 from transf import arith
 from transf import lists

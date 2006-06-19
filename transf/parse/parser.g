@@ -462,7 +462,7 @@ transf returns [ret]
 		|
 			{ o=None }
 		)
-			{ ret = transf.sugar.Switch(cond, cases, o) }
+			{ ret = transf.combine.Switch(cond, cases, o) }
 	  )
 	| #( LET 
 			{ vars = {} }
