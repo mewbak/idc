@@ -71,7 +71,7 @@ class Table(variable.Variable):
 		self.terms.update(other.terms)
 
 	def sub(self, other):
-		for key in self.terms.iteritems():
+		for key in self.terms.iterkeys():
 			if key not in other.terms:
 				del self.terms[key]
 

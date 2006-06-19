@@ -46,14 +46,7 @@ def setAllNeededVars(term, ctx):
 	return term
 setAllNeededVars = util.Adaptor(setAllNeededVars)
 
-
-isVarNeeded = table.Get('needed') | combine.Not(isVarLocal)
-isVarNeeded = debug.Trace(isVarNeeded, 'isVarNeeded')
-
-JoinNeededVars = lambda l,r: table.Join(l, r, ['needed'], [])
-
-
-parse.Transfs('''
+parse.Transfs(r'''
 
 isVarNeeded = ?needed + Not(isVarLocal)
 isVarNeeded = debug.Trace(isVarNeeded, `'isVarNeeded'`)
@@ -96,10 +89,7 @@ elimIf = {
 
 dceIf = 
 	?If ;
-	JoinNeededVars(
-		~If(_, <dceStmt>, _),
-		~If(_, _, <dceStmt>)
-	) ;
+	~If(_, <dceStmt>, _) \needed/ ~If(_, _, <dceStmt>) ;
 	Try(elimIf) ;
 	~If(<setNeededVars>, _, _)
 
