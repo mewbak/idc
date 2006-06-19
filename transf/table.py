@@ -102,11 +102,11 @@ def Get(name):
 
 
 def Set(name, key):
-	return combine.Where(build.List((key, base.ident)) & variable.Set(name))
+	return combine.Where(build.List((key, base.ident)) * variable.Set(name))
 
 
 def Del(name):
-	return combine.Where(build.List((base.ident,)) & variable.Set(name))
+	return combine.Where(build.List((base.ident,)) * variable.Set(name))
 
 
 def Clear(name):

@@ -591,11 +591,11 @@ match_term returns [ret]
 	| #( v:VAR // TODO: handle sub-patterns
 		{ ret = transf.match.Var(#v.getText()) }
 		( p=match_term
-			{ ret = transf.combine.composition(p, ret) }
+			{ ret = transf.combine.Composition(p, ret) }
 		)?
 	  )
 	| #( ANNOS t=match_term a=match_term )
-		{ ret = t & transf.match.Annos(a) }
+		{ ret = transf.combine.Composition(t, transf.match.Annos(a)) }
 	| UNDEF 
 		{ ret = transf.base.ident }
 	| #( TRANSF txn=transf )
@@ -642,7 +642,7 @@ build_term returns [ret]
 	| v:VAR 
 		{ ret = transf.build.Var(#v.getText()) }
 	| #( ANNOS t=build_term a=build_term )
-		{ ret = t & transf.build.Annos(a) }
+		{ ret = transf.combine.Composition(t, transf.build.Annos(a)) }
 	| UNDEF 
 		{ ret = transf.build.nil }
 	| #( TRANSF txn=transf )
@@ -667,7 +667,7 @@ traverse_term returns [ret]
 	| v:VAR
 		{ ret = transf.congruent.Var(#v.getText()) }
 	| #( ANNOS t=traverse_term a=traverse_term )
-		{ ret = t & transf.congruent.Annos(a) }
+		{ ret = transf.combine.Composition(t, transf.congruent.Annos(a)) }
 	| UNDEF 
 		{ ret = transf.base.ident }
 	| #( TRANSF txn=transf )

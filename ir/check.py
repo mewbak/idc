@@ -26,13 +26,13 @@ name = transf.match.aStr
 
 size = transf.match.anInt
 
-lit = transf.match.anInt | transf.match.aReal | transf.match.aStr
+lit = transf.match.anInt + transf.match.aReal + transf.match.aStr
 
 sign = transf.parse.Transf('''
 	?Signed +
 	?Unsigned +
 	?Unknown
-''') | LogFail('bad sign')
+''') + LogFail('bad sign')
 
 type = transf.util.Proxy()
 types = transf.lists.Map(type)
@@ -48,13 +48,13 @@ type.subject = transf.parse.Transf('''
 	?Compound( <types> ) +
 	?Union( <types> ) +
 	?Blob( <size> )
-''') | LogFail('bad type')
+''') + LogFail('bad type')
 
 unOp = transf.parse.Transf('''
 	?Not +
 	?BitNot( <size> ) +
 	?Neg( <size> )
-''') | LogFail('bad unary operator')
+''') + LogFail('bad unary operator')
 
 binOp = transf.parse.Transf('''
 	?And +
@@ -78,7 +78,7 @@ binOp = transf.parse.Transf('''
 	?LtEq( <type> ) +
 	?Gt( <type> ) +
 	?GtEq( <type> )
-''') | LogFail('bad binary operator')
+''') + LogFail('bad binary operator')
 
 expr = transf.util.Proxy()
 addr = expr
@@ -95,7 +95,7 @@ expr.subject = transf.parse.Transf('''
 	?Call( <addr> , <exprs> ) +
 	?Addr( <expr> ) +
 	?Ref( <addr> )
-''') | LogFail('bad expression')
+''') + LogFail('bad expression')
 
 optExpr = transf.parse.Transf('''
 	?NoExpr +
@@ -104,7 +104,7 @@ optExpr = transf.parse.Transf('''
 
 arg = transf.parse.Transf('''
 	?ArgDef( <type> , <name> )
-''') | LogFail('bad argument')
+''') + LogFail('bad argument')
 	
 stmt = transf.util.Proxy()
 stmts = transf.lists.Map(stmt)
@@ -122,11 +122,11 @@ stmt.subject = transf.parse.Transf('''
 	?Break +
 	?Continue +
 	?NoStmt
-''') | LogFail('bad statement')
+''') + LogFail('bad statement')
 
 module = transf.parse.Transf('''
 	?Module( <stmts> )
-''') | LogFail('bad module')
+''') + LogFail('bad module')
 
 
 if __name__ == '__main__':

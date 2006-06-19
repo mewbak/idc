@@ -25,7 +25,7 @@ markStmtsIds = scope.Let2((
 		('stmtid', build.zero),
 	),
 	traverse.TopDown(
-		combine.Try((matchModule | matchStmt) & setStmtId),
+		combine.Try((matchModule + matchStmt) * setStmtId),
 		stop = stopStmts
 	),
 )
@@ -59,10 +59,10 @@ LabelTable = lambda operand: scope.Local2(
 	(
 		('lbls', table.Table),
 	),
-	setLabelTable & operand,
+	setLabelTable * operand,
 )
 
-LookupLabel = lambda name: name & table.Get('lbls')
+LookupLabel = lambda name: name * table.Get('lbls')
 
 
 #######################################################################
@@ -229,7 +229,7 @@ if 0:
 	markStmtFlow.subject = debug.Trace('markStmtFlow', markStmtFlow.subject)
 	markStmtsFlow.subject = debug.Trace('markStmtsFlow', markStmtsFlow.subject)
 
-markFlow = markStmtsIds & markModuleFlow
+markFlow = markStmtsIds * markModuleFlow
 
 
 #######################################################################
@@ -239,9 +239,9 @@ makeNodeId = strings.tostr
 
 makeAttr = lambda name, value: build._.Attr(name, value)
 
-renderBox \
-	= util.Adaptor(lambda term, ctx: term.factory.makeStr(box.stringify(term))) \
-	| build.Str("???")
+renderBox = \
+	util.Adaptor(lambda term, ctx: term.factory.makeStr(box.stringify(term))) + \
+	build.Str("???")
 
 makeNodeLabel = parse.Rule('''
 	If(cond,_,_)
@@ -252,7 +252,7 @@ makeNodeLabel = parse.Rule('''
 		-> <ir.pprint.stmtKern>
 |	n(*) 
 		-> n
-''') & renderBox & box.escape
+''') * renderBox * box.escape
 
 makeNodeShape = parse.Rule('''
 	If(cond,_,_)
@@ -271,44 +271,44 @@ makeNodeShape = parse.Rule('''
 		-> "box"
 ''')
 
-makeNodeUrl = (path.get & box.reprz | build.empty ) & box.escape
+makeNodeUrl = (path.get * box.reprz + build.empty ) * box.escape
 
-makeNodeAttrs \
-	= build.List([
+makeNodeAttrs = \
+	build.List([
 		makeAttr("label", makeNodeLabel),
 		makeAttr("shape", makeNodeShape),
 		makeAttr("URL", makeNodeUrl),
 	])
 
-makeEdgeLabel \
-	= annotation.Get('Cond') \
-	| build.Str("")
+makeEdgeLabel = \
+	annotation.Get('Cond') + \
+	build.Str("")
 
-makeEdgeAttrs \
-	= build.List([
-		makeAttr("label", makeEdgeLabel & box.escape),
+makeEdgeAttrs = \
+	build.List([
+		makeAttr("label", makeEdgeLabel * box.escape),
 	])
 
 isValidNodeId = combine.Not(match.zero)
 
-makeNodeEdges \
-	= getCtrlFlow \
-	& lists.Filter(
+makeNodeEdges = \
+	getCtrlFlow * \
+	lists.Filter(
 		build._.Edge(
-			isValidNodeId & makeNodeId,
+			isValidNodeId * makeNodeId,
 			makeEdgeAttrs,
 		)
 	)
 
 makeNode = build._.Node(
-	getStmtId & makeNodeId, 
+	getStmtId * makeNodeId, 
 	makeNodeAttrs, 
 	makeNodeEdges
 )
 
 hasTerminalNode = match.Appl('Func', base.ident)
 
-makeTerminalNode = hasTerminalNode & build._.Node(
+makeTerminalNode = hasTerminalNode * build._.Node(
 	GetTerminalNodeId(getStmtId), 
 	build.List([
 		makeAttr("label", build.Str('""')),
@@ -341,8 +341,8 @@ findPointNode = {
 	Node(src, <One(matchPointShapeAttr)>, [Edge(dst, _)]) -> [src, dst]
 } ; =point
 
-findPointNodes
-	= Map(Try(findPointNode))
+findPointNodes =
+	Map(Try(findPointNode))
 
 replaceEdge = 
 	~Edge(<~point>, _)
@@ -365,7 +365,7 @@ simplifyGraph = simplifyPoints
 
 #######################################################################
 
-render = markFlow & makeGraph & simplifyGraph
+render = markFlow * makeGraph * simplifyGraph
 
 #######################################################################
 # Example
@@ -378,7 +378,7 @@ def main():
 	for arg in sys.argv[1:]:
 		print "* Reading aterm"
 		term = factory.readFromTextFile(file(arg, 'rt'))
-		#print ( pprint2.module & renderBox )(term)
+		#print ( pprint2.module * renderBox )(term)
 		#print
 
 		print "* Marking statements"

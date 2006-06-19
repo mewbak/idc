@@ -79,9 +79,9 @@ simplifyStmt = transf.parse.Rule('''
 		-> expr
 ''')
 
-simplify = transf.traverse.InnerMost(simplifyExpr | simplifyStmt)
+simplify = transf.traverse.InnerMost(simplifyExpr + simplifyStmt)
 
-sslLookup = SslLookup() & simplify
+sslLookup = SslLookup() * simplify
 #sslLookup = transf.debug.Trace(sslLookup, 'sslLookup')
 
 transf.parse.Transfs('''
@@ -134,13 +134,13 @@ stmt = ir.traverse.Stmt(
 	Wrapper = ir.traverse.UP(doStmt)
 )
 
-stmts.subject = transf.lists.Map(stmt) & transf.lists.concat
+stmts.subject = transf.lists.Map(stmt) * transf.lists.concat
 
 #stmts.subject = transf.debug.Trace('stmts', stmts.subject)
 #stmt.subject = transf.debug.Trace('stmt', stmt.subject)
 
 module = ir.traverse.Module(
-	stmts = transf.lists.Concat2(transf.debug.Dump() & stmtsPreambule, stmts), 
+	stmts = transf.lists.Concat2(transf.debug.Dump() * stmtsPreambule, stmts), 
 )
 
 

@@ -130,9 +130,9 @@ def GuardedChoice(operand1, operand2, operand3):
 	if operand1 is base.fail:
 		return operand3
 	if operand2 is base.ident:
-		return operand1 | operand2
+		return Choice(operand1, operand2)
 	if operand3 is base.fail:
-		return operand1 & operand2
+		return Composition(operand1, operand2)
 	return _GuardedChoice(operand1, operand2, operand3)
 
 
@@ -198,11 +198,11 @@ def Switch(cond, cases, otherwise = None):
 		match_tmp = match.Var(tmp_nam)
 		build_tmp = build.Var(tmp_nam)	
 		return scope.Local(
-			match_tmp & cond & operate.Nary(
+			match_tmp * cond * operate.Nary(
 				iter(cases), 
 				lambda (case, action), rest: \
-					IfThenElse(case, build_tmp & action, rest),
-				build_tmp & otherwise
+					IfThenElse(case, build_tmp * action, rest),
+				build_tmp * otherwise
 			),
 			[tmp_nam]
 		)

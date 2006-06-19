@@ -8,7 +8,7 @@ from transf import combine
 def Repeat(operand):
 	'''Applies a transformation until it fails.'''
 	repeat = util.Proxy()
-	repeat.subject = combine.Try(operand & repeat)
+	repeat.subject = combine.Try(operand * repeat)
 	return repeat
 
 

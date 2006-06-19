@@ -36,7 +36,7 @@ ppNodeEdges = transf.parse.Rule('''
 			-> <<Map(ppNodeEdge)> edges>
 ''')
 
-ppEdges = transf.lists.Map(ppNodeEdges) & transf.lists.concat
+ppEdges = transf.lists.Map(ppNodeEdges) * transf.lists.concat
 
 ppGraph = transf.parse.Rule(r'''
 		Graph(nodes)

@@ -52,7 +52,7 @@ def intrepr(term, ctx):
 	return term.factory.makeStr(rep)
 intrepr = util.Adaptor(intrepr)	
 
-intlit = intrepr & box.const
+intlit = intrepr * box.const
 
 
 #######################################################################

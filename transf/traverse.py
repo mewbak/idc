@@ -23,7 +23,7 @@ def One(operand):
 	'''Applies a transformation to exactly one direct subterm of a term.'''
 	one = util.Proxy()
 	one.subject = congruent.Subterms(
-		congruent.Cons(operand, base.ident) | congruent.Cons(base.ident, one), 
+		congruent.Cons(operand, base.ident) + congruent.Cons(base.ident, one), 
 		base.fail
 	)
 	return one
@@ -33,7 +33,7 @@ def Some(operand):
 	'''Applies a transformation to as many direct subterms of a term, but at list one.'''
 	some = util.Proxy()
 	some.subject = congruent.Subterms(
-		congruent.Cons(operand, lists.Map(combine.Try(operand))) | congruent.Cons(base.ident, some),
+		congruent.Cons(operand, lists.Map(combine.Try(operand))) + congruent.Cons(base.ident, some),
 		base.fail
 	)
 	return some
@@ -43,11 +43,11 @@ def DownUp(down = None, up = None, stop = None):
 	downup = util.Proxy()
 	downup.subject = All(downup)
 	if stop is not None:
-		downup.subject = stop | downup.subject
+		downup.subject = stop + downup.subject
 	if up is not None:
-		downup.subject = downup.subject & up
+		downup.subject = downup.subject * up
 	if down is not None:
-		downup.subject = down & downup.subject
+		downup.subject = down * downup.subject
 	return downup
 
 
@@ -61,7 +61,7 @@ def BottomUp(operand, stop = None):
 
 def InnerMost(operand):
 	innermost = util.Proxy()
-	innermost.subject = BottomUp(combine.Try(operand & innermost))
+	innermost.subject = BottomUp(combine.Try(operand * innermost))
 	return innermost
 
 
@@ -70,5 +70,5 @@ def AllTD(operand):
 	as soon as it finds a subterm to which the transformation succeeds.
 	'''
 	alltd = util.Proxy()
-	alltd.subject = operand | All(alltd)
+	alltd.subject = operand + All(alltd)
 	return alltd

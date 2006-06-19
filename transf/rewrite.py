@@ -74,7 +74,7 @@ def _Coerce(transf, Term, Pattern, locals = None):
 def Term(match_term, build_transf):
 	match_transf = match.Term(match_term)
 	build_transf = _Coerce(build_transf, build.Term, build.Pattern, [])
-	return match_transf & build_transf
+	return match_transf * build_transf
 
 
 class TermSet(base.Transformation):
@@ -110,7 +110,7 @@ def Pattern(match_transf, build_transf, locals = None):
 	else:
 		match_transf = _Coerce(match_transf, match.Term, match.Pattern)
 	build_transf = _Coerce(build_transf, build.Term, build.Pattern)
-	rule = match_transf & build_transf
+	rule = match_transf * build_transf
 	if locals:
 		rule = scope.Local(rule, locals)
 	return rule
@@ -122,7 +122,7 @@ def PatternSeq(seq, locals = None):
 	else:
 		l = []
 	rules = operate.Nary(seq, 
-		lambda (m, b), r: Pattern(m, b, l) | r,
+		lambda (m, b), r: Pattern(m, b, l) + r,
 		base.fail
 	)
 	if locals:

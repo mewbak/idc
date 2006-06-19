@@ -71,7 +71,7 @@ class ConsFilterR(congruent.Cons):
 
 def Map(operand, Cons = congruent.Cons):
 	map = util.Proxy()
-	map.subject = match.nil | Cons(operand, map)
+	map.subject = match.nil + Cons(operand, map)
 	return map
 
 
@@ -90,7 +90,7 @@ def FilterR(operand):
 def Fetch(operand):
 	fetch = util.Proxy()
 	fetch.subject = \
-		congruent.Cons(operand, base.ident) | \
+		congruent.Cons(operand, base.ident) + \
 		congruent.Cons(base.ident, fetch)
 	return fetch
 
@@ -98,8 +98,8 @@ def Fetch(operand):
 def FetchElem(operand):
 	fetch = util.Proxy()
 	fetch.subject = \
-		project.head & operand | \
-		project.tail & fetch
+		project.head * operand + \
+		project.tail * fetch
 	return fetch
 
 
@@ -135,7 +135,7 @@ def MapCat(operand):
 
 def AtSuffix(operand):
 	atsuffix = util.Proxy()
-	atsuffix.subject = operand | congruent.Cons(base.ident, atsuffix)
+	atsuffix.subject = operand + congruent.Cons(base.ident, atsuffix)
 	return atsuffix
 
 
@@ -174,7 +174,7 @@ def Split3(operand):
 		(elem, tail),
 		build.List((
 			AtSuffix(
-				match.Cons(operand & match.Var(elem), match.Var(tail)) &
+				match.Cons(operand * match.Var(elem), match.Var(tail)) &
 				build.nil
 			),
 			build.Var(elem),

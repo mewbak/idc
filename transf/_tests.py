@@ -592,21 +592,28 @@ class TestParse(TestMixin, unittest.TestCase):
 		'with a, b=!1, c[], d[] = e in id end',
 	]
 	
+	def testAST(self):
+		for input in self.parseTestCases:
+			parser = parse._parser(input)
+			#try:
+			parser.transf()
+			#except antlr.ANTLRException, ex:
+			#	self.fail(msg = "%s failed: %s" % (input, ex))
+			ast = parser.getAST()
+			#print ast.toStringTree()
+	
 	def testParse(self):
 		for input in self.parseTestCases:
-			try:
-				parser = parse._parser(input)
-				parser.transf()
-			except:
-				print input
-				raise
+			print input
+			#try:
+			parser = parse._parser(input)
+			parser.transf()
 			ast = parser.getAST()
-			try:
-				output = repr(parse.Transf(input))
-			except:
-				print input
-				print ast.toStringTree() 
-			#print output
+			print ast
+			output = repr(parse.Transf(input))
+			#except antlr.ANTLRException, ex:
+			#	self.fail(msg = "%s failed: %s" % (input, ex))
+			print output
 
 
 class TestPath(TestMixin, unittest.TestCase):
@@ -712,33 +719,6 @@ class TestPath(TestMixin, unittest.TestCase):
 			result = path.Range(lists.Map(rewrite.Pattern('x', 'X(x)')), start, end)(input)
 			
 			self.failUnlessEqual(result, expectedResult)
-
-
-class TestLists(TestMixin, unittest.TestCase):
-
-	split2TestCases = [
-		('[A,B,C,D]', 'FAILURE'),
-		('[X,A,B,C,D]', '[[],[Y,A,B,C,D]]'),
-		('[A,X,B,C,D]', '[[A],[Y,B,C,D]]'),
-		('[A,B,X,C,D]', '[[A,B],[Y,C,D]]'),
-		('[A,B,C,X,D]', '[[A,B,C],[Y,D]]'),
-		('[A,B,C,D,X]', '[[A,B,C,D],[Y]]'),
-	]
-	
-	def testSplit2(self):
-		self._testTransf(lists.Split2(rewrite.Pattern('X','Y')), self.split2TestCases)
-
-	split3TestCases = [
-		('[A,B,C,D]', 'FAILURE'),
-		('[X,A,B,C,D]', '[[],Y,[A,B,C,D]]'),
-		('[A,X,B,C,D]', '[[A],Y,[B,C,D]]'),
-		('[A,B,X,C,D]', '[[A,B],Y,[C,D]]'),
-		('[A,B,C,X,D]', '[[A,B,C],Y,[D]]'),
-		('[A,B,C,D,X]', '[[A,B,C,D],Y,[]]'),
-	]
-	
-	def testSplit3(self):
-		self._testTransf(lists.Split3(rewrite.Pattern('X','Y')), self.split3TestCases)
 
 
 if __name__ == '__main__':

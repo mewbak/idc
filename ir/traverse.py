@@ -10,13 +10,13 @@ from transf import traverse
 
 
 def DOWN(down):
-	return lambda traverser: down & traverser
+	return lambda traverser: down * traverser
 
 def UP(up):
-	return lambda traverser: traverser & up
+	return lambda traverser: traverser * up
 
 def DOWNUP(down, up):
-	return lambda traverser: down & traverser & up
+	return lambda traverser: down * traverser * up
 
 
 def Type(Wrapper = None):

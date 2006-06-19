@@ -17,8 +17,8 @@ def Set(label, *values):
 	annos_var = build.Var('annos')
 	return scope.Let(
 		congruent.Annos(
-			lists.Fetch(congruent.Appl(match.Str(label), annos_var))
-			| build.Cons(build.Appl(build.Str(label), annos_var), base.ident)
+			lists.Fetch(congruent.Appl(match.Str(label), annos_var)) +
+			build.Cons(build.Appl(build.Str(label), annos_var), base.ident)
 		),
 		annos = build.List(values)
 	)
@@ -32,10 +32,11 @@ def Update(label, *values):
 
 
 def Get(label):
-	return project.annos \
-		& project.Fetch(match.Appl(match.Str(label), base.ident)) \
-		& project.args \
-		& combine.IfThen(
+	return \
+		project.annos * \
+		project.Fetch(match.Appl(match.Str(label), base.ident)) * \
+		project.args * \
+		combine.IfThen(
 			match.Cons(base.ident, match.nil), 
 			project.head
 		)

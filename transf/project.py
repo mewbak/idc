@@ -32,17 +32,17 @@ tail = Tail()
 
 
 first = head
-second = tail & head
-third = tail & tail & head
-fourth = tail & tail & tail & head
+second = tail * head
+third = tail * tail * head
+fourth = tail * tail * tail * head
 
 
 def Nth(n):
 	if n > 1:
 		nth = Tail()
 		for i in range(2, n):
-			nth = nth & tail
-		nth = nth & head
+			nth = nth * tail
+		nth = nth * head
 	elif n < 1:
 		raise ValueError
 	else: # n = 1
@@ -52,7 +52,7 @@ def Nth(n):
 def Fetch(operand):
 	from transf import debug
 	fetch = util.Proxy()
-	fetch.subject = head & operand | tail & fetch
+	fetch.subject = head * operand + tail * fetch
 	return fetch
 
 	

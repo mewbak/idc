@@ -14,11 +14,11 @@ def Foldr(tail, Cons, operand=None):
 	if operand is None:
 		operand = base.ident
 	foldr = util.Proxy()
-	foldr.subject \
-		= match.nil & tail \
-		| Cons(
-			project.head & operand, 
-			project.tail & foldr
+	foldr.subject = \
+		match.nil * tail + \
+		Cons(
+			project.head * operand, 
+			project.tail * foldr
 		)
 	return foldr
 
@@ -37,7 +37,7 @@ def Count(operand):
 
 
 def Crush(tail, Cons, operand = None):
-	return project.subterms & Foldr(tail, Cons, operand)
+	return project.subterms * Foldr(tail, Cons, operand)
 
 
 def CollectAll(operand, Union = None, reduce = None):
@@ -60,11 +60,11 @@ def CollectAll(operand, Union = None, reduce = None):
 	collect = util.Proxy()
 	crush = Crush(build.nil, Union, collect)
 	if reduce is not None:
-		crush = combine.Try(reduce) & crush
-	collect.subject = build.Cons(operand, crush) | crush
+		crush = combine.Try(reduce) * crush
+	collect.subject = build.Cons(operand, crush) + crush
 	#else:
-		#collect.subject = build.Cons(operand, crush) | reduce & collect | crush
-		#collect.subject = build.Cons(operand, crush) | combine.Try(reduce) & crush
+		#collect.subject = build.Cons(operand, crush) + reduce * collect + crush
+		#collect.subject = build.Cons(operand, crush) + combine.Try(reduce) * crush
 	return collect
 
 

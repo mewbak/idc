@@ -38,23 +38,27 @@ class Transformation(object):
 		'''Applies the transformation.'''
 		raise NotImplementedError(self)
 
-	def __invert__(self):
+	def __neg__(self):
 		from transf import combine
 		return combine.Not(self)
 	
-	def __or__(self, other):
+	def __pos__(self):
+		from transf import combine
+		return combine.Try(self)
+	
+	def __add__(self, other):
 		from transf import combine
 		return combine.Choice(self, other)
 
-	def __ror__(self, other):
+	def __radd__(self, other):
 		from transf import combine
 		return combine.Choice(other, self)
 
-	def __and__(self, other):
+	def __mul__(self, other):
 		from transf import combine
 		return combine.Composition(self, other)	
 
-	def __rand__(self, other):
+	def __rmul__(self, other):
 		from transf import combine
 		return combine.Composition(other, self)
 	

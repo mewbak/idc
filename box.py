@@ -179,7 +179,7 @@ string = Tag('type', 'string')
 sym = Tag('type', 'symbol')
 
 def Path(operand):
-	return Tag('path', transf.path.get, operand ) | operand
+	return Tag('path', transf.path.get, operand ) + operand
 
 def reprz(term, ctx):
 	return term.factory.makeStr(str(term))
@@ -219,8 +219,8 @@ def Prefix(sep):
 
 def Join(sep):
 	return \
-		transf.match.nil \
-		| transf.congruent.Cons(
+		transf.match.nil + \
+		transf.congruent.Cons(
 			transf.base.ident,
 			Prefix(sep)
 		)
