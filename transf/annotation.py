@@ -44,9 +44,9 @@ def Get(label):
 
 def Del(label):
 	return congruent.Annos(
-		combine.Try(
+		+(
 			lists.Filter(
-				combine.Not(match.Appl(match.Str(label), base.ident))
+				-match.Appl(match.Str(label), base.ident)
 			)
 		)
 	)

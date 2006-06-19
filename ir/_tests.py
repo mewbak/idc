@@ -7,6 +7,7 @@ import aterm.factory
 import box
 
 import ir.check
+import ir.expr
 import ir.pprint
 
 
@@ -82,11 +83,11 @@ class TestPrettyPrint(unittest.TestCase):
 			if lexpr is not None:
 				if isinstance(lexpr, basestring):
 					lexpr = self.factory.parse(lexpr)
-					lexpr = ir.Expr(lexpr)
+					lexpr = ir.expr.Expr(lexpr)
 			if rexpr is not None:
 				if isinstance(rexpr, basestring):
 					rexpr = self.factory.parse(rexpr)
-					rexpr = ir.Expr(rexpr)
+					rexpr = ir.expr.Expr(rexpr)
 			expectedResult = self.factory.parse(expectedResultStr)
 
 			if rexpr is None:

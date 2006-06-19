@@ -60,11 +60,11 @@ def CollectAll(operand, Union = None, reduce = None):
 	collect = util.Proxy()
 	crush = Crush(build.nil, Union, collect)
 	if reduce is not None:
-		crush = combine.Try(reduce) * crush
+		crush = +reduce * crush
 	collect.subject = build.Cons(operand, crush) + crush
 	#else:
 		#collect.subject = build.Cons(operand, crush) + reduce * collect + crush
-		#collect.subject = build.Cons(operand, crush) + combine.Try(reduce) * crush
+		#collect.subject = build.Cons(operand, crush) + +reduce * crush
 	return collect
 
 

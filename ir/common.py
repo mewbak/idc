@@ -62,7 +62,7 @@ reduceStmts = parse.Transf('''
 }
 ''')
 
-stopStmts = combine.Not(matchModule + matchCompoundStmt + match.aList)
+stopStmts = -(matchModule + matchCompoundStmt + match.aList)
 
 #######################################################################
 # Expressions

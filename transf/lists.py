@@ -145,7 +145,7 @@ def Split(operand):
 		(tail,),
 		build.List((
 			AtSuffix(
-				match.Cons(operand, match.Var(tail)) &
+				match.Cons(operand, match.Var(tail)) *
 				build.nil
 			),
 			build.Var(tail)
@@ -159,8 +159,8 @@ def Split2(operand):
 		(tail,),
 		build.List((
 			AtSuffix(
-				congruent.Cons(operand, base.ident) &
-				match.Var(tail) &
+				congruent.Cons(operand, base.ident) *
+				match.Var(tail) *
 				build.nil
 			),
 			build.Var(tail)
@@ -174,7 +174,7 @@ def Split3(operand):
 		(elem, tail),
 		build.List((
 			AtSuffix(
-				match.Cons(operand * match.Var(elem), match.Var(tail)) &
+				match.Cons(operand * match.Var(elem), match.Var(tail)) *
 				build.nil
 			),
 			build.Var(elem),

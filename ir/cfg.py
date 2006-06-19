@@ -25,7 +25,7 @@ markStmtsIds = scope.Let2((
 		('stmtid', build.zero),
 	),
 	traverse.TopDown(
-		combine.Try((matchModule + matchStmt) * setStmtId),
+		+((matchModule + matchStmt) * setStmtId),
 		stop = stopStmts
 	),
 )
@@ -49,9 +49,9 @@ setLabelTable = util.Proxy()
 setLabelTables = lists.Map(setLabelTable)
 setLabelTable.subject = parse.Transf('''
 	Where(
-		setLabelRef
-		+ reduceStmts
-		; setLabelTables
+		setLabelRef +
+		reduceStmts ;
+		setLabelTables
 	)
 ''')
 
@@ -289,7 +289,7 @@ makeEdgeAttrs = \
 		makeAttr("label", makeEdgeLabel * box.escape),
 	])
 
-isValidNodeId = combine.Not(match.zero)
+isValidNodeId = -match.zero
 
 makeNodeEdges = \
 	getCtrlFlow * \

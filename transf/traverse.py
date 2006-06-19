@@ -33,7 +33,7 @@ def Some(operand):
 	'''Applies a transformation to as many direct subterms of a term, but at list one.'''
 	some = util.Proxy()
 	some.subject = congruent.Subterms(
-		congruent.Cons(operand, lists.Map(combine.Try(operand))) + congruent.Cons(base.ident, some),
+		congruent.Cons(operand, lists.Map(+operand)) + congruent.Cons(base.ident, some),
 		base.fail
 	)
 	return some
@@ -61,7 +61,7 @@ def BottomUp(operand, stop = None):
 
 def InnerMost(operand):
 	innermost = util.Proxy()
-	innermost.subject = BottomUp(combine.Try(operand * innermost))
+	innermost.subject = BottomUp(+(operand * innermost))
 	return innermost
 
 
