@@ -3,7 +3,7 @@
 
 
 header {
-import ir
+import ir.expr
 
 from parser import SemanticException
 }
@@ -279,9 +279,9 @@ expr returns [res]
 		}
 		| l=expr r=expr
 		{
-            e = ir.Expr(e)
-            l = ir.Expr(l)
-            r = ir.Expr(r)
+            e = ir.expr.Expr(e)
+            l = ir.expr.Expr(l)
+            r = ir.expr.Expr(r)
             
             res = (e >> r) & ((1 << (l - r + 1)) - 1)
             
