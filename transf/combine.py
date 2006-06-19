@@ -194,7 +194,7 @@ def Switch(cond, cases, otherwise = None):
 		otherwise = base.fail
 	
 	if cond is not base.ident:		
-		tmp_nam = context.Anonymous('switch')
+		tmp_nam = scope.Anonymous('switch')
 		match_tmp = match.Var(tmp_nam)
 		build_tmp = build.Var(tmp_nam)	
 		return scope.Local(

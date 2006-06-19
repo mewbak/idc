@@ -72,7 +72,7 @@ def Stmt(stmts = None, expr = None, type = None, Wrapper = None):
 	if type is None:
 		type = base.ident
 	if stmts is None:
-		stmts = traverse.Map(stmt)
+		stmts = lists.Map(stmt)
 		
 	stmt.subject = parse.Transf('''
 		~Var(<type>, _, <expr>) +
@@ -99,7 +99,7 @@ def Module(stmt = None, stmts = None, Wrapper = None):
 	
 	if stmts is None:
 		if stmt is not None :
-			stmts = traverse.Map(stmt)
+			stmts = lists.Map(stmt)
 		else:
 			stmts = base.ident
 		

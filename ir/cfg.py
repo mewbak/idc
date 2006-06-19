@@ -46,7 +46,7 @@ setLabelRef = parse.Transf('''
 
 
 setLabelTable = util.Proxy()
-setLabelTables = traverse.Map(setLabelTable)
+setLabelTables = lists.Map(setLabelTable)
 setLabelTable.subject = parse.Transf('''
 	Where(
 		setLabelRef
@@ -211,7 +211,7 @@ let this = getStmtId in
 end
 ''')
 
-markStmtsFlow.subject = traverse.MapR(markStmtFlow)
+markStmtsFlow.subject = lists.MapR(markStmtFlow)
 
 markModuleFlow = parse.Transf('''
 	?Module
@@ -293,7 +293,7 @@ isValidNodeId = combine.Not(match.zero)
 
 makeNodeEdges \
 	= getCtrlFlow \
-	& traverse.Filter(
+	& lists.Filter(
 		build._.Edge(
 			isValidNodeId & makeNodeId,
 			makeEdgeAttrs,

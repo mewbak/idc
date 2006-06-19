@@ -39,12 +39,14 @@ from transf import combine
 from transf import project
 from transf import match
 from transf import build
+from transf import congruent
 from transf import rewrite
+
+from transf import lists
 from transf import traverse
 from transf import unify
 
 from transf import arith
-from transf import lists
 from transf import strings
 from transf import table
 

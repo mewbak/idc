@@ -160,6 +160,18 @@ class Cons(base.Transformation):
 		else:	
 			return term
 
+class ConsR(Cons):
+	'''Transformation which matches a list construction term.'''
+	
+	def apply(self, term, ctx):
+		try:
+			self.head.apply(term.head, ctx)
+			self.tail.apply(term.tail, ctx)
+		except AttributeError:
+			raise exception.Failure
+		else:	
+			return term
+
 
 def List(elms, tail = None):
 	if tail is None:

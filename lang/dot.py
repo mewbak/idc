@@ -24,7 +24,7 @@ ppNode = transf.parse.Rule('''
 			-> H([ <<id> nid>, <<ppAttrs> attrs> ])
 ''')
 
-ppNodes = transf.traverse.Map(ppNode)
+ppNodes = transf.lists.Map(ppNode)
 
 ppNodeEdge = transf.parse.Rule('''
 		Edge(dst, attrs) 
@@ -36,7 +36,7 @@ ppNodeEdges = transf.parse.Rule('''
 			-> <<Map(ppNodeEdge)> edges>
 ''')
 
-ppEdges = transf.traverse.Map(ppNodeEdges) & transf.lists.concat
+ppEdges = transf.lists.Map(ppNodeEdges) & transf.lists.concat
 
 ppGraph = transf.parse.Rule(r'''
 		Graph(nodes)

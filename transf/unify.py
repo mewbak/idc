@@ -1,16 +1,12 @@
 '''Term unifying transformations.'''
 
 
-import aterm
-
 from transf import base
 from transf import util
 from transf import combine
 from transf import match
 from transf import build
-from transf import traverse
 from transf import project
-#from transf import lists
 from transf import arith
 
 

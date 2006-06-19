@@ -9,7 +9,7 @@ from transf import match
 from transf import build
 from transf import congruent
 from transf import project
-from transf import traverse
+from transf import lists
 from transf import debug
 
 
@@ -17,7 +17,7 @@ def Set(label, *values):
 	annos_var = build.Var('annos')
 	return scope.Let(
 		congruent.Annos(
-			traverse.One(congruent.Appl(match.Str(label), annos_var))
+			lists.Fetch(congruent.Appl(match.Str(label), annos_var))
 			| build.Cons(build.Appl(build.Str(label), annos_var), base.ident)
 		),
 		annos = build.List(values)
@@ -27,7 +27,7 @@ def Set(label, *values):
 def Update(label, *values):
 	values = congruent.List(values)
 	return congruent.Annos(
-		traverse.One(congruent.Appl(match.Str(label), values))
+		lists.Fetch(congruent.Appl(match.Str(label), values))
 	)
 
 
@@ -44,7 +44,7 @@ def Get(label):
 def Del(label):
 	return congruent.Annos(
 		combine.Try(
-			traverse.Filter(
+			lists.Filter(
 				combine.Not(match.Appl(match.Str(label), base.ident))
 			)
 		)

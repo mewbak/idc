@@ -35,7 +35,7 @@ sign = transf.parse.Transf('''
 ''') | LogFail('bad sign')
 
 type = transf.util.Proxy()
-types = transf.traverse.Map(type)
+types = transf.lists.Map(type)
 type.subject = transf.parse.Transf('''
 	?Void +
 	?Bool +
@@ -82,7 +82,7 @@ binOp = transf.parse.Transf('''
 
 expr = transf.util.Proxy()
 addr = expr
-exprs = transf.traverse.Map(expr)
+exprs = transf.lists.Map(expr)
 expr.subject = transf.parse.Transf('''
 	?True +
 	?False +
@@ -107,7 +107,7 @@ arg = transf.parse.Transf('''
 ''') | LogFail('bad argument')
 	
 stmt = transf.util.Proxy()
-stmts = transf.traverse.Map(stmt)
+stmts = transf.lists.Map(stmt)
 stmt.subject = transf.parse.Transf('''
 	?Var( <type> , <name> , <optExpr> ) +
 	?Func( <type> , <name> , <Map(arg)>, <stmts> ) +

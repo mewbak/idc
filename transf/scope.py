@@ -6,6 +6,27 @@ from transf import term
 from transf import operate
 
 
+class Anonymous(str):
+	'''Anonymous variable name. 
+	
+	This class is a string with singleton properties, i.e., it has an unique hash,
+	and it is equal to no object other than itself. Instances of this class can be
+	used in replacement of regular string to ensure no name collisions will ocurr,
+	effectivly providing means to anonymous variables.
+	'''
+	
+	__slots__ = []
+	
+	def __hash__(self):
+		return id(self)
+	
+	def __eq__(self, other):
+		return self is other
+	
+	def __ne__(self, other):
+		return self is not other
+
+
 class _Local(operate.Unary):
 	
 	def __init__(self, vars, operand):
@@ -29,6 +50,13 @@ def Local(operand, names = None):
 def Local2(vars, operand):
 	if not vars:
 		return operand
+	return _Local(vars, operand)
+
+
+def Local3(names, operand):
+	if not names:
+		return operand
+	vars = [(name, term.Term) for name in names]
 	return _Local(vars, operand)
 
 

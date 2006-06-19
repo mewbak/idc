@@ -1,6 +1,8 @@
 '''Congruent term transformations.'''
 
 
+import aterm.types
+
 from transf import exception
 from transf import base
 from transf import variable
@@ -119,7 +121,31 @@ class Annos(base.Transformation):
 
 
 def Anno(anno):
+	from transf.traverse import One
 	return Annos(One(anno))
 
 
 _ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, Var, match.Pattern)
+
+
+class Subterms(base.Transformation):
+	'''Congruent transformation of subterms.'''
+	
+	def __init__(self, children, leaf):
+		'''
+		@param children: transformation to be applied to the term children.
+		@param leaf: transformation to be applied if the term has no children.
+		'''
+		base.Transformation.__init__(self)
+		self.leaf = leaf
+		self.list = children
+		self.appl = Appl(base.ident, children)
+		
+	def apply(self, term, ctx):
+		if term.type == aterm.types.APPL:
+			return self.appl.apply(term, ctx)
+		elif term.type & aterm.types.LIST:
+			return self.list.apply(term, ctx)
+		else:
+			return self.leaf.apply(term, ctx)
+

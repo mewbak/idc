@@ -41,8 +41,8 @@ setNeededVars = parse.Transf('''
 setAllUnneededVars = table.Clear('needed')
 def setAllNeededVars(term, ctx):
 	local = ctx['local']
-	for name in local:
-		ctx['needed'][name] = name
+	for name in local.terms:
+		ctx['needed'].terms[name] = name
 	return term
 setAllNeededVars = util.Adaptor(setAllNeededVars)
 
