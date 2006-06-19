@@ -50,7 +50,7 @@ class Variable(object):
 	
 	def traverse(self, term):
 		'''Traverse the variable -- a combination of matching and building.
-		Used by L{transf.traverse.Var}.
+		Used by L{transf.congruent.Var}.
 		'''
 		raise exception.Fatal('unsupported operation')
 		

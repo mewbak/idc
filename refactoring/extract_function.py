@@ -40,7 +40,7 @@ class ExtractFunction(refactoring.Refactoring):
 			"[Label(name),*rest]",
 			"[Func(Void,name,[],rest)]",
 		)
-		txn = transf.traverse.Appl(
+		txn = transf.congruent.Appl(
 			'Module',
 			[ExtractBlock(txn,name)]
 		)

@@ -220,7 +220,7 @@ def Prefix(sep):
 def Join(sep):
 	return \
 		transf.match.nil \
-		| transf.traverse.Cons(
+		| transf.congruent.Cons(
 			transf.base.ident,
 			Prefix(sep)
 		)

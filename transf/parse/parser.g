@@ -659,15 +659,15 @@ traverse_term returns [ret]
 	| NIL
 		{ ret = transf.match.nil }
 	| #( CONS h=traverse_term t=traverse_term )
-		{ ret = transf.traverse.Cons(h, t) }
+		{ ret = transf.congruent.Cons(h, t) }
 	| #( APPL n=traverse_term a=traverse_term )
-		{ ret = transf.traverse.Appl(n, a) }
+		{ ret = transf.congruent.Appl(n, a) }
 	| w:WILDCARD 
 		{ ret = transf.base.ident }
 	| v:VAR
-		{ ret = transf.traverse.Var(#v.getText()) }
+		{ ret = transf.congruent.Var(#v.getText()) }
 	| #( ANNOS t=traverse_term a=traverse_term )
-		{ ret = t & transf.traverse.Annos(a) }
+		{ ret = t & transf.congruent.Annos(a) }
 	| UNDEF 
 		{ ret = transf.base.ident }
 	| #( TRANSF txn=transf )
