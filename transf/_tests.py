@@ -260,35 +260,6 @@ class TestRewrite(TestMixin, unittest.TestCase):
 
 class TestTraverse(TestMixin, unittest.TestCase):
 
-	mapTestCases = (
-		[ident, fail, rewrite.Pattern('x', 'X(x)'), match.Pattern('1')],
-		{
-			'[]': ['[]', '[]', '[]', '[]'],
-			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
-			'[1,2]': ['[1,2]', 'FAILURE', '[X(1),X(2)]', 'FAILURE'],
-			#'[1,*]': ['[1,*]', 'FAILURE', '[X(1),*]', '[1,*]'],
-			#'[1,*x]': ['[1,*x]', 'FAILURE', '[X(1),*x]', '[1,*x]'],
-		}
-	)
-		
-	def testMap(self):
-		self._testMetaTransf(lists.Map, self.mapTestCases)
-
-	# TODO: testFetch
-
-	filterTestCases = (
-		[ident, fail, rewrite.Pattern('x', 'X(x)'), match.Pattern('2')],
-		{
-			'[]': ['[]', '[]', '[]', '[]'],
-			'[1]': ['[1]', '[]', '[X(1)]', '[]'],
-			'[1,2]': ['[1,2]', '[]', '[X(1),X(2)]', '[2]'],
-			'[1,2,3]': ['[1,2,3]', '[]', '[X(1),X(2),X(3)]', '[2]'],
-		}
-	)
-		
-	def testFilter(self):
-		self._testMetaTransf(lists.Filter, self.filterTestCases)
-
 	allTestCases = (
 		[ident, fail, rewrite.Pattern('x', 'X(x)')],
 		{
@@ -611,18 +582,19 @@ class TestParse(TestMixin, unittest.TestCase):
 
 class TestPath(TestMixin, unittest.TestCase):
 	
-	annotateTestCases = [
-		('1', '1{Path([])}'),
-		('[1,2]', '[1{Path([0])},2{Path([1])}]{Path([])}'),
-		('C(1,2)', 'C(1{Path([0])},2{Path([1])}){Path([])}'),
-		('[[[]]]', '[[[]{Path([0,0])}]{Path([0])}]{Path([])}'),
-		('C(C(C))', 'C(C(C{Path([0,0])}){Path([0])}){Path([])}'),
-		('[[1],[2]]', '[[1{Path([0,0])}]{Path([0])},[2{Path([0,1])}]{Path([1])}]{Path([])}'),
-		('C(C(1),C(2))', 'C(C(1{Path([0,0])}){Path([0])},C(2{Path([0,1])}){Path([1])}){Path([])}'),
-	]
-	
 	def testAnnotate(self):
-		self._testTransf(path.annotate, self.annotateTestCases)
+		self._testTransf(
+			path.annotate,
+			(
+				('1', '1{Path([])}'),
+				('[1,2]', '[1{Path([0])},2{Path([1])}]{Path([])}'),
+				('C(1,2)', 'C(1{Path([0])},2{Path([1])}){Path([])}'),
+				('[[[]]]', '[[[]{Path([0,0])}]{Path([0])}]{Path([])}'),
+				('C(C(C))', 'C(C(C{Path([0,0])}){Path([0])}){Path([])}'),
+				('[[1],[2]]', '[[1{Path([0,0])}]{Path([0])},[2{Path([0,1])}]{Path([1])}]{Path([])}'),
+				('C(C(1),C(2))', 'C(C(1{Path([0,0])}){Path([0])},C(2{Path([0,1])}){Path([1])}){Path([])}'),
+			)
+		)
 
 	def checkTransformation(self, metaTransf, testCases):
 		for termStr, pathStr, expectedResultStr in testCases:
@@ -716,29 +688,95 @@ class TestPath(TestMixin, unittest.TestCase):
 
 class TestLists(TestMixin, unittest.TestCase):
 
-	split2TestCases = [
-		('[A,B,C,D]', 'FAILURE'),
-		('[X,A,B,C,D]', '[[],[Y,A,B,C,D]]'),
-		('[A,X,B,C,D]', '[[A],[Y,B,C,D]]'),
-		('[A,B,X,C,D]', '[[A,B],[Y,C,D]]'),
-		('[A,B,C,X,D]', '[[A,B,C],[Y,D]]'),
-		('[A,B,C,D,X]', '[[A,B,C,D],[Y]]'),
-	]
-	
-	def testSplit2(self):
-		self._testTransf(lists.Split2(rewrite.Pattern('X','Y')), self.split2TestCases)
+	mapTestCases = (
+		[ident, fail, rewrite.Pattern('x', 'X(x)'), match.Pattern('1')],
+		{
+			'[]': ['[]', '[]', '[]', '[]'],
+			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
+			'[1,2]': ['[1,2]', 'FAILURE', '[X(1),X(2)]', 'FAILURE'],
+			#'[1,*]': ['[1,*]', 'FAILURE', '[X(1),*]', '[1,*]'],
+			#'[1,*x]': ['[1,*x]', 'FAILURE', '[X(1),*x]', '[1,*x]'],
+		}
+	)
+		
+	def testMap(self):
+		self._testMetaTransf(lists.Map, self.mapTestCases)
 
-	split3TestCases = [
-		('[A,B,C,D]', 'FAILURE'),
-		('[X,A,B,C,D]', '[[],Y,[A,B,C,D]]'),
-		('[A,X,B,C,D]', '[[A],Y,[B,C,D]]'),
-		('[A,B,X,C,D]', '[[A,B],Y,[C,D]]'),
-		('[A,B,C,X,D]', '[[A,B,C],Y,[D]]'),
-		('[A,B,C,D,X]', '[[A,B,C,D],Y,[]]'),
-	]
+	filterTestCases = (
+		[ident, fail, rewrite.Pattern('x', 'X(x)'), match.Pattern('2')],
+		{
+			'[]': ['[]', '[]', '[]', '[]'],
+			'[1]': ['[1]', '[]', '[X(1)]', '[]'],
+			'[1,2]': ['[1,2]', '[]', '[X(1),X(2)]', '[2]'],
+			'[1,2,3]': ['[1,2,3]', '[]', '[X(1),X(2),X(3)]', '[2]'],
+		}
+	)
+		
+	def testFilter(self):
+		self._testMetaTransf(lists.Filter, self.filterTestCases)
+
+	# TODO: testFetch
+
+	def testSplit(self):
+		self._testTransf(
+			lists.Split(rewrite.Pattern('X','Y')), 
+			(
+				('[A,B,C]', 'FAILURE'),
+				('[X,A,B,C]', '[[],[A,B,C]]'),
+				('[A,X,B,C]', '[[A],[B,C]]'),
+				('[A,B,X,C]', '[[A,B],[C]]'),
+				('[A,B,C,X]', '[[A,B,C],[]]'),
+			)
+		)
 	
-	def testSplit3(self):
-		self._testTransf(lists.Split3(rewrite.Pattern('X','Y')), self.split3TestCases)
+	def testSplitBefore(self):
+		self._testTransf(
+			lists.SplitBefore(rewrite.Pattern('X','Y')), 
+			(
+				('[A,B,C]', 'FAILURE'),
+				('[X,A,B,C]', '[[],[Y,A,B,C]]'),
+				('[A,X,B,C]', '[[A],[Y,B,C]]'),
+				('[A,B,X,C]', '[[A,B],[Y,C]]'),
+				('[A,B,C,X]', '[[A,B,C],[Y]]'),
+			)
+		)
+
+	def testSplitAfter(self):
+		self._testTransf(
+			lists.SplitAfter(rewrite.Pattern('X','Y')), 
+			(
+				('[A,B,C]', 'FAILURE'),
+				('[X,A,B,C]', '[[Y],[A,B,C]]'),
+				('[A,X,B,C]', '[[A,Y],[B,C]]'),
+				('[A,B,X,C]', '[[A,B,Y],[C]]'),
+				('[A,B,C,X]', '[[A,B,C,Y],[]]'),
+			)
+		)
+
+	def testSplitKeep(self):
+		self._testTransf(
+			lists.SplitKeep(rewrite.Pattern('X','Y')), 
+			(
+				('[A,B,C,D]', 'FAILURE'),
+				('[X,A,B,C,D]', '[[],Y,[A,B,C,D]]'),
+				('[A,X,B,C,D]', '[[A],Y,[B,C,D]]'),
+				('[A,B,X,C,D]', '[[A,B],Y,[C,D]]'),
+				('[A,B,C,X,D]', '[[A,B,C],Y,[D]]'),
+				('[A,B,C,D,X]', '[[A,B,C,D],Y,[]]'),
+			)
+		)
+
+	def testSplitAll(self):
+		self._testTransf(
+			lists.SplitAll(rewrite.Pattern('X','Y')), 
+			(
+				('[A,B,C,D]', '[[A,B,C,D]]'),
+				('[X,A,B,C,D]', '[[],[A,B,C,D]]'),
+				('[A,B,X,C,D]', '[[A,B],[C,D]]'),
+				('[A,X,B,X,C]', '[[A],[B],[C]]'),
+				('[X,A,B,C,X]', '[[],[A,B,C],[]]'),
+			)
+		)
 
 
 if __name__ == '__main__':
@@ -751,4 +789,3 @@ if __name__ == '__main__':
 		prof.runcall(unittest.main)
 		prof.close()
 
-		

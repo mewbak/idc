@@ -8,6 +8,7 @@ from transf import exception
 from transf import base
 from transf import util
 from transf import operate
+from transf import combine
 from transf import project
 from transf import match
 from transf import build
@@ -80,8 +81,16 @@ def MapR(operand):
 
 
 def Filter(operand):
-	return Map(operand, ConsFilter)
-
+	#return Map(operand, ConsFilter)
+	filter = util.Proxy()
+	filter.subject = \
+		match.nil + \
+		combine.GuardedChoice(
+			congruent.Cons(operand, base.ident),
+			congruent.Cons(base.ident, filter),
+			project.tail * filter
+		)
+	return filter
 
 def FilterR(operand):
 	return Map(operand, ConsFilterR)
@@ -139,10 +148,11 @@ def AtSuffix(operand):
 	return atsuffix
 
 
+# TODO: is there any way to avoid so much code duplication in the Split* transfs?
+
 def Split(operand):
-	tail = scope.Anonymous('split-tail')
-	return scope.Local3(
-		(tail,),
+	tail = scope.Anonymous('tail')
+	return scope.Local3((tail,),
 		build.List((
 			AtSuffix(
 				match.Cons(operand, match.Var(tail)) *
@@ -152,26 +162,35 @@ def Split(operand):
 		))
 	)
 
-
-def Split2(operand):
-	tail = scope.Anonymous('split-tail')
-	return scope.Local3(
-		(tail,),
+def SplitAfter(operand):
+	tail = scope.Anonymous('tail')
+	return scope.Local3((tail,),
 		build.List((
 			AtSuffix(
-				congruent.Cons(operand, base.ident) *
-				match.Var(tail) *
-				build.nil
+				congruent.Cons(operand, match.Var(tail) * build.nil)
 			),
 			build.Var(tail)
 		))
 	)
 
-def Split3(operand):
-	elem = scope.Anonymous('split3-elem')
-	tail = scope.Anonymous('split3-tail')
-	return scope.Local3(
-		(elem, tail),
+
+def SplitBefore(operand):
+	tail = scope.Anonymous('tail')
+	return scope.Local3((tail,),
+		build.List((
+			AtSuffix(
+				congruent.Cons(operand, base.ident) * 
+				match.Var(tail) * build.nil
+			),
+			build.Var(tail)
+		))
+	)
+
+
+def SplitKeep(operand):
+	elem = scope.Anonymous('elem')
+	tail = scope.Anonymous('tail')
+	return scope.Local3((elem, tail),
 		build.List((
 			AtSuffix(
 				match.Cons(operand * match.Var(elem), match.Var(tail)) *
@@ -182,6 +201,16 @@ def Split3(operand):
 		))
 	)
 	
+def SplitAll(operand):
+	split = util.Proxy()
+	split.subject = \
+		combine.GuardedChoice(
+			Split(operand),
+			congruent.Cons(base.ident, project.head * split),
+			build.List((base.ident,))
+		)
+	return split
+		
 
 class Lookup(base.Transformation):
 	
