@@ -778,6 +778,42 @@ class TestLists(TestMixin, unittest.TestCase):
 			)
 		)
 
+	def testSplitAllBefore(self):
+		self._testTransf(
+			lists.SplitAllBefore(rewrite.Pattern('X','Y')), 
+			(
+				('[A,B,C,D]', '[[A,B,C,D]]'),
+				('[X,A,B,C,D]', '[[],[Y,A,B,C,D]]'),
+				('[A,B,X,C,D]', '[[A,B],[Y,C,D]]'),
+				('[A,X,B,X,C]', '[[A],[Y,B],[Y,C]]'),
+				('[X,A,B,C,X]', '[[],[Y,A,B,C],[Y]]'),
+			)
+		)
+
+	def testSplitAllAfter(self):
+		self._testTransf(
+			lists.SplitAllAfter(rewrite.Pattern('X','Y')), 
+			(
+				('[A,B,C,D]', '[[A,B,C,D]]'),
+				('[X,A,B,C,D]', '[[Y],[A,B,C,D]]'),
+				('[A,B,X,C,D]', '[[A,B,Y],[C,D]]'),
+				('[A,X,B,X,C]', '[[A,Y],[B,Y],[C]]'),
+				('[X,A,B,C,X]', '[[Y],[A,B,C,Y],[]]'),
+			)
+		)
+
+	def testSplitAllKeep(self):
+		self._testTransf(
+			lists.SplitAllKeep(rewrite.Pattern('X','Y')), 
+			(
+				('[A,B,C,D]', '[[A,B,C,D]]'),
+				('[X,A,B,C,D]', '[[],Y,[A,B,C,D]]'),
+				('[A,B,X,C,D]', '[[A,B],Y,[C,D]]'),
+				('[A,X,B,X,C]', '[[A],Y,[B],Y,[C]]'),
+				('[X,A,B,C,X]', '[[],Y,[A,B,C],Y,[]]'),
+			)
+		)
+
 
 if __name__ == '__main__':
 	if __debug__:

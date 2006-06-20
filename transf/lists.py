@@ -162,17 +162,6 @@ def Split(operand):
 		))
 	)
 
-def SplitAfter(operand):
-	tail = scope.Anonymous('tail')
-	return scope.Local3((tail,),
-		build.List((
-			AtSuffix(
-				congruent.Cons(operand, match.Var(tail) * build.nil)
-			),
-			build.Var(tail)
-		))
-	)
-
 
 def SplitBefore(operand):
 	tail = scope.Anonymous('tail')
@@ -181,6 +170,18 @@ def SplitBefore(operand):
 			AtSuffix(
 				congruent.Cons(operand, base.ident) * 
 				match.Var(tail) * build.nil
+			),
+			build.Var(tail)
+		))
+	)
+
+
+def SplitAfter(operand):
+	tail = scope.Anonymous('tail')
+	return scope.Local3((tail,),
+		build.List((
+			AtSuffix(
+				congruent.Cons(operand, match.Var(tail) * build.nil)
 			),
 			build.Var(tail)
 		))
@@ -200,16 +201,45 @@ def SplitKeep(operand):
 			build.Var(tail)
 		))
 	)
-	
-def SplitAll(operand):
-	split = util.Proxy()
-	split.subject = \
+
+
+def SplitAll(operand, ):
+	splitall = util.Proxy()
+	splitall.subject = \
 		combine.GuardedChoice(
 			Split(operand),
-			congruent.Cons(base.ident, project.head * split),
+			congruent.Cons(base.ident, project.head * splitall),
 			build.List((base.ident,))
 		)
-	return split
+	return splitall
+		
+
+def SplitAllAfter(operand, ):
+	splitall = util.Proxy()
+	splitall.subject = \
+		combine.GuardedChoice(
+			SplitAfter(operand),
+			congruent.Cons(base.ident, project.head * splitall),
+			build.List((base.ident,))
+		)
+	return splitall
+		
+
+def SplitAllKeep(operand, ):
+	splitall = util.Proxy()
+	splitall.subject = \
+		combine.GuardedChoice(
+			SplitKeep(operand),
+			congruent.Cons(
+				base.ident, 
+				congruent.Cons(
+					base.ident, 
+					project.head * splitall
+				)
+			),
+			build.List((base.ident,))
+		)
+	return splitall
 		
 
 class Lookup(base.Transformation):
