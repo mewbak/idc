@@ -64,6 +64,24 @@ class Transformation(object):
 		from transf import combine
 		return combine.Composition(self, other)	
 
+	def __pow__(self, other):
+		'''Exponentiation operater. Shorthand for L{combine.GuardedChoice}.
+		
+		For example, C{t1 **t2** t3} is equivalent, to C{combine.GuardedChoice(t1, t2,
+		t3)}. The exponentiation operator is right associative, so C{t1 **t2** t3
+		**t4** t5} is the same as C{t1 **t2** (t3 **t4** t5)}. However note that its
+		precedence is higher than other operators, therefore parenthesis must be used
+		around them.
+		
+		@see: U{http://docs.python.org/ref/summary.html} for a summary of Python's
+		operators precedence.
+		'''
+		from transf import combine
+		if isinstance(other, tuple):
+			return combine.GuardedChoice(self, *other)
+		else:
+			return (self, other)
+		
 	def __repr__(self):
 		name = self.__class__.__module__ + '.' + self.__class__.__name__
 		attrs = {}
@@ -75,7 +93,9 @@ class Transformation(object):
 				except:
 					objrepr = "<error>"
 				attrs[objname] = objrepr
-		return '<' + name + '(' + ', '.join(["%s=%s" % attr for attr in attrs.iteritems()]) + ')>'
+		names = attrs.keys()
+		names.sort()
+		return '<' + name + '(' + ', '.join(["%s=%s" % (name, attrs[name]) for name in names]) + ')>'
 			
 
 class Ident(Transformation):

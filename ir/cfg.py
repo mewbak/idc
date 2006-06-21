@@ -9,6 +9,7 @@ from transf import *
 
 from ir.common import *
 import ir.traverse
+import ir.traverse2
 import ir.pprint
 import lang.dot
 
@@ -24,10 +25,7 @@ setStmtId = annotation.Set(stmtIdAnno, arith.Count('stmtid'))
 markStmtsIds = scope.Let2((
 		('stmtid', build.zero),
 	),
-	traverse.TopDown(
-		+((matchModule + matchStmt) * setStmtId),
-		stop = stopStmts
-	),
+	ir.traverse2.AllStmtsBU(debug.Dump() * setStmtId)
 )
 
 
@@ -378,13 +376,14 @@ def main():
 	for arg in sys.argv[1:]:
 		print "* Reading aterm"
 		term = factory.readFromTextFile(file(arg, 'rt'))
-		#print ( pprint2.module * renderBox )(term)
-		#print
+		#print ( ir.pprint.module * renderBox )(term)
+		print term
+		print
 
 		print "* Marking statements"
 		term = markStmtsIds (term)
-		#print term
-		#print
+		print term
+		print
 		
 		print "* Marking flow"
 		term = markFlow (term)

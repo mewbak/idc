@@ -188,7 +188,7 @@ class Term(object):
 		except ImportError:
 			from StringIO import StringIO
 		fp = StringIO()
-		writer = _helpers.AbbrevTextWriter(fp, 2)
+		writer = _helpers.AbbrevTextWriter(fp, 3)
 		try:
 			writer.visit(self)
 		except:

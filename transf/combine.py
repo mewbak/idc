@@ -130,7 +130,7 @@ def GuardedChoice(operand1, operand2, operand3):
 	if operand1 is base.fail:
 		return operand3
 	if operand2 is base.ident:
-		return Choice(operand1, operand2)
+		return Choice(operand1, operand3)
 	if operand3 is base.fail:
 		return Composition(operand1, operand2)
 	return _GuardedChoice(operand1, operand2, operand3)

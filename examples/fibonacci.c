@@ -9,14 +9,12 @@ unsigned fib(int x)
 		return 1;
 }
 
-/*
 int main()
 {
 	register int i;
 
 	for (i = 1; i <= 10; i++)
-		printf("fibonacci(%d) = %u\n", i, fibonacci(i));
+		printf("fibonacci(%d) = %u\n", i, fib(i));
 	
 	return 0;
 }
-*/

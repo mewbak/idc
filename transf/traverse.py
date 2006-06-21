@@ -4,14 +4,8 @@
 from transf import exception
 from transf import base
 from transf import util
-from transf import variable
-from transf import operate
-from transf import combine
-from transf import match
 from transf import congruent
 from transf import lists
-
-
 
 
 def All(operand):
@@ -37,6 +31,23 @@ def Some(operand):
 		base.fail
 	)
 	return some
+
+
+def Traverse(Subterms, down = None, up = None, stop = None, Enter = None, Leave = None):
+	'''Generic traversal.'''
+	traverse = util.Proxy()
+	traverse.subject = Subterms(traverse)
+	if Leave is not None:
+		traverse.subject = Leave(traverse.subject)
+	if stop is not None:
+		traverse.subject = stop + traverse.subject
+	if up is not None:
+		traverse.subject = traverse.subject * up
+	if down is not None:
+		traverse.subject = down * traverse.subject
+	if Enter is not None:
+		traverse.subject = Enter(traverse.subject)
+	return traverse
 
 
 def DownUp(down = None, up = None, stop = None):

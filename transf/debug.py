@@ -55,7 +55,31 @@ class DebugMixin(object):
 			log.write('\n      %r: %r,' % (name, var))
 		log.write(sep + '}\n')
 	
+
+class Log(base.Transformation):
+	'''Log message.'''
 	
+	def __init__(self, msg, args):
+		base.Transformation.__init__(self)
+		self.msg = msg
+		self.args = args
+		
+	def apply(self, trm, ctx):
+		args = []
+		for arg in self.args:
+			try:
+				res = arg.apply(trm, ctx)
+			except exception.Failure:
+				res = '<Failure>'
+			else:
+				res = str(res)
+			args.append(res)
+		# TODO: better error handling
+		msg = self.msg % args
+		log.write(msg)
+		return trm
+	
+		
 class Dump(base.Transformation, DebugMixin):
 	'''Dump the current term and context.'''
 	
@@ -70,7 +94,7 @@ class Dump(base.Transformation, DebugMixin):
 	
 	def apply(self, term, ctx):
 		self.dump_line(self.filename, self.lineno)
-		self.dump_term(ctx)
+		self.dump_term(term)
 		self.dump_context(ctx)
 		return term
 

@@ -2,9 +2,12 @@
 
 
 import refactoring
+
 import transf
+
 from transf import path
-import ir.transfs
+
+import ir
 
 
 class SetFunctionReturn(refactoring.Refactoring):
@@ -44,22 +47,23 @@ class SetFunctionReturn(refactoring.Refactoring):
 		print args
 		name, ret = args
 
-		name = transf.match.Term(name)
-		typ = transf.build.Term('Int(32,Signed)')
-		ret = transf.build.Term(ret)
+		funcname = transf.match.Term(name)
+		functype = transf.build.Term('Int(32,Signed)')
+		retsym = transf.build.Term(ret)
 		
 		txn = transf.parse.Transf('''
-			AllTD(
-				~Func(<typ>, <name>, _, 
-					<AllTD(~Ret(<typ>, <!Sym(<ret>)>))>
-				) 
-			) ;
-			AllTD(
-				?Assign(Void, NoExpr, Call(Sym(<name>),*)) ;
-				~Assign(<typ>, <!Sym(<ret>)>, *)
-			)
+			~Module(<
+				One(
+					~Func(<functype>, <funcname>, _, 
+						<AllTD(~Ret(<functype>, <!Sym(<retsym>)>))>
+					) 
+				)>) ;
+				ir.traverse2.AllStmtsBU(Try(
+					?Assign(Void, NoExpr, Call(Sym(<funcname>),*)) ;
+					~Assign(<functype>, <!Sym(<retsym>)>, *)
+				))
+			
 		''')
-		#txn = transf.debug.Trace(txn, 'txn')
 		return txn(term)
 
 
