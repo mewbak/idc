@@ -8,11 +8,12 @@ from transf import base
 from transf import variable
 from transf import operate
 from transf import combine
+from transf import _common
 from transf import match
 from transf import _helper
 
 
-class Cons(match.Cons):
+class _ConsL(_common._Cons):
 	
 	def apply(self, term, ctx):
 		try:
@@ -33,8 +34,11 @@ class Cons(match.Cons):
 		else:
 			return term
 
+def ConsL(head, tail):
+	return _common.Cons(head, tail, _ConsL, match._Term)
 
-class ConsR(Cons):
+
+class _ConsR(_common._Cons):
 	
 	def apply(self, term, ctx):
 		try:
@@ -54,34 +58,21 @@ class ConsR(Cons):
 			)
 		else:
 			return term
+
+def ConsR(head, tail):
+	return _common.Cons(head, tail, _ConsR, match._Term)
+
+
+Cons = ConsL
 
 
 def List(elms, tail = None):
-	'''Transformation which traverses a term list. 
-	
-	@param elms: sequence of transformations to be applied to the elements
-	@param tail: option transformation to be applied to the list tail; defaults 
-	to matching the empty list
-	'''
-	if tail is None:
-		tail = match.nil
-	return operate.Nary(iter(elms), Cons, tail)
+	return _common.List(elms, tail, Cons, match.nil)
 	
 
-class Appl(base.Transformation):
+class _Appl(_common._Appl):
 	'''Traverse a term application.'''
 
-	def __init__(self, name, args):
-		base.Transformation.__init__(self)
-		if isinstance(name, basestring):
-			self.name = match.Str(name)
-		else:
-			self.name = name
-		if isinstance(args, (tuple, list)):
-			self.args = List(args)
-		else:
-			self.args = args
-				
 	def apply(self, term, ctx):
 		try:
 			old_name = term.name
@@ -101,16 +92,15 @@ class Appl(base.Transformation):
 		else:
 			return term
 
+def Appl(name, args):
+	return _common.Appl(name, args, _Appl, match._Term, List)
+
 
 Var = variable.Traverse
 
 
-class Annos(base.Transformation):
+class Annos(_common.Annos):
 	
-	def __init__(self, annos):
-		base.Transformation.__init__(self)
-		self.annos = annos
-
 	def apply(self, term, ctx):
 		old_annos = term.getAnnotations()
 		new_annos = self.annos.apply(old_annos, ctx)

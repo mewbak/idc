@@ -20,56 +20,6 @@ from transf import unify
 length = unify.Count(base.ident)
 
 
-class ConsFilter(congruent.Cons):
-	
-	def apply(self, term, ctx):
-		try:
-			old_head = term.head
-			old_tail = term.tail
-		except AttributeError:
-			raise exception.Failure
-		
-		try:
-			new_head = self.head.apply(old_head, ctx)
-		except exception.Failure:
-			return self.tail.apply(old_tail, ctx)
-		new_tail = self.tail.apply(old_tail, ctx)
-		
-		if new_head is not old_head or new_tail is not old_tail:
-			return term.factory.makeCons(
-				new_head,
-				new_tail,
-				term.annotations
-			)
-		else:
-			return term
-
-
-class ConsFilterR(congruent.Cons):
-	
-	def apply(self, term, ctx):
-		try:
-			old_head = term.head
-			old_tail = term.tail
-		except AttributeError:
-			raise exception.Failure
-		
-		new_tail = self.tail.apply(old_tail, ctx)
-		try:
-			new_head = self.head.apply(old_head, ctx)
-		except exception.Failure:
-			return new_tail
-
-		if new_head is not old_head or new_tail is not old_tail:
-			return term.factory.makeCons(
-				new_head,
-				new_tail,
-				term.annotations
-			)
-		else:
-			return term
-
-
 def Map(operand, Cons = congruent.Cons):
 	map = util.Proxy()
 	map.subject = match.nil + Cons(operand, map)
@@ -81,7 +31,6 @@ def MapR(operand):
 
 
 def Filter(operand):
-	#return Map(operand, ConsFilter)
 	filter = util.Proxy()
 	filter.subject = \
 		match.nil + \
@@ -93,7 +42,12 @@ def Filter(operand):
 	return filter
 
 def FilterR(operand):
-	return Map(operand, ConsFilterR)
+	filter = util.Proxy()
+	filter.subject = \
+		match.nil + \
+		congruent.Cons(base.ident, filter) * \
+		(congruent.Cons(operand, base.ident) + project.tail)
+	return filter
 
 
 def Fetch(operand):

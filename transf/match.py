@@ -8,7 +8,8 @@ import aterm.terms
 from transf import exception
 from transf import base
 from transf import variable
-from transf import operate
+from transf import combine
+from transf import _common
 from transf import _helper
 
 
@@ -57,21 +58,16 @@ def AnAppl():
 anAppl = AnAppl()
 
 
-class Term(base.Transformation):
+class _Term(_common._Term):
 	
-	def __init__(self, term):
-		base.Transformation.__init__(self)
-		if isinstance(term, basestring):
-			self.term = _factory.parse(term)
-		else:
-			assert isinstance(term, aterm.terms.Term)
-			self.term = term
-
 	def apply(self, term, ctx):
-		if self.term.isEquivalent(term):
+		if self.term == term:
 			return term
 		else:
 			raise exception.Failure('term mismatch', self.term, term)
+
+def Term(term):
+	return _common.Term(term, _Term)
 
 
 class TermSet(base.Transformation):
@@ -93,22 +89,9 @@ class TermSet(base.Transformation):
 			raise exception.Failure('term not in set', term)
 
 
-class Lit(base.Transformation):
-
-	def __init__(self, type, value):
-		base.Transformation.__init__(self)
-		self.type = type
-		self.value = value
-
-	def apply(self, term, ctx):
-		if term.type != self.type or term.value != self.value:
-			raise exception.Failure
-		return term
-
-
 def Int(value):
 	'''Transformation which matches an integer term with the given value.'''
-	return Lit(aterm.types.INT, value)
+	return _common.Int(value, _Term)
 
 zero = Int(0)
 one = Int(1)
@@ -119,21 +102,28 @@ four = Int(4)
 
 def Real(value):
 	'''Transformation which matches a real term with the given value.'''
-	return Lit(aterm.types.REAL, value)
+	return _common.Real(value, _Term)
 
 
 def Str(value):
 	'''Transformation which matches a string term with the given value.'''
-	return Lit(aterm.types.STR, value)
-	
+	return _common.Str(value, _Term)
+
+empty = Str("")
+
 
 def StrSet(*values):
 	return TermSet(*[_factory.makeStr(value) for value in values])
 	
 
-class Nil(base.Transformation):
+class Nil(_Term):
 	'''Transformation which matches an empty list term.'''
 
+	# XXX: we subclass _Term in orde to save time in apply
+	
+	def __init__(self):
+		_Term.__init__(self, _factory.makeNil())
+		
 	def apply(self, term, ctx):
 		if term.type != aterm.types.NIL:
 			raise exception.Failure
@@ -142,77 +132,70 @@ class Nil(base.Transformation):
 nil = Nil()
 
 
-class Cons(base.Transformation):
-	'''Transformation which matches a list construction term.'''
+class _ConsL(_common._Cons):
 	
-	def __init__(self, head, tail):
-		'''Takes as argument the transformations to be applied to the list 
-		head and tail.'''
-		self.head = head
-		self.tail = tail
-		
 	def apply(self, term, ctx):
 		try:
-			self.head.apply(term.head, ctx)
-			self.tail.apply(term.tail, ctx)
+			head = term.head
+			tail = term.tail
 		except AttributeError:
-			raise exception.Failure
+			raise exception.Failure('not a list construction term', term)
 		else:	
+			self.head.apply(head, ctx)
+			self.tail.apply(tail, ctx)
 			return term
 
-class ConsR(Cons):
-	'''Transformation which matches a list construction term.'''
+def ConsL(head, tail):
+	return _common.Cons(head, tail, _ConsL, _Term)
+
+
+class _ConsR(_common._Cons):
 	
 	def apply(self, term, ctx):
 		try:
-			self.head.apply(term.head, ctx)
-			self.tail.apply(term.tail, ctx)
+			head = term.head
+			tail = term.tail
 		except AttributeError:
-			raise exception.Failure
+			raise exception.Failure('not a list construction term', term)
 		else:	
+			self.tail.apply(tail, ctx)
+			self.head.apply(head, ctx)
 			return term
+
+def ConsR(head, tail):
+	return _common.Cons(head, tail, _ConsR, _Term)
+
+
+Cons = ConsL
 
 
 def List(elms, tail = None):
-	if tail is None:
-		tail = nil
-	return operate.Nary(iter(elms), Cons, tail)
+	return _common.List(elms, tail, Cons, nil)
 	
 
-class Appl(base.Transformation):
+class _Appl(_common._Appl):
 
-	def __init__(self, name, args):
-		base.Transformation.__init__(self)
-		if isinstance(name, basestring):
-			self.name = Str(name)
-		else:
-			self.name = name
-		if isinstance(args, (tuple, list)):
-			self.args = List(args)
-		else:
-			self.args = args
-		
 	def apply(self, term, ctx):
 		try:
 			name = term.name
 			args = term.args
 		except AttributeError:
-			raise exception.Failure
+			raise exception.Failure('not an application term', term)
 		else:
 			self.name.apply(name, ctx)
 			self.args.apply(args, ctx)
 			return term
 
 
+def Appl(name, args):
+	return _common.Appl(name, args, _Appl, _Term, List)
+
+
 Var = variable.Match
 
 
-class Annos(base.Transformation):
+class Annos(_common.Annos):
 	
-	def __init__(self, annos):
-		base.Transformation.__init__(self)
-		self.annos = annos
-
 	def apply(self, term, ctx):
 		self.annos.apply(term.getAnnotations(), ctx)
 		return term
@@ -220,10 +203,10 @@ class Annos(base.Transformation):
 
 def Anno(anno):
 	from transf import traverse
-	return Annos(traverse.One(Where(anno)))
+	return Annos(traverse.One(combine.Where(anno)))
 
 
-class Pattern(base.Transformation):
+class Pattern(_common.Pattern):
 	
 	def __init__(self, pattern):
 		base.Transformation.__init__(self)

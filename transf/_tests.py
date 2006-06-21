@@ -714,6 +714,7 @@ class TestLists(TestMixin, unittest.TestCase):
 		
 	def testFilter(self):
 		self._testMetaTransf(lists.Filter, self.filterTestCases)
+		self._testMetaTransf(lists.FilterR, self.filterTestCases)
 
 	# TODO: testFetch
 

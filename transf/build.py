@@ -8,17 +8,17 @@ import aterm.terms
 from transf import exception
 from transf import base
 from transf import variable
-from transf import operate
+from transf import _common
 from transf import _helper
 
 
 _factory = aterm.factory.factory
 
 
-class _Term(base.Transformation):
+class _Term(_common._Term):
 
-	# NOTE: this class should not be derived to avoid 
-	# breaking optimizations
+	# NOTE: especial care should when deriving this class
+	# to avoid breaking optimizations
 	
 	def __init__(self, term):
 		base.Transformation.__init__(self)
@@ -28,28 +28,25 @@ class _Term(base.Transformation):
 		return self.term
 
 def Term(term):
-	if isinstance(term, basestring):
-		term = _factory.parse(term)
-	return _Term(term)
+	return _common.Term(term, _Term)
 
 
 def Int(value):
-	term = _factory.makeInt(value)
-	return _Term(term)
+	return _common.Int(value, _Term)
 
 zero = Int(0)
 one = Int(1)
 two = Int(2)
 three = Int(3)
 four = Int(4)
-
+	
 
 def Real(value):
-	return _Term(_factory.makeReal(value))
+	return _common.Real(value, _Term)
 
 
 def Str(value):
-	return _Term(_factory.makeStr(value))
+	return _common.Str(value, _Term)
 
 empty = Str("")
 
@@ -62,78 +59,60 @@ def Nil():
 nil = Nil()
 
 
-class _Cons(base.Transformation):
+class _ConsL(_common._Cons):
 	
-	def __init__(self, head, tail):
-		base.Transformation.__init__(self)
-		self.head = head
-		self.tail = tail
-		
 	def apply(self, term, ctx):
 		head = self.head.apply(term, ctx)
 		tail = self.tail.apply(term, ctx)
 		return term.factory.makeCons(head, tail)
 
-def Cons(head, tail):
-	if isinstance(tail, (tuple, list)):
-		tail = List(tail)
-	if isinstance(head, _Term) and isinstance(tail, _Term):
-		return _Term(_factory.makeCons(head.term, tail.term))
-	return _Cons(head, tail)
+def ConsL(head, tail):
+	return _common.Cons(head, tail, _ConsL, _Term)
+
+
+class _ConsR(_common._Cons):
+	
+	def apply(self, term, ctx):
+		tail = self.tail.apply(term, ctx)
+		head = self.head.apply(term, ctx)
+		return term.factory.makeCons(head, tail)
+
+def ConsR(head, tail):
+	return _common.Cons(head, tail, _ConsR, _Term)
+
+
+Cons = ConsL
 
 
 def List(elms, tail = None):
-	if tail is None:
-		tail = nil
-	return operate.Nary(iter(elms), Cons, tail)
-
-
-class _Appl(base.Transformation):
+	return _common.List(elms, tail, Cons, nil)
 	
-	def __init__(self, name, args):
-		base.Transformation.__init__(self)
-		self.name = name
-		self.args = args
-		
+
+class _Appl(_common._Appl):
+
 	def apply(self, term, ctx):
 		name = self.name.apply(term, ctx)
 		args = self.args.apply(term, ctx)
 		return term.factory.makeAppl(name, args)
 
+
 def Appl(name, args):
-	if isinstance(name, basestring):
-		name = Str(name)
-	if isinstance(args, (tuple, list)):
-		args = List(args)
-	if isinstance(name, _Term) and isinstance(args, _Term):
-		return _Term(_factory.makeAppl(name.term, args.term))
-	return _Appl(name, args)
+	return _common.Appl(name, args, _Appl, _Term, List)
 
 
 Var = variable.Build
 
 
-class Annos(base.Transformation):
+class Annos(_common.Annos):
 	
-	def __init__(self, annos):
-		base.Transformation.__init__(self)
-		self.annos = annos
-
 	def apply(self, term, ctx):
 		return term.setAnnotations(self.annos.apply(term, ctx))
 
-	
-class Pattern(base.Transformation):
+
+class Pattern(_common.Pattern):
 
 	# TODO: Parse patterns into the above classes
 
-	def __init__(self, pattern):
-		base.Transformation.__init__(self)
-		if isinstance(pattern, basestring):
-			self.pattern = _factory.parse(pattern)
-		else:
-			self.pattern = pattern
-	
 	def apply(self, term, ctx):
 		# FIXME: avoid the dict copy
 		kargs = {}
