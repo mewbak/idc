@@ -59,7 +59,7 @@ class SetFunctionReturn(refactoring.Refactoring):
 					) 
 				)>) ;
 				ir.traverse2.AllStmtsBU(Try(
-					?Assign(Void, NoExpr, Call(Sym(<funcname>),*)) ;
+					?Assign(Void, NoExpr, Call(Sym(<funcname>), *)) ;
 					~Assign(<functype>, <!Sym(<retsym>)>, *)
 				))
 			

@@ -47,7 +47,7 @@ class SslLookup(transf.base.Transformation):
 		for temp in temps:
 			self.tmp_no += 1
 			name = "tmp%d" % self.tmp_no
-			kargs[temp] = term.factory.make("Sym(_)", name)
+			kargs[temp] = term.factory.make("Sym(_){Tmp}", name)
 
 		return term.factory.make(pattern, **kargs)	
 
@@ -134,7 +134,7 @@ stmt = ir.traverse.Stmt(
 	Wrapper = ir.traverse.UP(doStmt)
 )
 
-stmts.subject = transf.lists.Map(stmt) * transf.lists.concat
+stmts.subject = transf.lists.MapConcat(stmt)
 
 #stmts.subject = transf.debug.Trace('stmts', stmts.subject)
 #stmt.subject = transf.debug.Trace('stmt', stmt.subject)

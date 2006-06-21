@@ -2,53 +2,42 @@
 
 
 from transf import *
+import ir.match
 
 
-setLocalVar = build.List((base.ident, base.ident)) * variable.Set('local')
-# FIXME: this is machine dependent -- we should search the locally declared vars
-setLocalVars = parse.Transf('''
-	Where(<Map(setLocalVar)> [
-		"eax", "ebx", "ecx", "edx",
-		"esi", "edi", "ebp", "esp",
-		"ax", "bx", "cx", "dx",
-		"si", "di", "bp", "sp",
-		"ah", "bh", "ch", "dh",
-		"al", "bl", "cl", "dl",
-		"nf", "zf", "af", "pf",
-		"cf", "of", "df", "if"
-	])
-''')
-setLocalVars = debug.Trace(setLocalVars, 'setLocalVars')
+#######################################################################
+# Local var table
 
-def isTempVar(term, ctx):
-	if term.value.startswith('tmp'):
-		return term
-	raise exception.Failure
-isTempVar = match.aStr * util.Adaptor(isTempVar)
+# TODO: detect local variables from scope rules
+isReg = combine.Where(annotation.Get('Reg'))
+isTmp = combine.Where(annotation.Get('Tmp'))
+isLocalVar = ir.match.aSym * (isReg + isTmp)
 
-clearLocalVars = table.Clear('local')
-isVarLocal = isTempVar + table.Get('local')
+markLocalVar = isLocalVar * table.Set('locals') * debug.Log('Found local %s\n', base.ident)
+markLocalVars = traverse.AllTD(markLocalVar)
+
+def EnterLocals(operand):
+	return scope.With((
+			('locals', table.new),
+		),
+		markLocalVars * operand
+	)
+
+
+#######################################################################
+# Needed/uneeded table
 
 setUnneededVar = table.Del('needed')
-#setUnneededVar = build.List((base.ident,)) * variable.Set('needed')
 setNeededVar = table.Set('needed', base.ident)
-#setNeededVar = build.List((base.ident,base.ident)) * variable.Set('needed')
 
-setNeededVars = parse.Transf('''
-	AllTD(?Sym(<setNeededVar>))
-''')
+setNeededVars = traverse.AllTD(ir.match.aSym * setNeededVar)
 
 setAllUnneededVars = table.Clear('needed')
-def setAllNeededVars(term, ctx):
-	local = ctx['local']
-	for name in local.terms:
-		ctx['needed'].terms[name] = name
-	return term
-setAllNeededVars = util.Adaptor(setAllNeededVars)
+setAllNeededVars = table.Add('needed', 'local')
 
 parse.Transfs(r'''
 
-isVarNeeded = ?needed + Not(isVarLocal)
+isVarNeeded = ir.match.aSym ; (?needed + Not(isLocalVar))
 isVarNeeded = debug.Trace(isVarNeeded, `'isVarNeeded'`)
 
 dceStmt = Proxy()
@@ -56,7 +45,7 @@ dceStmts = Proxy()
 
 dceAssign = 
 	{x:
-		?Assign(_, Sym(x), _) ;
+		?Assign(_, x, _) ;
 		if <isVarNeeded> x then
 			<setUnneededVar> x ;
 			~Assign(_, _, <setNeededVars>)
@@ -103,10 +92,10 @@ dceBlock =
 
 dceFunc = 
 	~Func(_, _, _, <
-		setLocalVars; 
-		setAllUnneededVars; 
-		dceStmts; 
-		clearLocalVars
+		EnterLocals(
+			setAllUnneededVars; 
+			dceStmts
+		)
 	>)
 
 # If none of the above applies, assume all vars are needed

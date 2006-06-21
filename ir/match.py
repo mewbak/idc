@@ -6,6 +6,16 @@ import transf as trf
 def ApplName(name):
 	return trf.match.Appl(trf.match.Str(name), trf.base.ident)
 
+
+#######################################################################
+# Expression
+
+aSym = ApplName('Sym')
+
+
+#######################################################################
+# Statements
+
 aModule = ApplName('Module')
 aFunc = ApplName('Func')
 aWhile = ApplName('While')

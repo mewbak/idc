@@ -233,7 +233,7 @@ immediate returns [ret]
 
 register returns [ret]
 	: PERCENTAGE^ name=symbol
-		{ ret = self.factory.make("Sym(_)", name) }
+		{ ret = self.factory.make("Sym(_){Reg}", name) }
 	;
 
 memory returns [ret]

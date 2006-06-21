@@ -26,12 +26,13 @@ class Transformation(object):
 		'''Constructor.'''
 		pass
 	
-	def __call__(self, trm, ctx = None):
+	def __call__(self, trm, **kargs):
 		'''User-friendly wrapper for L{apply}.'''
 		if isinstance(trm, basestring):
 			trm = aterm.factory.factory.parse(trm)
-		if ctx is None:
-			ctx = context.empty
+		from transf import variable
+		vars = [(name, variable.Term(value)) for name, value in kargs.iteritems()]
+		ctx = context.Context()
 		return self.apply(trm, ctx)
 
 	def apply(self, trm, ctx):

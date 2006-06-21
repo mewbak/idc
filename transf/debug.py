@@ -59,7 +59,7 @@ class DebugMixin(object):
 class Log(base.Transformation):
 	'''Log message.'''
 	
-	def __init__(self, msg, args):
+	def __init__(self, msg, *args):
 		base.Transformation.__init__(self)
 		self.msg = msg
 		self.args = args
@@ -75,7 +75,7 @@ class Log(base.Transformation):
 				res = str(res)
 			args.append(res)
 		# TODO: better error handling
-		msg = self.msg % args
+		msg = self.msg % tuple(args)
 		log.write(msg)
 		return trm
 	

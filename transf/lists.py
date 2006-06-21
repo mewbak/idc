@@ -32,37 +32,41 @@ def MapR(operand):
 
 def Filter(operand):
 	filter = util.Proxy()
-	filter.subject = \
-		match.nil + \
+	filter.subject = (
+		match.nil +
 		combine.GuardedChoice(
 			congruent.Cons(operand, base.ident),
 			congruent.Cons(base.ident, filter),
 			project.tail * filter
 		)
+	)
 	return filter
 
 def FilterR(operand):
 	filter = util.Proxy()
-	filter.subject = \
-		match.nil + \
-		congruent.Cons(base.ident, filter) * \
+	filter.subject = (
+		match.nil +
+		congruent.Cons(base.ident, filter) *
 		(congruent.Cons(operand, base.ident) + project.tail)
+	)
 	return filter
 
 
 def Fetch(operand):
 	fetch = util.Proxy()
-	fetch.subject = \
-		congruent.Cons(operand, base.ident) + \
+	fetch.subject = (
+		congruent.Cons(operand, base.ident) +
 		congruent.Cons(base.ident, fetch)
+	)
 	return fetch
 
 
 def FetchElem(operand):
 	fetch = util.Proxy()
-	fetch.subject = \
-		project.head * operand + \
+	fetch.subject = (
+		project.head * operand +
 		project.tail * fetch
+	)
 	return fetch
 
 
@@ -92,8 +96,8 @@ def Concat(*operands):
 concat = unify.Foldr(build.nil, Concat2)
 
 
-def MapCat(operand):
-	return Map(operand, Cons = Concat2)
+def MapConcat(operand):
+	return unify.Foldr(build.nil, Concat2, operand)
 
 
 def AtSuffix(operand):
@@ -159,29 +163,31 @@ def SplitKeep(operand):
 
 def SplitAll(operand, ):
 	splitall = util.Proxy()
-	splitall.subject = \
+	splitall.subject = (
 		combine.GuardedChoice(
 			Split(operand),
 			congruent.Cons(base.ident, project.head * splitall),
 			build.List((base.ident,))
 		)
+	)
 	return splitall
 		
 
 def SplitAllAfter(operand, ):
 	splitall = util.Proxy()
-	splitall.subject = \
+	splitall.subject = (
 		combine.GuardedChoice(
 			SplitAfter(operand),
 			congruent.Cons(base.ident, project.head * splitall),
 			build.List((base.ident,))
 		)
+	)
 	return splitall
 		
 
 def SplitAllKeep(operand, ):
 	splitall = util.Proxy()
-	splitall.subject = \
+	splitall.subject = (
 		combine.GuardedChoice(
 			SplitKeep(operand),
 			congruent.Cons(
@@ -193,6 +199,7 @@ def SplitAllKeep(operand, ):
 			),
 			build.List((base.ident,))
 		)
+	)
 	return splitall
 		
 

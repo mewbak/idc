@@ -228,7 +228,7 @@ rt returns [res]
 var returns [res]
 		{ res = self.factory.make("Sym(\"UNKNOWN\")") }
 	: r:REG_ID
-		{ res = self.factory.make("Sym(_)", #r.getText()[1:].lower()) }
+		{ res = self.factory.make("Sym(_){Reg}", #r.getText()[1:].lower()) }
 	| #( ri:REG_IDX i=expr )
 		{ raise SemanticException(#ri, "register indexes not supported") }
 	| #( mi:MEM_IDX i=expr )

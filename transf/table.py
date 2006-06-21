@@ -101,7 +101,9 @@ def Get(name):
 	return variable.Traverse(name)
 
 
-def Set(name, key):
+def Set(name, key = None):
+	if key is None:
+		key = base.ident
 	return combine.Where(build.List((key, base.ident)) * variable.Set(name))
 
 
@@ -112,6 +114,17 @@ def Del(name):
 def Clear(name):
 	return variable.Unset(name)
 
+
+class Add(variable.Operation):
+	def __init__(self, name, other):
+		variable.Operation.__init__(self, name)
+		self.other = other
+	def apply(self, term, ctx):
+		var = ctx.get(self.name)
+		other = ctx.get(self.other)
+		var.add(other)
+		return term
+	
 	
 class Join(operate.Binary):
 	'''Transformation composition which joins (unites/intersects) tables in 

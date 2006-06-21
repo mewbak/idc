@@ -3,20 +3,20 @@ Module([
 		If(
 			Binary(
 				Gt(Int(32, Signed)), 
-				Sym("ecx"), 
+				Sym("ecx"){Reg}, 
 				Lit(Int(32, Signed), 0),
 			),
 			Assign(
 				Int(32, Signed), 
-				Sym("eax"),
+				Sym("eax"){Reg},
 				Lit(Int(32, Signed), 1)
 			),
 			Assign(
 				Int(32, Signed), 
-				Sym("ecx"),
+				Sym("ecx"){Reg},
 				Lit(Int(32, Signed), 0)
 			),
 		),
-		Ret(Int(32,Signed), Sym("eax"))
+		Ret(Int(32,Signed), Sym("eax"){Reg})
 	])
 ])
