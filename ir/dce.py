@@ -107,17 +107,6 @@ dceRet =
 	setAllUnneededVars ;
 	~Ret(_, <setNeededVars>)
 
-elimIf = {
-	If(cond,NoStmt,NoStmt) -> Assign(Void,NoExpr,cond) |
-	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
-}
-
-dceIf = 
-	?If ;
-	~If(_, <dceStmt>, _) \needed/ ~If(_, _, <dceStmt>) ;
-	Try(elimIf) ;
-	~If(<setNeededVars>, _, _)
-
 elimBlock = {
 	Block([]) -> NoStmt
 }
@@ -126,11 +115,32 @@ dceBlock =
 	~Block(<dceStmts>) ;
 	Try(elimBlock)
 
+elimIf = {
+	If(cond,NoStmt,NoStmt) -> Assign(Void,NoExpr,cond) |
+	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
+}
+
+dceIf = 
+	?If ;
+	~If(_, <dceStmt>, _) \needed/ ~If(_, _, <dceStmt>) ;
+	~If(<setNeededVars>, _, _) ;
+	Try(elimIf)
+
+elimWhile = {
+	While(cond,NoStmt) -> Assign(Void,NoExpr,cond)
+}
+
+dceWhile = 
+	?While ;
+	\needed/* ~While(<setNeededVars>, <dceStmt>) ;
+	Try(elimWhile)
+dceWhile = debug.Trace(dceWhile, `'dceWhile'`)
+
+
 dceFunc = 
 	with local[], label_needed[] in
 		updateLocalVars ;
 		~Func(_, _, _, <
-#			table.Iterate(with needed[] in dceStmts end, `['label_needed']`, `[]`)
 			\label_needed/* with needed[] in dceStmts end 
 		>)
 		; debug.Dump()
@@ -148,6 +158,7 @@ dceStmt.subject =
 	?Ret < dceRet +
 	?Block < dceBlock +
 	?If < dceIf +
+	?While < dceWhile +
 	?Func < dceFunc + 
 	?Var < id +
 	?NoStmt
