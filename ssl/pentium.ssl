@@ -605,42 +605,42 @@ IDIVL   modrm
             *32* %edx := tmpl %! tmp2
             undefineflags( );
 
-IMUL.B   modrm 
+IMULB   modrm 
             *16* tmph := %al *! modrm{8}
             *16* %ax := tmph
             IMULTFLAGS8(tmph);
 
-IMUL.OW   modrm 
+IMULW   modrm 
             *32* tmp2 := %ax *! modrm
             *16* %ax := truncu(32,16,tmp2)
             *16* %dx := truncu(32,16,tmp2 >> 16)
             IMULTFLAGS16(tmp2);
 
-IMUL.OD   modrm 
+IMULL   modrm 
             *64* tmpl := %eax *! modrm
             *32* %eax := truncu(64,32,tmpl)
             *32* %edx := truncu(64,32,tmpl >> 32)
             IMULTFLAGS32(tmpl);
 
-IMUL.RMOW   reg16, modrm 
-            *16* reg16 := modrm{16} *! reg16
+IMULW2   reg16, modrm 
+            *16* reg16 := modrm *! reg16
             IMULTFLAGS16(reg16);
 
-IMUL.RMOD   reg32, modrm 
-            *32* reg32 := modrm{32} *! reg32
+IMULL2   reg32, modrm 
+            *32* reg32 := modrm *! reg32
             IMULTFLAGS32(reg32);
 
-IMUL.IVW   reg16, modrm, i16 
-            *16* reg16 := modrm{16} *! i16
+IMULW3   reg16, modrm, i16 
+            *16* reg16 := modrm *! i16
             IMULTFLAGS16(reg16);
 
-IMUL.IVD   reg32, modrm, i32 
-            *32* reg32 := modrm{32} *! i32
+IMULL3   reg32, modrm, i32 
+            *32* reg32 := modrm *! i32
             IMULTFLAGS32(reg32);
 
 IMUL.Ibow   reg16, modrm, i8 
             *16* reg16 := modrm{8} *! sgnex(8,16,i8)
-            IMULTFLAGS32(reg16);
+            IMULTFLAGS16(reg16);
 
 IMUL.Ibod   reg32, modrm, i8 
             *32* reg32 := modrm{32} *! sgnex(8,32,i8)

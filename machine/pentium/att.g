@@ -211,8 +211,9 @@ instruction returns [res]
 		{ operands = [] }
 	: opcode:INSTRUCTION^ ( o=operand { operands.append(o) } ( COMMA! o=operand { operands.append(o) } )* )?
 		{
-            // have destination operand as first
-			operands.reverse()
+            // reverse operands to intel syntax
+            if len(operands) == 2:
+                operands.reverse()
             res = self.factory.make("Asm(_, _)", #opcode.getText().lower(), operands)
 		}
 	;

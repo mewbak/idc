@@ -12,10 +12,8 @@ sslTranslationTable = {
 	"orl": "OR.RMOD",
 	"xorl": "XOR.RMOD",
 	"leal": "LEA.OD",
-	"imull": "IMUL.OD",
 	"pushl": "PUSH.OD",
 	"popl": "POP.OD",
-	"leave": "LEAVE",
 }
 
 
@@ -27,6 +25,9 @@ class SslLookup(transf.base.Transformation):
 		transf.base.Transformation.__init__(self)
 
 	def apply(self, term, ctx):
+		if not term.rmatch('Asm(_, [*])'):
+			raise transf.exception.Failure
+			
 		opcode, operands = term.args
 
 		opcode = opcode.value
@@ -81,7 +82,7 @@ simplifyStmt = transf.parse.Rule('''
 
 simplify = transf.traverse.InnerMost(simplifyExpr + simplifyStmt)
 
-sslLookup = SslLookup() * simplify
+sslLookup = SslLookup()
 #sslLookup = transf.debug.Trace(sslLookup, 'sslLookup')
 
 transf.parse.Transfs('''
@@ -118,20 +119,24 @@ stmtsPreambule =
 
 stmts = transf.util.Proxy()
 
-doStmt = transf.parse.Rule('''
+preStmt = transf.parse.Rule('''
 	Asm("ret", [])
-		-> [Ret(Void, NoExpr)]
+		-> Ret(Void, NoExpr)
 |	Asm("call", [Ref(addr)])
-		-> [Assign(Void, NoExpr, Call(addr,[]))]
-|	Asm	
-		-> <sslLookup>
-|	_ 
-		-> [_]
+		-> Assign(Void, NoExpr, Call(addr,[]))
+|	Asm("imull", [op1,op2])
+		-> Asm("imull2", [op1,op2])
+|	Asm("imull", [op1,op2,op3])
+		-> Asm("imull3", [op1,op2,op3])
+''')
+
+doStmt = transf.parse.Transf(''' 
+	sslLookup + ![<id>]
 ''')
 
 stmt = ir.traverse.Stmt(
 	stmts=stmts, 
-	Wrapper = ir.traverse.UP(doStmt)
+	Wrapper = ir.traverse.UP(+preStmt * doStmt * simplify)
 )
 
 stmts.subject = transf.lists.MapConcat(stmt)
@@ -140,7 +145,8 @@ stmts.subject = transf.lists.MapConcat(stmt)
 #stmt.subject = transf.debug.Trace('stmt', stmt.subject)
 
 module = ir.traverse.Module(
-	stmts = transf.lists.Concat2(transf.debug.Dump() * stmtsPreambule, stmts), 
+	#stmts = transf.lists.Concat2(transf.debug.Dump() * stmtsPreambule, stmts), 
+	stmts = stmts, 
 )
 
 
