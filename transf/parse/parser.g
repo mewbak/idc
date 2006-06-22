@@ -131,6 +131,10 @@ transf_merge
 		| LSLASH id_list RSLASH! ( RSLASH id_list LSLASH! )? transf_application
 			{ ## = #(#[JOIN,"JOIN"], ##) } 
 		)?
+	| RSLASH id_list LSLASH! ( LSLASH id_list RSLASH! )? STAR! transf_application 
+		{ ## = #(#[ITERATE,"ITERATE"], ##) } 
+	| LSLASH id_list RSLASH! ( RSLASH id_list LSLASH! )? STAR! transf_application
+		{ ## = #(#[ITERATE,"ITERATE"], ##) } 
 	;
 
 transf_composition
@@ -513,16 +517,10 @@ transf returns [ret]
 		)* IN t=transf
 	  )
 	  	{ ret = transf.scope.Let(t, **vars) }
-	| #( JOIN l=transf 
-			{ unames = [] }
-			{ inames = [] }
-		( LSLASH ids=id_list 
-			{ inames.extend(ids) }
-		| RSLASH ids=id_list
-			{ unames.extend(ids) }
-		)* r=transf
-	 ) 
-		{ ret = transf.table.Join(l, r, unames, inames) }
+	| #( JOIN l=transf names=merge_names r=transf ) 
+		{ ret = transf.table.Join(l, r, names[0], names[1]) }
+	| #( ITERATE names=merge_names r=transf ) 
+		{ ret = transf.table.Iterate(r, names[0], names[1]) }
 	| #( REC 
 			{ ret = transf.util.Proxy() }
 		r=id 
@@ -535,6 +533,18 @@ transf returns [ret]
 		{ ret = transf.variable.Wrap(v, m, *a) }
 	| #( WITH v=var_def_list IN t=transf )
 		{ ret = transf.scope.With(v, t) }
+	;
+
+merge_names returns [ret]
+	:
+			{ unames = [] }
+			{ inames = [] }
+		( LSLASH ids=id_list 
+			{ inames.extend(ids) }
+		| RSLASH ids=id_list
+			{ unames.extend(ids) }
+		)*
+			{ ret = unames, inames }
 	;
 
 arg_list returns [ret]

@@ -130,7 +130,8 @@ dceFunc =
 	with local[], label_needed[] in
 		updateLocalVars ;
 		~Func(_, _, _, <
-			table.Iterate(with needed[] in dceStmts end, `['label_needed']`, `[]`)
+#			table.Iterate(with needed[] in dceStmts end, `['label_needed']`, `[]`)
+			\label_needed/* with needed[] in dceStmts end 
 		>)
 		; debug.Dump()
 	end
