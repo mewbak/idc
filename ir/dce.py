@@ -13,24 +13,23 @@ isReg = combine.Where(annotation.Get('Reg'))
 isTmp = combine.Where(annotation.Get('Tmp'))
 isLocalVar = ir.match.aSym * (isReg + isTmp)
 
-markLocalVar = isLocalVar * table.Set('locals') * debug.Log('Found local %s\n', base.ident)
-markLocalVars = traverse.AllTD(markLocalVar)
+updateLocalVar = (
+	isLocalVar * 
+	table.Set('local')
+)
 
-def EnterLocals(operand):
-	return scope.With((
-			('locals', table.new),
-		),
-		markLocalVars * operand
-	)
+updateLocalVars = traverse.AllTD(updateLocalVar)
 
 
 #######################################################################
 # Needed/uneeded table
 
 setUnneededVar = table.Del('needed')
-setNeededVar = table.Set('needed', base.ident)
+setNeededVar = table.Set('needed')
 
-setNeededVars = traverse.AllTD(ir.match.aSym * setNeededVar)
+setNeededVars = debug.Log('Finding needed vars in %s\n', base.ident) * \
+	traverse.AllTD(ir.match.aSym * setNeededVar * 
+	debug.Log('Found var needed %s\n', base.ident))
 
 setAllUnneededVars = table.Clear('needed')
 setAllNeededVars = table.Add('needed', 'local')
@@ -38,33 +37,70 @@ setAllNeededVars = table.Add('needed', 'local')
 parse.Transfs(r'''
 
 isVarNeeded = ir.match.aSym ; (?needed + Not(isLocalVar))
-isVarNeeded = debug.Trace(isVarNeeded, `'isVarNeeded'`)
+''')
 
+
+#######################################################################
+# Labels
+
+getLabelNeeded = parse.Transf('''
+Where(
+	with label in
+		?Jump(Sym(label)) <
+			!label_needed ; Map(Try(?[label,<setNeededVar>])) +
+			setAllNeededVars
+	end
+)
+''')
+
+setLabelNeeded = parse.Transf('''
+Where(
+	with label in
+		?Label(label) ; debug.Dump(); 
+		!needed ; 
+		setAllUnneededVars ;
+		Map(![label,<id>] ; 
+		table.Set('label_needed'))
+	end
+)
+''')
+
+#######################################################################
+# Statements
+
+parse.Transfs(r'''
 dceStmt = Proxy()
 dceStmts = Proxy()
 
 dceAssign = 
 	{x:
 		?Assign(_, x, _) ;
-		if <isVarNeeded> x then
-			<setUnneededVar> x ;
-			~Assign(_, _, <setNeededVars>)
+		if <isLocalVar> x then
+			if <isVarNeeded> x then
+				debug.Log(`'******* var needed %s\n'`, !x) ;
+				Where(<setUnneededVar> x );
+				~Assign(_, _, <setNeededVars>)
+			else
+				debug.Log(`'******* var uneeded %s\n'`, !x) ;
+				!NoStmt
+			end
 		else
-			!NoStmt
+			debug.Log(`'******* var not local %s\n'`, !x) ;
+			~Assign(_, <setNeededVars>, <setNeededVars>)
 		end
-	} +
-	~Assign(_, <setNeededVars>, <setNeededVars>)
+	}
 
 dceAsm = 
 	?Asm ;
 	setAllNeededVars
 
 dceLabel = 
-	?Label
+	?Label ;
+	setLabelNeeded
 
 dceJump = 
 	?Jump ;
-	setAllNeededVars
+	getLabelNeeded
 
 dceRet = 
 	?Ret ;
@@ -91,39 +127,39 @@ dceBlock =
 	Try(elimBlock)
 
 dceFunc = 
-	~Func(_, _, _, <
-		EnterLocals(
-			setAllUnneededVars; 
-			dceStmts
-		)
-	>)
+	with local[], label_needed[] in
+		updateLocalVars ;
+		~Func(_, _, _, <
+			table.Iterate(with needed[] in dceStmts end, `['label_needed']`, `[]`)
+		>)
+		; debug.Dump()
+	end
 
 # If none of the above applies, assume all vars are needed
 dceDefault = 
 	setAllNeededVars
 
 dceStmt.subject = 
-	dceAssign +
-	dceAsm +
-	dceLabel +
-	dceJump +
-	dceRet +
-	dceBlock +
-	dceIf +
-	dceFunc + 
-	dceDefault
+	?Assign < dceAssign +
+	?Asm < dceAsm +
+	?Label < dceLabel +
+	?Jump < dceJump +
+	?Ret < dceRet +
+	?Block < dceBlock +
+	?If < dceIf +
+	?Func < dceFunc + 
+	?Var < id +
+	?NoStmt
 
 dceStmts.subject = 
-	FilterR(
-		Try(dceStmt) ; 
-		Not(?NoStmt)
-	)
+	MapR(dceStmt) ;
+	Filter(Not(?NoStmt))
 
 dceModule = 
 	~Module(<dceStmts>)
 
 dce =
-	with needed[], local[] in
+	with needed[], local[], label_needed[] in
 		dceModule
 	end
 ''')

@@ -74,7 +74,7 @@ class MainApp(gtk.Window):
 			('New', gtk.STOCK_NEW, None, None, None, self.on_new),  
 			('Open', gtk.STOCK_OPEN, None, None, None, self.on_open),  
 			('Save', gtk.STOCK_SAVE, None, None, None, self.on_save),
-			('SaveAs', gtk.STOCK_SAVE_AS, None, None, None, self.on_save),
+			('SaveAs', gtk.STOCK_SAVE_AS, None, None, None, self.on_saveas),
 			('Quit', gtk.STOCK_QUIT, None, None, None, self.on_quit),  
 			('RefactorMenu', None, '_Refactor'),
 			('ViewMenu', None, '_View'),
@@ -154,7 +154,7 @@ class MainApp(gtk.Window):
 
 	def on_save(self, action):
 		# FIXME: implement this
-		pass
+		self.on_saveas(action)
 	
 	def on_saveas(self, action):
 		path = self.run_saveas_dialog(

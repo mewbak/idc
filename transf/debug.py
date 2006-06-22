@@ -156,6 +156,9 @@ class Traceback(operate.Unary, DebugMixin):
 				self.dump_source(file, lineno)
 				try:
 					self.dump_term(locals['term'])
+				except:
+					pass
+				try:
 					self.dump_context(locals['ctx'])
 				except:
 					pass

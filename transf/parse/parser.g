@@ -178,7 +178,7 @@ constructor
 	;
 
 var
-	: LID
+	: l:LID	{ #l.setType(VAR) }
 	;
 
 id
@@ -194,7 +194,7 @@ arg_list
 
 arg
 	: OBJ
-	| PRIME^ term_var
+	| PRIME! var ( PRIME! )?
 	| transf
 	;
 	
@@ -260,8 +260,7 @@ term_name
 	;
 
 term_var
-	: l:LID
-		{ ## = #(#[VAR,#l.getText()]) }
+	: var
 	;
 
 term_sym
@@ -449,7 +448,7 @@ transf returns [ret]
                 raise SemanticException(#i, "%s is not a transformation" % n)
             ret = txn
         }
-	| #( TRANSF_FAC n=f:id a=arg_list )
+	| #( TRANSF_FAC n=f:id a=as:arg_list )
 		{
             ret = None
             Txn = self.bind_name(n)
@@ -457,7 +456,10 @@ transf returns [ret]
                 raise SemanticException(#f, "could not find %s" % n)
             if not callable(Txn):
                 raise SemanticException(#f, "%s is not callable" % n)
-            txn = Txn(*a)
+            try:
+                txn = Txn(*a)
+            except TypeError, ex:
+                raise SemanticException(#f, "error: %s" % ex)
             if not isinstance(txn, transf.base.Transformation):
                 raise SemanticException(#f, "%s did not return a transformation" % n)
             ret = txn
@@ -482,7 +484,7 @@ transf returns [ret]
             if vars:
                 ret = transf.scope.Local(ret, vars)
         }
-	| #( RDARROW t=transf v=id )
+	| #( RDARROW t=transf v=var )
 		{ ret = transf.combine.Where(transf.combine.Composition(t, transf.variable.Set(v))) }
 	| #( BUILD_APPLY t=transf b=build_term )
 		{ ret = transf.combine.Composition(b, t) }
@@ -542,8 +544,7 @@ arg_list returns [ret]
 arg returns [ret]
 	: o:OBJ
 		{ ret = eval(#o.getText(), self.globals, self.locals) }
-	| PRIME v:VAR
-		{ ret = #v.getText() }
+	| ret=var
 	| ret=transf
 	;
 
@@ -688,6 +689,8 @@ id returns [ret]
 	;
 	
 var returns [ret]
-	: l:LID
+	: v:VAR
+		{ ret = #v.getText() }
+	| l:LID
 		{ ret = #l.getText() }
 	;

@@ -56,7 +56,7 @@ class Table(variable.Variable):
 	
 	def build(self):
 		'''Builds a list all keys in the table.'''
-		return _factory.makeList(self.terms.iterkeys())
+		return _factory.makeList(self.terms.keys())
 		
 	def traverse(self, term):
 		'''Lookups the key matching to the term in the table and return its 
@@ -74,6 +74,17 @@ class Table(variable.Variable):
 		for key in self.terms.iterkeys():
 			if key not in other.terms:
 				del self.terms[key]
+
+	def equals(self, other):
+		if len(self.terms) != len(other.terms):
+			return False
+		for key, value in self.terms.iteritems():
+			try:
+				if value != other.terms[key]:
+					return False
+			except KeyError:
+				return False
+		return True
 
 	def __repr__(self):
 		return '<%s.%s %r>' % (__name__, self.__class__.__name__, self.terms)
@@ -137,9 +148,6 @@ class Join(operate.Binary):
 		self.inames = inames
 	
 	def apply(self, term, ctx):
-		# copy tables
-		names = self.unames + self.inames
-		
 		# duplicate tables
 		lvars = []
 		rvars = []
@@ -148,18 +156,22 @@ class Join(operate.Binary):
 		for name in self.unames:
 			tbl = ctx.get(name)
 			ltbl = tbl.copy()
+			lvars.append((name, ltbl))
 			rtbl = tbl.copy()
+			rvars.append((name, rtbl))
 			utbls.append((tbl, ltbl, rtbl))
 		for name in self.inames:
 			tbl = ctx.get(name)
 			ltbl = tbl.copy()
+			lvars.append((name, ltbl))
 			rtbl = tbl.copy()
+			rvars.append((name, rtbl))
 			itbls.append((tbl, ltbl, rtbl))
+		lctx = context.Context(lvars, ctx)
+		rctx = context.Context(rvars, ctx)
 
 		# apply transformations
-		lctx = context.Context(lvars, ctx)
 		term = self.loperand.apply(term, lctx)
-		rctx = context.Context(rvars, ctx)
 		term = self.roperand.apply(term, rctx)
 
 		# join the tables
@@ -175,5 +187,66 @@ class Join(operate.Binary):
 			tbl.sub(rtbl)
 		
 		return term
+
+
+class Iterate(operate.Unary):
+	'''Transformation composition which joins (unites/intersects) tables in 
+	the process.
+	'''
+	
+	def __init__(self, operand, unames, inames):
+		operate.Unary.__init__(self, operand)
+		self.unames = unames
+		self.inames = inames
+	
+	def apply(self, term, ctx):
+		# duplicate tables
+		lvars = []
+		rvars = []
+		utbls = []
+		itbls = []
+		for name in self.unames:
+			tbl = ctx.get(name)
+			ltbl = tbl.copy()
+			lvars.append((name, ltbl))
+			rtbl = tbl.copy()
+			rvars.append((name, rtbl))
+			utbls.append((tbl, ltbl, rtbl))
+		for name in self.inames:
+			tbl = ctx.get(name)
+			ltbl = tbl.copy()
+			lvars.append((name, ltbl))
+			rtbl = tbl.copy()
+			rvars.append((name, rtbl))
+			itbls.append((tbl, ltbl, rtbl))
+		rctx = context.Context(rvars, ctx)
+
+		# iterate
+		while True:
+			# apply transformation
+			res = self.operand.apply(term, rctx)
+
+			# join the tables
+			equals = True
+			for tbl, ltbl, rtbl in utbls:
+				# unite
+				equals = equals and ltbl.equals(rtbl)
+				ltbl.add(rtbl)
+			for tbl, ltbl, rtbl in itbls:
+				# intersect
+				equals = equals and ltbl.equals(rtbl)
+				ltbl.sub(rtbl)
+			if equals:
+				break
+
+		# copy final result
+		for tbl, ltbl, rtbl in utbls:
+			tbl.unset()
+			tbl.add(ltbl)
+		for tbl, ltbl, rtbl in itbls:
+			tbl.unset()
+			tbl.add(ltbl)
+	
+		return res
 
 

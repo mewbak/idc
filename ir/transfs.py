@@ -20,7 +20,7 @@ class _Splitter(aterm.visitor.Visitor):
 		
 	def visitCons(self, term, ctx):
 		try:
-			head = self.operand(term.head, ctx)
+			head = self.operand.apply(term.head, ctx)
 		except exception.Failure:
 			head, body, tail = self.visit(term.tail, ctx)
 			return head.insert(0, term.head), body, tail
@@ -74,6 +74,6 @@ class ExtractBlock(base.Transformation):
 		
 	def apply(self, term, ctx):
 		head, body, tail = self.split_block.apply(term, ctx)
-		body = self.operand(body, ctx)
+		body = self.operand.apply(body, ctx)
 		return head.extend(body.extend(tail))
 
