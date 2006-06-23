@@ -1,16 +1,60 @@
+'''Matching tranformations.'''
 
 
-import transf as trf
-
-
-def ApplName(name):
-	return trf.match.Appl(trf.match.Str(name), trf.base.ident)
+import transf as lib
 
 
 #######################################################################
-# Expression
+# Utilities
+
+def ApplName(name):
+	return lib.match.Appl(lib.match.Str(name), lib.base.ident)
+
+def ApplNames(names):
+	return lib.match.Appl(lib.match.StrSet(*names), lib.base.ident)
+
+
+#######################################################################
+# Types
+
+typeNames = [
+	'Void'
+	'Bool'
+	'Int',
+	'Float',
+	'Char',
+	'Pointer',
+	'Array',
+	'Compound',
+	'Union',
+	'Func',
+	'Blob',
+]
+
+matchType = ApplNames(typeNames)
+
+
+#######################################################################
+# Expressions
 
 aSym = ApplName('Sym')
+
+exprNames = [
+	'True'
+	'False'
+	'Lit',
+	'Sym',
+	'Cast',
+	'Unary',
+	'Binary',
+	'Cond',
+	'Call',
+	'Cast',
+	'Addr',
+	'Ref',
+]
+
+expr = ApplNames(exprNames)
 
 
 #######################################################################
@@ -26,35 +70,81 @@ aLabel = ApplName('Label')
 
 
 def Module(stmts = None):
-	return trf.match.Appl(
-		trf.match.Str('Module'), 
-		trf.match.List((stmts,))
+	return lib.match.Appl(
+		lib.match.Str('Module'), 
+		lib.match.List((stmts,))
 	)
 
-def ModuleStmt(stmt, Subterms = trf.lists.Map):
+def ModuleStmt(stmt, Subterms = lib.lists.Map):
 	return Module(Subterms(stmt))
 
 
 def Func(type = None, name = None, args = None, stmts = None):
-	return trf.match.Appl(
-		trf.match.Str('Func'), 
-		trf.match.List((type, name, args, stmts))
+	return lib.match.Appl(
+		lib.match.Str('Func'), 
+		lib.match.List((type, name, args, stmts))
 	)
 
 
 def Block(stmts = None):
-	return trf.match.Appl(
-		trf.match.Str('Block'), 
-		trf.match.List((stmts))
+	return lib.match.Appl(
+		lib.match.Str('Block'), 
+		lib.match.List((stmts))
 	)
 
 
 def If(cond = None, true = None, false = None):
-	return trf.match.Appl(
-		trf.match.Str('Block'), 
-		trf.match.List((stmts))
+	return lib.match.Appl(
+		lib.match.Str('Block'), 
+		lib.match.List((true, false,))
 	)
 
-def matchApplName(names):
-	return match.Appl(match.StrSet(*names), base.ident)
-	
+
+# names of non-comound statements
+atomStmtNames = [
+	'Asm',
+	'Assign',
+	'Var',
+	'Ret',
+	'Label',
+	'Jump',
+	'Break',
+	'Continue',
+	'NoStmt'
+]
+
+# names of compound statements
+compoundStmtNames = [
+	'Block',
+	'Func',
+	'If',
+	'Module',
+	'While',
+]
+
+stmtNames = atomStmtNames + compoundStmtNames
+
+anAtomStmt = ApplNames(atomStmtNames)
+aCompoundStmt = ApplNames(compoundStmtNames)
+aStmt = ApplNames(stmtNames)
+
+# list a statement's sub-statements
+reduceStmts = lib.parse.Transf('''
+{ stmts:
+	( 
+		?Block(stmts) +
+		?If(_, *stmts) +
+		?While(_, *stmts) +
+		?Func(_,_,_,stmts) +
+		?Module(stmts)
+	) ; !stmts +
+	![]
+}
+''')
+
+stopStmts = -(aModule + aCompoundStmt + lib.match.aList)
+
+
+
+
+

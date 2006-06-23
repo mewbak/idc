@@ -1,13 +1,15 @@
 '''Path annotation.'''
 
 
-from transf import *
-from ir.common import *
+import transf as lib
+import ir.match
 
 
 # Only annotate term applications
-annotate = path.Annotate(matchApplName(
-	stmtNames +
-	exprNames +
-	typeNames
-))
+annotate = lib.path.Annotate(
+	ir.match.ApplNames(
+		ir.match.stmtNames +
+		ir.match.exprNames +
+		ir.match.typeNames
+	)
+)

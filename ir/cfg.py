@@ -7,7 +7,6 @@ import box
 
 from transf import *
 
-from ir.common import *
 import ir.traverse
 import ir.pprint
 import lang.dot
@@ -47,7 +46,7 @@ setLabelTables = lists.Map(setLabelTable)
 setLabelTable.subject = parse.Transf('''
 	Where(
 		setLabelRef +
-		reduceStmts ;
+		ir.match.reduceStmts ;
 		setLabelTables
 	)
 ''')
@@ -319,8 +318,8 @@ makeTerminalNode = hasTerminalNode * build._.Node(
 
 # TODO: try to merge both collects in one? it doesn't seem to be more efficient though
 makeNodes = lists.Concat(
-	unify.CollectAll(makeNode, reduce = reduceStmts),
-	unify.CollectAll(makeTerminalNode, reduce = reduceStmts)
+	unify.CollectAll(makeNode, reduce = ir.match.reduceStmts),
+	unify.CollectAll(makeTerminalNode, reduce = ir.match.reduceStmts)
 )
 
 makeGraph = build._.Graph(makeNodes)
