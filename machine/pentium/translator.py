@@ -4,6 +4,8 @@
 import transf
 
 import ir.transfs
+import ir.traverse
+
 
 from ssl.pentium import insn_table
 
@@ -117,8 +119,6 @@ stmtsPreambule =
 
 ''')
 
-stmts = transf.util.Proxy()
-
 preStmt = transf.parse.Rule('''
 	Asm("ret", [])
 		-> Ret(Void, NoExpr)
@@ -134,19 +134,8 @@ doStmt = transf.parse.Transf('''
 	sslLookup + ![<id>]
 ''')
 
-stmt = ir.traverse.Stmt(
-	stmts=stmts, 
-	Wrapper = ir.traverse.UP(+preStmt * doStmt * simplify)
-)
-
-stmts.subject = transf.lists.MapConcat(stmt)
-
-#stmts.subject = transf.debug.Trace('stmts', stmts.subject)
-#stmt.subject = transf.debug.Trace('stmt', stmt.subject)
-
 module = ir.traverse.Module(
-	#stmts = transf.lists.Concat2(transf.debug.Dump() * stmtsPreambule, stmts), 
-	stmts = stmts, 
+	stmts = transf.lists.MapConcat(+preStmt * doStmt * simplify), 
 )
 
 

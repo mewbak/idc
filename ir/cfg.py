@@ -8,7 +8,7 @@ import box
 from transf import *
 
 from ir.common import *
-import ir.traverse2
+import ir.traverse
 import ir.pprint
 import lang.dot
 
@@ -24,7 +24,7 @@ setStmtId = annotation.Set(stmtIdAnno, arith.Count('stmtid'))
 markStmtsIds = scope.Let2((
 		('stmtid', build.zero),
 	),
-	ir.traverse2.AllStmtsBU(debug.Dump() * setStmtId)
+	ir.traverse.AllStmtsBU(debug.Dump() * setStmtId)
 )
 
 

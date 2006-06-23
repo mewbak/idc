@@ -7,7 +7,7 @@ import transf
 
 from transf import path
 
-import ir
+import ir.traverse
 
 
 class SetFunctionReturn(refactoring.Refactoring):
@@ -58,7 +58,7 @@ class SetFunctionReturn(refactoring.Refactoring):
 						<AllTD(~Ret(<functype>, <!Sym(<retsym>)>))>
 					) 
 				)>) ;
-				ir.traverse2.AllStmtsBU(Try(
+				ir.traverse.AllStmtsBU(Try(
 					?Assign(Void, NoExpr, Call(Sym(<funcname>), *)) ;
 					~Assign(<functype>, <!Sym(<retsym>)>, *)
 				))
