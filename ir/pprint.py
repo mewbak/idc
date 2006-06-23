@@ -6,9 +6,6 @@ import math
 
 from transf import *
 
-import ir.traverse
-from ir.traverse import UP, DOWN
-
 import box
 from box import op
 from box import kw
@@ -101,11 +98,14 @@ type = rec type : {
 #
 # See http://www.difranco.net/cop2220/op-prec.htm
 
-opPrec = parse.Rule('''
+unOpPrec = parse.Rule('''
 	Not -> 1
 |	BitNot -> 1
 |	Neg -> 1
-|	And -> 10 		
+''')
+
+binOpPrec = parse.Rule('''
+	And -> 10 		
 |	Or -> 11 		
 |	BitAnd -> 7 		
 |	BitOr -> 9 		
@@ -133,93 +133,96 @@ exprPrec = parse.Rule('''
 |	Cast(_, _) -> 1
 |	Addr(_) -> 1
 |	Ref(_) -> 1
-|	Unary(op, _) -> <<opPrec>op>
-|	Binary(op, _, _) -> <<opPrec>op>
+|	Unary(op, _) -> <<unOpPrec>op>
+|	Binary(op, _, _) -> <<binOpPrec>op>
 |	Cond(_, _, _) -> 13
 |	Call(_, _) -> 0
 ''')
 
+stmtPrec = parse.Transf('''
+	!99
+''')
 
 #######################################################################
 # Expressions
 
-oper = parse.Rule('''
+unOp = parse.Rule('''
 	Not -> "!"
-|	BitNot(_) -> "~"
-|	Neg(_) -> "-"
-|	And -> "&&"
-|	Or -> "||"
-|	BitAnd(_) -> "&"
-|	BitOr(_) -> "|"
-|	BitXor(_) -> "^"
-|	LShift(_) -> "<<"
-|	RShift(_) -> ">>"
-|	Plus(_) -> "+"
-|	Minus(_) -> "-"
-|	Mult(_) -> "*"
-|	Div(_) -> "/"
-|	Mod(_) -> "%"
-|	Eq(_) -> "=="
-|	NotEq(_) -> "!="
-|	Lt(_) -> "<"
-|	LtEq(_) -> "<="
-|	Gt(_) -> ">"
-|	GtEq(_) -> ">="
+|	BitNot -> "~"
+|	Neg -> "-"
 ''')
 
-exprUp = parse.Rule('''
+binOp = parse.Rule('''
+	And -> "&&"
+|	Or -> "||"
+|	BitAnd -> "&"
+|	BitOr -> "|"
+|	BitXor -> "^"
+|	LShift -> "<<"
+|	RShift -> ">>"
+|	Plus -> "+"
+|	Minus -> "-"
+|	Mult -> "*"
+|	Div -> "/"
+|	Mod -> "%"
+|	Eq -> "=="
+|	NotEq -> "!="
+|	Lt -> "<"
+|	LtEq -> "<="
+|	Gt -> ">"
+|	GtEq -> ">="
+''')
+
+subExpr = util.Proxy()
+
+exprKern = Path(parse.Rule('''
 	False 
 		-> "FALSE"
 |	True 
 		-> "TRUE"
-|	Lit(_, value)
+|	Lit(Int(_,_), value)
 		-> <<intlit> value>
 |	Lit(type, value)
 		-> <<lit> value>
 |	Sym(name)
 		-> <<sym> name>
 |	Cast(type, expr)
-		-> H([ "(", type, ")", " ", expr ])
+		-> H([ "(", <<type>type>, ")", " ", <<subExpr>expr> ])
 |	Unary(op, expr)
-		-> H([ op, expr ])
+		-> H([ <<unOp>op>, <<subExpr>expr> ])
 |	Binary(op, lexpr, rexpr)
-		-> H([ lexpr, " ", op, " ", rexpr ])
+		-> H([ <<subExpr>lexpr>, " ", <<binOp>op>, " ", <<subExpr>rexpr> ])
 |	Cond(cond, texpr, fexpr)
-		-> H([ cond, " ", <<op>"?">, " ", texpr, " ", <<op>":">, " ", fexpr ])
+		-> H([ <<subExpr>cond>, " ", <<op>"?">, " ", <<subExpr>texpr>, " ", <<op>":">, " ", <<subExpr>fexpr> ])
 |	Call(addr, args)
-		-> H([ addr, "(", <<commas> args>, ")" ])
+		-> H([ <<subExpr>addr>, "(", <<Map(subExpr);commas> args>, ")" ])
 |	Addr(addr)
-		-> H([ <<op>"&">, addr ])
+		-> H([ <<op>"&">, <<subExpr>addr> ])
 |	Ref(expr)
-		-> H([ <<op>"*">, expr ])
+		-> H([ <<op>"*">, <<subExpr>expr> ])
+'''))
+
+subExpr.subject = parse.Transf('''
+	let 
+		pprec = !prec, # parent precedence
+		prec = exprPrec
+	in
+		if Gt(!prec, !pprec) then
+			!H([ "(", <exprKern>, ")" ])
+		else
+			exprKern
+		end
+	end
 ''')
 
-Expr = lambda traverse: parse.Transf('''
-	Path(
-		let 
-			pprec = !prec, # parent precedence
-			prec = exprPrec
-		in
-			traverse ;
-			exprUp ;
-			if Gt(!prec, !pprec) then
-				!H([ "(", <id>, ")" ])
-				#!H([ "(GT:", <id>, ")" ])
-			else
-				id
-				#!H([ "(LT:", <id>, ")" ])
-			end
-		end
-	)
-	''')
+expr = parse.Transf('''
+	let 
+		prec = exprPrec
+	in
+		exprKern
+	end
+''')
 
-pexpr = ir.traverse.Expr(
-	type = type, 
-	op = oper,
-	Wrapper = Expr
-)
-
-expr = scope.Let(pexpr, prec = build.Int(99))
 
 #######################################################################
 # Statements
@@ -259,10 +262,24 @@ stmtKern = parse.Rule('''
 		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<Map(expr)>operands>]>, ")" ])
 ''')
 
-stmt.subject = Path(parse.Rule('''
-	Assign
-		-> H([ <stmtKern>, ";" ])
-|	If(_, true, NoStmt)
+
+parse.Transfs('''
+ppLabel = {
+	Label
+		-> D( <stmtKern> )
+}
+
+ppBlock = {
+	Block( stmts )
+		-> V([
+			D("{"), 
+				<<stmts>stmts>, 
+			D("}")
+		])
+}
+		
+ppIf = {
+	If(_, true, NoStmt)
 		-> V([
 			<stmtKern>,
 				I( <<stmt>true> )
@@ -274,28 +291,39 @@ stmt.subject = Path(parse.Rule('''
 			H([ <<kw>"else"> ]),
 				I( <<stmt>false> )
 		])
-|	While(_, body)
+}
+
+ppWhile = {
+	While(_, body)
 		-> V([
 			<stmtKern>,
 				I( <<stmt>body> )
 		])
-|	Block( stmts )
-		-> V([
-			D("{"), 
-				<<stmts>stmts>, 
-			D("}")
-		])
-|	Func(_, _, _, stmts)
+}
+
+ppFunc = {
+	Func(_, _, _, stmts)
 		-> D(V([
 			<stmtKern>, 
 			"{",
 				I(V([ <<stmts>stmts> ])),
 			"}"
 		]))
-|	Label
-		-> D( <stmtKern> )
-|	_
-		-> H([ <stmtKern>, ";" ])
+}
+
+ppDefault =
+	!H([ <stmtKern>, ";" ])
+
+''')
+
+stmt.subject = Path(parse.Transf('''
+	?Assign < ppDefault +
+	?Label < ppLabel +
+	?Block < ppBlock +
+	?If < ppIf +
+	?While < ppWhile +
+	?Func < ppFunc +
+	ppDefault
 '''))
 
 module = Path(parse.Rule('''
@@ -340,7 +368,7 @@ if __name__ == '__main__':
 		('Label("label")', 'label:\n'),
 		('Asm("ret",[])', 'asm("ret");\n'),
 		('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);\n'),
-		('Func(Void,"main",[],Block([]))', 'void main()\n{\n}\n'),	
+		('Func(Void,"main",[],[])', 'void main()\n{\n}\n'),	
 		('Assign(Void,Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('Assign(Blob(32{Path([0,0,1,0])}){Path([0,1,0])},Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('If(Binary(Eq(Int(32,Signed)),Binary(BitOr(32),Binary(BitXor(32),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),Jump(Sym(".L4")),NoStmt)', ''),

@@ -8,7 +8,6 @@ import box
 from transf import *
 
 from ir.common import *
-import ir.traverse
 import ir.traverse2
 import ir.pprint
 import lang.dot

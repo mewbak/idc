@@ -1,9 +1,8 @@
-'''Dead Code Elimination.'''
+'''Constant/expression propagation.'''
 
 
 from transf import *
 import ir.match
-import ir.sym
 
 
 #######################################################################
@@ -21,7 +20,7 @@ setAllNeededVars = table.Add('needed', 'local')
 
 parse.Transfs(r'''
 
-isVarNeeded = ir.match.aSym ; (?needed + Not(ir.sym.isLocalVar))
+isVarNeeded = ir.match.aSym ; (?needed + Not(isLocalVar))
 ''')
 
 
@@ -59,7 +58,7 @@ dceStmts = Proxy()
 
 dceAssign = {x:
 	?Assign(_, x, _) ;
-	if <ir.sym.isLocalVar> x then
+	if <isLocalVar> x then
 		if <isVarNeeded> x then
 			debug.Log(`'******* var needed %s\n'`, !x) ;
 			Where(<setUnneededVar> x );
@@ -118,14 +117,13 @@ dceWhile =
 	Try(elimWhile)
 
 dceFunc = 
-	ir.sym.EnterFunction(
-	with label_needed[] in
+	with local[], label_needed[] in
+		updateLocalVars ;
 		~Func(_, _, _, <
 			\label_needed/* with needed[] in dceStmts end 
 		>)
 		; debug.Dump()
 	end
-	)
 
 # If none of the above applies, assume all vars are needed
 dceDefault = 
