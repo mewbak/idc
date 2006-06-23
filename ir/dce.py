@@ -72,23 +72,22 @@ parse.Transfs(r'''
 dceStmt = Proxy()
 dceStmts = Proxy()
 
-dceAssign = 
-	{x:
-		?Assign(_, x, _) ;
-		if <isLocalVar> x then
-			if <isVarNeeded> x then
-				debug.Log(`'******* var needed %s\n'`, !x) ;
-				Where(<setUnneededVar> x );
-				~Assign(_, _, <setNeededVars>)
-			else
-				debug.Log(`'******* var uneeded %s\n'`, !x) ;
-				!NoStmt
-			end
+dceAssign = {x:
+	?Assign(_, x, _) ;
+	if <isLocalVar> x then
+		if <isVarNeeded> x then
+			debug.Log(`'******* var needed %s\n'`, !x) ;
+			Where(<setUnneededVar> x );
+			~Assign(_, _, <setNeededVars>)
 		else
-			debug.Log(`'******* var not local %s\n'`, !x) ;
-			~Assign(_, <setNeededVars>, <setNeededVars>)
+			debug.Log(`'******* var uneeded %s\n'`, !x) ;
+			!NoStmt
 		end
-	}
+	else
+		debug.Log(`'******* var not local %s\n'`, !x) ;
+		~Assign(_, <setNeededVars>, <setNeededVars>)
+	end
+}
 
 dceAsm = 
 	?Asm ;
@@ -121,7 +120,6 @@ elimIf = {
 }
 
 dceIf = 
-	?If ;
 	~If(_, <dceStmt>, _) \needed/ ~If(_, _, <dceStmt>) ;
 	~If(<setNeededVars>, _, _) ;
 	Try(elimIf)
@@ -131,11 +129,8 @@ elimWhile = {
 }
 
 dceWhile = 
-	?While ;
 	\needed/* ~While(<setNeededVars>, <dceStmt>) ;
 	Try(elimWhile)
-dceWhile = debug.Trace(dceWhile, `'dceWhile'`)
-
 
 dceFunc = 
 	with local[], label_needed[] in
