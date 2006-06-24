@@ -328,7 +328,7 @@ case "While":
 	ppWhile
 case "Func":
 	ppFunc
-otherwise:
+else:
 	ppDefault
 end
 '''))

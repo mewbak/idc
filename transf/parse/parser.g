@@ -118,7 +118,7 @@ transf_atom
 		{ ## = #(#[ATAPPL,"BuildApply"], ##) }
 	| ( IF ) => if_clauses if_else END!
 		{ ## = #(#[ATAPPL,"If"], ##) }
-	| SWITCH! transf switch_cases switch_otherwise END!
+	| SWITCH! transf switch_cases switch_else END!
 		{ ## = #(#[ATAPPL,"Switch"], ##) }
 	| LET! defn_list IN! transf END!
 		{ ## = #(#[ATAPPL,"Let"], ##) }
@@ -160,8 +160,8 @@ switch_case_terms
 		{ ## = #(#[ATLIST], ##) }
 	;
 
-switch_otherwise
-	: OTHERWISE! COLON! transf
+switch_else
+	: ELSE! COLON! transf
 	|
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
 	;

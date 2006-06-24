@@ -555,7 +555,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		'?1 < !2 + !3',
 		'?1 < !2 + !3 + !4',
 		'?1 + !2 + !3 + !4',
-		'switch !x case 1: !A case 2: !B otherwise: !C end',
+		'switch !x case 1: !A case 2: !B else: !C end',
 		'!1 / a \\ !2',
 		'!1 / a \\ \\ b / !2',
 		'=a',

@@ -102,7 +102,6 @@ _tokenizer = antlrre.Tokenizer(
 		"rec": parser.REC,
 		"switch": parser.SWITCH,
 		"case": parser.CASE,
-		"otherwise": parser.OTHERWISE,		
 	}
 )
 
