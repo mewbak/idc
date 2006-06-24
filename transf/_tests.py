@@ -161,16 +161,16 @@ class TestCombine(TestMixin, unittest.TestCase):
 		self._testCombination(combine.GuardedChoice, 3, func)
 		self._testCombination(parse.Meta('x, y, z: x < y + z'), 3, func)
 
-	def testIfThen(self):
+	def testIf(self):
 		func = lambda x, y: (x and y) or (not x)
-		self._testCombination(combine._IfThen, 2, func)
-		self._testCombination(combine.IfThen, 2, func)
+		self._testCombination(combine._If, 2, func)
+		self._testCombination(combine.If, 2, func)
 		self._testCombination(parse.Meta('x, y: if x then y end'), 2, func)
 		
-	def testIfThenElse(self):
+	def testIfElse(self):
 		func = lambda x, y, z: (x and y) or (not x and z)
-		self._testCombination(combine._IfThenElse, 3, func)
-		self._testCombination(combine.IfThenElse, 3, func)
+		self._testCombination(combine._IfElse, 3, func)
+		self._testCombination(combine.IfElse, 3, func)
 		self._testCombination(parse.Meta('x, y, z: if x then y else z end'), 3, func)
 
 
@@ -555,7 +555,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		'?1 < !2 + !3',
 		'?1 < !2 + !3 + !4',
 		'?1 + !2 + !3 + !4',
-		'switch !x case ?1: !A case ?2: !B otherwise: !C end',
+		'switch !x case 1: !A case 2: !B otherwise: !C end',
 		'!1 / a \\ !2',
 		'!1 / a \\ \\ b / !2',
 		'=a',
@@ -577,6 +577,7 @@ class TestParse(TestMixin, unittest.TestCase):
 			except:
 				print input
 				print ast.toStringTree() 
+				raise
 			#print output
 
 

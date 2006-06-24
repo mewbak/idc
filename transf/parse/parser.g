@@ -6,6 +6,7 @@
 
 header {
     import antlr
+    import aterm.factory
     import transf
 
 
@@ -110,12 +111,15 @@ transf_atom
 		) RPAREN!
 	| LANGLE! transf RANGLE! term
 		{ ## = #(#[BUILD_APPLY,"BUILD_APPLY"], ##) }
-	| IF^ transf THEN! transf ( ELSE! transf )? END!
-	| LET^ defn_list IN transf END!
+	| IF^ transf THEN! transf 
+		( ELIF! transf THEN! transf )*
+		( ELSE transf )? 
+	  END!
 	| SWITCH^ transf 
-		( CASE transf COLON! transf )* 
+		( CASE term ( COMMA! term )* COLON! transf )* 
 		( OTHERWISE COLON! transf )? 
 	  END!
+	| LET^ defn_list IN transf END!
 	| REC^ id COLON! transf_atom
 	| WITH^ var_def_list IN transf END!
 	;
@@ -492,16 +496,20 @@ transf returns [ret]
 		{ ret = transf.combine.Where(transf.combine.Composition(t, transf.variable.Set(v))) }
 	| #( BUILD_APPLY t=transf b=build_term )
 		{ ret = transf.combine.Composition(b, t) }
-	| #( IF c=transf t=transf 
-		(
-			{ ret = transf.combine.IfThen(c, t) }
-		| e=transf
-			{ ret = transf.combine.IfThenElse(c, t, e) }
+	| #( IF 
+			{ conds = [] }
+		( cond=transf action=transf 
+			{ conds.append((cond, action)) }
+		)*
+		( ELSE other=transf 
+		|
+			{ other = transf.base.ident }
 		)
+			{ ret = transf.combine.IfElifElse(conds, other) }
 	  )
 	| #( SWITCH cond=transf 
 			{ cases = [] }
-		( CASE c=transf a=transf
+		( CASE c=static_term a=transf
 			{ cases.append((c, a)) }
 		)*
 		( OTHERWISE o=transf
@@ -584,6 +592,31 @@ constructor returns [ret]
 	 )
 	;
 	
+static_term returns [ret]
+	: i:INT 
+		{ ret = aterm.factory.factory.makeInt(int(#i.getText())) }
+	| r:REAL 
+		{ ret = aterm.factory.factory.makeReal(float(#r.getText())) }
+	| s:STR 
+		{ ret = aterm.factory.factory.makeStr(#s.getText()) }
+	| NIL
+		{ ret = aterm.factory.factory.makeNil() }
+	| #( CONS h=static_term t=static_term )
+		{ ret = aterm.factory.factory.makeCons(h, t) }
+	| UNDEF 
+		{ ret = aterm.factory.factory.makeNil() }	
+	| #( APPL n=static_term a=static_term )
+		{ ret = aterm.factory.factory.makeAppl(n, a) }
+	| #( ANNOS t=static_term a=static_term )
+		{ ret = t.setAnnotations(a) }
+	| w:WILDCARD 
+		{ raise SemanticException(#w, "wildcard in static term") }
+	| v:VAR
+		{ raise SemanticException(#v, "variable in static term") }
+	| t:TRANSF
+		{ raise SemanticException(#t, "transformation in static term") }
+	;
+
 match_term returns [ret]
 	: i:INT 
 		{ ret = transf.match.Int(int(#i.getText())) }
@@ -595,6 +628,8 @@ match_term returns [ret]
 		{ ret = transf.match.nil }
 	| #( CONS h=match_term t=match_term )
 		{ ret = transf.match.Cons(h, t) }
+	| UNDEF 
+		{ ret = transf.base.ident }
 	| #( APPL n=match_term a=match_term )
 		{ ret = transf.match.Appl(n, a) }
 	| w:WILDCARD 
@@ -607,8 +642,6 @@ match_term returns [ret]
 	  )
 	| #( ANNOS t=match_term a=match_term )
 		{ ret = transf.combine.Composition(t, transf.match.Annos(a)) }
-	| UNDEF 
-		{ ret = transf.base.ident }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;
@@ -646,6 +679,8 @@ build_term returns [ret]
 		{ ret = transf.build.nil }
 	| #( CONS h=build_term t=build_term )
 		{ ret = transf.build.Cons(h, t) }
+	| UNDEF 
+		{ ret = transf.build.nil }
 	| #( APPL n=build_term a=build_term )
 		{ ret = transf.build.Appl(n, a) }
 	| w:WILDCARD 
@@ -654,8 +689,6 @@ build_term returns [ret]
 		{ ret = transf.build.Var(#v.getText()) }
 	| #( ANNOS t=build_term a=build_term )
 		{ ret = transf.combine.Composition(t, transf.build.Annos(a)) }
-	| UNDEF 
-		{ ret = transf.build.nil }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;
@@ -671,6 +704,8 @@ traverse_term returns [ret]
 		{ ret = transf.match.nil }
 	| #( CONS h=traverse_term t=traverse_term )
 		{ ret = transf.congruent.Cons(h, t) }
+	| UNDEF 
+		{ ret = transf.base.ident }
 	| #( APPL n=traverse_term a=traverse_term )
 		{ ret = transf.congruent.Appl(n, a) }
 	| w:WILDCARD 
@@ -679,8 +714,6 @@ traverse_term returns [ret]
 		{ ret = transf.congruent.Var(#v.getText()) }
 	| #( ANNOS t=traverse_term a=traverse_term )
 		{ ret = transf.combine.Composition(t, transf.congruent.Annos(a)) }
-	| UNDEF 
-		{ ret = transf.base.ident }
 	| #( TRANSF txn=transf )
 		{ ret = txn }
 	;

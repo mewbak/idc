@@ -317,13 +317,20 @@ ppDefault =
 ''')
 
 stmt.subject = Path(parse.Transf('''
-	?Assign < ppDefault +
-	?Label < ppLabel +
-	?Block < ppBlock +
-	?If < ppIf +
-	?While < ppWhile +
-	?Func < ppFunc +
+switch project.name
+case "Label":
+	ppLabel
+case "Block":
+	ppBlock
+case "If":
+	ppIf
+case "While":
+	ppWhile
+case "Func":
+	ppFunc
+otherwise:
 	ppDefault
+end
 '''))
 
 module = Path(parse.Rule('''

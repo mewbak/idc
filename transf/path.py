@@ -276,7 +276,7 @@ class Range(base.Transformation):
 		head, rest = split(term, self.start)
 		old_body, tail = split(rest, self.end - self.start)
 		
-		new_body = self.operand(old_body, ctx)
+		new_body = self.operand.apply(old_body, ctx)
 		if new_body is not old_body:
 			return head.extend(new_body.extend(tail))
 		else:

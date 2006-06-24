@@ -36,7 +36,7 @@ def Get(label):
 		project.annos * \
 		project.Fetch(match.Appl(match.Str(label), base.ident)) * \
 		project.args * \
-		combine.IfThen(
+		combine.If(
 			match.Cons(base.ident, match.nil), 
 			project.head
 		)

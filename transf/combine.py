@@ -136,7 +136,7 @@ def GuardedChoice(operand1, operand2, operand3):
 	return _GuardedChoice(operand1, operand2, operand3)
 
 
-class _IfThen(operate.Binary):
+class _If(operate.Binary):
 
 	__slots__ = []
 	
@@ -148,7 +148,7 @@ class _IfThen(operate.Binary):
 		else:
 			return self.roperand.apply(term, ctx)
 
-def IfThen(loperand, roperand):
+def If(loperand, roperand):
 	if loperand is base.ident:
 		return roperand
 	if loperand is base.fail:
@@ -157,10 +157,10 @@ def IfThen(loperand, roperand):
 		return Where(loperand)
 	if roperand is base.fail:
 		return Not(loperand)
-	return _IfThen(loperand, roperand)
+	return _If(loperand, roperand)
 
 
-class _IfThenElse(operate.Ternary):
+class _IfElse(operate.Ternary):
 
 	__slots__ = []
 	
@@ -172,44 +172,72 @@ class _IfThenElse(operate.Ternary):
 		else:
 			return self.operand2.apply(term, ctx)
 
-def IfThenElse(operand1, operand2, operand3):
+def IfElse(operand1, operand2, operand3):
 	if operand1 is base.ident:
 		return operand2
 	if operand1 is base.fail:
 		return operand3
 	if operand3 is base.fail:
-		return IfThen(operand1, operand2)
-	return _IfThenElse(operand1, operand2, operand3)
+		return If(operand1, operand2)
+	return _IfElse(operand1, operand2, operand3)
 
 
-def Switch(cond, cases, otherwise = None):
-	'''Sugar around L{IfThenElse}.'''
+class _IfElifElse(base.Transformation):
+
+	__slots__ = ['conds', 'otherwise']
 	
-	from transf import context
-	from transf import scope
-	from transf import match
-	from transf import build
+	def __init__(self, conds, otherwise):
+		base.Transformation.__init__(self)
+		self.conds = conds
+		self.otherwise = otherwise
+		
+	def apply(self, term, ctx):
+		for if_cond, if_then in self.conds:
+			try:
+				if_cond.apply(term, ctx)
+			except exception.Failure:
+				pass
+			else:
+				return if_then.apply(term, ctx)
+		return self.otherwise.apply(term, ctx)
+
+def IfElifElse(conds, otherwise = None):
+	if otherwise is None:
+		otherwise = base.ident
+	if len(conds) == 1:
+		((cond, true),) = conds
+		return IfElse(cond, true, otherwise)
+	return _IfElifElse(conds, otherwise)
+
+
+class _Switch(base.Transformation):
+
+	__slots__ = ['expr', 'cases', 'otherwise']
 	
+	def __init__(self, expr, cases, otherwise):
+		base.Transformation.__init__(self)
+		self.expr = expr
+		self.cases = cases
+		self.otherwise = otherwise
+		
+	def apply(self, term, ctx):
+		switch_term = self.expr.apply(term, ctx)
+		try:
+			action = self.cases[switch_term]
+		except KeyError:
+			return self.otherwise.apply(term, ctx)
+		else:
+			return action.apply(term, ctx)
+
+def Switch(expr, cases, otherwise = None):	
 	if otherwise is None:
 		otherwise = base.fail
-	
-	if cond is not base.ident:		
-		tmp_nam = scope.Anonymous('switch')
-		match_tmp = match.Var(tmp_nam)
-		build_tmp = build.Var(tmp_nam)	
-		return scope.Local(
-			match_tmp * cond * operate.Nary(
-				iter(cases), 
-				lambda (case, action), rest: \
-					IfThenElse(case, build_tmp * action, rest),
-				build_tmp * otherwise
-			),
-			[tmp_nam]
-		)
-	else:
-		operate.Nary(
-			iter(cases), 
-			lambda (case, action), rest: \
-				IfThenElse(case, action, rest),
-			otherwise
-		)
+	_cases = {}
+	for terms, action in cases:
+		if not isinstance(terms, tuple):
+			terms = (terms,)
+		for term in terms:
+			if term in _cases:
+				raise ValueError('duplicate case', term)
+			_cases[term] = action
+	return _Switch(expr, _cases, otherwise)

@@ -92,6 +92,7 @@ _tokenizer = antlrre.Tokenizer(
 		"fail": parser.FAIL,
 		"if": parser.IF,
 		"then": parser.THEN,
+		"elif": parser.ELIF,
 		"else": parser.ELSE,
 		"end": parser.END,
 		"let": parser.LET,
