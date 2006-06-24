@@ -572,13 +572,21 @@ class TestParse(TestMixin, unittest.TestCase):
 				print input
 				raise
 			ast = parser.getAST()
+			
+			print "INPUT:", input
+			print "AST:", ast.toStringTree() 
+			import antlraterm
+			term = antlraterm.Walker().aterm(ast)
+			print "ATERM:", term
+			
 			try:
 				output = repr(parse.Transf(input))
 			except:
 				print input
 				print ast.toStringTree() 
 				raise
-			#print output
+			print "OUTPUT:", output
+			print 
 
 
 class TestPath(TestMixin, unittest.TestCase):

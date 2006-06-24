@@ -44,50 +44,36 @@ options {
 	k=2;
 	buildAST = true;
 	defaultErrorHandler = false;
-}
-
-tokens {
-	TRANSF_DEF;
-	TRANSF_FAC_DEF;
-	TRANSF;
-	TRANSF_FAC;
-	SCOPE;
-	RULE;
-	ANON;
-	BUILD_APPLY;
-	JOIN;
-	ITERATE;
-	TERM;
-	TABLE;
-	NIL;
-	CONS;
-	UNDEF;
-	APPL;
-	ANNOS;
-	VAR;
+	importVocab = antlraterm;
 }
 
 transf_defs
 	: ( transf_def )* EOF!
+		{ ## = #([ATAPPL,"Defs"],#([ATLIST], ##)) }
 	;
 
 rule_defs
 	: ( rule_def )* EOF!
+		{ ## = #([ATAPPL,"Defs"],#([ATLIST], ##)) }
 	;
 
 meta_def
-	: id_list COLON transf EOF!
+	: id_list COLON! transf EOF!
+		{ ## = #([ATAPPL,"MetaDef"], ##) }
 	;
 
 transf_def
 	: id EQUAL! transf
-		{ ## = #(#[TRANSF_DEF,"TRANSF_DEF"], ##) }
-	| id LPAREN! id_list RPAREN! EQUAL transf	
-		{ ## = #(#[TRANSF_FAC_DEF,"TRANSF_FAC_DEF"], ##) }
+		{ ## = #(#[ATAPPL,"TransfDef"], ##) }
+	| id LPAREN! id_list RPAREN! EQUAL! transf	
+		{ ## = #(#[ATAPPL,"TransfFacDef"], ##) }
 	;
+	
+
 
 rule_def
 	: id EQUAL^ rule_set
+		{ ## = #(#[ATAPPL,"RuleDef"], ##) }
 	;
 
 transf
@@ -95,35 +81,31 @@ transf
 	;
 
 transf_prefix
-	: QUEST^ term
-	| BANG^ term
-	| TILDE^ term
-	| EQUAL^ (PLUS | MINUS)? LID (LPAREN! arg_list RPAREN!)?
-	| CARET^ LID
-	;
-
-transf_method
-	: v:VARMETHOD! ( LPAREN! arg_list RPAREN!)?
-		{
-            n, m = #v.getText().split('-')
-            ## = #(#[VARMETHOD,"VARMETHOD"], #[ID,n], #[ID,m], ##) 
-		}
+	: QUEST! term
+		{ ## = #(#[ATAPPL,"Match"], ##) }
+	| BANG! term
+		{ ## = #(#[ATAPPL,"Build"], ##) }
+	| TILDE! term
+		{ ## = #(#[ATAPPL,"Traverse"], ##) }
+	| EQUAL! var
+		{ ## = #(#[ATAPPL,"Set"], ##) }
 	;
 
 transf_atom
-	: IDENT
-	| FAIL
+	: IDENT!
+		{ ## = #(#[ATAPPL,"Ident"], ##) }
+	| FAIL!
+		{ ## = #(#[ATAPPL,"Fail"], ##) }
 	| transf_prefix
-	| transf_method
 	| id 
 		( 
-			{ ## = #(#[TRANSF,"TRANSF"], ##) }
+			{ ## = #(#[ATAPPL,"Transf"], ##) }
 		| LPAREN! arg_list RPAREN!
-			{ ## = #(#[TRANSF_FAC,"TRANSF_FAC"], ##) }
+			{ ## = #(#[ATAPPL,"TransfFac"], ##) }
 		)
 	| LCURLY!
-		( ( id_list COLON ) => id_list COLON transf
-			{ ## = #(#[SCOPE,"SCOPE"], ##) } 
+		( ( id_list COLON! ) => id_list COLON! transf
+			{ ## = #(#[ATAPPL,"Scope"], ##) } 
 		| rule_set
 		) RCURLY!
 	| LPAREN!
@@ -131,50 +113,123 @@ transf_atom
 		| transf
 		) RPAREN!
 	| LANGLE! transf RANGLE! term
-		{ ## = #(#[BUILD_APPLY,"BUILD_APPLY"], ##) }
-	| IF^ transf THEN! transf 
-		( ELIF! transf THEN! transf )*
-		( ELSE transf )? 
-	  END!
-	| SWITCH^ transf 
-		( CASE term ( COMMA! term )* COLON! transf )* 
-		( OTHERWISE COLON! transf )? 
-	  END!
-	| LET^ defn_list IN transf END!
-	| REC^ id COLON! transf_atom
-	| WITH^ var_def_list IN transf END!
+		{ ## = #(#[ATAPPL,"BuildApply"], ##) }
+	| ( IF ) => if_clauses if_else END!
+		{ ## = #(#[ATAPPL,"If"], ##) }
+	| SWITCH! transf switch_cases switch_otherwise END!
+		{ ## = #(#[ATAPPL,"Switch"], ##) }
+	| LET! defn_list IN! transf END!
+		{ ## = #(#[ATAPPL,"Let"], ##) }
+	| REC! id COLON! transf_atom
+		{ ## = #(#[ATAPPL,"Rec"], ##) }
+	| WITH! var_def_list IN! transf END!
+		{ ## = #(#[ATAPPL,"With"], ##) }
 	;
 
+if_clauses
+	: ( if_clause )*
+		{ ## = #(#[ATLIST], ##) }
+	;
+	
+if_clause
+	: IF! transf THEN! transf 
+		{ ## = #(#[ATAPPL,"IfClause"], ##) }
+	| ELIF! transf THEN! transf
+		{ ## = #(#[ATAPPL,"IfClause"], ##) }
+	;
+	
+if_else
+	: ELSE! transf
+	| { ## = #(#[ATAPPL,"Ident"], ##) }
+	;
+	
+switch_cases
+	: ( switch_case )*
+		{ ## = #(#[ATLIST], ##) }
+	;
+	
+switch_case
+	: CASE! switch_case_terms COLON! transf
+		{ ## = #(#[ATAPPL,"SwitchCase"], ##) }
+	;
+	
+switch_case_terms
+	: term ( COMMA! term )*
+		{ ## = #(#[ATLIST], ##) }
+	;
+
+switch_otherwise
+	: OTHERWISE! COLON! transf
+	|
+		{ ## = #(#[ATAPPL,"Fail"], ##) }
+	;
+	
 transf_application
-	: transf_atom ( RDARROW^ var )?
+	: transf_atom 
+		( RDARROW! var 
+			{ ## = #(#[ATAPPL,"Store"], ##) } 
+		)?
 	;
 
 transf_merge
-	: transf_application 
-		( RSLASH id_list LSLASH! ( LSLASH id_list RSLASH! )? transf_application 
-			{ ## = #(#[JOIN,"JOIN"], ##) } 
-		| LSLASH id_list RSLASH! ( RSLASH id_list LSLASH! )? transf_application
-			{ ## = #(#[JOIN,"JOIN"], ##) } 
-		)?
-	| RSLASH id_list LSLASH! ( LSLASH id_list RSLASH! )? STAR! transf_application 
-		{ ## = #(#[ITERATE,"ITERATE"], ##) } 
-	| LSLASH id_list RSLASH! ( RSLASH id_list LSLASH! )? STAR! transf_application
-		{ ## = #(#[ITERATE,"ITERATE"], ##) } 
+	:! l:transf_application 
+		( n:transf_merge_names r:transf_application
+		{ ## = #(#[ATAPPL,"Join"], #l, #r, #n) } 
+		|
+		{ ## = #l } 
+		)
+	|! n2:transf_merge_names STAR! o:transf_application
+		{ ## = #(#[ATAPPL,"Iterate"], #o, #n2) } 
+	;
+
+transf_merge_names
+	: transf_merge_union_names transf_merge_opt_isect_names
+	|! i:transf_merge_isect_names u:transf_merge_opt_union_names
+		{ ## = #i }
+		{ ##.setNextSibling(#u) }
+	;
+
+transf_merge_union_names
+	: LSLASH! id_list RSLASH!
+	;
+
+transf_merge_isect_names
+	: RSLASH! id_list LSLASH!
+	;
+
+transf_merge_opt_union_names
+	: transf_merge_union_names
+	| 
+		{ ## = #([ATLIST]) }
+	;
+
+transf_merge_opt_isect_names
+	: transf_merge_isect_names
+	| 
+		{ ## = #([ATLIST]) }
 	;
 
 transf_composition
-	: transf_merge ( SEMI^ transf_merge )*
+	: transf_merge 
+		( SEMI! transf_composition 
+			{ ## = #(#[ATAPPL,"Composition"], ##) }	
+		)?
 	;
 
 transf_choice
 	: transf_composition 
-		( LANGLE^ transf_composition PLUS! transf_choice
-		| PLUS^ transf_choice 
+		( LANGLE! transf_composition PLUS! transf_choice
+			{ ## = #(#[ATAPPL,"GuardedChoice"], ##) }	
+		| PLUS! transf_choice 
+			{ ## = #(#[ATAPPL,"LeftChoice"], ##) }	
 		)?
 	;
 
 transf_undeterministic_choice
-	: transf_choice ( VERT^ transf_choice ( VERT! transf_choice )* )?
+	: transf_choice 
+		( VERT! transf_undeterministic_choice 
+			{ ## = #(#[ATAPPL,"Choice"], ##) }	
+		)?
 	;
 
 transf_expr
@@ -183,68 +238,84 @@ transf_expr
 
 transf_list
 	: ( transf ( COMMA! transf )* )?
-	;
-
-defn
-	: id EQUAL! transf
+		{ ## = #(#[ATLIST], ##) }
 	;
 
 defn_list
 	: defn ( COMMA! defn )*
+		{ ## = #(#[ATLIST], ##) }
+	;
+
+defn
+	: id EQUAL! transf
+		{ ## = #(#[ATAPPL,"LetDef"], ##) }
 	;
 
 var_def_list
 	: var_def (COMMA! var_def )*
+		{ ## = #(#[ATLIST], ##) }
 	;
 
 var_def
 	: var constructor
+		{ ## = #(#[ATAPPL,"VarDef"], ##) }
 	;
 
 constructor
-	: ( EQUAL! transf )?
-		{ ## = #(#[TERM,"TERM"], ##) }
-	| LSQUARE! RSQUARE! ( EQUAL! var )?
-		{ ## = #(#[TABLE,"TABLE"], ##) }
+	: 
+		{ ## = #(#[ATAPPL,"Term"], ##) }
+	| EQUAL! transf
+		{ ## = #(#[ATAPPL,"TermTransf"], ##) }
+	| LSQUARE! RSQUARE! 
+		( EQUAL! var 
+		{ ## = #(#[ATAPPL,"TableCopy"], ##) }
+		|
+		{ ## = #(#[ATAPPL,"Table"], ##) }
+		)
 	| LPAREN! RPAREN! ( EQUAL! transf )?
-		{ ## = #(#[DYNAMIC,"DYNAMIC"], ##) }
+		{ ## = #(#[ATAPPL,"Dynamic"], ##) }
 	;
 
 var
-	: l:LID	{ #l.setType(VAR) }
+	: LID
+		{ ## = #(#[ATAPPL,"Var"], #([ATSTR],##)) }
 	;
 
 id
-	: ID
-	| l:LID { #l.setType(ID) }
-	| u:UID { #u.setType(ID) }
-	| w:WHERE { #w.setType(ID) }
+	: ( ID | LID | UID | WHERE ) 
+		{ ## = #(#[ATAPPL,"Id"], #([ATSTR],##)) }
 	;
 
 arg_list
 	: ( arg ( COMMA! arg )* )?
+		{ ## = #(#[ATLIST], ##) }
 	;
 
 arg
 	: OBJ
+			{ ## = #(#[ATAPPL,"Obj"], #([ATSTR],##)) }
 	| PRIME! var ( PRIME! )?
 	| transf
 	;
 	
 rule
-	: term RARROW! term ( WHERE transf )?
-		{ ## = #(#[RULE,"RULE"], ##) }
+	: term RARROW! term 
+		( WHERE transf 
+			{ ## = #(#[ATAPPL,"WhereRule"], ##) }
+		|
+			{ ## = #(#[ATAPPL,"Rule"], ##) }
+		)
 	;
 
 anon_rule
 	: rule
-		{ ## = #(#[ANON,"ANON"], ##) }
+		{ ## = #(#[ATAPPL,"Anon"], ##) }
 	;
 
 rule_set
 	: anon_rule 
 		( VERT! rule_set
-			{ ## = #(#[PLUS,"PLUS"], ##) }
+			{ ## = #(#[ATAPPL,"Choice"], ##) }
 		)?
 	;
 
@@ -265,31 +336,31 @@ term
 	: term_atom 
 		( options { warnWhenFollowAmbig=false; }
 		: term_anno
-			{ ## = #(#[ANNOS,"ANNOS"], ##) }
+			{ ## = #(#[ATAPPL,"Annos"], ##) }
 		)?
-//	| transf_prefix
-	//	{ ## = #(#[TRANSF,"TRANSF"], ##) }
-	| transf_method
-		{ ## = #(#[TRANSF,"TRANSF"], ##) }
+	| transf_prefix
 	;
 
 term_atom
 	: INT
+		{ ## = #(#[ATAPPL,"Int"], #([ATINT],##)) }
 	| REAL
+		{ ## = #(#[ATAPPL,"Real"], #([ATREAL],##)) }
 	| STR
+		{ ## = #(#[ATAPPL,"Str"], #([ATSTR],##)) }
 	| LSQUARE! term_list RSQUARE!
 	| term_sym
 	| term_tuple
 	| term_appl
 	| term_var
-	| WILDCARD
+	| term_wildcard
 	| LANGLE! transf RANGLE!
-		{ ## = #(#[TRANSF,"TRANSF"], ##) }
+		{ ## = #(#[ATAPPL,"Transf"], ##) }
 	;
 
 term_name
-	: u:UID
-		{ ## = #(#[STR,#u.getText()]) }
+	: UID
+		{ ## = #([ATAPPL,"Str"],#([ATSTR],##)) }
 	;
 
 term_var
@@ -298,17 +369,17 @@ term_var
 
 term_sym
 	: term_name term_undefined
-		{ ## = #(#[APPL,"APPL"], ##) }
+		{ ## = #(#[ATAPPL,"Appl"], ##) }
 	;
 	
 term_tuple
 	: term_args
-		{ ## = #(#[APPL,"APPL"], #[STR,""], ##) }
+		{ ## = #(#[ATAPPL,"Appl"], #[ATSTR,""], ##) }
 	;
 	
 term_appl
-	: ( term_name | term_var | WILDCARD ) term_args
-		{ ## = #(#[APPL,"APPL"], ##) }
+	: ( term_name | term_var | term_wildcard ) term_args
+		{ ## = #(#[ATAPPL,"Appl"], ##) }
 	;
 	
 term_args
@@ -317,16 +388,21 @@ term_args
 
 term_undefined
 	:
-		{ ## = #(#[UNDEF,"UNDEF"]) }
+		{ ## = #(#[ATAPPL,"Undef"]) }
 	;
-
+	
+term_wildcard
+	: WILDCARD!
+		{ ## = #(#[ATAPPL,"Wildcard"]) }	
+	;
+	
 term_anno
 	: LCURLY! term_list RCURLY!
 	;
 
 term_implicit_wildcard
 	:
-		{ ## = #(#[WILDCARD,"_"]) }
+		{ ## = #(#[ATAPPL,"Wildcard"]) }	
 	;
 
 term_opt_args
@@ -336,22 +412,23 @@ term_opt_args
 	
 term_implicit_nil
 	:
-		{ ## = #(#[NIL,"NIL"]) }	
+		{ ## = #(#[ATAPPL,"Nil"]) }	
 	;
 
 term_list
 	: term_implicit_nil
 	| term ( COMMA! term_list | term_implicit_nil )
-		{ ## = #(#[CONS,"CONS"], ##) }	
+		{ ## = #(#[ATAPPL,"Cons"], ##) }	
 	| STAR! term_opt_wildcard
 	;
 	
 term_opt_wildcard
 	: term
-	|
-		{ ## = #(#[WILDCARD,"_"]) }	
+	| term_implicit_wildcard
 	;
 
 id_list
 	: ( id ( COMMA! id )* )?
+		{ ## = #([ATLIST],##) }
 	;
+

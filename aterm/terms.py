@@ -237,7 +237,7 @@ class Real(Literal):
 	
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, float):
-			raise TypeError('value is not an integer: %r' % value)
+			raise TypeError('value is not a float: %r' % value)
 		Literal.__init__(self, factory, value, annotations)
 
 	def __float__(self):

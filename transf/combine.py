@@ -234,7 +234,7 @@ def Switch(expr, cases, otherwise = None):
 		otherwise = base.fail
 	_cases = {}
 	for terms, action in cases:
-		if not isinstance(terms, tuple):
+		if not isinstance(terms, (tuple, list)):
 			terms = (terms,)
 		for term in terms:
 			if term in _cases:

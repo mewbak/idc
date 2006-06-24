@@ -36,7 +36,7 @@ def _getConsHandler(walker, term, prefix):
 	return getattr(walker, prefix + 'Cons'), (term.head, term.tail)
 
 def _getListHandler(walker, term, prefix):
-	return _getHandler(walker, prefix + 'List'), (term,)
+	return getattr(walker, prefix + 'List'), (term,)
 
 def _getApplHandler(walker, term, prefix):
 	try:

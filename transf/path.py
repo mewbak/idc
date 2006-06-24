@@ -5,7 +5,7 @@ position of a term relative to the root term. The indexes are listed orderly
 from the leaves to the root.
 '''
 
-
+	
 import aterm.factory
 import aterm.visitor
 
