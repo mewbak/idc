@@ -106,7 +106,7 @@ class Writer(walker.Walker):
 	def write(self, box, mode = NONE):
 		self._dispatch(box, 'write', mode = mode)
 	
-	def writeApplV(self, boxes, mode):
+	def writeV(self, boxes, mode):
 		if mode == self.HORIZ:
 			raise Warning('vbox inside hbox', boxes)
 		else:
@@ -114,17 +114,17 @@ class Writer(walker.Walker):
 		for box in boxes:
 			self.write(box, mode)
 	
-	def writeApplI(self, box, mode):
+	def writeI(self, box, mode):
 		self.formatter.indent()
 		self.write(box, mode)
 		self.formatter.dedent()
 	
-	def writeApplD(self, box, mode):
+	def writeD(self, box, mode):
 		self.formatter.dedent()
 		self.write(box, mode)
 		self.formatter.indent()
 	
-	def writeApplT(self, name, value, box, mode):
+	def writeT(self, name, value, box, mode):
 		name = self._str(name)
 		try:
 			value = self._str(value)
@@ -134,7 +134,7 @@ class Writer(walker.Walker):
 		self.write(box, mode)
 		self.formatter.handle_tag_end(name)
 
-	def writeApplH(self, boxes, mode):
+	def writeH(self, boxes, mode):
 		if mode == self.VERT:
 			self.formatter.write_indent()
 		for box in boxes:
@@ -142,7 +142,7 @@ class Writer(walker.Walker):
 		if mode == self.VERT:
 			self.formatter.write_eol()
 	
-	def writeStr(self, s, mode):
+	def write_Str(self, s, mode):
 		if mode == self.VERT:
 			self.formatter.write_indent()
 		self.formatter.write(s)

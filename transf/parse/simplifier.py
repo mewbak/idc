@@ -20,7 +20,7 @@ simplifyRule = {
 simplifyChoice = {
 	Choice(rules) -> 
 		Switch(
-			Transf(Id("project.name")), 
+			Transf("project.name"), 
 			<<Filter(simplifyRule)> rules>, 
 			Choice(<<Filter(Not(simplifyRule))>rules>)
 		)

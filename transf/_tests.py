@@ -788,7 +788,7 @@ class TestLists(TestMixin, unittest.TestCase):
 			)
 		)
 
-	def testSplitAllBefore(self):
+	def _testSplitAllBefore(self):
 		self._testTransf(
 			lists.SplitAllBefore(rewrite.Pattern('X','Y')), 
 			(

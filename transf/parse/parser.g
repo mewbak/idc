@@ -87,8 +87,10 @@ transf_prefix
 		{ ## = #(#[ATAPPL,"Build"], ##) }
 	| TILDE! term
 		{ ## = #(#[ATAPPL,"Traverse"], ##) }
-	| EQUAL! var
+	| EQUAL! id
 		{ ## = #(#[ATAPPL,"Set"], ##) }
+	| CARET! id
+		{ ## = #(#[ATAPPL,"Unset"], ##) }
 	;
 
 transf_atom
@@ -166,7 +168,7 @@ switch_otherwise
 	
 transf_application
 	: transf_atom 
-		( RDARROW! var 
+		( RDARROW! id 
 			{ ## = #(#[ATAPPL,"Store"], ##) } 
 		)?
 	;
@@ -257,7 +259,7 @@ var_def_list
 	;
 
 var_def
-	: var constructor
+	: id constructor
 		{ ## = #(#[ATAPPL,"VarDef"], ##) }
 	;
 
@@ -267,7 +269,7 @@ constructor
 	| EQUAL! transf
 		{ ## = #(#[ATAPPL,"TermTransf"], ##) }
 	| LSQUARE! RSQUARE! 
-		( EQUAL! var 
+		( EQUAL! id 
 		{ ## = #(#[ATAPPL,"TableCopy"], ##) }
 		|
 		{ ## = #(#[ATAPPL,"Table"], ##) }
@@ -276,14 +278,9 @@ constructor
 		{ ## = #(#[ATAPPL,"Dynamic"], ##) }
 	;
 
-var
-	: LID
-		{ ## = #(#[ATAPPL,"Var"], #([ATSTR],##)) }
-	;
-
 id
 	: ( ID | LID | UID | WHERE ) 
-		{ ## = #(#[ATAPPL,"Id"], #([ATSTR],##)) }
+		{ ## = #([ATSTR], ##) }
 	;
 
 arg_list
@@ -293,8 +290,9 @@ arg_list
 
 arg
 	: OBJ
-			{ ## = #(#[ATAPPL,"Obj"], #([ATSTR],##)) }
-	| PRIME! var ( PRIME! )?
+		{ ## = #(#[ATAPPL,"Obj"], #([ATSTR],##)) }
+	| PRIME! id ( PRIME! )?
+		{ ## = #(#[ATAPPL,"Var"], ##) }
 	| transf
 	;
 	
@@ -364,7 +362,8 @@ term_name
 	;
 
 term_var
-	: var
+	: LID
+		{ ## = #(#[ATAPPL,"Var"], #([ATSTR],##)) }
 	;
 
 term_sym

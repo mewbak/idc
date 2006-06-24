@@ -15,7 +15,9 @@ class Match(object):
 	def __init__(self):
 		self.args = []
 		self.kargs = {}
-
+	
+	def __iter__(self):
+		return iter(self.args)
 
 
 class Term(object):

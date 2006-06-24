@@ -1,3 +1,5 @@
+"""Translates the transformation describing aterms into the 
+respective transformation objects."""
 
 
 # pylint: disable-msg=R0201
@@ -44,7 +46,7 @@ class Meta:
 			locals = self.locals,
 		)
 		translator.stack.append(dict(zip(self.args, args)))
-		return translator.translate(self.term)
+		return translator.transf(self.term)
 
 
 class Translator(walker.Walker):
@@ -94,25 +96,25 @@ class Translator(walker.Walker):
 		return self._dispatch(t, 'translate')
 	
 	transf_defs = translate
-	transf = translate
 	meta_def = translate
 	
-	def translateApplDefs(self, tdefs):
+	def translateDefs(self, tdefs):
 		for tdef in tdefs:
 			self.translate(tdef)
 	
-	def translateApplTransfDef(self, n, t):
+	def translateTransfDef(self, n, t):
 		n = self.id(n)
-		t = self.translate(t)
+		t = self.transf(t)
 		self.define_name(n, t)
 
-	def translateApplTransfFacDef(self, n, a, t):
+	def translateTransfFacDef(self, n, a, t):
 		n = self.id(n)
 		T = self.meta(a, t)
 		self.define_name(n, T)
 	
-	def translateApplMetaDef(self, a, t):
+	def translateMetaDef(self, a, t):
 		return self.meta(a, t)
+
 
 	def meta(self, a, t):
 		a = map(self.id, a)
@@ -122,51 +124,55 @@ class Translator(walker.Walker):
 			a,
 			t,
 		)
+
 	
-	def translateApplIdent(self):
+	def transf(self, t):
+		return self._dispatch(t, 'transf')
+	
+	def transfIdent(self):
 		return transf.base.ident
 		
-	def translateApplFail(self):
+	def transfFail(self):
 		return transf.base.fail
 
-	def translateApplMatch(self, t):
+	def transfMatch(self, t):
 		return self.match(t)
 		
-	def translateApplBuild(self, t):
+	def transfBuild(self, t):
 		return self.build(t)
 		
-	def translateApplTraverse(self, t):
+	def transfTraverse(self, t):
 		return self.traverse(t)
 		
-	def translateApplSet(self, v):
-		v = self.var(v)
+	def transfSet(self, v):
+		v = self.id(v)
 		return transf.variable.Set(v)
 
-	def translateApplUnset(self, v):
-		v = self.var(v)
+	def transfUnset(self, v):
+		v = self.id(v)
 		return transf.variable.Unset(v)
 		
-	def translateApplComposition(self, l, r):
-		l = self.translate(l)
-		r = self.translate(r)
+	def transfComposition(self, l, r):
+		l = self.transf(l)
+		r = self.transf(r)
 		return transf.combine.Composition(l, r)
 		
-	def translateApplChoice(self, o):
-		o = map(self.translate, o)
+	def transfChoice(self, o):
+		o = map(self.transf, o)
 		return transf.combine.UndeterministicChoice(o)
 		
-	def translateApplLeftChoice(self, l, r):
-		l = self.translate(l)
-		r = self.translate(r)
+	def transfLeftChoice(self, l, r):
+		l = self.transf(l)
+		r = self.transf(r)
 		return transf.combine.Choice(l, r)
 		
-	def translateApplGuardedChoice(self, l, m, r):
-		l = self.translate(l)
-		m = self.translate(m)
-		r = self.translate(r)
+	def transfGuardedChoice(self, l, m, r):
+		l = self.transf(l)
+		m = self.transf(m)
+		r = self.transf(r)
 		return transf.combine.GuardedChoice(l, m, r)
 		
-	def translateApplTransf(self, n):
+	def transfTransf(self, n):
 		n = self.id(n)
 		txn = self.bind_name(n)
 		if txn is None:
@@ -175,7 +181,7 @@ class Translator(walker.Walker):
 			raise SemanticException(n, "%s is not a transformation" % n)
 		return txn
 		
-	def translateApplTransfFac(self, i, a):
+	def transfTransfFac(self, i, a):
 		n = self.id(i)
 		a = map(self.arg, a)
 		
@@ -192,88 +198,96 @@ class Translator(walker.Walker):
 			raise SemanticException(i, "%s did not return a transformation" % n)
 		return txn
 	
-	def translateApplScope(self, vars, t):
+	def transfScope(self, vars, t):
 		vars = self.id_list(vars)
-		t = self.translate(t)
+		t = self.transf(t)
 		if vars:
 			return transf.scope.Local(t, vars)
 		else:
 			return t
 
-	def translateApplRule(self, m, b):
+	def transfRule(self, m, b):
 		m = self.match(m)
 		b = self.build(b)
 		return transf.combine.Composition(m, b)
 		
-	def translateApplWhereRule(self, m, b, w):
+	def transfWhereRule(self, m, b, w):
 		m = self.match(m)
 		b = self.match(b)
-		w = self.translate(w)
+		w = self.transf(w)
 		return transf.combine.Composition(m, transf.combine.Composition(transf.combine.Where(w), b))
 		
-	def translateApplAnon(self, r):
+	def transfAnon(self, r):
 		vars = []
 		self.collect(r, vars)
-		r = self.translate(r)
+		r = self.transf(r)
 		if vars:
 			r = transf.scope.Local(r, vars)
 		return r
 	
-	def translateApplStore(self, t, v):
-		t = self.translate(t)
-		v = self.var(v)
+	def transfStore(self, t, v):
+		t = self.transf(t)
+		v = self.id(v)
 		return transf.combine.Where(transf.combine.Composition(t, transf.variable.Set(v)))
 	
-	def translateApplBuildApply(self, t, b):
-		t = self.translate(t)
+	def transfBuildApply(self, t, b):
+		t = self.transf(t)
 		b = self.build(b)
 		return transf.combine.Composition(b, t)
 		
-	def translateApplIf(self, conds, other):
-		conds = map(self.translate, conds)
-		other = self.translate(other)
+	def transfIf(self, conds, other):
+		conds = map(self.doIfClause, conds)
+		other = self.transf(other)
 		return transf.combine.IfElifElse(conds, other)
 
-	def translateApplIfClause(self, c, a):
-		c = self.translate(c)
-		a = self.translate(a)
+	def doIfClause(self, t):
+		c, a = t.rmatch("IfClause(_, _)")
+		c = self.transf(c)
+		a = self.transf(a)
 		return (c, a)
 		
-	def translateApplSwitch(self, expr, cases, other):
-		expr = self.translate(expr)
-		cases = map(self.translate, cases)
-		other = self.translate(other)
+	def transfSwitch(self, expr, cases, other):
+		expr = self.transf(expr)
+		cases = map(self.doSwitchClause, cases)
+		other = self.transf(other)
 		return transf.combine.Switch(expr, cases, other)
 
-	def translateApplSwitchCase(self, c, a):
-		c = tuple(map(self.static, c))
-		a = self.translate(a)
+	def doSwitchClause(self, t):
+		c, a = t.rmatch("SwitchCase(_, _)")
+		c = map(self.static, c)
+		a = self.transf(a)
 		return (c, a)
 		
-	def translateApplLet(self, v, t):
-		v = map(self.translate, v)
-		t = self.translate(t)
+	def transfLet(self, v, t):
+		v = map(self.doLetDef, v)
+		t = self.transf(t)
 		v = dict(v)
 		return transf.scope.Let(t, **v)
 
-	def translateApplJoin(self, l, r, u, i):	
-		l = self.translate(l)
-		r = self.translate(r)
+	def doLetDef(self, t):
+		i, t = t.rmatch("LetDef(_,_)")
+		i = self.id(i)
+		t = self.transf(t)
+		return (i, t)
+		
+	def transfJoin(self, l, r, u, i):	
+		l = self.transf(l)
+		r = self.transf(r)
 		u = self.id_list(u)
 		i = self.id_list(i)
 		return transf.table.Join(l, r, u, i)
 		
-	def translateApplIterate(self, o, u, i):	
-		o = self.translate(o)
+	def transfIterate(self, o, u, i):	
+		o = self.transf(o)
 		u = self.id_list(u)
 		i = self.id_list(i)
 		return transf.table.Iterate(o, u, i)
 
-	def translateApplRec(self, i, t):
+	def transfRec(self, i, t):
 		i = self.id(i)
 		ret = transf.util.Proxy()
 		self.stack.append({i: ret})
-		t = self.translate(t)
+		t = self.transf(t)
 		self.stack.pop()
 		ret.subject = t
 		return ret
@@ -281,91 +295,92 @@ class Translator(walker.Walker):
 	# #( VARMETHOD v=id m=id a=arg_list )
 	#	{ ret = transf.variable.Wrap(v, m, *a) }
 	
-	def translateApplWith(self, vs, t):
-		vs = map(self.translate, vs)
-		t = self.translate(t)
+	def transfWith(self, vs, t):
+		vs = map(self.doVarDef, vs)
+		t = self.transf(t)
 		return transf.scope.With(vs, t)
 
-	def translateApplLetDef(self, i, t):
-		i = self.id(i)
-		t = self.transf(t)
-		return (i, t)
-		
+	def doVarDef(self, t):
+		v, c = t.rmatch("VarDef(_,_)")
+		v = self.id(v)
+		c = self.constructor(c)
+		return (v, c)
+
+
 	def arg(self, arg):
 		return self._dispatch(arg, 'arg')
 	
-	def argApplObj(self, o):
+	def argObj(self, o):
 		o = self._str(o)
 		return eval(o, self.globals, self.locals)
 	
-	def argApplVar(self, v):
+	def argVar(self, v):
 		v = self._str(v)
 		return v
 	
-	def argTerm(self, t):
-		return self.translate(t)
+	def arg_Term(self, t):
+		return self.transf(t)
 
-	def translateApplVarDef(self, v, c):
-		v = self.var(v)
-		c = self.constructor(c)
-		return (v, c)
 
 	def constructor(self, c):
 		return self._dispatch(c, 'constructor')
 		
-	def constructorApplTermTransf(self, t):
-		t = self.translate(t)
+	def constructorTermTransf(self, t):
+		t = self.transf(t)
 		return transf.term.Transf(t)
 
-	def constructorApplTerm(self):
+	def constructorTerm(self):
 		return transf.term.new
 		
-	def constructorApplTableCopy(self, v):
-		v = self.var(v)
+	def constructorTableCopy(self, v):
+		v = self.id(v)
 		return transf.table.Copy(v)
 
-	def constructorApplTable(self):
+	def constructorTable(self):
 		return transf.table.new
 
 
 	def static(self, t):
 		return self._dispatch(t, 'static')
 		
-	def staticApplInt(self, i):
-		return i
+	def staticInt(self, i):
+		i = self._int(i)
+		return aterm.factory.factory.makeInt(i)
 	
-	def staticApplReal(self, r):
-		return r
+	def staticReal(self, r):
+		r = self._real(r)
+		return aterm.factory.factory.makeReal(r)
 	
-	def staticApplStr(self, s):
-		return s
+	def staticStr(self, s):
+		s = self._str(s)
+		return aterm.factory.factory.makeStr(s)
 	
-	def staticApplNil(self):
+	def staticNil(self):
 		return aterm.factory.factory.makeNil()
 	
-	def staticApplCons(self, h, t):
+	def staticCons(self, h, t):
 		h = self.static(h)
 		t = self.static(t)
 		return aterm.factory.factory.makeCons(h, t)
 	
-	def staticApplUndef(self):
+	def staticUndef(self):
 		return aterm.factory.factory.makeNil()
 		
-	def staticApplAppl(self, n, a):
+	def staticAppl(self, n, a):
 		n = self.static(n)
 		a = self.static(a)
 		return aterm.factory.factory.makeAppl(n, a)
 		
-	def staticApplWildcard(self):
+	def staticWildcard(self):
 		raise SemanticException(None, "wildcard in static term")
 
-	def staticApplVar(self, v):
+	def staticVar(self, v):
 		raise SemanticException(None, "variable in static term")
 
-	def staticApplTransf(self, t):
+	def staticTransf(self, t):
 		raise SemanticException(None, "transformation in static term")
 
-	def staticApplAnnos(self, t, a):
+	def staticAnnos(self, t, a):
 		t = self.static(t)
 		a = self.static(a)
 		return t.setAnnotations(a)
@@ -374,46 +389,46 @@ class Translator(walker.Walker):
 	def match(self, t):
 		return self._dispatch(t, 'match')
 		
-	def matchApplInt(self, i):
+	def matchInt(self, i):
 		i = self._int(i)
 		return transf.match.Int(i)
 	
-	def matchApplReal(self, r):
+	def matchReal(self, r):
 		r = self._real(r)
 		return transf.match.Real(r)
 	
-	def matchApplStr(self, s):
+	def matchStr(self, s):
 		s = self._str(s)
 		return transf.match.Str(s)
 	
-	def matchApplNil(self):
+	def matchNil(self):
 		return transf.match.nil
 	
-	def matchApplCons(self, h, t):
+	def matchCons(self, h, t):
 		h = self.match(h)
 		t = self.match(t)
 		return transf.match.Cons(h, t)
 	
-	def matchApplUndef(self):
+	def matchUndef(self):
 		return transf.base.ident
 		
-	def matchApplAppl(self, n, a):
+	def matchAppl(self, n, a):
 		n = self.match(n)
 		a = self.match(a)
 		return transf.match.Appl(n, a)
 		
-	def matchApplWildcard(self):
+	def matchWildcard(self):
 		return transf.base.ident
 
-	def matchApplVar(self, v):
+	def matchVar(self, v):
 		v = self._str(v)
 		return transf.match.Var(v)
 
-	def matchApplTransf(self, t):
-		t = self.translate(t)
+	def matchTransf(self, t):
+		t = self.transf(t)
 		return t
 
-	def matchApplAnnos(self, t, a):
+	def matchAnnos(self, t, a):
 		t = self.match(t)
 		a = self.match(a)
 		return transf.combine.Composition(t, transf.match.Annos(a))
@@ -422,46 +437,46 @@ class Translator(walker.Walker):
 	def build(self, t):
 		return self._dispatch(t, 'build')
 		
-	def buildApplInt(self, i):
+	def buildInt(self, i):
 		i = self._int(i)
 		return transf.build.Int(i)
 	
-	def buildApplReal(self, r):
+	def buildReal(self, r):
 		r = self._real(r)
 		return transf.build.Real(r)
 	
-	def buildApplStr(self, s):
+	def buildStr(self, s):
 		s = self._str(s)
 		return transf.build.Str(s)
 	
-	def buildApplNil(self):
+	def buildNil(self):
 		return transf.build.nil
 	
-	def buildApplCons(self, h, t):
+	def buildCons(self, h, t):
 		h = self.build(h)
 		t = self.build(t)
 		return transf.build.Cons(h, t)
 	
-	def buildApplUndef(self):
+	def buildUndef(self):
 		return transf.build.nil
 		
-	def buildApplAppl(self, n, a):
+	def buildAppl(self, n, a):
 		n = self.build(n)
 		a = self.build(a)
 		return transf.build.Appl(n, a)
 		
-	def buildApplWildcard(self):
+	def buildWildcard(self):
 		return transf.base.ident
 
-	def buildApplVar(self, v):
+	def buildVar(self, v):
 		v = self._str(v)
 		return transf.build.Var(v)
 
-	def buildApplTransf(self, t):
-		t = self.translate(t)
+	def buildTransf(self, t):
+		t = self.transf(t)
 		return t
 
-	def buildApplAnnos(self, t, a):
+	def buildAnnos(self, t, a):
 		t = self.build(t)
 		a = self.build(a)
 		return transf.combine.Composition(t, transf.build.Annos(a))
@@ -472,46 +487,46 @@ class Translator(walker.Walker):
 	def traverse(self, t):
 		return self._dispatch(t, 'traverse')
 		
-	def traverseApplInt(self, i):
+	def traverseInt(self, i):
 		i = self._int(i)
 		return transf.match.Int(i)
 	
-	def traverseApplReal(self, r):
+	def traverseReal(self, r):
 		r = self._real(r)
 		return transf.match.Real(r)
 	
-	def traverseApplStr(self, s):
+	def traverseStr(self, s):
 		s = self._str(s)
 		return transf.match.Str(s)
 	
-	def traverseApplNil(self):
+	def traverseNil(self):
 		return transf.match.nil
 	
-	def traverseApplCons(self, h, t):
+	def traverseCons(self, h, t):
 		h = self.traverse(h)
 		t = self.traverse(t)
 		return transf.congruent.Cons(h, t)
 	
-	def traverseApplUndef(self):
+	def traverseUndef(self):
 		return transf.base.ident
 		
-	def traverseApplAppl(self, n, a):
+	def traverseAppl(self, n, a):
 		n = self.traverse(n)
 		a = self.traverse(a)
 		return transf.congruent.Appl(n, a)
 		
-	def traverseApplWildcard(self):
+	def traverseWildcard(self):
 		return transf.base.ident
 
-	def traverseApplVar(self, v):
+	def traverseVar(self, v):
 		v = self._str(v)
 		return transf.congruent.Var(v)
 
-	def traverseApplTransf(self, t):
-		t = self.translate(t)
+	def traverseTransf(self, t):
+		t = self.transf(t)
 		return t
 
-	def traverseApplAnnos(self, t, a):
+	def traverseAnnos(self, t, a):
 		t = self.traverse(t)
 		a = self.traverse(a)
 		return transf.combine.Composition(t, transf.traverse.Annos(a))
@@ -520,21 +535,21 @@ class Translator(walker.Walker):
 	def collect(self, t, vars):
 		self._dispatch(t, 'collect', vars = vars)
 		
-	def collectApplRule(self, m, b, vars):
+	def collectRule(self, m, b, vars):
 		self.collect(m, vars)
 
-	def collectApplWhereRule(self, m, b, w, vars):
+	def collectWhereRule(self, m, b, w, vars):
 		self.collect(m, vars)
 
-	def collectApplCons(self, h, t, vars):
+	def collectCons(self, h, t, vars):
 		self.collect(h, vars)
 		self.collect(t, vars)
 	
-	def collectApplAppl(self, n, a, vars):
+	def collectAppl(self, n, a, vars):
 		self.collect(n, vars)
 		self.collect(a, vars)
 		
-	def collectApplVar(self, v, vars):
+	def collectVar(self, v, vars):
 		v = self._str(v)
 		if v not in vars:
 			vars.append(v)
@@ -543,20 +558,13 @@ class Translator(walker.Walker):
 		self.collect(t, vars)
 		self.collect(a, vars)
 
-	def collectTerm(self, t, vars):
+	def collect_Term(self, t, vars):
+		# ignore everything else
 		pass
+
 
 	def id_list(self, l):
 		return map(self.id, l)
 
-	def id(self, v):
-		return self._dispatch(v, "id")
-	
-	def idApplId(self, i):
+	def id(self, i):
 		return self._str(i)
-
-	def var(self, v):
-		return self._dispatch(v, "var")
-	
-	def varApplVar(self, v):
-		return self._str(v)

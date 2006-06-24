@@ -12,40 +12,43 @@ the same walker methods do not necessarily yield the same results.
 '''
 
 
-import sys
+# pylint: disable-msg=R0201
+
+
+import inspect
 
 import aterm
 
 
 def _getIntHandler(walker, term, prefix):
-	return getattr(walker, prefix + 'Int'), (term.value,)
+	return getattr(walker, prefix + '_Int'), (term.value,)
 		
 def _getRealHandler(walker, term, prefix):
-	return getattr(walker, prefix + 'Real'), (term.value,)
+	return getattr(walker, prefix + '_Real'), (term.value,)
 
 def _getStrHandler(walker, term, prefix):
-	return getattr(walker, prefix + 'Str'), (term.value,)
+	return getattr(walker, prefix + '_Str'), (term.value,)
 
 def _getLitHandler(walker, term, prefix):
-	return getattr(walker, prefix + 'Lit'), (term.value,)
+	return getattr(walker, prefix + '_Lit'), (term.value,)
 
 def _getNilHandler(walker, term, prefix):
-	return getattr(walker, prefix + 'Nil'), ()
+	return getattr(walker, prefix + '_Nil'), ()
 
 def _getConsHandler(walker, term, prefix):
-	return getattr(walker, prefix + 'Cons'), (term.head, term.tail)
+	return getattr(walker, prefix + '_Cons'), (term.head, term.tail)
 
 def _getListHandler(walker, term, prefix):
-	return getattr(walker, prefix + 'List'), (term,)
+	return getattr(walker, prefix + '_List'), (term,)
 
 def _getApplHandler(walker, term, prefix):
 	try:
-		return getattr(walker, prefix + 'Appl' + term.name.value), tuple(term.args)
+		return getattr(walker, prefix + term.name.value), tuple(term.args)
 	except AttributeError:
-		return getattr(walker, prefix + 'Appl'), (term.name, term.args)
+		return getattr(walker, prefix + '_Appl'), (term.name, term.args)
 
 def _getTermHandler(walker, term, prefix):
-	return getattr(walker, prefix + 'Term'), (term,)
+	return getattr(walker, prefix + '_Term'), (term,)
 
 _getHandlersTable = {
 	aterm.types.INT: (_getIntHandler, _getLitHandler, _getTermHandler),
@@ -144,7 +147,7 @@ class Walker(object):
 		'''
 		match = term.rmatch(pattern)
 		if match:
-			caller = sys._getframe(1)
+			caller = inspect.currentframe().f_back
 			caller.f_locals.update(match.kargs)
 			return True
 		else:
