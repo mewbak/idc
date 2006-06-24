@@ -296,12 +296,12 @@ class Translator(walker.Walker):
 	#	{ ret = transf.variable.Wrap(v, m, *a) }
 	
 	def transfWith(self, vs, t):
-		vs = map(self.doVarDef, vs)
+		vs = map(self.doWithDef, vs)
 		t = self.transf(t)
 		return transf.scope.With(vs, t)
 
-	def doVarDef(self, t):
-		v, c = t.rmatch("VarDef(_,_)")
+	def doWithDef(self, t):
+		v, c = t.rmatch("WithDef(_,_)")
 		v = self.id(v)
 		c = self.constructor(c)
 		return (v, c)
