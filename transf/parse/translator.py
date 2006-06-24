@@ -151,10 +151,9 @@ class Translator(walker.Walker):
 		r = self.translate(r)
 		return transf.combine.Composition(l, r)
 		
-	def translateApplChoice(self, l, r):
-		l = self.translate(l)
-		r = self.translate(r)
-		return transf.combine.Choice(l, r)
+	def translateApplChoice(self, o):
+		o = map(self.translate, o)
+		return transf.combine.UndeterministicChoice(o)
 		
 	def translateApplLeftChoice(self, l, r):
 		l = self.translate(l)
@@ -522,6 +521,9 @@ class Translator(walker.Walker):
 		self._dispatch(t, 'collect', vars = vars)
 		
 	def collectApplRule(self, m, b, vars):
+		self.collect(m, vars)
+
+	def collectApplWhereRule(self, m, b, w, vars):
 		self.collect(m, vars)
 
 	def collectApplCons(self, h, t, vars):

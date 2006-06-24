@@ -227,8 +227,8 @@ transf_choice
 
 transf_undeterministic_choice
 	: transf_choice 
-		( VERT! transf_undeterministic_choice 
-			{ ## = #(#[ATAPPL,"Choice"], ##) }	
+		( ( VERT! transf_choice )+
+			{ ## = #(#[ATAPPL,"Choice"], #([ATLIST],##)) }	
 		)?
 	;
 
@@ -300,7 +300,7 @@ arg
 	
 rule
 	: term RARROW! term 
-		( WHERE transf 
+		( WHERE! transf 
 			{ ## = #(#[ATAPPL,"WhereRule"], ##) }
 		|
 			{ ## = #(#[ATAPPL,"Rule"], ##) }
@@ -314,8 +314,8 @@ anon_rule
 
 rule_set
 	: anon_rule 
-		( VERT! rule_set
-			{ ## = #(#[ATAPPL,"Choice"], ##) }
+		( ( VERT! anon_rule )+
+		{ ## = #(#[ATAPPL,"Choice"], #([ATLIST],##)) }
 		)?
 	;
 

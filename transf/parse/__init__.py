@@ -41,12 +41,16 @@ def _translator():
 	return translator
 
 
-def Transfs(buf):
+def Transfs(buf, simplify=True):
 	'''Parse transformation definitions from a string.'''
 	parser = _parser(buf)
 	parser.transf_defs()
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
+	if simplify:
+		import transf.parse.simplifier
+		old = term
+		term = transf.parse.simplifier.simplify(term)
 	translator = _translator()
 	translator.transf_defs(term)
 
@@ -73,12 +77,16 @@ def Rules(buf):
 	return txn
 
 
-def Rule(buf):
+def Rule(buf, simplify=True):
 	'''Parse a transformation rule from a string.'''
 	parser = _parser(buf)
 	parser.rule_set()
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
+	if simplify:
+		import transf.parse.simplifier
+		old = term
+		term = transf.parse.simplifier.simplify(term)
 	translator = _translator()
 	txn = translator.transf(term)
 	return txn

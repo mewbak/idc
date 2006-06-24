@@ -136,6 +136,10 @@ def GuardedChoice(operand1, operand2, operand3):
 	return _GuardedChoice(operand1, operand2, operand3)
 
 
+def UndeterministicChoice(operands):
+	return operate.Nary(operands, Choice, base.fail)
+
+
 class _If(operate.Binary):
 
 	__slots__ = []
@@ -204,6 +208,8 @@ class _IfElifElse(base.Transformation):
 def IfElifElse(conds, otherwise = None):
 	if otherwise is None:
 		otherwise = base.ident
+	if len(conds) == 0:
+		return otherwise
 	if len(conds) == 1:
 		((cond, true),) = conds
 		return IfElse(cond, true, otherwise)
@@ -233,6 +239,8 @@ def Switch(expr, cases, otherwise = None):
 	if otherwise is None:
 		otherwise = base.fail
 	_cases = {}
+	if len(cases) == 0:
+		return Composition(Where(expr), otherwise)
 	for terms, action in cases:
 		if not isinstance(terms, (tuple, list)):
 			terms = (terms,)
