@@ -100,7 +100,7 @@ transf_construct
 	| id 
 		( 
 			{ ## = #(#[ATAPPL,"Transf"], ##) }
-		| LPAREN! arg_list RPAREN!
+		| LPAREN! args RPAREN!
 			{ ## = #(#[ATAPPL,"TransfFac"], ##) }
 		)
 	| LCURLY!
@@ -124,6 +124,19 @@ transf_construct
 		{ ## = #(#[ATAPPL,"With"], ##) }
 	| REC! id COLON! transf_construct
 		{ ## = #(#[ATAPPL,"Rec"], ##) }
+	;
+
+args
+	: ( arg ( COMMA! arg )* )?
+		{ ## = #(#[ATLIST], ##) }
+	;
+
+arg
+	: OBJ
+		{ ## = #(#[ATAPPL,"Obj"], #(#[ATSTR],##)) }
+	| PRIME! id ( PRIME! )?
+		{ ## = #(#[ATAPPL,"Var"], ##) }
+	| transf
 	;
 
 if_clauses
@@ -257,11 +270,6 @@ transf_expr
 	: transf_choice
 	;
 
-transf_list
-	: ( transf ( COMMA! transf )* )?
-		{ ## = #(#[ATLIST], ##) }
-	;
-
 constructor
 	: 
 		{ ## = #(#[ATAPPL,"Term"], ##) }
@@ -277,27 +285,9 @@ constructor
 		{ ## = #(#[ATAPPL,"Dynamic"], ##) }
 	;
 
-id
-	: ( ID | LID | UID | WHERE ) 
-		{ ## = #(#[ATSTR], ##) }
-	;
-
-arg_list
-	: ( arg ( COMMA! arg )* )?
-		{ ## = #(#[ATLIST], ##) }
-	;
-
-arg
-	: OBJ
-		{ ## = #(#[ATAPPL,"Obj"], #(#[ATSTR],##)) }
-	| PRIME! id ( PRIME! )?
-		{ ## = #(#[ATAPPL,"Var"], ##) }
-	| transf
-	;
-	
 rule
 	: term RARROW! term 
-		( WHERE! transf 
+		( WHERE! transf_choice
 			{ ## = #(#[ATAPPL,"WhereRule"], ##) }
 		|
 			{ ## = #(#[ATAPPL,"Rule"], ##) }
@@ -415,5 +405,10 @@ term_opt_wildcard
 id_list
 	: ( id ( COMMA! id )* )?
 		{ ## = #(#[ATLIST],##) }
+	;
+
+id
+	: ( ID | LID | UID | WHERE ) 
+		{ ## = #(#[ATSTR], ##) }
 	;
 

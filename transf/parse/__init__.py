@@ -3,18 +3,9 @@
 
 import sys
 
-try:
-	import cStringIO as StringIO
-except ImportError:
-	import StringIO
-
-
 from transf.parse.lexer import Lexer
 from transf.parse.parser import Parser
-
 from antlraterm import Walker as Converter
-
-#from transf.parse.simplifier import Simplifier
 from transf.parse.translator import Translator
 
 
@@ -61,6 +52,10 @@ def Transf(buf):
 	parser.transf()
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
+	if True:
+		import transf.parse.simplifier
+		old = term
+		term = transf.parse.simplifier.simplify(term)
 	translator = _translator()
 	txn = translator.transf(term)
 	return txn
@@ -72,6 +67,10 @@ def Rules(buf):
 	parser.rule_defs()
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
+	if True:
+		import transf.parse.simplifier
+		old = term
+		term = transf.parse.simplifier.simplify(term)
 	translator = _translator()
 	txn = translator.transf_defs(term)
 	return txn
