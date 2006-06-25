@@ -1,9 +1,6 @@
 '''Transformation combinators.'''
 
 
-__docformat__ = 'epytext'
-
-
 from transf import exception
 from transf import base
 from transf import operate
@@ -76,12 +73,17 @@ class _Composition(operate.Binary):
 
 def Composition(loperand, roperand):
 	'''Transformation composition.'''
+	assert isinstance(loperand, base.Transformation)
+	assert isinstance(roperand, base.Transformation)
 	if loperand is base.ident:
 		return roperand
 	if roperand is base.ident:
 		return loperand
 	if loperand is base.fail:
 		return base.fail
+	while loperand.__class__ is _Composition:
+		roperand = _Composition(loperand.roperand, roperand)
+		loperand = loperand.loperand
 	return _Composition(loperand, roperand)
 	
 
@@ -97,6 +99,8 @@ class _Choice(operate.Binary):
 
 def Choice(loperand, roperand):
 	'''Attempt the first transformation, transforming the second on failure.'''
+	assert isinstance(loperand, base.Transformation)
+	assert isinstance(roperand, base.Transformation)
 	if loperand is base.ident:
 		return base.ident
 	if loperand is base.fail:
@@ -105,6 +109,9 @@ def Choice(loperand, roperand):
 		return Try(loperand)
 	if roperand is base.fail:
 		return loperand
+	while loperand.__class__ is _Choice:
+		roperand = _Choice(loperand.roperand, roperand)
+		loperand = loperand.loperand
 	return _Choice(loperand, roperand)
 	
 
