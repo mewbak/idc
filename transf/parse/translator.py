@@ -211,7 +211,7 @@ class Translator(walker.Walker):
 		b = self.build(b)
 		return transf.combine.Composition(m, b)
 		
-	def transfWhereRule(self, m, b, w):
+	def transfRuleWhere(self, m, b, w):
 		m = self.match(m)
 		b = self.match(b)
 		w = self.transf(w)

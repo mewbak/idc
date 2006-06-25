@@ -19,11 +19,10 @@ header "att_parser.__main__" {
     print str(term)
     print
 
+    from transf.exception import Failure
+    from ir import pprint
+    from box import stringify
     try:
-        from transf.exception import Failure
-        from ir import pprint
-        from box import stringify
-       
         text = stringify(pprint.module(term))
         print "** C pretty-print **"
         print text

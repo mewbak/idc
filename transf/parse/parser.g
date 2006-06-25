@@ -109,12 +109,12 @@ transf_construct
 		| rule_set
 		) RCURLY!
 	| LPAREN!
-		( ( term RARROW ) =>  rule
+		( ( term RARROW ) => rule_set
 		| transf
 		) RPAREN!
 	| LANGLE! transf RANGLE! term
 		{ ## = #(#[ATAPPL,"BuildApply"], ##) }
-	| ( IF ) => if_clauses if_else END!
+	| IF! if_clauses if_else END!
 		{ ## = #(#[ATAPPL,"If"], ##) }
 	| SWITCH! transf switch_cases switch_else END!
 		{ ## = #(#[ATAPPL,"Switch"], ##) }
@@ -140,14 +140,12 @@ arg
 	;
 
 if_clauses
-	: ( if_clause )*
+	: if_clause (ELIF! if_clause)*
 		{ ## = #(#[ATLIST], ##) }
 	;
 	
 if_clause
-	: IF! transf THEN! transf 
-		{ ## = #(#[ATAPPL,"IfClause"], ##) }
-	| ELIF! transf THEN! transf
+	: transf THEN! transf 
 		{ ## = #(#[ATAPPL,"IfClause"], ##) }
 	;
 	
@@ -288,7 +286,7 @@ constructor
 rule
 	: term RARROW! term 
 		( WHERE! transf_choice
-			{ ## = #(#[ATAPPL,"WhereRule"], ##) }
+			{ ## = #(#[ATAPPL,"RuleWhere"], ##) }
 		|
 			{ ## = #(#[ATAPPL,"Rule"], ##) }
 		)
@@ -408,7 +406,7 @@ id_list
 	;
 
 id
-	: ( ID | LID | UID | WHERE ) 
+	: ( ID | LID | UID ) 
 		{ ## = #(#[ATSTR], ##) }
 	;
 
