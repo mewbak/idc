@@ -7,7 +7,7 @@ import ir.transfs
 import ir.traverse
 
 
-from ssl.pentium import insn_table
+from lang.ssl.pentium import insn_table
 
 
 sslTranslationTable = {

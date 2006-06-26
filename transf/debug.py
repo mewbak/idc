@@ -153,7 +153,7 @@ class Traceback(operate.Unary, DebugMixin):
 				file = file and os.path.abspath(file) or '?'
 				args, varargs, varkw, locals = inspect.getargvalues(frame)
 				print locals['self'].__class__.__name__,
-				self.dump_source(file, lineno)
+				self.dump_line(file, lineno)
 				try:
 					self.dump_term(locals['term'])
 				except:

@@ -6,12 +6,11 @@ import optparse
 import os.path
 
 import aterm.factory
-import ir
 
-from lexer import Lexer
-from parser import Parser
-from preprocessor import Walker as Preprocessor
-from compiler import Walker as Compiler
+from lang.ssl.lexer import Lexer
+from lang.ssl.parser import Parser
+from lang.ssl.preprocessor import Walker as Preprocessor
+from lang.ssl.compiler import Walker as Compiler
 
 
 def sslc(fpin, fpout, debug = False):

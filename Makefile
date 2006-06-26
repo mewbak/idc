@@ -33,10 +33,10 @@ all:
 
 # SSL compilation
 
-all: ssl/pentium.py
+all: lang/ssl/pentium.py
 
-%.py: %.ssl util/sslc/sslc.py util/sslc/lexer.py util/sslc/parser.py util/sslc/preprocessor.py util/sslc/compiler.py aterm/parser.py
-	$(PYTHON) util/sslc/sslc.py -o $@ $<
+%.py: %.ssl util/sslc.py lang/ssl/lexer.py lang/ssl/parser.py lang/ssl/preprocessor.py lang/ssl/compiler.py aterm/parser.py
+	$(PYTHON) util/sslc.py -o $@ $<
 
 
 # Unit, component, and integration testing
