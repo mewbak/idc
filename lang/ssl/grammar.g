@@ -73,7 +73,6 @@ class lexer extends Lexer;
 options {
 	k = 4;
 	testLiterals=true;
-	exportVocab = ssl;
 }
 
 tokens {
@@ -115,7 +114,7 @@ FLOATNUM
 
 FLOAT_OR_NUM
 	: (FLOATNUM ) => FLOATNUM { $setType(FLOATNUM); }
-	| (NUM) => NUM                     { $setType(NUM); }
+	| (NUM) => NUM { $setType(NUM); }
 	| (MINUS) => MINUS { $setType(MINUS); }
 	;
 
@@ -246,7 +245,6 @@ class parser extends Parser;
 options {
 	buildAST = true;
 	k = 3;
-	exportVocab = ssl;
 }
 
 tokens {
@@ -563,7 +561,7 @@ part
                 if n in self.instructions:
                     old_ip, old_rtl = self.instructions[n]
                     if ip != old_ip:
-                    	raise SemanticException(#ib, "parameter list of '%s' changed" % n)
+                        raise SemanticException(#ib, "parameter list of '%s' changed" % n)
                     if rtl.getFirstChild():
                         old_rtl.addChild(rtl.getFirstChild())
                 else:
@@ -649,14 +647,14 @@ rtl_expand
 	:! #( RTL
 			{ ## = #(#[RTL,"RTL"]) }
 		(rt:rtl_expand
-		 	{
+			{
                 // do not nest RTL blocks
                 if #rt.getType() == RTL:
                     if #rt.getFirstChild():
                         ##.addChild(#rt.getFirstChild())
                 else:
                     ##.addChild(#rt)
-		 	}
+			}
 		)*)
 	|! name:NAME
 		{

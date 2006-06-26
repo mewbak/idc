@@ -87,8 +87,9 @@ builtinTable = {
 }
 
 class compiler extends TreeParser;
+
 options {
-    importVocab = ssl;
+    importVocab = lexer;
 }
 
 start
