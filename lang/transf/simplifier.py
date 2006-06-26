@@ -28,5 +28,6 @@ simplifyChoice = {
 }
 
 simplify = BottomUp(Try(simplifyChoice))
+simplify = id
 
 ''', simplify=False)

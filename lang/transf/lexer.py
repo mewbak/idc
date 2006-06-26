@@ -81,7 +81,7 @@ _tokenizer = antlrre.Tokenizer(
 		'|': parser.VERT,
 		'~': parser.TILDE,
 		"'": parser.PRIME,
-		#'@': parser.AT,
+		'@': parser.AT,
 		'=': parser.EQUAL,
 
 	},

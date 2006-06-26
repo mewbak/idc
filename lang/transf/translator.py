@@ -49,6 +49,9 @@ class Meta:
 		return translator.transf(self.term)
 
 
+MATCH, BUILD, TRAVERSE = range(3)
+
+
 class Translator(walker.Walker):
 	
 	def __init__(self, **kwargs):
@@ -387,149 +390,102 @@ class Translator(walker.Walker):
 
 
 	def match(self, t):
-		return self._dispatch(t, 'match')
-		
-	def matchInt(self, i):
-		i = self._int(i)
-		return transf.match.Int(i)
-	
-	def matchReal(self, r):
-		r = self._real(r)
-		return transf.match.Real(r)
-	
-	def matchStr(self, s):
-		s = self._str(s)
-		return transf.match.Str(s)
-	
-	def matchNil(self):
-		return transf.match.nil
-	
-	def matchCons(self, h, t):
-		h = self.match(h)
-		t = self.match(t)
-		return transf.match.Cons(h, t)
-	
-	def matchUndef(self):
-		return transf.base.ident
-		
-	def matchAppl(self, n, a):
-		n = self.match(n)
-		a = self.match(a)
-		return transf.match.Appl(n, a)
-		
-	def matchWildcard(self):
-		return transf.base.ident
+		return self.termTransf(t, mode = MATCH)
 
-	def matchVar(self, v):
-		v = self._str(v)
-		return transf.match.Var(v)
-
-	def matchTransf(self, t):
-		t = self.transf(t)
-		return t
-
-	def matchAnnos(self, t, a):
-		t = self.match(t)
-		a = self.match(a)
-		return transf.combine.Composition(t, transf.match.Annos(a))
-
-	
 	def build(self, t):
-		return self._dispatch(t, 'build')
+		return self.termTransf(t, mode = BUILD)
 		
-	def buildInt(self, i):
-		i = self._int(i)
-		return transf.build.Int(i)
-	
-	def buildReal(self, r):
-		r = self._real(r)
-		return transf.build.Real(r)
-	
-	def buildStr(self, s):
-		s = self._str(s)
-		return transf.build.Str(s)
-	
-	def buildNil(self):
-		return transf.build.nil
-	
-	def buildCons(self, h, t):
-		h = self.build(h)
-		t = self.build(t)
-		return transf.build.Cons(h, t)
-	
-	def buildUndef(self):
-		return transf.build.nil
-		
-	def buildAppl(self, n, a):
-		n = self.build(n)
-		a = self.build(a)
-		return transf.build.Appl(n, a)
-		
-	def buildWildcard(self):
-		return transf.base.ident
-
-	def buildVar(self, v):
-		v = self._str(v)
-		return transf.build.Var(v)
-
-	def buildTransf(self, t):
-		t = self.transf(t)
-		return t
-
-	def buildAnnos(self, t, a):
-		t = self.build(t)
-		a = self.build(a)
-		return transf.combine.Composition(t, transf.build.Annos(a))
-
-
-
-	
 	def traverse(self, t):
-		return self._dispatch(t, 'traverse')
-		
-	def traverseInt(self, i):
+		return self.termTransf(t, mode = TRAVERSE)
+
+
+	def termTransf(self, t, mode):
+		return self._dispatch(t, 'termTransf', mode = mode)
+
+	def termTransfInt(self, i, mode):
 		i = self._int(i)
-		return transf.match.Int(i)
+		if mode == BUILD:
+			return transf.build.Int(i)
+		else:
+			return transf.match.Int(i)
 	
-	def traverseReal(self, r):
+	def termTransfReal(self, r, mode):
 		r = self._real(r)
-		return transf.match.Real(r)
+		if mode == BUILD:
+			return transf.build.Real(r)
+		else:
+			return transf.match.Real(r)
 	
-	def traverseStr(self, s):
+	def termTransfStr(self, s, mode):
 		s = self._str(s)
-		return transf.match.Str(s)
+		if mode == BUILD:
+			return transf.build.Str(s)
+		else:
+			return transf.match.Str(s)
 	
-	def traverseNil(self):
-		return transf.match.nil
+	def termTransfNil(self, mode):
+		if mode == BUILD:
+			return transf.build.nil
+		else:
+			return transf.match.nil
 	
-	def traverseCons(self, h, t):
-		h = self.traverse(h)
-		t = self.traverse(t)
-		return transf.congruent.Cons(h, t)
+	def termTransfCons(self, h, t, mode):
+		h = self.termTransf(h, mode)
+		t = self.termTransf(t, mode)
+		if mode == MATCH:
+			return transf.match.Cons(h, t)
+		elif mode == BUILD:
+			return transf.build.Cons(h, t)
+		elif mode == TRAVERSE:
+			return transf.congruent.Cons(h, t)
 	
-	def traverseUndef(self):
-		return transf.base.ident
+	def termTransfUndef(self, mode):
+		if mode == BUILD:
+			return transf.build.nil
+		else:
+			return transf.base.ident
 		
-	def traverseAppl(self, n, a):
-		n = self.traverse(n)
-		a = self.traverse(a)
-		return transf.congruent.Appl(n, a)
+	def termTransfAppl(self, n, a, mode):
+		n = self.termTransf(n, mode)
+		a = self.termTransf(a, mode)
+		if mode == MATCH:
+			return transf.match.Appl(n, a)
+		elif mode == BUILD:
+			return transf.build.Appl(n, a)
+		elif mode == TRAVERSE:
+			return transf.congruent.Appl(n, a)
 		
-	def traverseWildcard(self):
+	def termTransfWildcard(self, mode):
 		return transf.base.ident
 
-	def traverseVar(self, v):
+	def termTransfVar(self, v, mode):
 		v = self._str(v)
-		return transf.congruent.Var(v)
+		if mode == MATCH:
+			return transf.match.Var(v)
+		elif mode == BUILD:
+			return transf.build.Var(v)
+		elif mode == TRAVERSE:
+			return transf.congruent.Var(v)
 
-	def traverseTransf(self, t):
+	def termTransfAs(self, v, t, mode):
+		v = self.termTransf(v, mode)
+		t = self.termTransf(t, mode)
+		return transf.combine.Composition(t, v)	
+
+	def termTransfTransf(self, t, mode):
 		t = self.transf(t)
 		return t
 
-	def traverseAnnos(self, t, a):
-		t = self.traverse(t)
-		a = self.traverse(a)
-		return transf.combine.Composition(t, transf.traverse.Annos(a))
+	def termTransfAnnos(self, t, a, mode):
+		t = self.termTransf(t, mode)
+		a = self.termTransf(a, mode)
+		if mode == MATCH:
+			r = transf.match.Annos(a)
+		elif mode == BUILD:
+			r = transf.build.Annos(a)
+		elif mode == TRAVERSE:
+			r = transf.traverse.Annos(a)
+		return transf.combine.Composition(t, r)
 
 
 	def collect(self, t, vars):

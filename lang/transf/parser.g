@@ -324,7 +324,10 @@ term_atom
 	| term_sym
 	| term_tuple
 	| term_appl
-	| term_var
+	| term_var 
+		(AT! term 
+			{ ## = #(#[ATAPPL,"As"], ##) }
+		)?
 	| term_wildcard
 	| LANGLE! transf RANGLE!
 		{ ## = #(#[ATAPPL,"Transf"], ##) }

@@ -533,6 +533,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		'!f(x,y)',
 		'?C(<id>,<fail>)',
 		'!C(<id>,<fail>)',
+		'?C(v@<id>,<fail>)',
 		'base.ident',
 		'TestStub()',
 		'base.Ident()',

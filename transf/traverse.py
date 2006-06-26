@@ -83,3 +83,13 @@ def AllTD(operand):
 	alltd = util.Proxy()
 	alltd.subject = operand + All(alltd)
 	return alltd
+
+
+def OnceTD(operand):
+	'''Performs a left to right depth first search/transformation that 
+	stops as soon as the the transformation has been successfuly applied.
+	'''
+	oncetd = util.Proxy()
+	oncetd.subject = operand + One(alltd)
+	return oncetd
+
