@@ -8,17 +8,16 @@ import os.path
 
 import antlr
 
-sys.path.insert(0,'util/sslc')
-
 from aterm.factory import factory
-from lexer import Lexer
-from parser import Parser
+from lang.ssl.lexer import Lexer
+from lang.ssl.parser import Parser
 
 
 class TestCase(unittest.TestCase):
 	
 	def setUp(self):
-		self.filenames = [os.path.join('ssl', file) for file in os.listdir('ssl') if file.endswith('.ssl')]
+		ssldir = 'lang/ssl/spec' 
+		self.filenames = [os.path.join(ssldir, file) for file in os.listdir(ssldir) if file.endswith('.ssl')]
 
 	def testLexer(self):
 		for filename in self.filenames:
