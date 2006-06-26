@@ -102,7 +102,7 @@ def main(cls):
 	import aterm.factory
 	import sys
 	import ir.pprint
-	import box
+	from lang import box
 	factory = aterm.factory.factory
 	if len(sys.argv) < 1:
 		sys.exit(1)

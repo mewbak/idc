@@ -6,13 +6,13 @@ import math
 
 from transf import *
 
-import box
-from box import op
-from box import kw
-from box import lit
-from box import sym
-from box import commas
-from box import Path
+from lang import box
+from lang.box import op
+from lang.box import kw
+from lang.box import lit
+from lang.box import sym
+from lang.box import commas
+from lang.box import Path
 
 
 #######################################################################

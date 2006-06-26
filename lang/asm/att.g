@@ -21,7 +21,7 @@ header "att_parser.__main__" {
 
     from transf.exception import Failure
     from ir import pprint
-    from box import stringify
+    from lang.box import stringify
     try:
         text = stringify(pprint.module(term))
         print "** C pretty-print **"

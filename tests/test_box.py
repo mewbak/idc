@@ -4,7 +4,7 @@
 import unittest
 
 import aterm.factory
-import box
+from lang import box
 
 import transf._tests
 

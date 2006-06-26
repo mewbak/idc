@@ -4,7 +4,7 @@
 import gtk
 import pango
 
-import box
+from lang import box
 import ir.pprint
 
 from ui.menus import PopupMenu

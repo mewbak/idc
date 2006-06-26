@@ -5,7 +5,7 @@ See U{http://www.graphviz.org/}.
 
 import aterm
 import transf
-import box
+from lang import box
 
 
 ppId = transf.strings.tostr

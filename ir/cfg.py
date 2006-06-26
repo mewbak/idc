@@ -3,7 +3,7 @@
 
 import aterm
 import transf
-import box
+from lang import box
 
 from transf import *
 
