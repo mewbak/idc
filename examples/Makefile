@@ -1,6 +1,9 @@
 # Makefile
 
 
+PYTHON = python
+export PYTHONPATH = ..
+
 ARCH=$(shell uname -m)
 
 CC = gcc
@@ -24,7 +27,9 @@ LD = ld
 LDFLAGS = 
 
 
-all: $(patsubst %.c,%.s,$(wildcard *.c))
+all: \
+	$(patsubst %.c,%.s,$(wildcard *.c)) \
+	$(patsubst %.s,%.aterm,$(wildcard *.s))
 
 
 %.o: %.c
@@ -39,8 +44,14 @@ all: $(patsubst %.c,%.s,$(wildcard *.c))
 %: %.o
 	$(LD) $(LDFLAGS) -o $@ $<
 
+.PRECIOUS: %s
+
+%.aterm: %.s
+	$(PYTHON) ../util/translate.py $<
+
 
 clean:
+	rm -f $(patsubst %.s,%.aterm,$(wildcard *.s))
 	rm -f $(patsubst %.c,%.s,$(wildcard *.c))
 
 
