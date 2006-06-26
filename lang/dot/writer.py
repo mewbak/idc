@@ -1,61 +1,11 @@
-'''Dot language support.
-
-See U{http://www.graphviz.org/}.
-'''
-
-import aterm
-import transf
-from lang import box
-
-
-ppId = transf.strings.tostr
-
-ppAttr = transf.parse.Rule('''
-		Attr(name, value) 
-			-> H([ <<id> name>, "=", <<id> value> ])
-''')
-
-ppAttrs = transf.parse.Transf('''
-		!H([ "[", <Map(ppAttr); box.commas>, "]" ])
-''')
-
-ppNode = transf.parse.Rule('''
-		Node(nid, attrs, _)
-			-> H([ <<id> nid>, <<ppAttrs> attrs> ])
-''')
-
-ppNodes = transf.lists.Map(ppNode)
-
-ppNodeEdge = transf.parse.Rule('''
-		Edge(dst, attrs) 
-			-> H([ <<id> src>, "->", <<id> dst>, <<ppAttrs> attrs> ])
-''')
-
-ppNodeEdges = transf.parse.Rule('''
-		Node(src, _, edges) 
-			-> <<Map(ppNodeEdge)> edges>
-''')
-
-ppEdges = transf.lists.Map(ppNodeEdges) * transf.lists.concat
-
-ppGraph = transf.parse.Rule(r'''
-		Graph(nodes)
-			-> V([
-				H([ "digraph", " ", "{" ]),
-				V( <<ppNodes> nodes> ),
-				V( <<ppEdges> nodes> ),
-				H([ "}" ])
-			])
-''')
-
-pprint = ppGraph
+'''Dot writing.'''
 
 
 import walker
 
 
 class Writer(walker.Walker):
-	'''Writes boxes trhough a formatter.'''
+	'''Walker which writes dot in aterm to a file stream.'''
 
 	def __init__(self, fp):
 		walker.Walker.__init__(self)
@@ -107,11 +57,13 @@ class Writer(walker.Walker):
 		
 
 def write(dot, fp):
+	'''Write the dot in aterm to a file stream.'''
 	writer = Writer(fp)
 	writer.write(dot)
 	
 
 def stringify(dot):
+	'''Convert the dot in aterm to a string.'''
 	try:
 		from cStringIO import StringIO
 	except ImportError:
@@ -119,3 +71,4 @@ def stringify(dot):
 	fp = StringIO()
 	write(dot, fp)
 	return fp.getvalue()	
+
