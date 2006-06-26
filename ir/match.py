@@ -27,7 +27,7 @@ typeNames = [
 	'Array',
 	'Compound',
 	'Union',
-	'Func',
+	'Function',
 	'Blob',
 ]
 
@@ -61,7 +61,7 @@ expr = ApplNames(exprNames)
 # Statements
 
 aModule = ApplName('Module')
-aFunc = ApplName('Func')
+aFunction = ApplName('Function')
 aWhile = ApplName('While')
 anIf = ApplName('If')
 aBlock = ApplName('Block')
@@ -79,9 +79,9 @@ def ModuleStmt(stmt, Subterms = lib.lists.Map):
 	return Module(Subterms(stmt))
 
 
-def Func(type = None, name = None, args = None, stmts = None):
+def Function(type = None, name = None, args = None, stmts = None):
 	return lib.match.Appl(
-		lib.match.Str('Func'), 
+		lib.match.Str('Function'), 
 		lib.match.List((type, name, args, stmts))
 	)
 
@@ -107,7 +107,7 @@ atomStmtNames = [
 	'Var',
 	'Ret',
 	'Label',
-	'Jump',
+	'GoTo',
 	'Break',
 	'Continue',
 	'NoStmt'
@@ -116,7 +116,7 @@ atomStmtNames = [
 # names of compound statements
 compoundStmtNames = [
 	'Block',
-	'Func',
+	'Function',
 	'If',
 	'Module',
 	'While',
@@ -135,7 +135,7 @@ reduceStmts = lib.parse.Transf('''
 		?Block(stmts) +
 		?If(_, *stmts) +
 		?While(_, *stmts) +
-		?Func(_,_,_,stmts) +
+		?Function(_,_,_,stmts) +
 		?Module(stmts)
 	) ; !stmts +
 	![]

@@ -1,10 +1,10 @@
 Module(
 	[
 		Label("main"),
-		Jump(Sym("begin")),
+		GoTo(Sym("begin")),
 		Label("end"),
 		Ret(Void, NoExpr),
 		Label("begin"),
-		Jump(Sym("end"))
+		GoTo(Sym("end"))
 	]
 )

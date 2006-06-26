@@ -1,5 +1,5 @@
 Module([
-	Func(Void, "main", [], [
+	Function(Void, "main", [], [
 		Assign(
 			Int(32, Signed), 
 			Sym("eax"),

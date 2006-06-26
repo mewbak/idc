@@ -31,7 +31,7 @@ lit = transf.match.anInt + transf.match.aReal + transf.match.aStr
 sign = transf.parse.Transf('''
 	?Signed +
 	?Unsigned +
-	?Unknown
+	?NoSign
 ''') + LogFail('bad sign')
 
 type = transf.util.Proxy()
@@ -51,20 +51,16 @@ type.subject = transf.parse.Transf('''
 ''') + LogFail('bad type')
 
 unOp = transf.parse.Transf('''
-	?Not +
-	?BitNot( <size> ) +
-	?Neg( <size> )
+	?Not( <type> ) +
+	?Neg( <type> )
 ''') + LogFail('bad unary operator')
 
 binOp = transf.parse.Transf('''
-	?And +
-	?Or +
-	
-	?BitAnd( <size> ) +
-	?BitOr( <size> ) +
-	?BitXor( <size> ) +
-	?LShift( <size> ) +
-	?RShift( <size> ) +
+	?And( <type> ) +
+	?Or( <type> ) +
+	?Xor( <type> ) +
+	?LShift( <type> ) +
+	?RShift( <type> ) +
 	
 	?Plus( <type> ) +
 	?Minus( <type> ) +
@@ -84,8 +80,6 @@ expr = transf.util.Proxy()
 addr = expr
 exprs = transf.lists.Map(expr)
 expr.subject = transf.parse.Transf('''
-	?True +
-	?False +
 	?Lit( <type> , <lit> ) +
 	?Sym( <name> ) +
 	?Cast( <type> , <expr> ) +
@@ -103,14 +97,14 @@ optExpr = transf.parse.Transf('''
 ''')
 
 arg = transf.parse.Transf('''
-	?ArgDef( <type> , <name> )
+	?Arg( <type> , <name> )
 ''') + LogFail('bad argument')
 	
 stmt = transf.util.Proxy()
 stmts = transf.lists.Map(stmt)
 stmt.subject = transf.parse.Transf('''
 	?Var( <type> , <name> , <optExpr> ) +
-	?Func( <type> , <name> , <Map(arg)>, <stmts> ) +
+	?Function( <type> , <name> , <Map(arg)>, <stmts> ) +
 	?Assign( <type> , <optExpr> , <expr> ) +
 	?If( <expr> , <stmt> , <stmt> ) +
 	?While( <expr> , <stmt> ) +
@@ -118,7 +112,7 @@ stmt.subject = transf.parse.Transf('''
 	?Ret( <type> , <optExpr> ) +
 	?Label( <name> ) +
 	?Asm( <name> , <exprs> ) +
-	?Jump( <addr> ) +
+	?GoTo( <addr> ) +
 	?Break +
 	?Continue +
 	?NoStmt

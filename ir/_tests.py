@@ -56,7 +56,7 @@ class TestPrettyPrint(unittest.TestCase):
 			('Label("label")', 'label:'),
 			('Asm("ret",[])', 'asm("ret");'),
 			('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1000)])', 'asm("mov", ax, 1000);'),
-			('Func(Void,"main",[],[])', 'void main()\n{\n}\n'),
+			('Function(Void,"main",[],[])', 'void main()\n{\n}\n'),
 		],
 		
 		
@@ -74,8 +74,8 @@ class TestPrettyPrint(unittest.TestCase):
 
 	exprTestCases = [
 		('Sym("x")', None, lambda x: -x, 'Unary(Neg(32),Sym("x"))'),
-		('Sym("x")', 1, lambda x, y: x + 1, 'Binary(Plus(Int(32,Unknown)),Sym("x"),Lit(Int(32,Unknown),1))'),
-		('Sym("x")', 1, lambda x, y: 1 << x, 'Binary(LShift(32),Lit(Int(32,Unknown),1),Sym("x"))'),
+		('Sym("x")', 1, lambda x, y: x + 1, 'Binary(Plus(Int(32,NoSign)),Sym("x"),Lit(Int(32,NoSign),1))'),
+		('Sym("x")', 1, lambda x, y: 1 << x, 'Binary(LShift(32),Lit(Int(32,NoSign),1),Sym("x"))'),
 	]
 
 	def testExpr(self):

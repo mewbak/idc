@@ -22,17 +22,17 @@ options {
 
 {
 opTable = {
-    LNOT: "Not",
-    LAND: "And",
-    LOR: "Or",
+    LNOT: "Not(Bool)",
+    LAND: "And(Bool)",
+    LOR: "Or(Bool)",
 
-    NOT: "BitNot(size)",
-    AND: "BitAnd(size)",
-    OR: "BitOr(size)",
-    XOR: "BitXor(size)",
-    LSHIFT: "LShift(size)",
-    RSHIFT: "RShift(size)",
-    RSHIFTA: "RShift(size)", // FIXME: handle sign here
+    NOT: "Not(Int(size,sign))",
+    AND: "And(Int(size,sign))",
+    OR: "Or(Int(size,sign))",
+    XOR: "Xor(Int(size,sign))",
+    LSHIFT: "LShift(Int(size,sign))",
+    RSHIFT: "RShift(Int(size,Unsigned))",
+    RSHIFTA: "RShift(Int(size,Signed))",
 
     EQ: "Eq(Int(size,sign))",
     NE: "NotEq(Int(size,sign))",
@@ -188,22 +188,22 @@ rt returns [res]
                     sign = "Signed"
                     type = "Int(size,sign)"
                 elif c == 'j':
-                    sign = "Unknown"
+                    sign = "NoSign"
                     type = "Int(size,sign)"
                 elif c == 'u':
                     sign = "Unsigned"
                     type = "Int(size,sign)"
                 elif c == 'f':
-                    sign = "Unknown"
+                    sign = "NoSign"
                     type = "Float(size)"
                 elif c == 'c':
-                    sign = "Unknown"
+                    sign = "NoSign"
                     type = "Char(size)"
                 else:
                     raise SemanticException, "unsupported type code '%s'" % c
             else:
                 size = int(t)
-                sign = "Unknown"
+                sign = "NoSign"
                 if size == 1:
                     type = "Bool"
                 else:
@@ -272,8 +272,8 @@ expr returns [res]
             // FIXME: don't use hardcoded sizes
             res = e
             if l != 0:
-                res = self.factory.make("Binary(RShift(32),expr,Lit(Int(32,Signed),bits))", expr=res, bits=min(r, l))
-            res = self.factory.make("Binary(BitAnd(32),expr,Lit(Int(32,Signed),mask))", 
+                res = self.factory.make("Binary(RShift(Int(32,Signed)),expr,Lit(Int(32,Signed),bits))", expr=res, bits=min(r, l))
+            res = self.factory.make("Binary(And(Int(32,Signed)),expr,Lit(Int(32,Signed),mask))", 
             	expr = res, 
             	mask = (1 << (abs(l - r) + 1)) - 1
             )

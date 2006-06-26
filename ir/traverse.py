@@ -31,10 +31,10 @@ def Module(stmts = None, **kargs):
 	)
 
 
-def Func(type = None, name = None, args = None, stmts = None, **kargs):
+def Function(type = None, name = None, args = None, stmts = None, **kargs):
 	return Traverse(
 		trf.congruent.Appl(
-			trf.match.Str('Func'), 
+			trf.match.Str('Function'), 
 			trf.congruent.List((type, name, args, stmts))
 		),
 		**kargs
@@ -76,7 +76,7 @@ def Stmt(stmt, stmts, default, **kargs):
 		ir.match.aBlock **Block(stmts)**
 		ir.match.anIf **If(None, stmt, stmt)**
 		ir.match.aWhile **While(None, stmt)**
-		ir.match.aFunc **Func(None, None, None, stmts)**
+		ir.match.aFunction **Function(None, None, None, stmts)**
 		ir.match.aModule **Module(stmts)**
 		default,
 		**kargs
@@ -110,9 +110,9 @@ def OneGlobalStmt(operand):
 		trf.lists.Fetch(operand)
 	)
 
-def OneFunc(operand, type = None, name = None, args = None, stmts = None):
+def OneFunction(operand, type = None, name = None, args = None, stmts = None):
 	return OneGlobalStmt(
-		ir.match.Func(type, name, args, stmts), 
+		ir.match.Function(type, name, args, stmts), 
 		operand
 	)
 

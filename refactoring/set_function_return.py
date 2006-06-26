@@ -21,7 +21,7 @@ class SetFunctionReturn(refactoring.Refactoring):
 			return None
 
 		selected_term = path.fetch(term, start)
-		mo = selected_term.rmatch("Func(_,name,*)")
+		mo = selected_term.rmatch("Function(_,name,*)")
 		if mo:
 			print mo.kargs
 			return mo.kargs['name']
@@ -54,7 +54,7 @@ class SetFunctionReturn(refactoring.Refactoring):
 		txn = transf.parse.Transf('''
 			~Module(<
 				One(
-					~Func(<functype>, <funcname>, _, 
+					~Function(<functype>, <funcname>, _, 
 						<AllTD(~Ret(<functype>, <!Sym(<retsym>)>))>
 					) 
 				)>) ;

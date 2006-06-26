@@ -117,14 +117,14 @@ let this = getStmtId in
 +	?Ret 
 		< SetCtrlFlow(![retn])
 		; !this => next
-+	?Jump
++	?GoTo
 		< SetCtrlFlow({ _(Sym(name)) -> [<lists.Lookup(!name,!lbls)>] } + ![])
 		; !this => next
 +	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
 		; !this => next
-+	?Func
++	?Function
 		< let 
 			next = !next,
 			retn = GetTerminalNodeId(!this),
@@ -180,7 +180,7 @@ let this = getStmtId in
 +	?Ret 
 		< SetCtrlFlow(![retn])
 		; !this => next
-+	?Jump
++	?GoTo
 		< SetCtrlFlow({ _(Sym(name)) -> [<LookupLabel(!name)>] } + ![])
 		; !this => next
 +	?Var
@@ -190,7 +190,7 @@ let this = getStmtId in
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
 		; !this => next
-+	?Func
++	?Function
 		< let 
 			next = !next,
 			retn = GetTerminalNodeId(!this),
@@ -302,7 +302,7 @@ makeNode = build._.Node(
 	makeNodeEdges
 )
 
-hasTerminalNode = match.Appl('Func', base.ident)
+hasTerminalNode = match.Appl('Function', base.ident)
 
 makeTerminalNode = hasTerminalNode * build._.Node(
 	GetTerminalNodeId(getStmtId), 

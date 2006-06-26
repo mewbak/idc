@@ -17,5 +17,3 @@ class Machine:
 		'''Translate the "Asm" terms into the higher-level IR equivalent 
 		constructs by means of the SSL.'''
 		raise NotImplementedError
-
-

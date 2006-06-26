@@ -30,7 +30,7 @@ isVarNeeded = ir.match.aSym ; (?needed + Not(isLocalVar))
 getLabelNeeded = parse.Transf('''
 Where(
 	with label in
-		?Jump(Sym(label)) <
+		?GoTo(Sym(label)) <
 			!label_needed ; Map(Try(?[label,<setNeededVar>])) +
 			setAllNeededVars
 	end
@@ -81,8 +81,8 @@ dceLabel =
 	?Label ;
 	setLabelNeeded
 
-dceJump = 
-	?Jump ;
+dceGoTo = 
+	?GoTo ;
 	getLabelNeeded
 
 dceRet = 
@@ -116,10 +116,10 @@ dceWhile =
 	\needed/* ~While(<setNeededVars>, <dceStmt>) ;
 	Try(elimWhile)
 
-dceFunc = 
+dceFunction = 
 	with local[], label_needed[] in
 		updateLocalVars ;
-		~Func(_, _, _, <
+		~Function(_, _, _, <
 			\label_needed/* with needed[] in dceStmts end 
 		>)
 		; debug.Dump()
@@ -133,12 +133,12 @@ dceStmt.subject =
 	?Assign < dceAssign +
 	?Asm < dceAsm +
 	?Label < dceLabel +
-	?Jump < dceJump +
+	?GoTo < dceGoTo +
 	?Ret < dceRet +
 	?Block < dceBlock +
 	?If < dceIf +
 	?While < dceWhile +
-	?Func < dceFunc + 
+	?Function < dceFunction + 
 	?Var < id +
 	?NoStmt
 

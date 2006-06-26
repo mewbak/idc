@@ -12,7 +12,7 @@ class Expr:
 		self.term = term
 		self.factory = term.factory
 		
-		self.sign = self.factory.make("Unknown")
+		self.sign = self.factory.make("NoSign")
 		self.size = self.factory.makeInt(32)
 		self.type = self.factory.make("Int(size,sign)", size=self.size, sign=self.sign)
 		
@@ -41,8 +41,8 @@ class Expr:
 			raise TypeError, "don't know how to handle '%r'" % other
 
 	_un_op_table = {
-		'neg': 'Neg(size)',
-		'invert': 'BitNot(size)',
+		'neg': 'Neg(type)',
+		'invert': 'Not(type)',
 	}
 		
 	_bin_op_table = {
@@ -52,11 +52,11 @@ class Expr:
 		'div': 'Div(type)',
 		'mod': 'Mod(type)',
 
-		'and': 'BitAnd(size)',
-		'xor': 'BitXor(size)',
-		'or': 'BitOr(size)',
-		'lshift': 'LShift(size)',
-		'rshift': 'RShift(size)',
+		'and': 'And(type)',
+		'xor': 'Xor(type)',
+		'or': 'Or(type)',
+		'lshift': 'LShift(type)',
+		'rshift': 'RShift(type)',
 	}
 	
 	def __getattr__(self, name):

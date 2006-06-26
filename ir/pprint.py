@@ -59,7 +59,7 @@ parse.Transfs('''
 sign = {
 	Signed -> H([ <<kw> "signed">, " " ])
 |	Unsigned -> H([ <<kw> "unsigned"> , " " ])
-|	Unknown -> ""
+|	NoSign -> ""
 }
 
 size = {
@@ -100,16 +100,15 @@ type = rec type : {
 
 unOpPrec = parse.Rule('''
 	Not -> 1
-|	BitNot -> 1
 |	Neg -> 1
 ''')
 
 binOpPrec = parse.Rule('''
-	And -> 10 		
-|	Or -> 11 		
-|	BitAnd -> 7 		
-|	BitOr -> 9 		
-|	BitXor -> 8 		
+	And(Bool) -> 10 		
+|	Or(Bool) -> 11 		
+|	And(_) -> 7 		
+|	Or(_) -> 9 		
+|	Xor(_) -> 8 		
 |	LShift -> 4 		
 |	RShift -> 4 		
 |	Plus -> 3 		
@@ -126,9 +125,7 @@ binOpPrec = parse.Rule('''
 ''')
 
 exprPrec = parse.Rule('''
-	False -> 0
-|	True -> 0
-|	Lit(_, _) -> 0
+	Lit(_, _) -> 0
 |	Sym(_) -> 0
 |	Cast(_, _) -> 1
 |	Addr(_) -> 1
@@ -147,17 +144,17 @@ stmtPrec = parse.Transf('''
 # Expressions
 
 unOp = parse.Rule('''
-	Not -> "!"
-|	BitNot -> "~"
+	Not(Bool) -> "!"
+|	Not(_) -> "~"
 |	Neg -> "-"
 ''')
 
 binOp = parse.Rule('''
-	And -> "&&"
-|	Or -> "||"
-|	BitAnd -> "&"
-|	BitOr -> "|"
-|	BitXor -> "^"
+	And(Bool) -> "&&"
+|	Or(Bool) -> "||"
+|	And(_) -> "&"
+|	Or(_) -> "|"
+|	Xor(_) -> "^"
 |	LShift -> "<<"
 |	RShift -> ">>"
 |	Plus -> "+"
@@ -176,11 +173,7 @@ binOp = parse.Rule('''
 subExpr = util.Proxy()
 
 exprKern = Path(parse.Rule('''
-	False 
-		-> "FALSE"
-|	True 
-		-> "TRUE"
-|	Lit(Int(_,_), value)
+	Lit(Int(_,_), value)
 		-> <<intlit> value>
 |	Lit(type, value)
 		-> <<lit> value>
@@ -246,11 +239,11 @@ stmtKern = parse.Rule('''
 		-> H([ <<type>type>, " ", name ])
 |	Var(type, name, val)
 		-> H([ <<type>type>, " ", name, "=", <<expr>val> ])
-|	Func(type, name, args, stmts)
+|	Function(type, name, args, stmts)
 		-> H([ <<type>type>, " ", name, "(", <<commas> args>, ")" ])
 |	Label(name)
 		-> H([ name, ":" ])
-|	Jump(label)
+|	GoTo(label)
 		-> H([ <<kw>"goto">, " ", <<expr>label> ])
 |	Ret(_, NoExpr)
 		-> H([ <<kw>"return"> ])
@@ -301,8 +294,8 @@ ppWhile = {
 		])
 }
 
-ppFunc = {
-	Func(_, _, _, stmts)
+ppFunction = {
+	Function(_, _, _, stmts)
 		-> D(V([
 			<stmtKern>, 
 			"{",
@@ -326,8 +319,8 @@ case "If":
 	ppIf
 case "While":
 	ppWhile
-case "Func":
-	ppFunc
+case "Function":
+	ppFunction
 else:
 	ppDefault
 end
@@ -375,10 +368,10 @@ if __name__ == '__main__':
 		('Label("label")', 'label:\n'),
 		('Asm("ret",[])', 'asm("ret");\n'),
 		('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);\n'),
-		('Func(Void,"main",[],[])', 'void main()\n{\n}\n'),	
+		('Function(Void,"main",[],[])', 'void main()\n{\n}\n'),	
 		('Assign(Void,Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('Assign(Blob(32{Path([0,0,1,0])}){Path([0,1,0])},Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
-		('If(Binary(Eq(Int(32,Signed)),Binary(BitOr(32),Binary(BitXor(32),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),Jump(Sym(".L4")),NoStmt)', ''),
+		('If(Binary(Eq(Int(32,Signed)),Binary(Or(Int(32,NoSign)),Binary(Xor(Int(32,NoSign)),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),GoTo(Sym(".L4")),NoStmt)', ''),
 	]
 	
 	for inputStr, output in stmtTestCases:

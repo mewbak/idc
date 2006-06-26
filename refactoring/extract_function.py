@@ -38,7 +38,7 @@ class ExtractFunction(refactoring.Refactoring):
 		name, = args
 		txn = transf.rewrite.Pattern(
 			"[Label(name),*rest]",
-			"[Func(Void,name,[],rest)]",
+			"[Function(Void,name,[],rest)]",
 		)
 		txn = transf.congruent.Appl(
 			'Module',
@@ -64,7 +64,7 @@ class TestCase(refactoring.TestCase):
 			'["main"]',
 			'''
 			Module([
-				Func(Void,"main",[],[
+				Function(Void,"main",[],[
 					Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
 					Ret(Int(32,Signed),Sym("eax"))
 				])
@@ -85,7 +85,7 @@ class TestCase(refactoring.TestCase):
 			'''
 			Module([
 				Asm("pre",[]),
-				Func(Void,"main",[],[
+				Function(Void,"main",[],[
 					Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
 					Ret(Int(32,Signed),Sym("eax"))
 				]),

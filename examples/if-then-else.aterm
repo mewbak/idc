@@ -1,5 +1,5 @@
 Module([
-	Func(Int(32,Signed), "main", [], [
+	Function(Int(32,Signed), "main", [], [
 		If(
 			Binary(
 				Gt(Int(32, Signed)), 

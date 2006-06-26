@@ -56,9 +56,9 @@ class SslLookup(transf.base.Transformation):
 
 
 simplifyExpr = transf.parse.Rule('''
-	BitNot(1) -> Not
-|	BitOr(1) -> Or
-|	BitAnd(1) -> And
+	Not(Int(1,_)) -> Not(Bool)
+|	Or(Int(1,_)) -> Or(Bool)
+|	And(Int(1,_)) -> And(Bool)
 ''')
 
 simplifyStmt = transf.parse.Rule('''
@@ -69,7 +69,7 @@ simplifyStmt = transf.parse.Rule('''
 		-> If(Unary(Not, cond), Assign(type, dst, src), NoStmt)
 		
 |	Assign(_, Sym("pc"), expr)
-		-> Jump(Addr(expr))
+		-> GoTo(Addr(expr))
 
 |	Cond(cond,Lit(Int(_,_),1),Lit(Int(_,_),0))
 		-> cond
@@ -108,7 +108,7 @@ flagNames = ![
 	"cf", "of", "df", "if"
 ]
 
-declReg32 = !Var(Int(32,Unknown),<id>,NoExpr)
+declReg32 = !Var(Int(32,NoSign),<id>,NoExpr)
 declFlag = !Var(Bool,<id>,NoExpr)
 
 stmtsPreambule =
