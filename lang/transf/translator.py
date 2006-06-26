@@ -72,7 +72,7 @@ class Translator(walker.Walker):
 			pass
 	
 		# lookup in the builtins module
-		from transf.parse import builtins
+		from lang.transf import builtins
 		try:
 			return getattr(builtins, name)
 		except AttributeError:

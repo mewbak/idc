@@ -4,7 +4,7 @@
 import antlr
 import antlrre
 
-from transf.parse import parser
+from lang.transf import parser
 
 
 pystr = \

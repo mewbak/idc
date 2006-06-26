@@ -3,10 +3,10 @@
 
 import sys
 
-from transf.parse.lexer import Lexer
-from transf.parse.parser import Parser
 from antlraterm import Walker as Converter
-from transf.parse.translator import Translator
+from lang.transf.lexer import Lexer
+from lang.transf.parser import Parser
+from lang.transf.translator import Translator
 
 
 __all__ = [
@@ -39,9 +39,9 @@ def Transfs(buf, simplify=True):
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
 	if simplify:
-		import transf.parse.simplifier
+		import lang.transf.simplifier
 		old = term
-		term = transf.parse.simplifier.simplify(term)
+		term = lang.transf.simplifier.simplify(term)
 	translator = _translator()
 	translator.transf_defs(term)
 
@@ -53,9 +53,9 @@ def Transf(buf):
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
 	if True:
-		import transf.parse.simplifier
+		import lang.transf.simplifier
 		old = term
-		term = transf.parse.simplifier.simplify(term)
+		term = lang.transf.simplifier.simplify(term)
 	translator = _translator()
 	txn = translator.transf(term)
 	return txn
@@ -68,9 +68,9 @@ def Rules(buf):
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
 	if True:
-		import transf.parse.simplifier
+		import lang.transf.simplifier
 		old = term
-		term = transf.parse.simplifier.simplify(term)
+		term = lang.transf.simplifier.simplify(term)
 	translator = _translator()
 	txn = translator.transf_defs(term)
 	return txn
@@ -83,9 +83,9 @@ def Rule(buf, simplify=True):
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
 	if simplify:
-		import transf.parse.simplifier
+		import lang.transf.simplifier
 		old = term
-		term = transf.parse.simplifier.simplify(term)
+		term = lang.transf.simplifier.simplify(term)
 	translator = _translator()
 	txn = translator.transf(term)
 	return txn
