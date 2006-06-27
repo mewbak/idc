@@ -16,3 +16,5 @@ from transf.lists import *
 from transf.strings import tostr
 
 from transf.arith import *
+
+from transf.iterate import *

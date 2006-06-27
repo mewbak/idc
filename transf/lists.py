@@ -106,6 +106,12 @@ def AtSuffix(operand):
 	return atsuffix
 
 
+def AtSuffixR(operand):
+	atsuffix = util.Proxy()
+	atsuffix.subject = congruent.Cons(base.ident, atsuffix) + operand
+	return atsuffix
+
+
 # TODO: is there any way to avoid so much code duplication in the Split* transfs?
 
 def Split(operand):

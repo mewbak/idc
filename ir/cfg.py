@@ -164,7 +164,7 @@ let this = getStmtId in
 +	?While
 		< { true, false:
 			!next => false
-			; ~_(_, <markStmtsFlow; !next => true>)
+			; ~_(_, <let next=!this in markStmtFlow; !next => true end>)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
 		}
 		; !this => next
