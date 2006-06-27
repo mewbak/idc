@@ -77,13 +77,12 @@ _tokenizer = antlrre.Tokenizer(
 		'!': parser.BANG,
 		'+': parser.PLUS,
 		#'-': parser.MINUS,
-		#'^': parser.CARET,
+		'^': parser.CARET,
 		'|': parser.VERT,
 		'~': parser.TILDE,
 		"'": parser.PRIME,
 		'@': parser.AT,
 		'=': parser.EQUAL,
-
 	},
 	
 	# literals table

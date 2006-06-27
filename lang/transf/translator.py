@@ -487,6 +487,11 @@ class Translator(walker.Walker):
 			r = transf.traverse.Annos(a)
 		return transf.combine.Composition(t, r)
 
+	def termTransf_Term(self, t, mode):
+		# fallback to a regular transformation
+		t = self.transf(t)
+		return t
+
 
 	def collect(self, t, vars):
 		self._dispatch(t, 'collect', vars = vars)

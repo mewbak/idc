@@ -217,6 +217,7 @@ transf_merge
 merge_names
 	: merge_union_names merge_opt_isect_names
 	|! i:merge_isect_names u:merge_opt_union_names
+		
 		{ ## = #i }
 		{ ##.setNextSibling(#u) }
 	;

@@ -28,3 +28,4 @@ EnterFunction(operand) =
 	end
 ''')
 
+EnterModule = EnterFunction

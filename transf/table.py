@@ -38,13 +38,16 @@ class Table(variable.Variable):
 		'''Setting a [key, value] list will add the pair to the table. Setting
 		a [key] list will remove the key and its value from the table.'''
 		# TODO: better exception handling
-		key = term.head
-		tail = term.tail
-		if tail:
-			val = tail.head
-			self._set(key, val)
+		if term:
+			key = term.head
+			tail = term.tail
+			if tail:
+				val = tail.head
+				self._set(key, val)
+			else:
+				self._pop(key)
 		else:
-			self._pop(key)
+			self.unset()
 		
 	def unset(self):
 		'''Clears all elements of the table.'''

@@ -3,155 +3,150 @@
 
 from transf import *
 import ir.match
+import ir.sym
+import ir.dce
+
+
+parse.Transfs(r'''
+hasSideEffects = OnceTD(?Call(*) + ?Sym(*) ; Not(ir.sym.isLocalVar))
+''')
 
 
 #######################################################################
-# Needed/uneeded table
-
-setUnneededVar = table.Del('needed')
-setNeededVar = table.Set('needed')
-
-setNeededVars = debug.Log('Finding needed vars in %s\n', base.ident) * \
-	traverse.AllTD(ir.match.aSym * setNeededVar * 
-	debug.Log('Found var needed %s\n', base.ident))
-
-setAllUnneededVars = table.Clear('needed')
-setAllNeededVars = table.Add('needed', 'local')
+# Inline (var, expr) table
 
 parse.Transfs(r'''
 
-isVarNeeded = ir.match.aSym ; (?needed + Not(isLocalVar))
+SetVarInline(x, y) = 
+	Where(![x, y] => inline) ;
+	Where(
+		!inline ;
+		Filter(([z, OnceTD(?x) ] -> [z]) => inline)
+	)
+	
+
+ClearVarInline(x) = Where(![x] => inline)
+
+clearAllInline = Where(![] => inline)
+
+inlineVars = AllTD(?Sym; ~inline)
+
+
 ''')
 
-
 #######################################################################
-# Labels
+# Labels' state
 
-getLabelNeeded = parse.Transf('''
+parse.Transfs(r'''
+setLabelInline =
 Where(
 	with label in
 		?GoTo(Sym(label)) <
-			!label_needed ; Map(Try(?[label,<setNeededVar>])) +
-			setAllNeededVars
+		!inline ; 
+		Map(![label,<id>,~inline]; ![_,_] => label_inline) +
+		id # FIXME
 	end
 )
-''')
 
-setLabelNeeded = parse.Transf('''
+setLabelInline = id
+
+getLabelInline =
 Where(
 	with label in
 		?Label(label) ; debug.Dump(); 
-		!needed ; 
-		setAllUnneededVars ;
-		Map(![label,<id>] ; 
-		table.Set('label_needed'))
+		!label_inline ; Filter( ([label,x,y] -> [x,y]) ) ;
+		Map(id /inline\ ([x,y] -> <SetVarInline(!x, !y)>) )
 	end
 )
+
+getLabelInline = clearAllInline
+
 ''')
 
 #######################################################################
 # Statements
 
 parse.Transfs(r'''
-dceStmt = Proxy()
-dceStmts = Proxy()
+propStmt = Proxy()
+propStmts = Proxy()
 
-dceAssign = {x:
-	?Assign(_, x, _) ;
-	if <isLocalVar> x then
-		if <isVarNeeded> x then
-			debug.Log(`'******* var needed %s\n'`, !x) ;
-			Where(<setUnneededVar> x );
-			~Assign(_, _, <setNeededVars>)
-		else
-			debug.Log(`'******* var uneeded %s\n'`, !x) ;
-			!NoStmt
+propAssign = 
+	with x, y in
+		~Assign(_, x, y@<inlineVars>) ;
+		if <ir.sym.isLocalVar> x then
+			if <hasSideEffects> y then
+				debug.Log(`'******* has side effects %s\n'`, !y) ;
+				ClearVarInline(!x)
+			else
+				debug.Log(`'*******  %s\n'`, !x) ;
+				SetVarInline(!x, !y)
+			end
 		end
-	else
-		debug.Log(`'******* var not local %s\n'`, !x) ;
-		~Assign(_, <setNeededVars>, <setNeededVars>)
-	end
-}
+	end 
 
-dceAsm = 
+propAsm = 
 	?Asm ;
-	setAllNeededVars
+	clearAllInline
 
-dceLabel = 
+propLabel = 
 	?Label ;
-	setLabelNeeded
+	getLabelInline
 
-dceGoTo = 
-	?GoTo ;
-	getLabelNeeded
+propGoTo = 
+	?GoTo(<inlineVars>) ;
+	setLabelInline
 
-dceRet = 
-	?Ret ;
-	setAllUnneededVars ;
-	~Ret(_, <setNeededVars>)
+propRet = 
+	?Ret(_, <inlineVars>)
 
-elimBlock = {
-	Block([]) -> NoStmt
-}
+propBlock = 
+	~Block(<propStmts>)
 
-dceBlock = 
-	~Block(<dceStmts>) ;
-	Try(elimBlock)
+propIf = 
+	~If(<inlineVars>, _, _) ;
+	~If(_, <propStmt>, _) /inline\ ~If(_, _, <propStmt>)
 
-elimIf = {
-	If(cond,NoStmt,NoStmt) -> Assign(Void,NoExpr,cond) |
-	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
-}
+propWhile = 
+	/inline\* ~While(<inlineVars>, <propStmt>)
 
-dceIf = 
-	~If(_, <dceStmt>, _) \needed/ ~If(_, _, <dceStmt>) ;
-	~If(<setNeededVars>, _, _) ;
-	Try(elimIf)
+propFunction = 
+	ir.sym.EnterFunction(
+		with label_inline[] in
+			~Function(_, _, _, <
+				\label_inline/* with inline[] in propStmts end 
+			>)
+			; debug.Dump()
+		end
+	)
 
-elimWhile = {
-	While(cond,NoStmt) -> Assign(Void,NoExpr,cond)
-}
+propDefault = 
+	clearAllInline
 
-dceWhile = 
-	\needed/* ~While(<setNeededVars>, <dceStmt>) ;
-	Try(elimWhile)
-
-dceFunction = 
-	with local[], label_needed[] in
-		updateLocalVars ;
-		~Function(_, _, _, <
-			\label_needed/* with needed[] in dceStmts end 
-		>)
-		; debug.Dump()
-	end
-
-# If none of the above applies, assume all vars are needed
-dceDefault = 
-	setAllNeededVars
-
-dceStmt.subject = 
-	?Assign < dceAssign +
-	?Asm < dceAsm +
-	?Label < dceLabel +
-	?GoTo < dceGoTo +
-	?Ret < dceRet +
-	?Block < dceBlock +
-	?If < dceIf +
-	?While < dceWhile +
-	?Function < dceFunction + 
+propStmt.subject = 
+	?Assign < propAssign +
+	?Asm < propAsm +
+	?Label < propLabel +
+	?GoTo < propGoTo +
+	?Ret < propRet +
+	?Block < propBlock +
+	?If < propIf +
+	?While < propWhile +
+	?Function < propFunction + 
 	?Var < id +
 	?NoStmt
 
-dceStmts.subject = 
-	MapR(dceStmt) ;
-	Filter(Not(?NoStmt))
+propStmts.subject = 
+	Map(propStmt)
 
-dceModule = 
-	~Module(<dceStmts>)
+propModule = 
+	ir.sym.EnterModule(
+		~Module(<propStmts>)
+	)
 
-dce =
-	with needed[], local[], label_needed[] in
-		dceModule
+prop =
+	with inline[], local[], label_inline[] in
+		propModule
 	end
 ''')
 
+prop = prop

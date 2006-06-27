@@ -111,8 +111,8 @@ binOpPrec = parse.Rule('''
 |	Xor(_) -> 8 		
 |	LShift -> 4 		
 |	RShift -> 4 		
-|	Plus -> 3 		
-|	Minus -> 3 		
+|	Plus -> 4 # force parenthesis inside shifts (was 3)
+|	Minus -> 4 # force parenthesis inside shifts (was 3)
 |	Mult -> 2 		
 |	Div -> 2 		
 |	Mod -> 2 		
@@ -170,9 +170,26 @@ binOp = parse.Rule('''
 |	GtEq -> ">="
 ''')
 
-subExpr = util.Proxy()
+exprKern = util.Proxy()
 
-exprKern = Path(parse.Rule('''
+parse.Transfs('''
+SubExpr(Cmp) = 
+	let 
+		pprec = !prec, # parent precedence
+		prec = exprPrec
+	in
+		if Cmp(!prec, !pprec) then
+			!H([ "(", <exprKern>, ")" ])
+		else
+			exprKern
+		end
+	end
+
+''')
+subExpr = SubExpr(arith.Gt)
+subExprEq = SubExpr(arith.Geq)
+
+exprKern.subject = Path(parse.Rule('''
 	Lit(Int(_,_), value)
 		-> <<intlit> value>
 |	Lit(type, value)
@@ -184,7 +201,7 @@ exprKern = Path(parse.Rule('''
 |	Unary(op, expr)
 		-> H([ <<unOp>op>, <<subExpr>expr> ])
 |	Binary(op, lexpr, rexpr)
-		-> H([ <<subExpr>lexpr>, " ", <<binOp>op>, " ", <<subExpr>rexpr> ])
+		-> H([ <<subExpr>lexpr>, " ", <<binOp>op>, " ", <<subExprEq>rexpr> ])
 |	Cond(cond, texpr, fexpr)
 		-> H([ <<subExpr>cond>, " ", <<op>"?">, " ", <<subExpr>texpr>, " ", <<op>":">, " ", <<subExpr>fexpr> ])
 |	Call(addr, args)
@@ -194,19 +211,6 @@ exprKern = Path(parse.Rule('''
 |	Ref(expr)
 		-> H([ <<op>"*">, <<subExpr>expr> ])
 '''))
-
-subExpr.subject = parse.Transf('''
-	let 
-		pprec = !prec, # parent precedence
-		prec = exprPrec
-	in
-		if Gt(!prec, !pprec) then
-			!H([ "(", <exprKern>, ")" ])
-		else
-			exprKern
-		end
-	end
-''')
 
 expr = parse.Transf('''
 	let 

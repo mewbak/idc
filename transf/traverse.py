@@ -90,6 +90,6 @@ def OnceTD(operand):
 	stops as soon as the the transformation has been successfuly applied.
 	'''
 	oncetd = util.Proxy()
-	oncetd.subject = operand + One(alltd)
+	oncetd.subject = operand + One(oncetd)
 	return oncetd
 
