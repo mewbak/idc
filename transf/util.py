@@ -18,6 +18,16 @@ class Adaptor(base.Transformation):
 		return self.func(term, ctx, *self.args, **self.kargs)
 
 
+class BoolAdaptor(base.Transformation):
+	'''Transformation adapter for a boolean function.'''
+	
+	def apply(self, term, ctx):
+		if self.func(term, ctx, *self.args, **self.kargs):
+			return term
+		else:
+			raise exception.Failure
+
+
 class Proxy(base.Transformation):
 	'''Defers the transformation to another transformation, which does not 
 	need to be specified at initialization time.
