@@ -4,6 +4,9 @@ See also U{http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-unstable-latest/m
 '''
 
 
+from aterm.factory import factory
+from aterm import types
+
 from transf import exception
 from transf import base
 from transf import util
@@ -20,6 +23,22 @@ from transf import unify
 length = unify.Count(base.ident)
 
 
+class Reverse(base.Transformation):
+
+	def apply(self, term, ctx):
+		accum = factory.makeNil()
+		while True:
+			if term.type == types.NIL:
+				return accum
+			elif term.type == types.LIST:
+				accum = factory.makeCons(term.head, accum)
+				term = term.tail
+			else:
+				raise exception.Failure('not a list term', term)
+
+reverse = Reverse()
+
+
 def Map(operand, Cons = congruent.Cons):
 	map = util.Proxy()
 	map.subject = match.nil + Cons(operand, map)
@@ -28,6 +47,10 @@ def Map(operand, Cons = congruent.Cons):
 
 def MapR(operand):
 	return Map(operand, congruent.ConsR)
+
+
+def MapTest(operand):
+	return Map(operand, match.Cons)
 
 
 def Filter(operand):

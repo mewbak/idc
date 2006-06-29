@@ -3,16 +3,20 @@
 
 from transf import *
 import ir.match
-
+import ir.path
 
 #######################################################################
 # Statements
 
 parse.Transfs(r'''
 
+goto =  
+	ir.path.isSelected ;
+	?GoTo(Sym(label))
+
 liftIfThen =
 		with cond, label, rest in
-			~[If(cond, GoTo(Sym(label)), NoStmt), *<AtSuffix(
+			~[If(cond, <goto>, NoStmt), *<AtSuffix(
 				?[Label(label), *] ; ?rest ; 
 				![]
 			)>] ;
@@ -24,7 +28,7 @@ liftIfThen =
 liftLoop =
 		with label, rest in
 			~[Label(label), *<AtSuffix(
-				?[GoTo(Sym(label)), *rest] ; 
+				?[<goto>, *rest] ; 
 				![]
 			) ; 
 			![While(Lit(Bool,1), Block(<id>)), *rest]
@@ -34,7 +38,7 @@ liftLoop =
 liftWhile =
 		with label, cond, rest in
 			~[Label(label), *<AtSuffix(
-				?[If(_,GoTo(Sym(label)),NoStmt), *] ; 
+				?[If(_,<goto>,NoStmt), *] ; 
 				?[If(cond,_,_), *rest] ; 
 				![]
 			) ; 

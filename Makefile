@@ -59,6 +59,10 @@ test-%: all %/_tests.py
 test-%: all lang/%/_tests.py
 	$(PYTHON) lang/$*/_tests.py $(TESTOPTS)
 
+TestTransf.%: all
+	$(PYTHON) transf/_tests.py $*
+
+
 .PHONY: test-%
 
 examples:

@@ -30,9 +30,9 @@ class Transformation(object):
 		'''User-friendly wrapper for L{apply}.'''
 		if isinstance(trm, basestring):
 			trm = aterm.factory.factory.parse(trm)
-		from transf import variable
-		vars = [(name, variable.Term(value)) for name, value in kargs.iteritems()]
-		ctx = context.Context()
+		from transf import term
+		vars = [(name, term.Term(value)) for name, value in kargs.iteritems()]
+		ctx = context.Context(vars)
 		return self.apply(trm, ctx)
 
 	def apply(self, trm, ctx):

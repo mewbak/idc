@@ -2,28 +2,53 @@
 
 
 import refactoring
-import transf
-from transf import path
-import ir.cs
+import paths
+import transf as lib
+from ir import cs, match
+from ir.path import *
+
+lib.parse.Transfs('''
+
+applicable = matchSelectionTo(?GoTo(Sym(_)))
+
+
+apply = cs.do
+
+
+''')
+
+
 
 
 class Consolidate(refactoring.Refactoring):
 
 	def name(self):
-		return "Consolidate"
+		return __doc__
 	
 	def applicable(self, term, selection):
-		return True
+		start, end = selection
+		selection = paths.ancestor(start, end)
+		print selection
+		try:
+			applicable(term, selection=selection)
+		except lib.exception.Failure:
+			return False
+		else:
+			return True
 
 	def input(self, term, selection, inputter):
 		factory = term.factory
-		args = factory.make("[]")
+		start, end = selection
+		selection = paths.ancestor(start, end)
+		args = factory.make("[_]", selection)
 		return args
 
 	def apply(self, term, args):
-		factory = term.factory
-		txn = ir.cs.do
-		return txn(term)
+		selection, = args
+		try:
+			return apply(term, selection=selection)
+		except lib.exception.Failure:
+			return False
 
 
 if __name__ == '__main__':
