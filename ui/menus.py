@@ -16,7 +16,10 @@ class RefactorMenu(gtk.Menu):
 		gtk.Menu.__init__(self)
 		self.model = model
 		
-		for refactoring in self.refactoring_factory.refactorings.itervalues():
+		names = self.refactoring_factory.refactorings.keys()
+		names.sort()
+		for name in names:
+			refactoring = self.refactoring_factory.refactorings[name]
 			menuitem = gtk.MenuItem(refactoring.name())
 			menuitem.connect("realize", self.on_menuitem_realize, refactoring)
 			menuitem.connect("activate", self.on_menuitem_activate, refactoring)

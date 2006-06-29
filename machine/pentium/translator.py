@@ -16,6 +16,10 @@ sslTranslationTable = {
 	"leal": "LEA.OD",
 	"pushl": "PUSH.OD",
 	"popl": "POP.OD",
+	"cbtw": "CBW",
+	"cwtl": "CWDE",
+	"cwtd": "CWD",
+	"cltd": "CDQ",
 }
 
 
@@ -128,6 +132,8 @@ preStmt = transf.parse.Rule('''
 		-> Asm("imull2", [op1,op2])
 |	Asm("imull", [op1,op2,op3])
 		-> Asm("imull3", [op1,op2,op3])
+|	Asm("sarl", [op1])
+		-> Asm("sarl", [op1,Lit(Int(32,Signed),1)])
 ''')
 
 doStmt = transf.parse.Transf(''' 

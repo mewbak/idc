@@ -197,8 +197,8 @@ class Translator(walker.Walker):
 			txn = Txn(*a)
 		except TypeError, ex:
 			raise SemanticException(i, "error: %s" % ex)
-		if not isinstance(txn, transf.base.Transformation):
-			raise SemanticException(i, "%s did not return a transformation" % n)
+		#if not isinstance(txn, transf.base.Transformation):
+		#	raise SemanticException(i, "%s did not return a transformation" % n)
 		return txn
 	
 	def transfScope(self, vars, t):

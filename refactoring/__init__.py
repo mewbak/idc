@@ -37,6 +37,7 @@ class Refactoring:
 		raise NotImplementedError
 
 
+
 class Factory:
 	"""Factory for refactories."""
 	
@@ -51,10 +52,13 @@ class Factory:
 				if name != '__init__' and ext == '.py':
 					module = __import__(__name__ + '.' + name)
 					module = getattr(module, name)
-					for nam, cls in module.__dict__.iteritems():
+					for nam, obj in module.__dict__.iteritems():
 						try:
-							if issubclass(cls, Refactoring):
-								refactoring = cls()
+							if isinstance(obj, Refactoring):
+								refactoring = obj
+								self.refactorings[refactoring.name()] = refactoring
+							if issubclass(obj, Refactoring):
+								refactoring = obj()
 								self.refactorings[refactoring.name()] = refactoring
 						except TypeError:
 							pass
@@ -98,7 +102,7 @@ class TestCase(unittest.TestCase):
 			self.failUnlessEqual(result, expectedResult)
 			
 
-def main(cls):
+def main(obj):
 	import aterm.factory
 	import sys
 	import ir.pprint
@@ -115,7 +119,10 @@ def main(cls):
 		box.AnsiTextFormatter(sys.stdout)
 	)
 
-	refactoring = cls()
+	if isinstance(obj, Refactoring):
+		refactoring = obj
+	if issubclass(obj, Refactoring):
+		refactoring = obj()
 	term = refactoring.apply(term, args)
 	
 	sys.stdout.write('*** AFTER ***\n')

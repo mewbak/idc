@@ -40,7 +40,7 @@ def _reverse(path):
 PRECEDENT = -2
 ANCESTOR = -1
 EQUAL = 0
-DESCENDANT = 1
+DESCENDENT = 1
 SUBSEQUENT = 2
 
 
@@ -58,7 +58,7 @@ def compare(path, ref_path):
 		path = path.tail
 		ref_path = ref_path.tail
 	if path:
-		return DESCENDANT
+		return DESCENDENT
 	return EQUAL
 	
 
