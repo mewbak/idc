@@ -1,4 +1,4 @@
-"""Consolidate Control Structures."""
+"""Control structure consolidation."""
 
 
 import refactoring

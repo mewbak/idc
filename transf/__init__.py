@@ -40,7 +40,6 @@ from transf import project
 from transf import match
 from transf import build
 from transf import congruent
-from transf import rewrite
 
 from transf import lists
 from transf import traverse

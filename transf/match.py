@@ -206,23 +206,4 @@ def Anno(anno):
 	return Annos(traverse.One(combine.Where(anno)))
 
 
-class Pattern(_common.Pattern):
-	
-	def __init__(self, pattern):
-		base.Transformation.__init__(self)
-		if isinstance(pattern, basestring):
-			self.pattern = _factory.parse(pattern)
-		else:
-			self.pattern = pattern
-	
-	def apply(self, term, ctx):
-		match = self.pattern.match(term)
-		if not match:
-			raise exception.Failure('pattern mismatch', self.pattern, term)
-		for name, value in match.kargs.iteritems():
-			var = ctx.get(name)
-			var.match(value)
-		return term
-
-
-_ = _helper.Factory(Int, Real, Str, List, Appl, Var, Pattern)
+_ = _helper.Factory(Int, Real, Str, List, Appl, Var, Term)

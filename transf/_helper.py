@@ -6,14 +6,14 @@ from transf import base
 
 class Factory(object):
 
-	def __init__(self, Int, Real, Str, List, Appl, Var, Pattern):
+	def __init__(self, Int, Real, Str, List, Appl, Var, Term):
 		self.__Int = Int
 		self.__Real = Real
 		self.__Str = Str
 		self.__List = List
 		self.__Appl = Appl
 		self.__Var = Var
-		self.__Pattern = Pattern
+		self.__Term = Term
 
 	def __coerce(self, arg):
 		if isinstance(arg, base.Transformation):
@@ -27,7 +27,7 @@ class Factory(object):
 		if isinstance(arg, (tuple, list)):
 			return self.__List(map(self.__coerce, arg))
 		if isinstance(arg, aterm.term.Term):
-			self.__Pattern(arg)
+			self.__Term(arg)
 		raise TypeError, 'cannot coerce arg %r' % arg
 		
 	def __getattribute__(self, name):

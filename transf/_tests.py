@@ -111,7 +111,7 @@ class TestCombine(TestMixin, unittest.TestCase):
 		argTable = {
 			0: fail,
 			1: ident, 
-			2: rewrite.Pattern('_', 'X'),
+			2: parse.Rule('_ -> X'),
 		}
 		testCaseTable = {
 			1: self.unaryTestCases, 
@@ -223,45 +223,10 @@ class TestMatch(TestMixin, unittest.TestCase):
 		self._testMatchTransf(parse.Transf('?C(1,2)'), 'C(1,2)')
 
 
-class TestRewrite(TestMixin, unittest.TestCase):
-	
-	setTransfTestCases = [
-		lambda t,i: base.ident,
-		lambda t,i: base.fail,
-		lambda t,i: rewrite.Pattern('x', i),
-		lambda t,i: rewrite.Pattern(t, 'X(%s)' % i),
-		lambda t,i: rewrite.Pattern(t, 'X(%s,%s)' % (t, i)),
-	]
-	
-	def _testSetTransf(self, SetTransf):
-		for Transf in self.setTransfTestCases:
-			testCases = []
-			seq = []
-			i = 0
-			for input in self.termInputs:
-				i += 1
-				inputTransf = Transf(input, str(i))
-				try:
-					output = str(inputTransf(input))
-				except exception.Failure:
-					output = 'FAILURE'
-				seq.append((input,inputTransf))
-				testCases.append((input, output))
-			transf = SetTransf(seq)
-			self._testTransf(transf, testCases)
-	
-	def testTermSet(self):
-		self._testSetTransf(rewrite.TermSet)
-	
-	def testPatternSeq(self):
-		# XXX: this is just a sanity check as it does not use patterns
-		self._testSetTransf(rewrite.PatternSeq)
-
-
 class TestTraverse(TestMixin, unittest.TestCase):
 
 	allTestCases = (
-		[ident, fail, rewrite.Pattern('x', 'X(x)')],
+		[ident, fail, parse.Rule('x -> X(x)')],
 		{
 			'A()': [
 				'A()', 
@@ -285,7 +250,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.All, self.allTestCases)	
 	
 	oneTestCases = (
-		[ident, fail, rewrite.Pattern('X(*a)', 'Y(*a)')],
+		[ident, fail, parse.Rule('X(*a) -> Y(*a)')],
 		{
 			'1': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'0.1': ['FAILURE', 'FAILURE', 'FAILURE'],
@@ -305,7 +270,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.One, self.oneTestCases)	
 
 	someTestCases = (
-		[ident, fail, rewrite.Pattern('X(*a)', 'Y(*a)')],
+		[ident, fail, parse.Rule('X(*a) -> Y(*a)')],
 		{
 			'1': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'0.1': ['FAILURE', 'FAILURE', 'FAILURE'],
@@ -325,7 +290,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.Some, self.someTestCases)	
 
 	bottomUpTestCases = (
-		[ident, fail, rewrite.Pattern('x', 'X(x)')],
+		[ident, fail, parse.Rule('x -> X(x)')],
 		{
 			'A()': [
 				'A()', 
@@ -344,7 +309,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.BottomUp, self.bottomUpTestCases)
 
 	topDownTestCases = (
-		[ident, fail, combine.Try(rewrite.Pattern('f(x,y)', 'X(x,y)'))],
+		[ident, fail, combine.Try(parse.Rule('f(x,y) -> X(x,y)'))],
 		{
 			'A()': [
 				'A()', 
@@ -373,7 +338,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 	def testSplit(self):
 		# FIXME: move this away from here
 		from ir.transfs import Split
-		self._testTransf(Split(match.Pattern('X')), self.spitTestCases)
+		self._testTransf(Split(match.Term('X')), self.spitTestCases)
 
 	# TODO: testInnerMost
 
@@ -381,7 +346,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 class TestProject(TestMixin, unittest.TestCase):
 
 	fetchTestCases = (
-		[ident, fail, rewrite.Pattern('X(*a)', 'Y(*a)')],
+		[ident, fail, parse.Rule('X(*a) -> Y(*a)')],
 		{
 			'[]': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'[X]': ['X', 'FAILURE', 'Y'],
@@ -437,7 +402,7 @@ class TestAnno(TestMixin, unittest.TestCase):
 
 	def _testAnnoTransf(self, Transf, testCases):
 		for input, label, values, output in testCases:
-			transf = Transf(label, *map(build.Pattern, values))
+			transf = Transf(label, *map(build.Term, values))
 			self._testTransf(transf, [(input, output)])
 		
 	setTestCases = (
@@ -650,7 +615,7 @@ class TestPath(TestMixin, unittest.TestCase):
 	
 	def testSubTerm(self):
 		self.checkTransformation(
-			lambda p: path.SubTerm(rewrite.Pattern('x', 'X(x)'), p),
+			lambda p: path.SubTerm(parse.Rule('x -> X(x)'), p),
 			self.pathTestCases
 		)
 
@@ -691,7 +656,7 @@ class TestPath(TestMixin, unittest.TestCase):
 			input = self.factory.parse(inputStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
-			result = path.Range(lists.Map(rewrite.Pattern('x', 'X(x)')), start, end)(input)
+			result = path.Range(lists.Map(parse.Rule('x -> X(x)')), start, end)(input)
 			
 			self.failUnlessEqual(result, expectedResult)
 
@@ -699,7 +664,7 @@ class TestPath(TestMixin, unittest.TestCase):
 class TestLists(TestMixin, unittest.TestCase):
 
 	mapTestCases = (
-		[ident, fail, rewrite.Pattern('x', 'X(x)'), match.Pattern('1')],
+		[ident, fail, parse.Rule('x -> X(x)'), match.Int(1)],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
@@ -713,7 +678,7 @@ class TestLists(TestMixin, unittest.TestCase):
 		self._testMetaTransf(lists.Map, self.mapTestCases)
 
 	filterTestCases = (
-		[ident, fail, rewrite.Pattern('x', 'X(x)'), match.Pattern('2')],
+		[ident, fail, parse.Rule('x -> X(x)'), match.Int(2)],
 		{
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', '[]', '[X(1)]', '[]'],
@@ -730,7 +695,7 @@ class TestLists(TestMixin, unittest.TestCase):
 
 	def testSplit(self):
 		self._testTransf(
-			lists.Split(rewrite.Pattern('X','Y')), 
+			lists.Split(parse.Rule('X -> Y')), 
 			(
 				('[A,B,C]', 'FAILURE'),
 				('[X,A,B,C]', '[[],[A,B,C]]'),
@@ -742,7 +707,7 @@ class TestLists(TestMixin, unittest.TestCase):
 	
 	def testSplitBefore(self):
 		self._testTransf(
-			lists.SplitBefore(rewrite.Pattern('X','Y')), 
+			lists.SplitBefore(parse.Rule('X -> Y')), 
 			(
 				('[A,B,C]', 'FAILURE'),
 				('[X,A,B,C]', '[[],[Y,A,B,C]]'),
@@ -754,7 +719,7 @@ class TestLists(TestMixin, unittest.TestCase):
 
 	def testSplitAfter(self):
 		self._testTransf(
-			lists.SplitAfter(rewrite.Pattern('X','Y')), 
+			lists.SplitAfter(parse.Rule('X -> Y')), 
 			(
 				('[A,B,C]', 'FAILURE'),
 				('[X,A,B,C]', '[[Y],[A,B,C]]'),
@@ -766,7 +731,7 @@ class TestLists(TestMixin, unittest.TestCase):
 
 	def testSplitKeep(self):
 		self._testTransf(
-			lists.SplitKeep(rewrite.Pattern('X','Y')), 
+			lists.SplitKeep(parse.Rule('X -> Y')), 
 			(
 				('[A,B,C,D]', 'FAILURE'),
 				('[X,A,B,C,D]', '[[],Y,[A,B,C,D]]'),
@@ -779,7 +744,7 @@ class TestLists(TestMixin, unittest.TestCase):
 
 	def testSplitAll(self):
 		self._testTransf(
-			lists.SplitAll(rewrite.Pattern('X','Y')), 
+			lists.SplitAll(parse.Rule('X -> Y')), 
 			(
 				('[A,B,C,D]', '[[A,B,C,D]]'),
 				('[X,A,B,C,D]', '[[],[A,B,C,D]]'),
@@ -791,7 +756,7 @@ class TestLists(TestMixin, unittest.TestCase):
 
 	def _testSplitAllBefore(self):
 		self._testTransf(
-			lists.SplitAllBefore(rewrite.Pattern('X','Y')), 
+			lists.SplitAllBefore(parse.Rule('X -> Y')), 
 			(
 				('[A,B,C,D]', '[[A,B,C,D]]'),
 				('[X,A,B,C,D]', '[[],[Y,A,B,C,D]]'),
@@ -803,7 +768,7 @@ class TestLists(TestMixin, unittest.TestCase):
 
 	def testSplitAllAfter(self):
 		self._testTransf(
-			lists.SplitAllAfter(rewrite.Pattern('X','Y')), 
+			lists.SplitAllAfter(parse.Rule('X -> Y')), 
 			(
 				('[A,B,C,D]', '[[A,B,C,D]]'),
 				('[X,A,B,C,D]', '[[Y],[A,B,C,D]]'),
@@ -815,7 +780,7 @@ class TestLists(TestMixin, unittest.TestCase):
 
 	def testSplitAllKeep(self):
 		self._testTransf(
-			lists.SplitAllKeep(rewrite.Pattern('X','Y')), 
+			lists.SplitAllKeep(parse.Rule('X -> Y')), 
 			(
 				('[A,B,C,D]', '[[A,B,C,D]]'),
 				('[X,A,B,C,D]', '[[],Y,[A,B,C,D]]'),

@@ -1,8 +1,11 @@
 '''Facilities for building terms.'''
 
 
+import antlr
+
 from aterm import exceptions
 from aterm import terms
+from aterm import match
 
 
 class _Singleton(type):
@@ -107,22 +110,17 @@ class Factory(object):
 	def _parse(self, lexer):
 		'''Creates a new term by parsing a string.'''
 		
-		from aterm.lexer import Lexer
-		from aterm.parser import Parser
-		from antlr import ANTLRException
-
-		parser = Parser(lexer, factory = self)
+		parser = Parser(lexer)
 		try:
-			return parser.aterm()
-		except ANTLRException, ex:
-			raise exceptions.ParseException(str(ex))
+			return parser.term()
+		except antlr.ANTLRException, exc:
+			raise exceptions.ParseException(str(exc))
 	
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
 
-		from aterm.lexer import Lexer
-		lexer = Lexer(fp = fp)
-		return self._parse(lexer)
+		l = Lexer(fp = fp)
+		return self._parse(l)
 
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
@@ -132,7 +130,6 @@ class Factory(object):
 		except KeyError:
 			pass
 		
-		from aterm.lexer import Lexer
 		lexer = Lexer(buf)
 		result = self._parse(lexer)
 		
@@ -143,11 +140,21 @@ class Factory(object):
 			
 		return result
 
-	def match(self, pattern, other):
+	def match(self, pattern, term):
 		'''Matches the term to a string pattern and a list of arguments. 
 		First the string pattern is parsed into an Term. .'''
-		
-		return self.parse(pattern).match(other)
+		assert isinstance(pattern, basestring)
+		lexer = Lexer(pattern)
+		parser = Parser(lexer)
+		try:
+			matcher = parser.match_term()
+		except antlr.ANTLRException, exc:
+			raise exceptions.ParseException(str(exc))
+		mo = match.Match()
+		if matcher.visit(term, mo):
+			return mo
+		else:
+			return None
 
 	def make(self, pattern, *args, **kargs):
 		'''Creates a new term from a string pattern and a list of arguments. 
@@ -155,7 +162,14 @@ class Factory(object):
 		the pattern are filled with arguments taken from the supplied list of 
 		arguments.'''
 		
-		_pattern = self.parse(pattern)
+		assert isinstance(pattern, basestring)
+		lexer = Lexer(pattern)
+		parser = Parser(lexer)
+		try:
+			builder = parser.build_term()
+		except antlr.ANTLRException, exc:
+			raise exceptions.ParseException(str(exc))
+			
 		i = 0
 		_args = []
 		for i in range(len(args)):
@@ -166,7 +180,11 @@ class Factory(object):
 		for name, value in kargs.iteritems():
 			_kargs[name] = self.coerce(value, "'" + name + "'")
 
-		return _pattern.make(*_args, **_kargs)
+		return builder.build(*_args, **_kargs)
 
 
 factory = Factory()
+
+
+from aterm.lexer import Lexer
+from aterm.parser import Parser

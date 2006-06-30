@@ -115,7 +115,7 @@ def Anno(anno):
 	return Annos(One(anno))
 
 
-_ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, Var, match.Pattern)
+_ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, Var, match.Term)
 
 
 class Subterms(base.Transformation):

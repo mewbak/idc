@@ -97,6 +97,7 @@ class Term(object):
 
 	def match(self, other):
 		'''Matches this term pattern against a string or term.'''
+		raise NotImplementedError
 		if isinstance(other, basestring):
 			other = self.factory.parse(other)
 		match = Match()
@@ -108,9 +109,7 @@ class Term(object):
 	
 	def rmatch(self, other):
 		'''Matches this term against a string or term pattern.'''
-		if isinstance(other, basestring):
-			other = self.factory.parse(other)
-		return other.match(self)
+		return self.factory.match(other, self)
 
 	def getAnnotations(self):
 		'''Returns the annotation list.'''
@@ -125,11 +124,11 @@ class Term(object):
 
 	def getAnnotation(self, label):
 		'''Gets an annotation associated'''
-		if isinstance(label, basestring):
-			label = self.factory.parse(label)
+		if not isinstance(label, basestring):
+			raise TypeError("label is not a string '%r'", label)
 		annotations = self.annotations
 		while annotations:
-			if label.match(annotations.head):
+			if self.factory.match(label, annotations.head):
 				return annotations.head				
 			annotations = annotations.tail
 		raise ValueError("undefined annotation '%r'" % label)
@@ -137,8 +136,8 @@ class Term(object):
 	def setAnnotation(self, label, annotation):
 		'''Returns a new version of this term with the 
 		annotation associated with this label added or updated.'''
-		if isinstance(label, basestring):
-			label = self.factory.parse(label)
+		if not isinstance(label, basestring):
+			raise TypeError("label is not a string '%r'", label)
 		remover = _helpers.Remover(label)
 		if self.annotations:
 			annotations = remover.visit(self.annotations)
@@ -150,8 +149,8 @@ class Term(object):
 	def removeAnnotation(self, label):
 		'''Returns a new version of this term with the 
 		annotation associated with this label removed.'''
-		if isinstance(label, basestring):
-			label = self.factory.parse(label)
+		if not isinstance(label, basestring):
+			raise TypeError("label is not a string '%r'", label)
 		remover = _helpers.Remover(label)
 		annotation = self.annotations
 		if self.annotations:

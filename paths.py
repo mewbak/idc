@@ -12,7 +12,7 @@ import aterm.factory
 import aterm.visitor
 
 _factory = aterm.factory.factory
-_path = _factory.parse('Path(_)')
+_path = 'Path(_)'
 
 
 def check(path):
@@ -119,7 +119,7 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 	def visit(self, term, path, index):
 		term = super(Annotator, self).visit(term, path, index)
 		if self.callback(term):
-			return term.setAnnotation(_path, _path.make(path))
+			return term.setAnnotation(_path, term.factory.make(_path, path))
 		else:
 			return term
 		
@@ -468,7 +468,7 @@ class TestPath(unittest.TestCase):
 			input = self.factory.parse(inputStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
-			result = path.Range(lists.Map(rewrite.Pattern('x', 'X(x)')), start, end)(input)
+			result = path.Range(lists.Map(parse.Rule('x -> X(x)')), start, end)(input)
 			
 			self.failUnlessEqual(result, expectedResult)
 

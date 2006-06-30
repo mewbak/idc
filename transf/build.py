@@ -109,16 +109,4 @@ class Annos(_common.Annos):
 		return term.setAnnotations(self.annos.apply(term, ctx))
 
 
-class Pattern(_common.Pattern):
-
-	# TODO: Parse patterns into the above classes
-
-	def apply(self, term, ctx):
-		# FIXME: avoid the dict copy
-		kargs = {}
-		for name, var in ctx:
-			kargs[name] = var.build()
-		return self.pattern.make(term, **kargs)
-
-
-_ = _helper.Factory(Int, Real, Str, List, Appl, Var, Pattern)
+_ = _helper.Factory(Int, Real, Str, List, Appl, Var, Term)

@@ -164,7 +164,7 @@ class Remover(visitor.Visitor):
 	
 	def visitCons(self, term):
 		tail = self.visit(term.tail)
-		if self.pattern.match(term.head):
+		if term.factory.match(self.pattern, term.head):
 			return tail
 		elif tail is term.tail:
 			return term

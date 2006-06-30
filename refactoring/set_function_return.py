@@ -24,13 +24,10 @@ input =
 		![name, ret]
 	end 
 
-
 apply = 
 	with name, type, ret in
 		Where(!args; ?[name, ret]) ;
 		Where(!Int(32,Signed); ?type) ;
-		
-		
 		~Module(<
 			One(
 				~Function(!type, ?name, _, <

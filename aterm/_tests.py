@@ -188,11 +188,11 @@ class TestTerm(unittest.TestCase):
 						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))						
 
 						if term1.isConstant() and term2.isConstant():
-							result = bool(term1.match(term2))
+							result = bool(self.factory.match(term1Str, term2))
 							self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 						
 						if expectedResult:
-							term2 = term2.setAnnotation(self.factory.parse("A"), self.factory.parse("1"))
+							term2 = term2.setAnnotation("A", self.factory.parse("1"))
 							
 							result = term1.isEquivalent(term2)
 							self.failUnlessEqual(result, True, msg = '%s <=> %s = %r (!= %r)' % (term1Str, term2Str, result, True))
@@ -201,7 +201,7 @@ class TestTerm(unittest.TestCase):
 							self.failUnlessEqual(result, False, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, False))
 	
 							if term1.isConstant() and term2.isConstant():
-								result = bool(term1.match(term2))
+								result = bool(self.factory.match(term1Str, term2))
 								self.failUnlessEqual(result, True, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, True))
 							
 						
@@ -280,11 +280,10 @@ class TestTerm(unittest.TestCase):
 		for termStr, patternStr, expectedResult, expectedArgsStr, expectedKargsStr in self.matchTestCases:
 			
 			term = self.factory.parse(termStr)
-			pattern = self.factory.parse(patternStr)
 			expectedArgs = self.parseArgs(expectedArgsStr)
 			expectedKargs = self.parseKargs(expectedKargsStr)
 			
-			match = pattern.match(term)
+			match = self.factory.match(patternStr, term)
 			result = bool(match)
 			
 			self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (patternStr, termStr, result, expectedResult))
@@ -407,19 +406,19 @@ class TestTerm(unittest.TestCase):
 				term = term1
 				self.failUnlessEqual(term.getAnnotations(), factory.parse("[]"))
 				
-				term = term.setAnnotation(factory.parse("A(_)"), factory.parse("A(1)"))
+				term = term.setAnnotation("A(_)", factory.parse("A(1)"))
 				self.failUnlessEqual(term.getAnnotations(), factory.parse("[A(1)]"))
 				
-				term = term.setAnnotation(factory.parse("B(_)"), factory.parse("B(2)"))
-				self.failUnlessEqual(term.getAnnotation(factory.parse("A(_)")), factory.parse("A(1)"))
-				self.failUnlessEqual(term.getAnnotation(factory.parse("B(_)")), factory.parse("B(2)"))
+				term = term.setAnnotation("B(_)", factory.parse("B(2)"))
+				self.failUnlessEqual(term.getAnnotation("A(_)"), factory.parse("A(1)"))
+				self.failUnlessEqual(term.getAnnotation("B(_)"), factory.parse("B(2)"))
 		
-				term = term.setAnnotation(factory.parse("A(_)"), factory.parse("A(3)"))
-				self.failUnlessEqual(term.getAnnotation(factory.parse("A(_)")), factory.parse("A(3)"))
-				self.failUnlessEqual(term.getAnnotation(factory.parse("B(_)")), factory.parse("B(2)"))
+				term = term.setAnnotation("A(_)", factory.parse("A(3)"))
+				self.failUnlessEqual(term.getAnnotation("A(_)"), factory.parse("A(3)"))
+				self.failUnlessEqual(term.getAnnotation("B(_)"), factory.parse("B(2)"))
 		
 				try:
-					term.getAnnotation(factory.parse("C(_)"))
+					term.getAnnotation("C(_)")
 					self.fail()
 				except ValueError:
 					pass

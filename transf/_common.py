@@ -91,13 +91,3 @@ class Annos(base.Transformation):
 	def __init__(self, annos):
 		base.Transformation.__init__(self)
 		self.annos = annos
-
-
-class Pattern(base.Transformation):
-	
-	def __init__(self, pattern):
-		base.Transformation.__init__(self)
-		if isinstance(pattern, basestring):
-			self.pattern = _factory.parse(pattern)
-		else:
-			self.pattern = pattern

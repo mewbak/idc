@@ -36,10 +36,9 @@ class ExtractFunction(refactoring.Refactoring):
 	def apply(self, term, args):
 		factory = term.factory
 		name, = args
-		txn = transf.rewrite.Pattern(
-			"[Label(name),*rest]",
-			"[Function(Void,name,[],rest)]",
-		)
+		txn = transf.parse.Rule(r'''
+			[Label(name),*rest] -> [Function(Void,name,[],rest)]
+		''')
 		txn = transf.congruent.Appl(
 			'Module',
 			[ExtractBlock(txn,name)]

@@ -63,17 +63,15 @@ TestTransf.%: all
 	$(PYTHON) transf/_tests.py $*
 
 
-.PHONY: test-%
+.PHONY: test-% tests
+
+
+# Examples
 
 examples:
 	$(MAKE) -C $@
 
 .PHONY: examples
-	
-test-asm: tests/test_asm.sh asmLexer.py asmParser.py ir.py examples
-	$(SHELL) $<
-	
-.PHONY: tests
 
 
 # Generate reference documentation
