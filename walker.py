@@ -12,65 +12,107 @@ the same walker methods do not necessarily yield the same results.
 '''
 
 
-# pylint: disable-msg=R0201
-
-
 import inspect
 
-import aterm
+import aterm.types
+import aterm.visitor
 
 
-def _getIntHandler(walker, term, prefix):
-	return getattr(walker, prefix + '_Int'), (term.value,)
-		
-def _getRealHandler(walker, term, prefix):
-	return getattr(walker, prefix + '_Real'), (term.value,)
-
-def _getStrHandler(walker, term, prefix):
-	return getattr(walker, prefix + '_Str'), (term.value,)
-
-def _getLitHandler(walker, term, prefix):
-	return getattr(walker, prefix + '_Lit'), (term.value,)
-
-def _getNilHandler(walker, term, prefix):
-	return getattr(walker, prefix + '_Nil'), ()
-
-def _getConsHandler(walker, term, prefix):
-	return getattr(walker, prefix + '_Cons'), (term.head, term.tail)
-
-def _getListHandler(walker, term, prefix):
-	return getattr(walker, prefix + '_List'), (term,)
-
-def _getApplHandler(walker, term, prefix):
-	try:
-		return getattr(walker, prefix + term.name.value), tuple(term.args)
-	except AttributeError:
-		return getattr(walker, prefix + '_Appl'), (term.name, term.args)
-
-def _getTermHandler(walker, term, prefix):
-	return getattr(walker, prefix + '_Term'), (term,)
-
-_getHandlersTable = {
-	aterm.types.INT: (_getIntHandler, _getLitHandler, _getTermHandler),
-	aterm.types.REAL: (_getRealHandler, _getLitHandler, _getTermHandler),
-	aterm.types.STR: (_getStrHandler, _getLitHandler, _getTermHandler),
-	aterm.types.NIL: (_getNilHandler, _getListHandler, _getTermHandler),
-	aterm.types.CONS: (_getConsHandler, _getListHandler, _getTermHandler),
-	aterm.types.APPL: (_getApplHandler, _getTermHandler),
-}
-
-def _getHandler(walker, term, prefix):
-	try:
-		hgs = _getHandlersTable[term.type]
-	except KeyError:
-		hgs = (_getTermHandler,)
+class _Dispatcher(aterm.visitor.Visitor):
+	'''Visitor which dynamically resolves the walker method name corresponding 
+	to the term being dispatched.
+	'''
 	
-	for hg in hgs:
+	def __init__(self, walker, prefix):
+		aterm.visitor.Visitor.__init__(self)
+		self.walker = walker
+		self.prefix = prefix
+
+	def __call__(self, term, *args, **kargs):
+		method, targs = self.visit(term)
+		return method(*(targs + args), **kargs)
+
+	def getmethod(self, suffix):
+		return getattr(self.walker, self.prefix + suffix)
+		
+	def visitTerm(self, term):
+		return self.getmethod('_Term'), (term,)
+	
+	def visitLit(self, term):
 		try:
-			return hg(walker, term, prefix)
+			return self.getmethod('_Lit'), (term.value,)
 		except AttributeError:
-			pass
-	raise AttributeError
+			return self.visitTerm(term)
+	
+	def visitInt(self, term):
+		try:
+			return self.getmethod('_Int'), (term.value,)
+		except AttributeError:
+			return self.visitLit(term)
+			
+	def visitReal(self, term):
+		try:
+			return self.getmethod('_Real'), (term.value,)
+		except AttributeError:
+			return self.visitLit(term)
+	
+	def visitStr(self, term):
+		try:
+			return self.getmethod('_Str'), (term.value,)
+		except AttributeError:
+			return self.visitLit(term)
+	
+	def visitList(self, term):
+		try:
+			return self.getmethod('_List'), (term,)
+		except AttributeError:
+			return self.visitTerm(term)
+	
+	def visitNil(self, term):
+		try:
+			return self.getmethod('_Nil'), ()
+		except AttributeError:
+			return self.visitList(term)
+	
+	def visitCons(self, term):
+		try:
+			return self.getmethod('_Cons'), (term.head, term.tail)
+		except AttributeError:
+			return self.visitList(term)
+	
+	def visitAppl(self, term):
+		try:
+			return self.getmethod(term.name.value), tuple(term.args)
+		except AttributeError:
+			try:
+				return self.getmethod('_Appl'), (term.name, term.args)
+			except AttributeError:
+				return self.visitTerm(term)
+				
+
+class Dispatch(object):
+	'''Descriptor which dispatches a term to a method with a name starting 
+	with the given prefix, and a suffix determined from the term.
+		
+	Suffixes are (listed by the order their are tried):
+	 - "Name" for a "Name" application term
+	 - "_Int" for an integer term
+	 - "_Real" for a real term
+	 - "_Str" for a string term
+	 - "_Lit" for a generic literal term
+	 - "_Nil" for a nil list term
+	 - "_Cons" for a cons list term
+	 - "_List" for a generic list term
+	 - "_Appl" for a generic application term
+	 - "_Term" for a generic term
+	'''
+	
+	def __init__(self, prefix, doc = None):
+		self.prefix = prefix
+		self.__doc__ = doc
+		
+	def __get__(self, obj, objtype):
+		return _Dispatcher(obj, self.prefix)
 	
 
 class Walker(object):
@@ -82,30 +124,6 @@ class Walker(object):
 	# TODO: handle annotations?
 	# TODO: pass the term arg?
 	
-	def _dispatch(self, term, prefix, **kargs):
-		'''Dispatch the term to a method with a name starting with the given 
-		prefix, and a suffix determined from the term.
-		
-		Suffixes are (listed by the order their are tried):
-		- Int for an integer term
-		- Real for an integer term
-		- Str for a string term
-		- Lit for a generic literal term
-		- Nil for a nil list term
-		- Cons for a cons list term
-		- List for a generic list term
-		- ApplName for an Name application term
-		- Appl for a generic application term
-		- Term for a generic term
-		'''
-		
-		try:
-			method, args = _getHandler(self, term, prefix)
-		except AttributeError:
-			raise ValueError("unexpected term", term)
-		else:
-			return method(*args, **kargs)
-
 	def _int(self, term):
 		'''Get the value of an integer term.'''
 		if term.type != aterm.types.INT:
@@ -130,15 +148,13 @@ class Walker(object):
 			raise TypeError("not a literal term", term)
 		return term.value
 	
-	def _obj(self, term):
-		'''Convert the term to a python object.'''
-		return self._dispatch(term, '_obj')
+	_obj = Dispatch('_obj', doc = '''Convert the term to a python object.''')
 
 	def _objLit(self, value):
 		return value
 	
 	def _objList(self, terms):
-		return map(self._obj, terms)
+		return [self._obj(term) for term in terms]
 
 	# XXX: is this actually useful?
 	def _match(self, term, pattern):

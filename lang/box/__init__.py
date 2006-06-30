@@ -104,7 +104,9 @@ class Writer(walker.Walker):
 		self.formatter = formatter
 	
 	def write(self, box, mode = NONE):
-		self._dispatch(box, 'write', mode = mode)
+		self._write(box, mode = mode)
+	
+	_write = walker.Dispatch('write')
 	
 	def writeV(self, boxes, mode):
 		if mode == self.HORIZ:

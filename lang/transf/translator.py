@@ -95,8 +95,7 @@ class Translator(walker.Walker):
 		# define transf in the local namespace
 		eval(compile(name + " = _", "", "single"), {"_": value}, self.locals)
 
-	def translate(self, t):
-		return self._dispatch(t, 'translate')
+	translate = walker.Dispatch('translate')
 	
 	transf_defs = translate
 	meta_def = translate
@@ -129,8 +128,7 @@ class Translator(walker.Walker):
 		)
 
 	
-	def transf(self, t):
-		return self._dispatch(t, 'transf')
+	transf = walker.Dispatch('transf')
 	
 	def transfIdent(self):
 		return transf.base.ident
@@ -309,9 +307,8 @@ class Translator(walker.Walker):
 		c = self.constructor(c)
 		return (v, c)
 
-
-	def arg(self, arg):
-		return self._dispatch(arg, 'arg')
+	
+	arg = walker.Dispatch('arg')
 	
 	def argObj(self, o):
 		o = self._str(o)
@@ -325,8 +322,7 @@ class Translator(walker.Walker):
 		return self.transf(t)
 
 
-	def constructor(self, c):
-		return self._dispatch(c, 'constructor')
+	constructor = walker.Dispatch('constructor')
 		
 	def constructorTermTransf(self, t):
 		t = self.transf(t)
@@ -343,8 +339,7 @@ class Translator(walker.Walker):
 		return transf.table.new
 
 
-	def static(self, t):
-		return self._dispatch(t, 'static')
+	static = walker.Dispatch('static')
 		
 	def staticInt(self, i):
 		i = self._int(i)
@@ -399,8 +394,7 @@ class Translator(walker.Walker):
 		return self.termTransf(t, mode = TRAVERSE)
 
 
-	def termTransf(self, t, mode):
-		return self._dispatch(t, 'termTransf', mode = mode)
+	termTransf = walker.Dispatch('termTransf')
 
 	def termTransfInt(self, i, mode):
 		i = self._int(i)
@@ -493,8 +487,7 @@ class Translator(walker.Walker):
 		return t
 
 
-	def collect(self, t, vars):
-		self._dispatch(t, 'collect', vars = vars)
+	collect = walker.Dispatch('collect')
 		
 	def collectRule(self, m, b, vars):
 		self.collect(m, vars)
