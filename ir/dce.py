@@ -43,7 +43,6 @@ Where(
 	with label in
 		?Label(label) ; debug.Dump(); 
 		!needed ; 
-		setAllUnneededVars ;
 		Map(![label,<id>] ; 
 		table.Set('label_needed'))
 	end
