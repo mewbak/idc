@@ -145,10 +145,6 @@ class TermTreeModel(gtk.GenericTreeModel):
 				return '[...]'
 			elif type == aterm.types.APPL:
 				return term.getName().getValue()
-			elif type == aterm.types.WILDCARD:
-				return '_'
-			elif type == aterm.types.VAR:
-				return term.getName()
 			else:
 				return '?'
 		elif column == 1:
@@ -162,10 +158,6 @@ class TermTreeModel(gtk.GenericTreeModel):
 				return 'LIST'
 			elif type == aterm.types.APPL:
 				return 'APPL'
-			elif type == aterm.types.WILDCARD:
-				return 'WILDCARD'
-			elif type == aterm.types.VAR:
-				return 'VAR'
 			else:
 				return '?'
 		elif column == 2:

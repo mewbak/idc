@@ -41,15 +41,6 @@ class Visitor(object):
 	def visitAppl(self, term, *args, **kargs):
 		return self.visitTerm(term, *args, **kargs)
 
-	def visitPlaceholder(self,term, *args, **kargs):
-		return self.visitTerm(term, *args, **kargs)
-		
-	def visitWildcard(self, term, *args, **kargs):
-		return self.visitPlaceholder(term, *args, **kargs)
-
-	def visitVar(self, term, *args, **kargs):
-		return self.visitPlaceholder(term, *args, **kargs)
-
 
 class IncrementalVisitor(Visitor):
 	'''Base class for visitors which incrementally build-up a modified term.'''

@@ -236,7 +236,8 @@ var returns [res]
 		{ res = self.factory.make("Ref(_)", i) }
 //    | t:TEMP
 	| v:NAME
-		{ res = self.factory.makeVar(#v.getText(), self.factory.makeWildcard()) }
+		// XXX: hack
+		{ res = self.factory.makeAppl(self.factory.makeStr(#v.getText())) }
     ;
 
 lvalue returns [res]

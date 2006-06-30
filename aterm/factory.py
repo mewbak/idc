@@ -32,6 +32,8 @@ class Factory(object):
 	# TODO: implement maximal sharing
 
 	MAX_PARSE_CACHE_LEN = 512
+
+	# TODO: cache match and build patterns too
 	
 	def __init__(self):
 		self.parseCache = {}
@@ -47,7 +49,7 @@ class Factory(object):
 
 	def makeStr(self, value, annotations = None):
 		'''Creates a new string literal term'''
-		return terms.String(self, value, annotations)
+		return terms.Str(self, value, annotations)
 
 	def makeNil(self, annotations = None):
 		'''Creates a new empty list term'''
@@ -73,15 +75,7 @@ class Factory(object):
 	
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new appplication term'''
-		return terms.Application(self, name, args, annotations)
-
-	def makeWildcard(self, annotations = None):
-		'''Creates a new wildcard term'''
-		return terms.Wildcard(self, annotations)
-
-	def makeVar(self, name, pattern, annotations = None):
-		'''Creates a new variable term'''
-		return terms.Variable(self, name, pattern, annotations)
+		return terms.Appl(self, name, args, annotations)
 
 	def coerce(self, value, name = None):
 		'''Coerce an object to a term. Value must be an int, a float, a string, 
@@ -142,7 +136,7 @@ class Factory(object):
 
 	def match(self, pattern, term):
 		'''Matches the term to a string pattern and a list of arguments. 
-		First the string pattern is parsed into an Term. .'''
+		'''
 		assert isinstance(pattern, basestring)
 		lexer = Lexer(pattern)
 		parser = Parser(lexer)
@@ -158,9 +152,9 @@ class Factory(object):
 
 	def make(self, pattern, *args, **kargs):
 		'''Creates a new term from a string pattern and a list of arguments. 
-		First the string pattern is parsed into an Term. Then the holes in 
-		the pattern are filled with arguments taken from the supplied list of 
-		arguments.'''
+		First the string pattern is parsed, then the holes in 
+		the pattern are filled with the supplied arguments.
+		'''
 		
 		assert isinstance(pattern, basestring)
 		lexer = Lexer(pattern)

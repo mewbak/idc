@@ -121,12 +121,6 @@ class TestTerm(unittest.TestCase):
 		('C', '"C"', 0),
 		('C(1)', '"C"', 1),
 		('C(1,2)', '"C"', 2),
-		('f()', 'f', 0),
-		('f(x)', 'f', 1),
-		('f(x,y)', 'f', 2),
-		('_()', '_', 0),
-		('_(_)', '_', 1),
-		('_(_,_)', '_', 2),
 	]
 	
 	def testAppl(self):
@@ -150,23 +144,12 @@ class TestTerm(unittest.TestCase):
 		# strings
 		['""', '"s"', '"st"'],
 		
-		# vars
-		['x', 'y'],
-
-		# wildcard
-		['_'],
-
 		# lists
-		['[]', '[1]', '[1,2]', '[1,*]'], # '[*]'
+		['[]', '[1]', '[1,2]'],
 
 		# applications
-		['()', '(1)', '(1,2)', '(1,*)', '(*)'],
-		['C', 'D', 'C(1)', 'C(1,2)', 'C(1,*)', 'C(*)'],
-		['f()', 'g()', 'f(x)', 'f(x,y)', 'f(x,*y)', 'f(*)'],
-		['_()', '_(_)', '_(_,_)', '_(_,*)', '_(*)'],
-		
-		# assigns
-		['x=y=z', 't=C(*)', 't=f(*)']
+		['()', '(1)', '(1,2)'],
+		['C', 'D', 'C(1)', 'C(1,2)'],
 	]
 
 	def testIdentity(self):
@@ -187,10 +170,6 @@ class TestTerm(unittest.TestCase):
 						result = term1.isEqual(term2)
 						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))						
 
-						if term1.isConstant() and term2.isConstant():
-							result = bool(self.factory.match(term1Str, term2))
-							self.failUnlessEqual(result, expectedResult, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
-						
 						if expectedResult:
 							term2 = term2.setAnnotation("A", self.factory.parse("1"))
 							
@@ -199,10 +178,6 @@ class TestTerm(unittest.TestCase):
 	
 							result = term1.isEqual(term2)
 							self.failUnlessEqual(result, False, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, False))
-	
-							if term1.isConstant() and term2.isConstant():
-								result = bool(self.factory.match(term1Str, term2))
-								self.failUnlessEqual(result, True, msg = '%s ~ %s = %r (!= %r)' % (term1Str, term2Str, result, True))
 							
 						
 	def testWrite(self):

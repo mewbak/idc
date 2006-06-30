@@ -9,17 +9,6 @@ from aterm import exceptions
 from aterm import _helpers
 
 
-class Match(object):
-	'''Match object.'''
-	
-	def __init__(self):
-		self.args = []
-		self.kargs = {}
-	
-	def __iter__(self):
-		return iter(self.args)
-
-
 class Term(object):
 	'''Base class for all terms.
 	
@@ -72,10 +61,6 @@ class Term(object):
 
 	__hash__ = getStructuralHash
 		
-	def isConstant(self):
-		'''Whether this term is constant, as opposed to have variables or wildcards.'''
-		return _helpers.isConstant(self)
-
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
 		return _helpers.isEquivalent(self, other)
@@ -98,14 +83,6 @@ class Term(object):
 	def match(self, other):
 		'''Matches this term pattern against a string or term.'''
 		raise NotImplementedError
-		if isinstance(other, basestring):
-			other = self.factory.parse(other)
-		match = Match()
-		comparator = _helpers.PatternComparator(match.args, match.kargs)
-		if comparator.visit(self, other):
-			return match
-		else:
-			return None
 	
 	def rmatch(self, other):
 		'''Matches this term against a string or term pattern.'''
@@ -161,8 +138,7 @@ class Term(object):
 		
 	def make(self, *args, **kargs):
 		'''Create a new term based on this term and a list of arguments.'''
-		maker = _helpers.Maker(args, kargs)
-		return maker.visit(self)
+		raise NotImplementedError
 
 	def accept(self, visitor, *args, **kargs):
 		'''Accept a visitor.'''
@@ -197,7 +173,7 @@ class Term(object):
 		return '<Term %s>' % (fp.getvalue(),)
 
 
-class Literal(Term):
+class Lit(Term):
 	'''Base class for literal terms.'''
 
 	__slots__ = ['value']
@@ -210,7 +186,7 @@ class Literal(Term):
 		return self.value
 
 		
-class Integer(Literal):
+class Integer(Lit):
 	'''Integer literal term.'''
 
 	__slots__ = []
@@ -220,7 +196,7 @@ class Integer(Literal):
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, (int, long)):
 			raise TypeError('value is not an integer: %r' % value)
-		Literal.__init__(self, factory, value, annotations)
+		Lit.__init__(self, factory, value, annotations)
 
 	def __int__(self):
 		return int(self.value)
@@ -229,7 +205,7 @@ class Integer(Literal):
 		return visitor.visitInt(self, *args, **kargs)
 
 
-class Real(Literal):
+class Real(Lit):
 	'''Real literal term.'''
 	
 	__slots__ = []
@@ -239,7 +215,7 @@ class Real(Literal):
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, float):
 			raise TypeError('value is not a float: %r' % value)
-		Literal.__init__(self, factory, value, annotations)
+		Lit.__init__(self, factory, value, annotations)
 
 	def __float__(self):
 		return float(self.value)
@@ -248,7 +224,7 @@ class Real(Literal):
 		return visitor.visitReal(self, *args, **kargs)
 
 
-class String(Literal):
+class Str(Lit):
 	'''String literal term.'''
 	
 	__slots__ = []
@@ -258,7 +234,7 @@ class String(Literal):
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, str):
 			raise TypeError('value is not an str: %r' % value)
-		Literal.__init__(self, factory, value, annotations)
+		Lit.__init__(self, factory, value, annotations)
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitStr(self, *args, **kargs)
@@ -364,7 +340,7 @@ class Cons(List):
 		if tail is None:
 			self.tail = self.factory.makeNil()
 		else:
-			if not isinstance(tail, (List, Variable, Wildcard)):
+			if not isinstance(tail, List):
 				raise TypeError("tail is not a list, variable, or wildcard term: %r" % tail)
 			self.tail = tail
 	
@@ -414,7 +390,7 @@ class Cons(List):
 		return visitor.visitCons(self, *args, **kargs)
 
 
-class Application(Term):
+class Appl(Term):
 	'''Application term.'''
 
 	__slots__ = ['name', 'args']
@@ -424,13 +400,13 @@ class Application(Term):
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 
-		if not isinstance(name, (String, Variable, Wildcard)):
+		if not isinstance(name, Str):
 			raise TypeError("name is not a string, variable, or wildcard term: %r" % name)
 		self.name = name
 		if args is None:
 			self.args = self.factory.makeNil()
 		else:
-			if not isinstance(args, (List, Variable, Wildcard)):
+			if not isinstance(args, List):
 				raise TypeError("args is not a list term: %r" % args)
 			self.args = args
 	
@@ -445,46 +421,4 @@ class Application(Term):
 	
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitAppl(self, *args, **kargs)
-
-
-# TODO: drop placeholders as first-class terms
-
-
-class Placeholder(Term):
-	'''Base class for placeholder terms.'''
-
-	__slots__ = []
-	
-	
-class Wildcard(Placeholder):
-	'''Wildcard term.'''
-
-	__slots__ = []
-	
-	type = types.WILDCARD
-	
-	def accept(self, visitor, *args, **kargs):
-		return visitor.visitWildcard(self, *args, **kargs)
-
-
-class Variable(Placeholder):
-	'''Variable term.'''
-	
-	__slots__ = ['name', 'pattern']
-
-	type = types.VAR
-	
-	def __init__(self, factory, name, pattern, annotations = None):
-		Placeholder.__init__(self, factory, annotations)
-		self.name = name
-		self.pattern = pattern
-	
-	def getName(self):
-		return self.name
-
-	def getPattern(self):
-		return self.pattern
-
-	def accept(self, visitor, *args, **kargs):
-		return visitor.visitVar(self, *args, **kargs)
 

@@ -32,16 +32,6 @@ class Comparator(visitor.Visitor):
 			types.APPL == other.type and \
 			self.visit(term.name, other.name) and \
 			self.visit(term.args, other.args)		
-
-	def visitWildcard(self, term, other):
-		return \
-			types.WILDCARD == other.type
-
-	def visitVar(self, term, other):
-		return \
-			types.VAR == other.type and \
-			term.name == other.name and \
-			self.visit(term.pattern, other.pattern)
 	
 
 class EquivalenceComparator(Comparator):
@@ -79,45 +69,6 @@ class EqualityComparator(EquivalenceComparator):
 isEqual = EqualityComparator().visit
 
 
-class PatternComparator(Comparator):
-	'''Comparator for performing pattern matching.'''
-
-	def __init__(self, args = None, kargs = None):
-		Comparator.__init__(self)
-		
-		if args is None:
-			self.args = []
-		else:
-			self.args = args		
-		
-		if kargs is None:
-			self.kargs = {}
-		else:
-			self.kargs = kargs
-	
-	def visitLit(self, term, other):
-		return \
-			term is other or \
-			Comparator.visitLit(self, term, other)
-	
-	def visitWildcard(self, term, other):
-		self.args.append(other)
-		return True
-
-	def visitVar(self, term, other):
-		name = term.name
-		try:
-			value = self.kargs[name]
-		except KeyError:
-			if not PatternComparator([], self.kargs).visit(term.pattern, other):
-				return False
-			else:
-				self.kargs[name] = other
-				return True
-		else:
-			return isEquivalent(value, other)
-
-
 class Annotator(visitor.Visitor):
 	
 	def visit(self, term, annotations):
@@ -144,12 +95,6 @@ class Annotator(visitor.Visitor):
 	def visitAppl(self, term, annotations):
 		return term.factory.makeAppl(term.name, term.args, annotations)
 
-	def visitWildcard(self, term, annotations):
-		return term.factory.makeWildcard(annotations)
-		
-	def visitVar(self, term, annotations):
-		return term.factory.makeVar(term.name, term.pattern, annotations)
-
 annotate = Annotator().visit
 
 
@@ -170,69 +115,6 @@ class Remover(visitor.Visitor):
 			return term
 		else:
 			return term.factory.makeCons(term.head, tail, term.annotations)
-
-
-class Maker(visitor.IncrementalVisitor):
-	
-	def __init__(self, args, kargs):
-		self.args = list(args)
-		self.kargs = kargs
-	
-	def visitLit(self, term):
-		return term
-	
-	def visitNil(self, term):
-		return term
-	
-	def visitHead(self, term):
-		return self.visit(term)
-	
-	def visitTail(self, term):
-		return self.visit(term)
-		
-	def visitName(self, term):
-		return self.visit(term)
-	
-	def visitArgs(self, term):
-		return self.visit(term)
-	
-	def visitWildcard(self, term):
-		try:
-			return self.args.pop(0)
-		except IndexError:
-			raise TypeError('insufficient number of arguments')
-			
-	def visitVar(self, term):
-		try:
-			# TODO: do something with the pattern here?
-			return self.kargs[term.name]
-		except KeyError:
-			raise ValueError('undefined term variable %s' % term.name)
-	
-
-class Constness(visitor.Visitor):
-	'''Visitor for determining if a term is constant.'''
-	
-	def visitLit(self, term):
-		return True
-
-	def visitNil(self, term):
-		return True
-
-	def visitCons(self, term):
-		return \
-			self.visit(term.head) and \
-			self.visit(term.tail)
-
-	def visitAppl(self, term):
-		return \
-			self.visit(term.name) and \
-			self.visit(term.args)		
-
-	def visitPlaceholder(self, term):
-		return False
-
-isConstant = Constness().visit
 
 
 class StructuralHash(visitor.Visitor):
@@ -269,18 +151,6 @@ class StructuralHash(visitor.Visitor):
 			self.visit(term.args),
 		))
 
-	def visitWildcard(self, term):
-		return hash((
-			term.type,
-		))
-
-	def visitVar(self, term):
-		return hash((
-			term.type,
-			term.name,
-			self.visit(term.pattern),
-		))
-
 
 class Hash(StructuralHash):
 	'''Perform hashing.'''
@@ -313,15 +183,6 @@ class Hash(StructuralHash):
 			self.visit(term.args),
 		))
 
-	def visitWildcard(self, term):
-		return hash(None)
-
-	def visitVar(self, term):
-		return hash((
-			term.name,
-			self.visit(term.pattern),
-		))
-
 
 class Writer(visitor.Visitor):
 	'''Base class for term writers.'''
@@ -335,12 +196,6 @@ class _GetSymbol(visitor.Visitor):
 	
 	def visitStr(self, term):
 		return term.value
-
-	def visitWildcard(self, term):
-		return '_'
-	
-	def visitVar(self, term):
-		return term.name
 
 _getSymbol = _GetSymbol().visit
 
@@ -407,21 +262,6 @@ class TextWriter(Writer):
 			self.visit(args, inside_list = True)
 			self.fp.write(')')
 		self.writeAnnotations(term)
-		
-	def visitWildcard(self, term, inside_list = False):
-		if inside_list:
-			self.fp.write('*')
-		else:
-			self.fp.write('_')
-			
-	def visitVar(self, term, inside_list = False):
-		if inside_list:
-			self.fp.write('*')
-		self.fp.write(str(term.name))
-		pattern = term.pattern
-		if pattern.type != types.WILDCARD:
-			self.fp.write('=')
-			self.visit(pattern)
 
 
 class AbbrevTextWriter(TextWriter):
@@ -452,6 +292,4 @@ class AbbrevTextWriter(TextWriter):
 			self.writeAnnotations(term)
 
 		
-	
-
 # TODO: implement a XML writer

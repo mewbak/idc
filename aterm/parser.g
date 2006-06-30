@@ -41,26 +41,18 @@ term_atom returns [res]
 		{ res = elms }
 	| LPAREN args=term_list RPAREN
 		{ res = factory.makeAppl(factory.makeStr(""), args) }
-	| cname:CONS
+	| 
+		( cname:CONS
 			{ res = factory.makeStr(cname.getText()) }
+		| vname:VAR
+			{ res = factory.makeStr(vname.getText()) }
+		| WILDCARD
+			{ res = factory.makeStr("_") }
+		) 
 		( LPAREN args=term_list RPAREN
 			{ res = factory.makeAppl(res, args) }
 		|
 			{ res = factory.makeAppl(res) }
-		)
-	| WILDCARD 
-			{ res = factory.makeWildcard() }
-		( LPAREN args=term_list RPAREN
-			{ res = factory.makeAppl(res, args) }
-		)?
-	| vname:VAR
-		( ASSIGN pattern=term
-			{ res = factory.makeVar(vname.getText(), pattern) }
-		|
-				{ res = factory.makeVar(vname.getText(), factory.makeWildcard()) }
-			( LPAREN args=term_list RPAREN
-				{ res = factory.makeAppl(res, args) }
-			)?
 		)
 	;
 
@@ -74,10 +66,12 @@ term_list returns [res]
 		)
 		{ res = factory.makeCons(head, tail) }
 	| STAR
-			{ res = factory.makeWildcard() }
-		( vname:VAR
-			{ res = factory.makeVar(vname.getText(), res) }
-		)?
+		(
+			{ res = factory.makeStr("_") }
+		| vname:VAR
+			{ res = factory.makeStr(vname.getText()) }
+		)
+			{ res = factory.makeAppl(res) }
 	;
 	
 do_match_term returns [res]
