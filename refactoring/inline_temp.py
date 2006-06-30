@@ -15,7 +15,7 @@ class InlineTemp(refactoring.Refactoring):
 	def applicable(self, term, selection):
 		return True
 
-	def input(self, term, selection, inputter):
+	def input(self, term, selection):
 		factory = term.factory
 		args = factory.make("[]")
 		return args

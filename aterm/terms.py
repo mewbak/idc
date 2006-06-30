@@ -448,6 +448,9 @@ class Application(Term):
 		return visitor.visitAppl(self, *args, **kargs)
 
 
+# TODO: drop placeholders as first-class terms
+
+
 class Placeholder(Term):
 	'''Base class for placeholder terms.'''
 

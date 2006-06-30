@@ -39,7 +39,6 @@ class RefactorMenu(gtk.Menu):
 		args = refactoring.input(
 			self.model.get_term(), 
 			self.model.get_selection(),
-			inputter.Inputter()
 		)
 		
 		self.model.apply_refactoring(refactoring, args)

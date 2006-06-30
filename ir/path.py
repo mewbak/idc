@@ -23,8 +23,9 @@ annotate = lib.path.Annotate(
 
 lib.parse.Transfs(r'''
 
-MatchSelectionTo(s) = lib.path.Project(!selection) ; s 
+projectSelection = lib.path.Project(!selection)
 
+MatchSelectionTo(s) = projectSelection ; s 
 
 ''')
 

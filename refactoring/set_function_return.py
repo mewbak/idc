@@ -1,71 +1,55 @@
 """Set function return."""
 
 
+"""Consolidate Control Structures."""
+
+
 import refactoring
+from refactoring._common import CommonRefactoring
 
-import transf
-
-from transf import path
-
+import transf as lib
 import ir.traverse
+import ir.path
 
 
-class SetFunctionReturn(refactoring.Refactoring):
+lib.parse.Transfs('''
 
-	def name(self):
-		return "Set Function Return"
-	
-	def get_original_name(self, term, selection):
-		start, end = selection
-		if start != end:
-			return None
+applicable =
+	ir.path.projectSelection ; ?Function(Void, *)
 
-		selected_term = path.fetch(term, start)
-		mo = selected_term.rmatch("Function(_,name,*)")
-		if mo:
-			print mo.kargs
-			return mo.kargs['name']
-		else:
-			return None
+input = 
+	with name, ret in
+		ir.path.projectSelection ; ?Function(_, name, *) ;
+		lib.input.Str(!"Set Function Return", !"Return Symbol?") ; ?ret ;
+		![name, ret]
+	end 
 
-	def applicable(self, term, selection):
-		return self.get_original_name(term, selection) is not None
 
-	def input(self, term, selection, inputter):
-		factory = term.factory
-		name = self.get_original_name(term, selection)
-		print name
-		ret = factory.makeStr(inputter.inputStr(
-			title = self.name(), 
-			text = "Return symbol?"
-		))
-		args = factory.make("[name,ret]", name=name, ret=ret)
-		return args
-
-	def apply(self, term, args):
-		factory = term.factory
-		print args
-		name, ret = args
-
-		funcname = transf.match.Term(name)
-		functype = transf.build.Term('Int(32,Signed)')
-		retsym = transf.build.Term(ret)
+apply = 
+	with name, type, ret in
+		Where(!args; ?[name, ret]) ;
+		Where(!Int(32,Signed); ?type) ;
 		
-		txn = transf.parse.Transf('''
-			~Module(<
-				One(
-					~Function(<functype>, <funcname>, _, 
-						<AllTD(~Ret(<functype>, <!Sym(<retsym>)>))>
-					) 
-				)>) ;
-				ir.traverse.AllStmtsBU(Try(
-					?Assign(Void, NoExpr, Call(Sym(<funcname>), *)) ;
-					~Assign(<functype>, <!Sym(<retsym>)>, *)
-				))
-			
-		''')
-		return txn(term)
+		
+		~Module(<
+			One(
+				~Function(!type, ?name, _, <
+					AllTD(~Ret(!type, !Sym(ret)))
+				>) 
+			)
+		>) ;
+		ir.traverse.AllStmtsBU(Try(
+			?Assign(Void, NoExpr, Call(Sym(?name), _)) ;
+			~Assign(!type, !Sym(ret), _)
+		))
+	end
+''')
+
+setFunctionReturn = CommonRefactoring(
+	"Set Function Return", 
+	applicable, input, apply
+)
 
 
 if __name__ == '__main__':
-	refactoring.main(SetFunctionReturn)
+	refactoring.main(setFunctionReturn)

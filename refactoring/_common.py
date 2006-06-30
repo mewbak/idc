@@ -27,7 +27,7 @@ class CommonRefactoring(refactoring.Refactoring):
 		else:
 			return True
 
-	def input(self, term, selection, inputter):
+	def input(self, term, selection):
 		factory = term.factory
 		start, end = selection
 		selection = paths.ancestor(start, end)
@@ -39,6 +39,9 @@ class CommonRefactoring(refactoring.Refactoring):
 		selection = args.head
 		args = args.tail
 		try:
-			return self._apply(term, selection=selection)
-		except lib.exception.Failure:
+			return self._apply(term, selection=selection, args=args)
+		except transf.exception.Failure:
 			return term
+
+		
+		

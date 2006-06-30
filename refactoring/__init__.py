@@ -7,12 +7,6 @@ import aterm.factory
 import unittest
 
 
-class BaseException(Exception):
-	"""Base class for refactoring-related exceptions."""
-
-	pass
-	
-
 class Refactoring:
 	"""Base class for concrete refactorings."""
 
@@ -28,7 +22,7 @@ class Refactoring:
 		"""Verifies the pre-conditions for applying this refactory are met."""
 		raise NotImplementedError
 
-	def input(self, term, selection, inputter):
+	def input(self, term, selection):
 		"""Ask user input. It should return a list of arguments."""
 		raise NotImplementedError
 	

@@ -26,10 +26,10 @@ class Rename(refactoring.Refactoring):
 	def applicable(self, term, selection):
 		return self.get_original_name(term, selection) is not None
 
-	def input(self, term, selection, inputter):
+	def input(self, term, selection):
 		factory = term.factory
 		orig = self.get_original_name(term, selection)
-		new = factory.makeStr(inputter.inputStr(
+		new = factory.makeStr(transf.input.inputter.inputStr(
 			title = "Rename", 
 			text = "New name?"
 		))

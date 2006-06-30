@@ -1,13 +1,12 @@
-"""Consolidate."""
+"""Consolidate Control Structures."""
 
 
 import refactoring
 from refactoring._common import CommonRefactoring
 
-
-import paths
 import transf as lib
-from ir.path import *
+import ir.path
+
 
 lib.parse.Transfs('''
 
@@ -50,8 +49,8 @@ liftWhile =
 
 liftAll = AtSuffixR(liftIfThen + liftLoop + liftWhile)
 
-gotoSelected = Where(MatchSelectionTo(?GoTo(Sym(_))))
-functionSelected = Where(MatchSelectionTo(?Function))
+gotoSelected = Where(ir.path.MatchSelectionTo(?GoTo(Sym(_))))
+functionSelected = Where(ir.path.MatchSelectionTo(?Function))
 
 noInput = ![]
 
