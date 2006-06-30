@@ -393,31 +393,39 @@ class Cons(List):
 class Appl(Term):
 	'''Application term.'''
 
-	__slots__ = ['name', 'args']
+	__slots__ = ['_name', '_args']
 	
 	type = types.APPL
 	
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
-
-		if not isinstance(name, Str):
-			raise TypeError("name is not a string, variable, or wildcard term: %r" % name)
-		self.name = name
-		if args is None:
-			self.args = self.factory.makeNil()
+		if isinstance(name, Str):
+			self._name = name.value
 		else:
-			if not isinstance(args, List):
-				raise TypeError("args is not a list term: %r" % args)
-			self.args = args
+			if not isinstance(name, basestring):
+				raise TypeError("name is not a string, variable, or wildcard term: %r" % name)
+			self._name = name
+		if args is None:
+			self._args = ()
+		elif isinstance(args, List):
+			self._args = tuple(args)
+		else:
+			if not isinstance(args, tuple):
+				raise TypeError("args is not a tuple: %r" % args)
+			self._args = args
 	
 	def getName(self):
-		return self.name
+		return self.factory.makeStr(self._name)
+	
+	name = property(getName)
 	
 	def getArity(self):
-		return self.args.getLength()
+		return len(self._args)
 
 	def getArgs(self):
-		return self.args
+		return self.factory.makeList(self._args)
+	
+	args = property(getArgs)
 	
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitAppl(self, *args, **kargs)

@@ -28,10 +28,16 @@ class Comparator(visitor.Visitor):
 			self.visit(term.tail, other.tail)
 
 	def visitAppl(self, term, other):
-		return \
-			types.APPL == other.type and \
-			self.visit(term.name, other.name) and \
-			self.visit(term.args, other.args)		
+		if types.APPL != other.type:
+			return False
+		if term._name != other._name:
+			return False
+		if len(term._args) != len(other._args):
+			return False
+		for term_arg, other_arg in zip(term._args, other._args):
+			if not self.visit(term_arg, other_arg):
+				return False
+		return True
 	
 
 class EquivalenceComparator(Comparator):
@@ -93,7 +99,7 @@ class Annotator(visitor.Visitor):
 		return term.factory.makeCons(term.head, term.tail, annotations)
 
 	def visitAppl(self, term, annotations):
-		return term.factory.makeAppl(term.name, term.args, annotations)
+		return term.factory.makeAppl(term._name, term._args, annotations)
 
 annotate = Annotator().visit
 
@@ -147,8 +153,8 @@ class StructuralHash(visitor.Visitor):
 	def visitAppl(self, term):
 		return hash((
 			term.type,
-			self.visit(term.name),
-			self.visit(term.args),
+			term._name,
+			term._args,
 		))
 
 
@@ -164,24 +170,6 @@ class Hash(StructuralHash):
 			return hash(term_hash, annos_hash)
 		else:
 			return term_hash
-
-	def visitLit(self, term):
-		return hash(term.value)
-
-	def visitNil(self, term):
-		return hash(())
-
-	def visitCons(self, term):
-		return hash((
-			self.visit(term.head),
-			self.visit(term.tail),
-		))
-
-	def visitAppl(self, term):
-		return hash((
-			self.visit(term.name),
-			self.visit(term.args),
-		))
 
 
 class Writer(visitor.Visitor):
@@ -251,13 +239,9 @@ class TextWriter(Writer):
 			self.writeAnnotations(term)
 
 	def visitAppl(self, term):
-		name = term.name
-		self.fp.write(_getSymbol(name))
+		self.fp.write(term._name)
 		args = term.args
-		if \
-				name.type != types.STR \
-				or name.value == '' \
-				or not args.isEquivalent(args.factory.makeNil()):
+		if term._name == '' or term._args:
 			self.fp.write('(')
 			self.visit(args, inside_list = True)
 			self.fp.write(')')
