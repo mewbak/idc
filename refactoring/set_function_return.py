@@ -15,11 +15,11 @@ import ir.path
 lib.parse.Transfs('''
 
 applicable =
-	ir.path.projectSelection ; ?Function(Void, *)
+	ir.path.projectSelection ; ?Function(Void, _, _, _)
 
 input = 
 	with name, ret in
-		ir.path.projectSelection ; ?Function(_, name, *) ;
+		ir.path.projectSelection ; ?Function(_, name, _, _) ;
 		lib.input.Str(!"Set Function Return", !"Return Symbol?") ; ?ret ;
 		![name, ret]
 	end 

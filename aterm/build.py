@@ -68,15 +68,32 @@ class Appl(Builder):
 	
 	def __init__(self, name, args):
 		Builder.__init__(self)
+		assert isinstance(name, basestring)
+		self.name = name
+		self.args = tuple(args)
+	
+	def _build(self, build):
+		return factory.makeAppl(
+			self.name,	
+			[arg._build(build) for arg in self.args]
+		)
+
+
+class ApplCons(Builder):
+	
+	def __init__(self, name, args):
+		Builder.__init__(self)
 		assert isinstance(name, Builder)
 		assert isinstance(args, Builder)
 		self.name = name
 		self.args = args
 	
 	def _build(self, build):
+		name = self.name._build(build)
+		args = self.args._build(build)
 		return factory.makeAppl(
-			self.name._build(build),	
-			self.args._build(build)
+			name.value,
+			tuple(args)
 		)
 
 
@@ -95,3 +112,18 @@ class Var(Builder):
 	
 	def _build(self, build):
 		return build.kargs[self.name]
+
+
+class Annos(Builder):
+	
+	def __init__(self, term, annos):
+		Builder.__init__(self)
+		assert isinstance(term, Builder)
+		assert isinstance(args, Builder)
+		self.term = term
+		self.annos = annos
+	
+	def _build(self, build):
+		term = self.term._build(build)
+		annos = self.annos._build(build)
+		return term.setAnnotations(annos)

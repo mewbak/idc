@@ -32,16 +32,6 @@ class TestMixin:
 		'D',
 	]
 	
-	varTermInputs = termInputs + [
-		'[1,*]',
-		'[1,*x]',
-		'C(1,*)',
-		'C(1,*a)',
-		'_',
-		'x',
-		'y',
-	]
-
 	def setUp(self):
 		self.factory = aterm.factory.factory
 

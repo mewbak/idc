@@ -99,6 +99,28 @@ class Appl(Matcher):
 	
 	def __init__(self, name, args):
 		Matcher.__init__(self)
+		assert isinstance(name, basestring)
+		self.name = name
+		self.args = tuple(args)
+	
+	def visitTerm(self, term, match):
+		return False
+
+	def visitAppl(self, term, match):
+		if self.name != term._name:
+			return False
+		if len(self.args) != len(term._args):
+			return False
+		for arg, term_arg in zip(self.args, term._args):
+			if not arg.visit(term_arg, match):
+				return False
+		return True
+
+
+class ApplDecons(Matcher):
+	
+	def __init__(self, name, args):
+		Matcher.__init__(self)
 		assert isinstance(name, Matcher)
 		assert isinstance(args, Matcher)
 		self.name = name
@@ -108,9 +130,10 @@ class Appl(Matcher):
 		return False
 
 	def visitAppl(self, term, match):
+		factory = term.factory
 		return (
-			self.name.visit(term.name, match) and 
-			self.args.visit(term.args, match)
+			self.name.visit(factory.makeStr(term._name), match) and 
+			self.args.visit(factory.makeList(term._args), match)
 		)
 
 

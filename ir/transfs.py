@@ -50,7 +50,7 @@ class SplitBlock(base.Transformation):
 			)
 		)
 		self.split_tail = Split(
-			transf.parse.Transf("?Ret(*)")
+			transf.parse.Transf("?Ret(_,_)")
 		)
 
 	def apply(self, term, ctx):

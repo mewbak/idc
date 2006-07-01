@@ -528,7 +528,7 @@ start
 	;
 
 specification
-	: #(SEMI (part)*)
+	: #( SEMI (part)* )
 		{
             // Rebuild the expanded instructions
             names = self.instructions.keys()
@@ -655,7 +655,8 @@ rtl_expand
                 else:
                     ##.addChild(#rt)
 			}
-		)*)
+		)*
+	  )
 	|! name:NAME
 		{
             s = #name.getText()

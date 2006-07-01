@@ -25,8 +25,8 @@ do_term returns [res]
 term returns [res]
 	: res=term_atom
 		( options { greedy = true; }
-		: LCURLY anno=term_list RCURLY
-			{ res = res.setAnnotations(anno) }
+		: LCURLY annos=term_list RCURLY
+			{ res = res.setAnnotations(annos) }
 		)?
 	;
 
@@ -81,7 +81,7 @@ do_match_term returns [res]
 match_term returns [res]
 	: res=match_term_atom 
 		( options { greedy = true; }
-		: LCURLY anno=match_term_list RCURLY 
+		: LCURLY annos=match_term_list RCURLY 
 		)?
 	;
 
@@ -94,26 +94,26 @@ match_term_atom returns [res]
 		{ res = match.Str(sval.getText()) }
 	| LSQUARE elms=match_term_list RSQUARE
 		{ res = elms }
-	| LPAREN args=match_term_list RPAREN
-		{ res = match.Appl(match.Str(""), args) }
+	| LPAREN args=match_term_args RPAREN
+		{ res = match.Appl("", args) }
 	| cname:CONS
-			{ name = match.Str(cname.getText()) }
-		( LPAREN args=match_term_list RPAREN
+			{ name = cname.getText() }
+		( LPAREN args=match_term_args RPAREN
 		| 
-			{ args = match.Nil() } 
+			{ args = [] } 
 		)
 			{ res = match.Appl(name, args) }
 	| WILDCARD 
 			{ res = match.Wildcard() }
 		( LPAREN args=match_term_list RPAREN
-			{ res = match.Appl(res, args) }
+			{ res = match.ApplDecons(res, args) }
 		)?
 	| vname:VAR
 			{ res = match.Var(vname.getText()) }
 		( ASSIGN pattern=match_term
 			{ res = match.Seq(pattern, res) }
 		| LPAREN args=match_term_list RPAREN
-			{ res = match.Appl(res, args) }
+			{ res = match.ApplDecons(res, args) }
 		)?
 	;
 	
@@ -134,6 +134,15 @@ match_term_list returns [res]
 		)
 	;
 
+match_term_args returns [res]
+	: ( arg=match_term 
+			{ res = [arg] }
+		( COMMA arg=match_term 
+			{ res.append(arg) }
+		)* 
+	  )? 
+	;
+
 do_build_term returns [res]
 	: res=build_term EOF
 	;
@@ -141,7 +150,8 @@ do_build_term returns [res]
 build_term returns [res]
 	: res=build_term_atom 
 		( options { greedy = true; }
-		: LCURLY anno=build_term_list RCURLY 
+		: LCURLY annos=build_term_list RCURLY 
+			{ res = build.Annos(annos) }
 		)?
 	;
 
@@ -154,24 +164,24 @@ build_term_atom returns [res]
 		{ res = build.Str(sval.getText()) }
 	| LSQUARE elms=build_term_list RSQUARE
 		{ res = elms }
-	| LPAREN args=build_term_list RPAREN
-		{ res = build.Appl(build.Str(""), args) }
+	| LPAREN args=build_term_args RPAREN
+		{ res = build.Appl("", args) }
 	| cname:CONS
-			{ name = build.Str(cname.getText()) }
-		( LPAREN args=build_term_list RPAREN
+			{ name = cname.getText() }
+		( LPAREN args=build_term_args RPAREN
 		| 
-			{ args = build.Nil() } 
+			{ args = () } 
 		)
 			{ res = build.Appl(name, args) }
 	| WILDCARD 
 			{ res = build.Wildcard() }
 		( LPAREN args=build_term_list RPAREN
-			{ res = build.Appl(res, args) }
+			{ res = build.ApplCons(res, args) }
 		)?
 	| vname:VAR
 			{ res = build.Var(vname.getText()) }
 		( LPAREN args=build_term_list RPAREN
-			{ res = build.Appl(res, args) }
+			{ res = build.ApplCons(res, args) }
 		)?
 	;
 	
@@ -190,4 +200,13 @@ build_term_list returns [res]
 		| vname:VAR
 			{ res = build.Var(vname.getText()) }
 		)
+	;
+
+build_term_args returns [res]
+	: ( arg=build_term 
+			{ res = [arg] }
+		( COMMA arg=build_term 
+			{ res.append(arg) }
+		)* 
+	  )? 
 	;

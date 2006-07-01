@@ -8,7 +8,7 @@ import ir.dce
 
 
 parse.Transfs(r'''
-hasSideEffects = OnceTD(?Call(*) + ?Sym(*) ; Not(ir.sym.isLocalVar))
+hasSideEffects = OnceTD(?Call + ?Sym ; Not(ir.sym.isLocalVar))
 ''')
 
 

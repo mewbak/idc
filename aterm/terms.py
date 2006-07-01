@@ -407,12 +407,8 @@ class Appl(Term):
 			self._name = name
 		if args is None:
 			self._args = ()
-		elif isinstance(args, List):
-			self._args = tuple(args)
 		else:
-			if not isinstance(args, tuple):
-				raise TypeError("args is not a tuple: %r" % args)
-			self._args = args
+			self._args = tuple(args)
 	
 	def getName(self):
 		return self.factory.makeStr(self._name)
