@@ -24,17 +24,17 @@ class Matcher(visitor.Visitor):
 			return match
 		else:
 			return None
-	
 
+	def visitTerm(self, term, match):
+		return False
+
+	
 class Int(Matcher):
 	
 	def __init__(self, value):
 		Matcher.__init__(self)
 		assert isinstance(value, int)
 		self.value = value
-
-	def visitTerm(self, term, match):
-		return False
 
 	def visitInt(self, term, match):
 		return self.value == term.value
@@ -47,9 +47,6 @@ class Real(Matcher):
 		assert isinstance(value, float)
 		self.value = value
 
-	def visitTerm(self, term, match):
-		return False
-
 	def visitReal(self, term, match):
 		return self.value == term.value
 
@@ -61,18 +58,12 @@ class Str(Matcher):
 		assert isinstance(value, basestring)
 		self.value = value
 
-	def visitTerm(self, term, match):
-		return False
-
 	def visitStr(self, term, match):
 		return self.value == term.value
 
 
 class Nil(Matcher):
 	
-	def visitTerm(self, term, match):
-		return False
-
 	def visitNil(self, term, match):
 		return True
 
@@ -86,9 +77,6 @@ class Cons(Matcher):
 		self.head = head
 		self.tail = tail
 	
-	def visitTerm(self, term, match):
-		return False
-
 	def visitCons(self, term, match):
 		return (
 			self.head.visit(term.head, match) and 
@@ -104,9 +92,6 @@ class Appl(Matcher):
 		self.name = name
 		self.args = tuple(args)
 	
-	def visitTerm(self, term, match):
-		return False
-
 	def visitAppl(self, term, match):
 		if self.name != term.name:
 			return False
@@ -127,9 +112,6 @@ class ApplCons(Matcher):
 		self.name = name
 		self.args = args
 	
-	def visitTerm(self, term, match):
-		return False
-
 	def visitAppl(self, term, match):
 		factory = term.factory
 		return (

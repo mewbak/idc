@@ -1,7 +1,7 @@
 '''String manipulation transformations.'''
 
 
-import aterm.types
+import aterm.convert
 
 from transf import exception
 from transf import base
@@ -27,11 +27,12 @@ class _Concat2(operate.Binary):
 	def apply(self, term, ctx):
 		head = self.loperand.apply(term, ctx)
 		tail = self.roperand.apply(term, ctx)
-		if head.type != aterm.types.STR:
-			raise exception.Failure('not string term', head)
-		if tail.type != aterm.types.STR:
-			raise exception.Failure('not string term', tail)
-		return term.factory.makeStr(head.value + tail.value)
+		try:
+			head_value = aterm.convert.toStr(head)
+			tail_value = aterm.convert.toStr(tail)
+		except TypeError:
+			raise exception.Failure('not string terms', head, tail)
+		return term.factory.makeStr(head_value + tail_value)
 
 def Concat2(loperand, roperand):
 	'''Concatenates two lists.'''

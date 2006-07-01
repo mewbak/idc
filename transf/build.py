@@ -2,7 +2,6 @@
 
 
 import aterm.factory
-import aterm.types
 import aterm.terms
 
 from transf import exception

@@ -110,10 +110,11 @@ term_list returns [res]
 	;
 
 term_args returns [res]
-	: ( arg=term 
+	: 
+			{ res = [] }	
+	| arg=term 
 			{ res = [arg] }
-		( COMMA arg=term 
-			{ res.append(arg) }
-		)* 
-	  )? 
+		( COMMA args=term_args
+			{ res += args }
+		)?
 	;

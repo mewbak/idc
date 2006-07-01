@@ -14,8 +14,8 @@ the same walker methods do not necessarily yield the same results.
 
 import inspect
 
-from aterm import types
 from aterm import visitor
+from aterm import convert
 
 
 class _Dispatcher(visitor.Visitor):
@@ -134,35 +134,22 @@ class Walker(object):
 	
 	def _int(self, term):
 		'''Get the value of an integer term.'''
-		if term.type != types.INT:
-			raise TypeError("not an integer term", term)
-		return term.value
+		return convert.toInt(term)
 	
 	def _real(self, term):
 		'''Get the value of a real term.'''
-		if term.type != types.REAL:
-			raise TypeError("not a real term", term)
-		return term.value
+		return convert.toReal(term)
 	
 	def _str(self, term):
 		'''Get the value of a string term.'''
-		if term.type != types.STR:
-			raise TypeError("not a string term", term)
-		return term.value
+		return convert.toStr(term)
 	
 	def _lit(self, term):
 		'''Get the value of a literal term.'''
-		if not term.type in (types.INT, types.REAL, types.STR):
-			raise TypeError("not a literal term", term)
-		return term.value
+		return convert.toLit(term)
 	
-	_obj = Dispatch('_obj', doc = '''Convert the term to a python object.''')
-
-	def _objLit(self, value):
-		return value
-	
-	def _objList(self, terms):
-		return [self._obj(term) for term in terms]
+	def _obj(self, term):
+		return convert.toObj(term)
 
 	# XXX: is this actually useful?
 	def _match(self, term, pattern):

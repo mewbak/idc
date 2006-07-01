@@ -113,8 +113,8 @@ class TestTerm(unittest.TestCase):
 			_term = self.factory.parse(termStr)
 			self.failUnless(_term.factory is self.factory)
 			self.failUnless(_term.getType() & aterm.types.LIST)
-			self.failUnlessEqual(_term.isEmpty(), length == 0)
-			self.failUnlessEqual(_term.getLength(), length)
+			self.failUnlessEqual(not _term, length == 0)
+			self.failUnlessEqual(len(_term), length)
 			self.failUnlessEqual(str(_term), termStr)
 			self.failIfMutable(_term)
 	

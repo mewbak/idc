@@ -4,8 +4,7 @@ See also U{http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-unstable-latest/m
 '''
 
 
-from aterm.factory import factory
-from aterm import types
+import aterm.lists
 
 from transf import exception
 from transf import base
@@ -26,16 +25,8 @@ length = unify.Count(base.ident)
 class Reverse(base.Transformation):
 
 	def apply(self, term, ctx):
-		accum = factory.makeNil()
-		while True:
-			if term.type == types.NIL:
-				return accum
-			elif term.type == types.LIST:
-				accum = factory.makeCons(term.head, accum)
-				term = term.tail
-			else:
-				raise exception.Failure('not a list term', term)
-
+		return aterm.lists.reverse(term)
+		
 reverse = Reverse()
 
 
@@ -99,9 +90,10 @@ class _Concat2(operate.Binary):
 		head = self.loperand.apply(term, ctx)
 		tail = self.roperand.apply(term, ctx)
 		try:
-			return head.extend(tail)
-		except AttributeError:
-			raise exception.Failure('not term lists', head, tail)
+			return aterm.lists.extend(head, tail)
+		except TypeError:
+			raise exception.Failure('not term lists')
+
 
 def Concat2(loperand, roperand):
 	'''Concatenates two lists.'''

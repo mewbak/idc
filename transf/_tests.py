@@ -323,6 +323,21 @@ class TestTraverse(TestMixin, unittest.TestCase):
 
 class TestProject(TestMixin, unittest.TestCase):
 
+	subtermsTestCases = (
+		('1', '[]'),
+		('0.1', '[]'),
+		('"a"', '[]'),
+		('[]', '[]'),
+		('[1]', '[1]'),
+		('[1,2]', '[1,2]'),
+		('C', '[]'),
+		('C(1)', '[1]'),
+		('C(1,2)', '[1,2]'),
+	)
+	
+	def testSubterms(self):
+		self._testTransf(project.subterms, self.subtermsTestCases)
+
 	fetchTestCases = (
 		[ident, fail, parse.Rule('X(*a) -> Y(*a)')],
 		{
@@ -371,7 +386,7 @@ class TestUnify(TestMixin, unittest.TestCase):
 	
 	def testCollectAll(self):
 		self._testTransf(
-			unify.CollectAll(match.AnInt()), 
+			unify.CollectAll(match.anInt), 
 			self.collectAllTestCases
 		)
 	
@@ -647,8 +662,6 @@ class TestLists(TestMixin, unittest.TestCase):
 			'[]': ['[]', '[]', '[]', '[]'],
 			'[1]': ['[1]', 'FAILURE', '[X(1)]', '[1]'],
 			'[1,2]': ['[1,2]', 'FAILURE', '[X(1),X(2)]', 'FAILURE'],
-			#'[1,*]': ['[1,*]', 'FAILURE', '[X(1),*]', '[1,*]'],
-			#'[1,*x]': ['[1,*x]', 'FAILURE', '[X(1),*x]', '[1,*x]'],
 		}
 	)
 		

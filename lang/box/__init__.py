@@ -183,11 +183,11 @@ sym = Tag('type', 'symbol')
 def Path(operand):
 	return Tag('path', transf.path.get, operand ) + operand
 
-def reprz(term, ctx):
+def reprz(term):
 	return term.factory.makeStr(str(term))
 reprz = transf.util.Adaptor(reprz)
 
-def escape(term, ctx):
+def escape(term):
 	s = str(term.value)
 	s = s.replace('\"', '\\"')
 	s = s.replace('\t', '\\t')

@@ -236,7 +236,7 @@ makeNodeId = strings.tostr
 makeAttr = lambda name, value: build._.Attr(name, value)
 
 renderBox = \
-	util.Adaptor(lambda term, ctx: term.factory.makeStr(box.stringify(term))) + \
+	util.Adaptor(lambda term: term.factory.makeStr(box.stringify(term))) + \
 	build.Str("???")
 
 makeNodeLabel = parse.Rule('''

@@ -4,7 +4,7 @@ Module([
 			Binary(
 				Gt(Int(32, Signed)), 
 				Sym("ecx"){Reg}, 
-				Lit(Int(32, Signed), 0),
+				Lit(Int(32, Signed), 0)
 			),
 			Assign(
 				Int(32, Signed), 

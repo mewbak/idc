@@ -15,14 +15,14 @@ class Adaptor(base.Transformation):
 		self.kargs = kargs
 
 	def apply(self, term, ctx):
-		return self.func(term, ctx, *self.args, **self.kargs)
+		return self.func(term, *self.args, **self.kargs)
 
 
-class BoolAdaptor(base.Transformation):
+class BoolAdaptor(Adaptor):
 	'''Transformation adapter for a boolean function.'''
 	
 	def apply(self, term, ctx):
-		if self.func(term, ctx, *self.args, **self.kargs):
+		if self.func(term, *self.args, **self.kargs):
 			return term
 		else:
 			raise exception.Failure

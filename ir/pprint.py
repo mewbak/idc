@@ -30,7 +30,7 @@ def _entropy(seq, states):
 			entropy -= prob*math.log(prob)
 	return entropy
 
-def intrepr(term, ctx):
+def intrepr(term):
 	'''Represent integers, choosing the most suitable (lowest entropy) 
 	representation.
 	'''

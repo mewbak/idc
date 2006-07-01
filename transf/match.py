@@ -2,7 +2,7 @@
 
 
 import aterm.factory
-import aterm.types
+import aterm.type
 import aterm.terms
 
 from transf import exception
@@ -12,51 +12,17 @@ from transf import combine
 from transf import project
 from transf import _common
 from transf import _helper
+from transf import util
 
 
 _factory = aterm.factory.factory
 
 
-class Type(base.Transformation):
-
-	def __init__(self, type):
-		base.Transformation.__init__(self)
-		self.type = type
-
-	def apply(self, term, ctx):
-		if not term.type & self.type:
-			raise exception.Failure
-		return term
-
-
-def AnInt():
-	return Type(aterm.types.INT)
-
-anInt = AnInt()
-
-
-def AReal():
-	return Type(aterm.types.REAL)
-
-aReal = AReal()
-
-
-def AStr():
-	return Type(aterm.types.STR)
-
-aStr = AStr()
-
-
-def AList():
-	return Type(aterm.types.LIST)
-
-aList = AList()
-
-
-def AnAppl():
-	return Type(aterm.types.APPL)
-
-anAppl = AnAppl()
+anInt = util.BoolAdaptor(aterm.type.anInt)
+aStr = util.BoolAdaptor(aterm.type.aStr)
+aReal = util.BoolAdaptor(aterm.type.aReal)
+aList = util.BoolAdaptor(aterm.type.aList)
+anAppl = util.BoolAdaptor(aterm.type.anAppl)
 
 
 class _Term(_common._Term):
@@ -126,7 +92,7 @@ class Nil(_Term):
 		_Term.__init__(self, _factory.makeNil())
 		
 	def apply(self, term, ctx):
-		if term.type != aterm.types.NIL:
+		if not aterm.type.aNil(term):
 			raise exception.Failure
 		return term
 

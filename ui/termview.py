@@ -22,7 +22,7 @@ class TermTreeIter:
 		return self.head
 	
 	def next(self):
-		if self.tail.isEmpty():
+		if not self.tail:
 			return None
 		else:
 			return TermTreeIter(
@@ -44,7 +44,7 @@ class TermTreeIter:
 		
 	def children(self):
 		children = self._children()
-		if children.isEmpty():
+		if not children:
 			return None
 		else:
 			return TermTreeIter(
@@ -56,7 +56,7 @@ class TermTreeIter:
 
 	def has_child(self):
 		children = self._children()
-		return not children.isEmpty()
+		return bool(children)
 		
 	def n_children(self):
 		children = self._children()

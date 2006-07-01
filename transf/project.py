@@ -1,12 +1,11 @@
 '''Term projecting transformations.'''
 
 
-import aterm.types
+import aterm.project
 
 from transf import exception
 from transf import base
 from transf import util
-from transf import build
 
 
 class Head(base.Transformation):
@@ -50,7 +49,6 @@ def Nth(n):
 
 
 def Fetch(operand):
-	from transf import debug
 	fetch = util.Proxy()
 	fetch.subject = head * operand + tail * fetch
 	return fetch
@@ -82,16 +80,12 @@ class Args(base.Transformation):
 args = Args()
 
 
-class SubTerms(base.Transformation):
+class Subterms(base.Transformation):
 	
 	def apply(self, term, ctx):
-		if term.type == aterm.types.APPL:
-			return term.factory.makeList(term.args)
-		if term.type & aterm.types.LIST:
-			return term
-		return build._nil
+		return aterm.project.subterms(term)
 
-subterms = SubTerms()
+subterms = Subterms()
 
 
 class Annos(base.Transformation):
