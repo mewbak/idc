@@ -1,7 +1,6 @@
 '''Term hash computation.'''
 
 
-from aterm import types
 from aterm import visitor
 
 

@@ -14,7 +14,7 @@ except ImportError:
 	from StringIO import StringIO
 
 import aterm.types
-import walker
+from aterm import walker
 import transf
 
 

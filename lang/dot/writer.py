@@ -1,7 +1,7 @@
 '''Dot writing.'''
 
 
-import walker
+from aterm import walker
 
 
 class Writer(walker.Walker):

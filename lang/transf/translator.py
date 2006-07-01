@@ -7,8 +7,8 @@ respective transformation objects."""
 
 import antlr
 import aterm.factory
+from aterm import walker
 import transf
-import walker
 
 
 class SemanticException(antlr.SemanticException):
