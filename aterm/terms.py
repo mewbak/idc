@@ -6,7 +6,10 @@
 
 from aterm import types
 from aterm import exceptions
-from aterm import _helpers
+from aterm import compare
+from aterm import annotate
+from aterm import hash
+from aterm import write
 
 
 class Term(object):
@@ -51,29 +54,29 @@ class Term(object):
 	
 	def getHash(self):
 		'''Generate a hash value for this term.'''
-		return _helpers.Hash.hash(self)
+		return hash.Hash.hash(self)
 
 	def getStructuralHash(self):
 		'''Generate a hash value for this term. 
 		Annotations are not taken into account.
 		'''
-		return _helpers.StructuralHash.hash(self)
+		return hash.StructuralHash.hash(self)
 
 	__hash__ = getStructuralHash
 		
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
-		return _helpers.isEquivalent(self, other)
+		return compare.isEquivalent(self, other)
 
 	def isEqual(self, other):
 		'''Checks equality of this term against another term.  Note that for two
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
-		return _helpers.isEqual(self, other)
+		return compare.isEqual(self, other)
 	
 	def __eq__(self, other):
 		if isinstance(other, Term):
-			return _helpers.isEquivalent(self, other)
+			return compare.isEquivalent(self, other)
 		else:
 			return False
 
@@ -97,7 +100,7 @@ class Term(object):
 
 	def setAnnotations(self, annotations):
 		'''Modify the annotation list.'''
-		return _helpers.annotate(self, annotations)
+		return annotate.annotate(self, annotations)
 
 	def getAnnotation(self, label):
 		'''Gets an annotation associated'''
@@ -115,7 +118,7 @@ class Term(object):
 		annotation associated with this label added or updated.'''
 		if not isinstance(label, basestring):
 			raise TypeError("label is not a string '%r'", label)
-		remover = _helpers.Remover(label)
+		remover = annotate.Remover(label)
 		if self.annotations:
 			annotations = remover.visit(self.annotations)
 		else:
@@ -128,7 +131,7 @@ class Term(object):
 		annotation associated with this label removed.'''
 		if not isinstance(label, basestring):
 			raise TypeError("label is not a string '%r'", label)
-		remover = _helpers.Remover(label)
+		remover = annotate.Remover(label)
 		annotation = self.annotations
 		if self.annotations:
 			annotations = remover.visit(self.annotations)
@@ -146,7 +149,7 @@ class Term(object):
 
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
-		writer = _helpers.TextWriter(fp)
+		writer = write.TextWriter(fp)
 		writer.visit(self)
 
 	def __str__(self):
@@ -165,7 +168,7 @@ class Term(object):
 		except ImportError:
 			from StringIO import StringIO
 		fp = StringIO()
-		writer = _helpers.AbbrevTextWriter(fp, 3)
+		writer = write.AbbrevTextWriter(fp, 3)
 		try:
 			writer.visit(self)
 		except:

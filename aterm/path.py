@@ -1,4 +1,4 @@
-'''Paths into terms.
+'''Term paths.
 
 A path is a term comprehending a list of integer indexes which indicate the
 position of a term relative to the root term. The indexes are listed orderly
@@ -268,9 +268,3 @@ class Splitter(aterm.visitor.Visitor):
 
 split = Splitter.split
 
-
-import unittest
-
-
-if __name__ == '__main__':
-	unittest.main()
