@@ -3,7 +3,7 @@
 
 import refactoring
 import transf
-import paths
+import aterm.path
 
 
 class CommonRefactoring(refactoring.Refactoring):
@@ -19,7 +19,7 @@ class CommonRefactoring(refactoring.Refactoring):
 	
 	def applicable(self, term, selection):
 		start, end = selection
-		selection = paths.ancestor(start, end)
+		selection = aterm.path.ancestor(start, end)
 		try:
 			self._applicable(term, selection=selection)
 		except transf.exception.Failure:
@@ -30,7 +30,7 @@ class CommonRefactoring(refactoring.Refactoring):
 	def input(self, term, selection):
 		factory = term.factory
 		start, end = selection
-		selection = paths.ancestor(start, end)
+		selection = aterm.path.ancestor(start, end)
 		args = self._input(term, selection=selection)
 		args = factory.make("[_,*]", selection, args)
 		return args

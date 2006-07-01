@@ -9,7 +9,7 @@ from the leaves to the root.
 import aterm.factory
 import aterm.visitor
 
-import paths
+import aterm.path
 
 from transf import exception
 from transf import base
@@ -51,7 +51,7 @@ class Annotate(base.Transformation):
 				return False
 			else:
 				return True
-		return paths.annotate(term, root, func)
+		return aterm.path.annotate(term, root, func)
 
 annotate = Annotate(base.ident, build.nil)
 
@@ -68,9 +68,9 @@ class Project(base.Transformation):
 
 	def apply(self, term, ctx):
 		path = self.path.apply(term, ctx)
-		return paths.project(term, path)
+		return aterm.path.project(term, path)
 	
-fetch = paths.project
+fetch = aterm.path.project
 
 
 class SubTerm(base.Transformation):
@@ -87,10 +87,10 @@ class SubTerm(base.Transformation):
 	def apply(self, term, ctx):
 		path = self.path.apply(term, ctx)
 		func = lambda term: self.operand.apply(term, ctx)
-		return paths.transform(term, path, func)
+		return aterm.path.transform(term, path, func)
 	
 
-split = paths.split
+split = aterm.path.split
 
 
 class Range(base.Transformation):
@@ -108,8 +108,8 @@ class Range(base.Transformation):
 		self.end = end
 		
 	def apply(self, term, ctx):
-		head, rest = paths.split(term, self.start)
-		old_body, tail = paths.split(rest, self.end - self.start)
+		head, rest = aterm.path.split(term, self.start)
+		old_body, tail = aterm.path.split(rest, self.end - self.start)
 		
 		new_body = self.operand.apply(old_body, ctx)
 		if new_body is not old_body:
@@ -120,7 +120,7 @@ class Range(base.Transformation):
 		
 def PathRange(transformation, start, end):
 	'''Apply a transformation on a path range. The tails of the start and end 
-	paths should be equal.'''
+	aterm.path should be equal.'''
 	result = transformation
 	result = Range(result, start[0], end[0])
 	if start[1:] != end[1]:
@@ -158,7 +158,7 @@ class Equals(operate.Unary):
 	
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		if paths.equals(term, ref):
+		if aterm.path.equals(term, ref):
 			return term
 		else:
 			raise exception.Failure
@@ -168,7 +168,7 @@ class Contains(operate.Unary):
 	
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		if paths.contains(term, ref):
+		if aterm.path.contains(term, ref):
 			return term
 		else:
 			raise exception.Failure
@@ -178,7 +178,7 @@ class Contained(operate.Unary):
 	
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		if paths.contained(term, ref):
+		if aterm.path.contained(term, ref):
 			return term
 		else:
 			raise exception.Failure
