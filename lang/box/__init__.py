@@ -197,19 +197,19 @@ def escape(term):
 	return term.factory.makeStr(s)
 escape = transf.util.Adaptor(escape)
 
-
-def lit(term, ctx):
-	if term.type == aterm.types.INT:
-		term = term.factory.makeStr(str(term.value))
-		return const.apply(term, ctx)
-	if term.type == aterm.types.REAL:
-		term = term.factory.makeStr(str(term.value))
-		return const.apply(term, ctx)
-	if term.type == aterm.types.STR:
-		term = escape.apply(term, ctx)
-		return string.apply(term, ctx)
-	raise transf.exception.Failure
-lit = transf.util.Adaptor(lit)
+class Lit(transf.base.Transformation):
+	def apply(self, term, ctx):
+		if term.type == aterm.types.INT:
+			term = term.factory.makeStr(str(term.value))
+			return const.apply(term, ctx)
+		if term.type == aterm.types.REAL:
+			term = term.factory.makeStr(str(term.value))
+			return const.apply(term, ctx)
+		if term.type == aterm.types.STR:
+			term = escape.apply(term, ctx)
+			return string.apply(term, ctx)
+		raise transf.exception.Failure
+lit = Lit()
 
 
 def Prefix(sep):

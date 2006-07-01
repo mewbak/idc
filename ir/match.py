@@ -107,17 +107,32 @@ aCompoundStmt = lib.match.ApplNames(compoundStmtNames)
 aStmt = lib.match.ApplNames(stmtNames)
 
 # list a statement's sub-statements
+
 reduceStmts = lib.parse.Transf('''
-{ stmts:
-	( 
-		?Block(stmts) +
-		?If(_, *stmts) +
-		?While(_, *stmts) +
-		?Function(_,_,_,stmts) +
-		?Module(stmts)
-	) ; !stmts +
+(
+	Block(stmts) -> stmts |
+	If(_, true, false) -> [true, false] |
+	While(_, stmt) -> [stmt] |
+	Function(_, _, _, stmts) -> stmts |
+	Module(stmts) -> stmts
+) + ![]
+''')
+
+reduceStmts = lib.parse.Transf('''
+switch Try(project.name)
+case "Block": 
+	project.args ; project.first
+case "If": 
+	project.args ; project.tail
+case "While": 
+	project.args ; project.tail
+case "Function": 
+	project.args ; project.fourth
+case "Module": 
+	project.args ; project.first
+else:
 	![]
-}
+end
 ''')
 
 stopStmts = -(aModule + aCompoundStmt + lib.match.aList)

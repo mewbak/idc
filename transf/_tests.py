@@ -241,7 +241,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.All, self.allTestCases)	
 	
 	oneTestCases = (
-		[ident, fail, parse.Rule('X(*a) -> Y(*a)')],
+		[ident, fail, parse.Rule('X -> Y')],
 		{
 			'1': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'0.1': ['FAILURE', 'FAILURE', 'FAILURE'],
@@ -253,7 +253,6 @@ class TestTraverse(TestMixin, unittest.TestCase):
 			'A(X,B)': ['A(X,B))', 'FAILURE', 'A(Y,B)'],
 			'A(B,X)': ['A(B,X))', 'FAILURE', 'A(B,Y)'],
 			'A(X,X)': ['A(X,X))', 'FAILURE', 'A(Y,X)'],
-			'A(X(X,X))': ['A(X(X,X))', 'FAILURE', 'A(Y(X,X))'],
 		}
 	)
 	
@@ -261,7 +260,7 @@ class TestTraverse(TestMixin, unittest.TestCase):
 		self._testMetaTransf(traverse.One, self.oneTestCases)	
 
 	someTestCases = (
-		[ident, fail, parse.Rule('X(*a) -> Y(*a)')],
+		[ident, fail, parse.Rule('X -> Y')],
 		{
 			'1': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'0.1': ['FAILURE', 'FAILURE', 'FAILURE'],
@@ -273,7 +272,6 @@ class TestTraverse(TestMixin, unittest.TestCase):
 			'A(X,B)': ['A(X,B))', 'FAILURE', 'A(Y,B)'],
 			'A(B,X)': ['A(B,X))', 'FAILURE', 'A(B,Y)'],
 			'A(X,X)': ['A(X,X))', 'FAILURE', 'A(Y,Y)'],
-			'A(X(X,X))': ['A(X(X,X))', 'FAILURE', 'A(Y(X,X))'],
 		}
 	)
 	
@@ -339,13 +337,13 @@ class TestProject(TestMixin, unittest.TestCase):
 		self._testTransf(project.subterms, self.subtermsTestCases)
 
 	fetchTestCases = (
-		[ident, fail, parse.Rule('X(*a) -> Y(*a)')],
+		[ident, fail, parse.Rule('X -> Y')],
 		{
 			'[]': ['FAILURE', 'FAILURE', 'FAILURE'],
 			'[X]': ['X', 'FAILURE', 'Y'],
 			'[X,A]': ['X', 'FAILURE', 'Y'],
 			'[A,X]': ['A', 'FAILURE', 'Y'],
-			'[X(1),X(2)]': ['X(1)', 'FAILURE', 'Y(1)'],
+			'[X{1},X{2}]': ['X{1}', 'FAILURE', 'Y'],
 		}
 	)
 	

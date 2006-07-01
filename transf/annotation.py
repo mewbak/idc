@@ -14,9 +14,14 @@ from transf import debug
 
 
 def Set(label, *values):
-	return congruent.Annos(
-		lists.Fetch(congruent.Appl(label, values)) +
-		build.Cons(build.Appl(label, values), base.ident)
+	annos = scope.Anonymous('annos')
+	return scope.Let2((
+			(annos, build.List(values)),
+		),
+		congruent.Annos(
+			lists.Fetch(congruent.ApplCons(match.Str(label), build.Var(annos))) +
+			build.Cons(build.ApplCons(build.Str(label), build.Var(annos)), base.ident)
+		),
 	)
 
 

@@ -23,42 +23,36 @@ setStmtId = annotation.Set(stmtIdAnno, arith.Count('stmtid'))
 markStmtsIds = scope.Let2((
 		('stmtid', build.zero),
 	),
-	ir.traverse.AllStmtsBU(debug.Dump() * setStmtId)
+	ir.traverse.AllStmtsBU(setStmtId)
 )
 
 
 #######################################################################
-# Jumpes & Labels
+# GoTo's & Labels
 
-makeLabelRef = parse.Rule('''
-	Label(name) -> [name, <getStmtId>]
+parse.Transfs('''
+
+markLabelRef = 
+	with name in
+		?Label(name) ;
+		![name, <getStmtId>] => lbls
+	end
+
+lookupLabel =
+	debug.Dump() ;
+	with name in 
+		?GoTo(Sym(name));
+		!name ;
+		~lbls
+	end
+
+LabelTable(op) =
+	with lbls[] in
+		ir.traverse.AllStmtsBU(Try(Where(markLabelRef))) ;
+		op
+	end
+
 ''')
-
-makeLabelTable = unify.CollectAll(makeLabelRef)
-
-setLabelRef = parse.Transf('''
-	{Label(name) -> [name, <getStmtId>] } ; =lbls
-''')
-
-
-setLabelTable = util.Proxy()
-setLabelTables = lists.Map(setLabelTable)
-setLabelTable.subject = parse.Transf('''
-	Where(
-		setLabelRef +
-		ir.match.reduceStmts ;
-		setLabelTables
-	)
-''')
-
-LabelTable = lambda operand: scope.Local2(
-	(
-		('lbls', table.Table),
-	),
-	setLabelTable * operand,
-)
-
-LookupLabel = lambda name: name * table.Get('lbls')
 
 
 #######################################################################
@@ -101,69 +95,6 @@ let this = getStmtId in
 +	?While
 		< { true, false:
 			!next => false
-			; ~_(_, <markStmtsFlow; !next => true>)
-			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
-		}
-		; !this => next
-+	?NoStmt
-		< SetCtrlFlow(![next])
-		; !this => next
-+	?Continue 
-		< SetCtrlFlow(![cont])
-		; !this => next
-+	?Break 
-		< SetCtrlFlow(![brek])
-		; !this => next
-+	?Ret 
-		< SetCtrlFlow(![retn])
-		; !this => next
-+	?GoTo
-		< SetCtrlFlow({ _(Sym(name)) -> [<lists.Lookup(!name,!lbls)>] } + ![])
-		; !this => next
-+	?Block
-		< ~_(<markStmtsFlow>)
-		; SetCtrlFlow(![next])
-		; !this => next
-+	?Function
-		< let 
-			next = !next,
-			retn = GetTerminalNodeId(!this),
-			brek = !0,
-			cont = !0
-		in
-			~_(_, _, _, <markStmtsFlow>)
-			; SetCtrlFlow(![next])
-		end
-		# !next => next
-+	
-		SetCtrlFlow({ n(*) -> [next{Cond(n)}] })
-		; !this => next
-end
-''')
-
-markStmtFlow.subject = parse.Transf('''
-let this = getStmtId in
-	?Assign
-		< SetCtrlFlow(![next])
-		; !this => next
-+	?Label
-		< SetCtrlFlow(![next])
-		; !this => next
-+	?Asm 
-		< SetCtrlFlow(![next])
-		; !this => next
-+	?If
-		< { true, false: 
-			~_(_, 
-				<let next=!next in markStmtFlow; !next => true end>, 
-				<let next=!next in markStmtFlow; !next => false end>
-			)
-			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
-		}
-		; !this => next
-+	?While
-		< { true, false:
-			!next => false
 			; ~_(_, <let next=!this in markStmtFlow; !next => true end>)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
 		}
@@ -181,7 +112,7 @@ let this = getStmtId in
 		< SetCtrlFlow(![retn])
 		; !this => next
 +	?GoTo
-		< SetCtrlFlow({ _(Sym(name)) -> [<LookupLabel(!name)>] } + ![])
+		< SetCtrlFlow(![<lookupLabel>] + ![])
 		; !this => next
 +	?Var
 		< SetCtrlFlow(![next])

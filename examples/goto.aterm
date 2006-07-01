@@ -1,0 +1,8 @@
+Module([
+	Label("start"),
+	GoTo(Sym("middle")),
+	Label("end"),
+	Ret(Void, NoExpr),
+	Label("middle"),
+	GoTo(Sym("end"))
+])

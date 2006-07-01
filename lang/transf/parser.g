@@ -322,10 +322,12 @@ term_atom
 	| STR
 		{ ## = #(#[ATAPPL,"Str"], #(#[ATSTR],##)) }
 	| LSQUARE! term_list RSQUARE!
-	| term_sym
+	| term_name
+		{ ## = #(#[ATAPPL,"ApplName"], ##) }
 	| term_tuple
 	| term_appl
-	| term_var 
+	| term_appl_cons
+	| term_var
 		(AT! term 
 			{ ## = #(#[ATAPPL,"As"], ##) }
 		)?
@@ -336,7 +338,7 @@ term_atom
 
 term_name
 	: UID
-		{ ## = #(#[ATAPPL,"Str"],#(#[ATSTR],##)) }
+		{ ## = #(#[ATSTR],##) }
 	;
 
 term_var
@@ -344,30 +346,26 @@ term_var
 		{ ## = #(#[ATAPPL,"Var"], #(#[ATSTR],##)) }
 	;
 
-term_sym
-	: term_name term_undefined
-		{ ## = #(#[ATAPPL,"Appl"], ##) }
-	;
-	
 term_tuple
 	: term_args
 		{ ## = #(#[ATAPPL,"Appl"], #[ATSTR,""], ##) }
 	;
 	
 term_appl
-	: ( term_name | term_var | term_wildcard ) term_args
+	: term_name term_args
 		{ ## = #(#[ATAPPL,"Appl"], ##) }
+	;
+
+term_appl_cons
+	: ( term_var | term_wildcard ) LPAREN! term_list RPAREN!
+		{ ## = #(#[ATAPPL,"ApplCons"], ##) }
 	;
 	
 term_args
-	: LPAREN! term_list RPAREN!
+	: LPAREN! ( term ( COMMA! term )* )? RPAREN!
+		{ ## = #(#[ATLIST],##) }
 	;
 
-term_undefined
-	:
-		{ ## = #(#[ATAPPL,"Undef"]) }
-	;
-	
 term_wildcard
 	: WILDCARD!
 		{ ## = #(#[ATAPPL,"Wildcard"]) }	
@@ -383,8 +381,9 @@ term_implicit_wildcard
 	;
 
 term_opt_args
-	: ( LPAREN ) => term_args
-	| term_implicit_nil
+	: term_args
+	|
+		{ ## = #(#[ATLIST]) }
 	;
 	
 term_implicit_nil

@@ -433,13 +433,24 @@ class Translator(walker.Walker):
 		elif mode == TRAVERSE:
 			return transf.congruent.Cons(h, t)
 	
-	def termTransfUndef(self, mode):
-		if mode == BUILD:
-			return transf.build.nil
-		else:
-			return transf.base.ident
+	def termTransfAppl(self, name, args, mode):
+		name = self._str(name)
+		args = [self.termTransf(arg, mode) for arg in args]
+		if mode == MATCH:
+			return transf.match.Appl(name, args)
+		elif mode == BUILD:
+			return transf.build.Appl(name, args)
+		elif mode == TRAVERSE:
+			return transf.congruent.Appl(name, args)
 		
-	def termTransfAppl(self, n, a, mode):
+	def termTransfApplName(self, name, mode):
+		name = self._str(name)
+		if mode == BUILD:
+			return transf.build.Appl(name, ())
+		else:
+			return transf.match.ApplName(name)
+		
+	def termTransfApplCons(self, n, a, mode):
 		n = self.termTransf(n, mode)
 		a = self.termTransf(a, mode)
 		if mode == MATCH:
@@ -499,7 +510,11 @@ class Translator(walker.Walker):
 		self.collect(h, vars)
 		self.collect(t, vars)
 	
-	def collectAppl(self, n, a, vars):
+	def collectAppl(self, name, args, vars):
+		for arg in args:
+			self.collect(arg, vars)
+		
+	def collectApplCons(self, n, a, vars):
 		self.collect(n, vars)
 		self.collect(a, vars)
 		
