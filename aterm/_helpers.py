@@ -30,11 +30,11 @@ class Comparator(visitor.Visitor):
 	def visitAppl(self, term, other):
 		if types.APPL != other.type:
 			return False
-		if term._name != other._name:
+		if term.name != other.name:
 			return False
-		if len(term._args) != len(other._args):
+		if len(term.args) != len(other.args):
 			return False
-		for term_arg, other_arg in zip(term._args, other._args):
+		for term_arg, other_arg in zip(term.args, other.args):
 			if not self.visit(term_arg, other_arg):
 				return False
 		return True
@@ -99,7 +99,7 @@ class Annotator(visitor.Visitor):
 		return term.factory.makeCons(term.head, term.tail, annotations)
 
 	def visitAppl(self, term, annotations):
-		return term.factory.makeAppl(term._name, term._args, annotations)
+		return term.factory.makeAppl(term.name, term.args, annotations)
 
 annotate = Annotator().visit
 
@@ -153,8 +153,8 @@ class StructuralHash(visitor.Visitor):
 	def visitAppl(self, term):
 		return hash((
 			term.type,
-			term._name,
-			term._args,
+			term.name,
+			term.args,
 		))
 
 
@@ -239,11 +239,15 @@ class TextWriter(Writer):
 			self.writeAnnotations(term)
 
 	def visitAppl(self, term):
-		self.fp.write(term._name)
+		self.fp.write(term.name)
 		args = term.args
-		if term._name == '' or term._args:
+		if term.name == '' or term.args:
 			self.fp.write('(')
-			self.visit(args, inside_list = True)
+			sep = ""
+			for arg in term.args:
+				self.fp.write(sep)
+				self.visit(arg)
+				sep = ","
 			self.fp.write(')')
 		self.writeAnnotations(term)
 

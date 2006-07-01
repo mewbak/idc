@@ -367,7 +367,7 @@ class Translator(walker.Walker):
 	def staticAppl(self, n, a):
 		n = self.static(n)
 		a = self.static(a)
-		return aterm.factory.factory.makeAppl(n, a)
+		return aterm.factory.factory.makeAppl(n.value, a)
 		
 	def staticWildcard(self):
 		raise SemanticException(None, "wildcard in static term")
@@ -443,11 +443,11 @@ class Translator(walker.Walker):
 		n = self.termTransf(n, mode)
 		a = self.termTransf(a, mode)
 		if mode == MATCH:
-			return transf.match.Appl(n, a)
+			return transf.match.ApplCons(n, a)
 		elif mode == BUILD:
-			return transf.build.Appl(n, a)
+			return transf.build.ApplCons(n, a)
 		elif mode == TRAVERSE:
-			return transf.congruent.Appl(n, a)
+			return transf.congruent.ApplCons(n, a)
 		
 	def termTransfWildcard(self, mode):
 		return transf.base.ident

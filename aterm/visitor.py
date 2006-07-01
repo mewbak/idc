@@ -61,18 +61,22 @@ class IncrementalVisitor(Visitor):
 		else:
 			return term
 
-	def visitName(self, term, *args, **kargs):
-		return self.visitTerm(term, *args, **kargs)
-	
-	def visitArgs(self, term, *args, **kargs):
-		return self.visitTerm(term, *args, **kargs)
-	
 	def visitAppl(self, term, *args, **kargs):
-		old_name = term.name
+		name = term.name
 		old_args = term.args
-		new_name = self.visitName(old_name, *args, **kargs)
-		new_args = self.visitArgs(old_args, *args, **kargs)
-		if new_name is not old_name or new_args is not old_args:
-			return term.factory.makeAppl(new_name, new_args, term.annotations)
+			
+		new_args = []
+		modified = False
+		for old_arg in old_args:
+			new_arg = self.visit(old_arg, *args, **kargs)
+			new_args.append(new_arg)
+			modified = modified or new_arg is not old_arg
+		
+		if modified:
+			return term.factory.makeAppl(
+				name,
+				new_args,
+				term.annotations
+			)
 		else:
 			return term

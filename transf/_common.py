@@ -46,6 +46,8 @@ class _Cons(base.Transformation):
 	
 	def __init__(self, head, tail):
 		base.Transformation.__init__(self)
+		assert isinstance(head, base.Transformation)
+		assert isinstance(tail, base.Transformation)
 		self.head = head
 		self.tail = tail
 
@@ -65,25 +67,23 @@ def List(elms, tail, Cons, nil):
 	return operate.Nary(iter(elms), Cons, tail)
 
 
-class _Appl(base.Transformation):
+class Appl(base.Transformation):
 
 	def __init__(self, name, args):
 		base.Transformation.__init__(self)
+		assert isinstance(name, basestring)
+		self.name = name
+		self.args = tuple(args)
+
+
+class ApplCons(base.Transformation):
+
+	def __init__(self, name, args):
+		base.Transformation.__init__(self)
+		assert isinstance(name, base.Transformation)
+		assert isinstance(args, base.Transformation)
 		self.name = name
 		self.args = args
-
-def Appl(name, args, _Appl, _Term, List):
-	if name is None:
-		name = base.ident
-	elif isinstance(name, basestring):
-		name = _Term(_factory.makeStr(name))
-	if args is None:
-		args = base.ident
-	elif isinstance(args, (tuple, list)):
-		args = List(args)
-	if isinstance(name, _Term) and isinstance(args, _Term):
-		return _Term(_factory.makeAppl(name.term, args.term))
-	return _Appl(name, args)
 
 
 class Annos(base.Transformation):

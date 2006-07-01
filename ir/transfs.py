@@ -44,10 +44,7 @@ class SplitBlock(base.Transformation):
 	def __init__(self, name):
 		self.name = name
 		self.split_head = Split(
-			transf.match.Appl(
-				"Label", 
-				[transf.match.Term(name)]
-			)
+			transf.match.Appl("Label", (transf.match.Term(name),))
 		)
 		self.split_tail = Split(
 			transf.parse.Transf("?Ret(_,_)")

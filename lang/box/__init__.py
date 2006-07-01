@@ -172,7 +172,7 @@ def Tag(name, value, operand = None):
 		value = transf.build.Str(value)
 	if operand is None:
 		operand = transf.base.ident
-	return transf.build.Appl('T', [name, value, operand])
+	return transf.build.Appl('T', (name, value, operand))
 
 op = Tag('type', 'operator')
 kw = Tag('type', 'keyword')
@@ -227,10 +227,8 @@ def Join(sep):
 			Prefix(sep)
 		)
 
-hbox = transf.build.Str('H')
-
 def HBox(boxes):
-	return transf.build.Appl(hbox, transf.build.List((boxes,)))
+	return transf.build.Appl('H', (boxes,))
 
 commas = HBox(Join(transf.build.Str(', ')))
 spaces = HBox(Join(transf.build.Str(' ')))

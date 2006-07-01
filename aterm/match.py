@@ -107,17 +107,17 @@ class Appl(Matcher):
 		return False
 
 	def visitAppl(self, term, match):
-		if self.name != term._name:
+		if self.name != term.name:
 			return False
-		if len(self.args) != len(term._args):
+		if len(self.args) != len(term.args):
 			return False
-		for arg, term_arg in zip(self.args, term._args):
+		for arg, term_arg in zip(self.args, term.args):
 			if not arg.visit(term_arg, match):
 				return False
 		return True
 
 
-class ApplDecons(Matcher):
+class ApplCons(Matcher):
 	
 	def __init__(self, name, args):
 		Matcher.__init__(self)
@@ -132,8 +132,8 @@ class ApplDecons(Matcher):
 	def visitAppl(self, term, match):
 		factory = term.factory
 		return (
-			self.name.visit(factory.makeStr(term._name), match) and 
-			self.args.visit(factory.makeList(term._args), match)
+			self.name.visit(factory.makeStr(term.name), match) and 
+			self.args.visit(factory.makeList(term.args), match)
 		)
 
 

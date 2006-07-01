@@ -36,7 +36,15 @@ class _Dispatcher(aterm.visitor.Visitor):
 		return getattr(self.walker, self.prefix + suffix)
 		
 	def visitTerm(self, term):
-		return self.getmethod('_Term'), (term,)
+		try:
+			return self.getmethod('_Term'), (term,)
+		except AttributeError:
+			raise ValueError('%s.%s: cannot dispatch term: %r' % (
+					self.walker.__class__.__name__,
+					self.prefix,
+					term
+				)
+			)
 	
 	def visitLit(self, term):
 		try:
@@ -82,7 +90,7 @@ class _Dispatcher(aterm.visitor.Visitor):
 	
 	def visitAppl(self, term):
 		try:
-			return self.getmethod(term.name.value), tuple(term.args)
+			return self.getmethod(term.name), tuple(term.args)
 		except AttributeError:
 			try:
 				return self.getmethod('_Appl'), (term.name, term.args)

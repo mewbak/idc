@@ -134,12 +134,17 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 		# no need to annotate tails
 		return super(Annotator, self).visit(term, path, index + 1)
 
-	def visitName(self, term, path, index):
-		return term
-
-	def visitArgs(self, term, path, index):
-		# no need to annotate arg lists
-		return super(Annotator, self).visit(term, path, index)
+	def visitAppl(self, term, path, index):
+		return term.factory.makeAppl(
+			term.name,
+			[self.visit(
+					arg, 
+					term.factory.makeCons(term.factory.makeInt(index), path), 
+					0
+				) for index, arg in zip(range(len(term.args)), term.args)
+			],
+			term.annotations,
+		)
 
 annotate = Annotator.annotate
 
@@ -171,7 +176,7 @@ class Projector(aterm.visitor.Visitor):
 			return self.visit(term.tail, path, index + 1)
 
 	def visitAppl(self, term, path, index):
-		return self.visit(term.args, path, index)
+		return self.visit(term.args[index], path, 0)
 
 
 
@@ -210,11 +215,15 @@ class Transformer(aterm.visitor.IncrementalVisitor):
 		else:
 			return self.visit(term, path, index + 1)
 	
-	def visitName(self, term, path, index):
-		return term
-	
-	def visitArgs(self, term, path, index):
-		return self.visit(term, path, 0)
+	def visitAppl(self, term, path, index):
+		old_arg = args[index] 
+		new_arg = self.visit(old_arg, path, 0)
+		if new_arg is not old_arg:
+			args = list(args) 
+			args[index] = new_arg
+			return term.factory.makeAppl(term.name, args, term.annotation)
+		else:
+			return term
 
 
 class Splitter(aterm.visitor.Visitor):
@@ -275,7 +284,7 @@ class IndexProjector(aterm.visitor.Visitor):
 			return self.visit(term.tail, index + 1)
 
 	def visitAppl(self, term, index):
-		return self.visit(term.args, index)
+		return term.args[self.index]
 
 
 def project(term, path):
@@ -315,11 +324,15 @@ class IndexTransformer(aterm.visitor.IncrementalVisitor):
 		else:
 			return self.visit(term, index + 1)
 	
-	def visitName(self, term, index):
-		return term
-	
-	def visitArgs(self, term, index):
-		return self.visit(term, 0)
+	def visitAppl(self, term, index):
+		old_arg = term.args[self.index] 
+		new_arg = self.callback(old_arg)
+		if new_arg is not old_arg:
+			args = list(term.args) 
+			args[self.index] = new_arg
+			return term.factory.makeAppl(term.name, args, term.annotations)
+		else:
+			return term
 
 
 def transform(term, path, func):

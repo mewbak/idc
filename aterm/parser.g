@@ -106,14 +106,14 @@ match_term_atom returns [res]
 	| WILDCARD 
 			{ res = match.Wildcard() }
 		( LPAREN args=match_term_list RPAREN
-			{ res = match.ApplDecons(res, args) }
+			{ res = match.ApplCons(res, args) }
 		)?
 	| vname:VAR
 			{ res = match.Var(vname.getText()) }
 		( ASSIGN pattern=match_term
 			{ res = match.Seq(pattern, res) }
 		| LPAREN args=match_term_list RPAREN
-			{ res = match.ApplDecons(res, args) }
+			{ res = match.ApplCons(res, args) }
 		)?
 	;
 	

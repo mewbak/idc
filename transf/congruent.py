@@ -70,7 +70,39 @@ def List(elms, tail = None):
 	return _common.List(elms, tail, Cons, match.nil)
 	
 
-class _Appl(_common._Appl):
+class Appl(_common.Appl):
+	'''Traverse a term application.'''
+
+	def apply(self, term, ctx):
+		try:
+			name = term.name
+			old_args = term.args
+		except AttributeError:
+			raise exception.Failure('not an application term', term)
+		
+		if name != self.name:
+			raise exception.Failure
+
+		if len(self.args) != len(old_args):
+			raise exception.Failure
+
+		new_args = []
+		modified = False
+		for self_arg, old_arg in zip(self.args, old_args):
+			new_arg = self_arg.apply(old_arg, ctx)
+			new_args.append(new_arg)
+			modified = modified or new_arg is not old_arg
+		
+		if modified:
+			return term.factory.makeAppl(
+				name,
+				new_args,
+				term.annotations
+			)
+		else:
+			return term
+
+class ApplCons(_common.ApplCons):
 	'''Traverse a term application.'''
 
 	def apply(self, term, ctx):
@@ -80,10 +112,15 @@ class _Appl(_common._Appl):
 		except AttributeError:
 			raise exception.Failure('not an application term', term)
 		
+		factory = term.factory
+		old_name = factory.makeStr(old_name)
+		old_args = factory.makeList(old_args)
 		new_name = self.name.apply(old_name, ctx)
 		new_args = self.args.apply(old_args, ctx)
 		
 		if new_name is not old_name or new_args is not old_args:
+			new_name = new_name.value
+			new_args = tuple(new_args)
 			return term.factory.makeAppl(
 				new_name,
 				new_args,
@@ -91,9 +128,6 @@ class _Appl(_common._Appl):
 			)
 		else:
 			return term
-
-def Appl(name, args):
-	return _common.Appl(name, args, _Appl, match._Term, List)
 
 
 Var = variable.Traverse
@@ -129,7 +163,7 @@ class Subterms(base.Transformation):
 		base.Transformation.__init__(self)
 		self.leaf = leaf
 		self.list = children
-		self.appl = Appl(base.ident, children)
+		self.appl = ApplCons(base.ident, children)
 		
 	def apply(self, term, ctx):
 		if term.type == aterm.types.APPL:

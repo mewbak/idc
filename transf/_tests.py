@@ -204,7 +204,8 @@ class TestMatch(TestMixin, unittest.TestCase):
 		self._testMatchTransf(parse.Transf('?[1,2]'), '[1,2]')
 	
 	def testAppl(self):
-		self._testMatchTransf(match.Appl(match.Str("C"),match.nil), 'C')
+		self._testMatchTransf(match.Appl("C", ()), 'C')
+		self._testMatchTransf(match.ApplCons(match.Str("C"), match.nil), 'C')
 		self._testMatchTransf(match._.C(), 'C')
 		self._testMatchTransf(match._.C(1), 'C(1)')
 		self._testMatchTransf(match._.C(1,2), 'C(1,2)')
@@ -571,7 +572,7 @@ class TestPath(TestMixin, unittest.TestCase):
 			
 			self.failUnlessEqual(result, expectedResult)
 			
-	fetchTestCases = [
+	projectTestCases = [
 		('1', '[]', '1'),
 		('[1,2]', '[]', '[1,2]'),
 		('[1,2]', '[0]', '1'),
@@ -588,7 +589,7 @@ class TestPath(TestMixin, unittest.TestCase):
 	def testProject(self):
 		self.checkTransformation(
 			path.Project, 
-			self.fetchTestCases
+			self.projectTestCases
 		)
 	
 	pathTestCases = [

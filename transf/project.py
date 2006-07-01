@@ -60,9 +60,11 @@ class Name(base.Transformation):
 	
 	def apply(self, term, ctx):
 		try:
-			return term.name
+			name = term.name
 		except AttributeError:
 			raise exception.Failure("not an application term", term)
+		else:
+			return term.factory.makeStr(name)
 
 name = Name()
 
@@ -71,9 +73,11 @@ class Args(base.Transformation):
 	
 	def apply(self, term, ctx):
 		try:
-			return term.args
+			args = term.args
 		except AttributeError:
 			raise exception.Failure("not an application term", term)
+		else:
+			return term.factory.makeList(args)
 
 args = Args()
 
@@ -82,7 +86,7 @@ class SubTerms(base.Transformation):
 	
 	def apply(self, term, ctx):
 		if term.type == aterm.types.APPL:
-			return term.args
+			return term.factory.makeList(term.args)
 		if term.type & aterm.types.LIST:
 			return term
 		return build._nil

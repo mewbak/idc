@@ -39,10 +39,7 @@ class ExtractFunction(refactoring.Refactoring):
 		txn = transf.parse.Rule(r'''
 			[Label(name),*rest] -> [Function(Void,name,[],rest)]
 		''')
-		txn = transf.congruent.Appl(
-			'Module',
-			[ExtractBlock(txn,name)]
-		)
+		txn = transf.congruent.Appl('Module', (ExtractBlock(txn,name),))
 		# TODO: Handle seperate blocks
 		return txn(term)
 

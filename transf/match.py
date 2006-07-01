@@ -9,6 +9,7 @@ from transf import exception
 from transf import base
 from transf import variable
 from transf import combine
+from transf import project
 from transf import _common
 from transf import _helper
 
@@ -72,7 +73,7 @@ def Term(term):
 
 class TermSet(base.Transformation):
 	
-	def __init__(self, *terms):
+	def __init__(self, terms):
 		base.Transformation.__init__(self)
 		self.terms = {}
 		for term in terms:
@@ -112,8 +113,8 @@ def Str(value):
 empty = Str("")
 
 
-def StrSet(*values):
-	return TermSet(*[_factory.makeStr(value) for value in values])
+def StrSet(values):
+	return TermSet([_factory.makeStr(value) for value in values])
 	
 
 class Nil(_Term):
@@ -173,7 +174,30 @@ def List(elms, tail = None):
 	return _common.List(elms, tail, Cons, nil)
 	
 
-class _Appl(_common._Appl):
+class Appl(_common.Appl):
+
+	def apply(self, term, ctx):
+		try:
+			term_name = term.name
+			term_args = term.args
+		except AttributeError:
+			raise exception.Failure('not an application term', term)
+		else:
+			if self.name != term_name:
+				raise exception.Failure
+			if len(self.args) != len(term_args):
+				raise exception.Failure
+			for self_arg, term_arg in zip(self.args, term_args):
+				self_arg.apply(term_arg, ctx)
+			return term
+
+def ApplName(name):
+	return combine.Where(project.name * Str(name))
+
+def ApplNames(names):
+	return combine.Where(project.name * StrSet(names))
+
+class ApplCons(_common.ApplCons):
 
 	def apply(self, term, ctx):
 		try:
@@ -182,13 +206,10 @@ class _Appl(_common._Appl):
 		except AttributeError:
 			raise exception.Failure('not an application term', term)
 		else:
-			self.name.apply(name, ctx)
-			self.args.apply(args, ctx)
+			factory = term.factory
+			self.name.apply(factory.makeStr(name), ctx)
+			self.args.apply(factory.makeList(args), ctx)
 			return term
-
-
-def Appl(name, args):
-	return _common.Appl(name, args, _Appl, _Term, List)
 
 
 Var = variable.Match

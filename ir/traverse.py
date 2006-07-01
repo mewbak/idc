@@ -5,68 +5,53 @@ import transf as trf
 import ir.match
 
 
-def Traverse(subterms, down = None, up = None, stop = None, Enter = None, Leave = None):
+def Traverse(subterms, down = trf.base.ident, up = trf.base.ident, stop = trf.base.ident, Enter = trf.base.ident, Leave = trf.base.ident):
 	'''Generic traversal.'''
 	traverse = subterms
-	if Leave is not None:
+	if Leave is not trf.base.ident:
 		traverse = Leave(traverse)
-	if stop is not None:
+	if stop is not trf.base.ident:
 		traverse = stop + traverse
-	if up is not None:
+	if up is not trf.base.ident:
 		traverse = traverse * up
-	if down is not None:
+	if down is not trf.base.ident:
 		traverse = down * traverse
-	if Enter is not None:
+	if Enter is not trf.base.ident:
 		traverse = Enter(traverse)
 	return traverse
 
 
-def Module(stmts = None, **kargs):
+def Module(stmts = trf.base.ident, **kargs):
 	return Traverse(
-		trf.congruent.Appl(
-			trf.match.Str('Module'), 
-			trf.congruent.List((stmts,))
-		),
+		trf.congruent.Appl('Module', (stmts,)),
 		**kargs
 	)
 
 
-def Function(type = None, name = None, args = None, stmts = None, **kargs):
+def Function(type = trf.base.ident, name = trf.base.ident, args = trf.base.ident, stmts = trf.base.ident, **kargs):
 	return Traverse(
-		trf.congruent.Appl(
-			trf.match.Str('Function'), 
-			trf.congruent.List((type, name, args, stmts))
-		),
+		trf.congruent.Appl('Function', (type, name, args, stmts)),
 		**kargs
 	)
 
 
-def While(cond = None, stmt = None, **kargs):
+def While(cond = trf.base.ident, stmt = trf.base.ident, **kargs):
 	return Traverse(
-		trf.congruent.Appl(
-			trf.match.Str('While'), 
-			trf.congruent.List((cond, stmt))
-		),
+		trf.congruent.Appl('While', (cond, stmt)),
 		**kargs
 	)
 
 
-def If(cond = None, true = None, false = None, **kargs):
+def If(cond = trf.base.ident, true = trf.base.ident, false = trf.base.ident, **kargs):
 	return Traverse(
-		trf.congruent.Appl(
-			trf.match.Str('If'), 
-			trf.congruent.List((cond, true, false))
-		),
+		trf.congruent.Appl('If', (cond, true, false)),
 		**kargs
 	)
 
 
-def Block(stmts = None, **kargs):
+def Block(stmts = trf.base.ident, **kargs):
 	return Traverse(
-		trf.congruent.Appl(
-			trf.match.Str('Block'), 
-			trf.congruent.List((stmts,))
-		),
+		trf.congruent.Appl('Block', (stmts,)),
 		**kargs
 	)
 
@@ -74,9 +59,9 @@ def Block(stmts = None, **kargs):
 def Stmt(stmt, stmts, default, **kargs):
 	return Traverse(
 		ir.match.aBlock **Block(stmts)**
-		ir.match.anIf **If(None, stmt, stmt)**
-		ir.match.aWhile **While(None, stmt)**
-		ir.match.aFunction **Function(None, None, None, stmts)**
+		ir.match.anIf **If(trf.base.ident, stmt, stmt)**
+		ir.match.aWhile **While(trf.base.ident, stmt)**
+		ir.match.aFunction **Function(trf.base.ident, trf.base.ident, trf.base.ident, stmts)**
 		ir.match.aModule **Module(stmts)**
 		default,
 		**kargs
@@ -110,7 +95,7 @@ def OneGlobalStmt(operand):
 		trf.lists.Fetch(operand)
 	)
 
-def OneFunction(operand, type = None, name = None, args = None, stmts = None):
+def OneFunction(operand, type = trf.base.ident, name = trf.base.ident, args = trf.base.ident, stmts = trf.base.ident):
 	return OneGlobalStmt(
 		ir.match.Function(type, name, args, stmts), 
 		operand

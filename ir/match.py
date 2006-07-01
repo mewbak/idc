@@ -5,21 +5,11 @@ import transf as lib
 
 
 #######################################################################
-# Utilities
-
-def ApplName(name):
-	return lib.match.Appl(lib.match.Str(name), lib.base.ident)
-
-def ApplNames(names):
-	return lib.match.Appl(lib.match.StrSet(*names), lib.base.ident)
-
-
-#######################################################################
 # Types
 
 typeNames = [
-	'Void'
-	'Bool'
+	'Void',
+	'Bool',
 	'Int',
 	'Float',
 	'Char',
@@ -31,13 +21,13 @@ typeNames = [
 	'Blob',
 ]
 
-matchType = ApplNames(typeNames)
+matchType = lib.match.ApplNames(typeNames)
 
 
 #######################################################################
 # Expressions
 
-aSym = ApplName('Sym')
+aSym = lib.match.ApplName('Sym')
 
 exprNames = [
 	'True'
@@ -54,50 +44,38 @@ exprNames = [
 	'Ref',
 ]
 
-expr = ApplNames(exprNames)
+expr = lib.match.ApplNames(exprNames)
 
 
 #######################################################################
 # Statements
 
-aModule = ApplName('Module')
-aFunction = ApplName('Function')
-aWhile = ApplName('While')
-anIf = ApplName('If')
-aBlock = ApplName('Block')
-aLabel = ApplName('Label')
+aModule = lib.match.ApplName('Module')
+aFunction = lib.match.ApplName('Function')
+aWhile = lib.match.ApplName('While')
+anIf = lib.match.ApplName('If')
+aBlock = lib.match.ApplName('Block')
+aLabel = lib.match.ApplName('Label')
 
 
 
-def Module(stmts = None):
-	return lib.match.Appl(
-		lib.match.Str('Module'), 
-		lib.match.List((stmts,))
-	)
+def Module(stmts = lib.base.ident):
+	return lib.match.Appl('Module', (stmts,))
 
 def ModuleStmt(stmt, Subterms = lib.lists.Map):
 	return Module(Subterms(stmt))
 
 
-def Function(type = None, name = None, args = None, stmts = None):
-	return lib.match.Appl(
-		lib.match.Str('Function'), 
-		lib.match.List((type, name, args, stmts))
-	)
+def Function(type = lib.base.ident, name = lib.base.ident, args = lib.base.ident, stmts = lib.base.ident):
+	return lib.match.Appl('Function', (type, name, args, stmts))
 
 
-def Block(stmts = None):
-	return lib.match.Appl(
-		lib.match.Str('Block'), 
-		lib.match.List((stmts))
-	)
+def Block(stmts = lib.base.ident):
+	return lib.match.Appl('Block', (stmts,))
 
 
-def If(cond = None, true = None, false = None):
-	return lib.match.Appl(
-		lib.match.Str('Block'), 
-		lib.match.List((true, false,))
-	)
+def If(cond = lib.base.ident, true = lib.base.ident, false = lib.base.ident):
+	return lib.match.Appl('If', (cond, true, false))
 
 
 # names of non-comound statements
@@ -124,9 +102,9 @@ compoundStmtNames = [
 
 stmtNames = atomStmtNames + compoundStmtNames
 
-anAtomStmt = ApplNames(atomStmtNames)
-aCompoundStmt = ApplNames(compoundStmtNames)
-aStmt = ApplNames(stmtNames)
+anAtomStmt = lib.match.ApplNames(atomStmtNames)
+aCompoundStmt = lib.match.ApplNames(compoundStmtNames)
+aStmt = lib.match.ApplNames(stmtNames)
 
 # list a statement's sub-statements
 reduceStmts = lib.parse.Transf('''

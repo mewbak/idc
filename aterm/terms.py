@@ -393,36 +393,26 @@ class Cons(List):
 class Appl(Term):
 	'''Application term.'''
 
-	__slots__ = ['_name', '_args']
+	__slots__ = ['name', 'args']
 	
 	type = types.APPL
 	
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 		if isinstance(name, Str):
-			self._name = name.value
+			self.name = name.value
 		else:
 			if not isinstance(name, basestring):
 				raise TypeError("name is not a string, variable, or wildcard term: %r" % name)
-			self._name = name
+			self.name = name
 		if args is None:
-			self._args = ()
+			self.args = ()
 		else:
-			self._args = tuple(args)
-	
-	def getName(self):
-		return self.factory.makeStr(self._name)
-	
-	name = property(getName)
+			self.args = tuple(args)
 	
 	def getArity(self):
-		return len(self._args)
+		return len(self.args)
 
-	def getArgs(self):
-		return self.factory.makeList(self._args)
-	
-	args = property(getArgs)
-	
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitAppl(self, *args, **kargs)
 

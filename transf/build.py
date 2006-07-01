@@ -88,16 +88,22 @@ def List(elms, tail = None):
 	return _common.List(elms, tail, Cons, nil)
 	
 
-class _Appl(_common._Appl):
+class Appl(_common.Appl):
+
+	def apply(self, term, ctx):
+		name = self.name
+		args = [arg.apply(term, ctx) for arg in self.args]
+		return term.factory.makeAppl(name, args)
+
+class ApplCons(_common.ApplCons):
 
 	def apply(self, term, ctx):
 		name = self.name.apply(term, ctx)
 		args = self.args.apply(term, ctx)
+		# TODO: better type checking
+		name = name.value
+		args = tuple(args)
 		return term.factory.makeAppl(name, args)
-
-
-def Appl(name, args):
-	return _common.Appl(name, args, _Appl, _Term, List)
 
 
 Var = variable.Build

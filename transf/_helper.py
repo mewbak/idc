@@ -38,7 +38,7 @@ class Factory(object):
 			else:
 				return object.__getattribute__(self, name)
 		if inicial.isupper():
-			return lambda *args: self.__Appl(self.__Str(name), self.__List(map(self.__coerce, args)))
+			return lambda *args: self.__Appl(name, map(self.__coerce, args))
 		if inicial.islower():
 			return self.__Var(name)
 		raise AttributeError

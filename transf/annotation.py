@@ -14,39 +14,35 @@ from transf import debug
 
 
 def Set(label, *values):
-	annos_var = build.Var('annos')
-	return scope.Let(
-		congruent.Annos(
-			lists.Fetch(congruent.Appl(match.Str(label), annos_var)) +
-			build.Cons(build.Appl(build.Str(label), annos_var), base.ident)
-		),
-		annos = build.List(values)
+	return congruent.Annos(
+		lists.Fetch(congruent.Appl(label, values)) +
+		build.Cons(build.Appl(label, values), base.ident)
 	)
 
 
 def Update(label, *values):
-	values = congruent.List(values)
 	return congruent.Annos(
-		lists.Fetch(congruent.Appl(match.Str(label), values))
+		lists.Fetch(congruent.Appl(label, values))
 	)
 
 
 def Get(label):
-	return \
-		project.annos * \
-		project.Fetch(match.Appl(match.Str(label), base.ident)) * \
-		project.args * \
+	return (
+		project.annos *
+		project.Fetch(match.ApplName(label)) *
+		project.args *
 		combine.If(
 			match.Cons(base.ident, match.nil), 
 			project.head
 		)
+	)
 
 
 def Del(label):
 	return congruent.Annos(
 		+(
 			lists.Filter(
-				-match.Appl(match.Str(label), base.ident)
+				-match.ApplName(label)
 			)
 		)
 	)

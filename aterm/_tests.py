@@ -118,18 +118,17 @@ class TestTerm(unittest.TestCase):
 			self.failIfMutable(_term)
 	
 	applTestCases = [
-		('C', '"C"', 0),
-		('C(1)', '"C"', 1),
-		('C(1,2)', '"C"', 2),
+		('C', 'C', 0),
+		('C(1)', 'C', 1),
+		('C(1,2)', 'C', 2),
 	]
 	
 	def testAppl(self):
-		for termStr, nameStr, arity in self.applTestCases:
+		for termStr, name, arity in self.applTestCases:
 			_term = self.factory.parse(termStr)
-			name = self.factory.parse(nameStr)
 			self.failUnless(_term.factory is self.factory)
-			self.failUnlessEqual(_term.getType(), aterm.types.APPL)
-			self.failUnlessEqual(_term.getName(), name)
+			self.failUnlessEqual(_term.type, aterm.types.APPL)
+			self.failUnlessEqual(_term.name, name)
 			self.failUnlessEqual(_term.getArity(), arity)
 			self.failUnlessEqual(str(_term), termStr)
 			self.failIfMutable(_term)

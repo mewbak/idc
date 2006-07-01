@@ -302,7 +302,7 @@ makeNode = build._.Node(
 	makeNodeEdges
 )
 
-hasTerminalNode = match.Appl('Function', base.ident)
+hasTerminalNode = match.ApplName('Function')
 
 makeTerminalNode = hasTerminalNode * build._.Node(
 	GetTerminalNodeId(getStmtId), 
