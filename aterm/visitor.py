@@ -7,9 +7,6 @@ class Visitor(object):
 	def __init__(self):
 		pass
 	
-	def __call__(self, term, *args, **kargs):
-		return self.visit(term, *args, **kargs)
-		
 	def visit(self, term, *args, **kargs):
 		'''Visit the given term.'''
 		return term.accept(self, *args, **kargs)

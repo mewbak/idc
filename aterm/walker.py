@@ -1,9 +1,9 @@
-'''Base classes for term walker construction.
+'''Term walking.
 
 A term walker is a class aimed to process/transform a term as it traverses the
 term. It is an extension of the Visitor design pattern.
 
-An aterm walker's interface is very liberal: is up to the caller determine which
+An term walker's interface is very liberal: is up to the caller determine which
 method to call and which arguments to pass, and the return value is not
 necessarily a term.
 
@@ -14,17 +14,17 @@ the same walker methods do not necessarily yield the same results.
 
 import inspect
 
-import aterm.types
-import aterm.visitor
+from aterm import types
+from aterm import visitor
 
 
-class _Dispatcher(aterm.visitor.Visitor):
+class _Dispatcher(visitor.Visitor):
 	'''Visitor which dynamically resolves the walker method name corresponding 
 	to the term being dispatched.
 	'''
 	
 	def __init__(self, walker, prefix):
-		aterm.visitor.Visitor.__init__(self)
+		visitor.Visitor.__init__(self)
 		self.walker = walker
 		self.prefix = prefix
 
@@ -134,25 +134,25 @@ class Walker(object):
 	
 	def _int(self, term):
 		'''Get the value of an integer term.'''
-		if term.type != aterm.types.INT:
+		if term.type != types.INT:
 			raise TypeError("not an integer term", term)
 		return term.value
 	
 	def _real(self, term):
 		'''Get the value of a real term.'''
-		if term.type != aterm.types.REAL:
+		if term.type != types.REAL:
 			raise TypeError("not a real term", term)
 		return term.value
 	
 	def _str(self, term):
 		'''Get the value of a string term.'''
-		if term.type != aterm.types.STR:
+		if term.type != types.STR:
 			raise TypeError("not a string term", term)
 		return term.value
 	
 	def _lit(self, term):
 		'''Get the value of a literal term.'''
-		if not term.type in (aterm.types.INT, aterm.types.REAL, aterm.types.STR):
+		if not term.type in (types.INT, types.REAL, types.STR):
 			raise TypeError("not a literal term", term)
 		return term.value
 	

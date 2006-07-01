@@ -2,6 +2,7 @@
 
 
 from aterm import visitor
+from aterm import parser
 
 
 class Match(object):
@@ -163,17 +164,55 @@ class Var(Matcher):
 
 class Seq(Matcher):
 	
-	def __init__(self, first, second):
+	def __init__(self, pre, post):
 		Matcher.__init__(self)
-		assert isinstance(first, Matcher)
-		assert isinstance(second, Matcher)
-		self.first = first
-		self.second = second
+		assert isinstance(pre, Matcher)
+		assert isinstance(post, Matcher)
+		self.pre = pre
+		self.post = post
 
 	def visitTerm(self, term, match):
 		temp = Match()
 		temp.kargs = match.kargs
 		return (
-			self.first.visit(term, temp) and 
-			self.second.visit(term, match)
-		)		
+			self.pre.visit(term, temp) and 
+			self.post.visit(term, match)
+		)
+
+
+class Parser(parser.Parser):
+	
+	def handleInt(self, value):
+		return Int(value)
+
+	def handleReal(self, value):
+		return Real(value)
+
+	def handleStr(self, value):
+		return Str(value)
+
+	def handleNil(self):
+		return Nil()
+
+	def handleCons(self, head, tail):
+		return Cons(head, tail)
+	
+	def handleAppl(self, name, args):
+		return Appl(name, args)
+	
+	def handleAnnos(self, term, annos):
+		# ignore annotations
+		return term
+	
+	def handleWildcard(self):
+		return Wildcard()
+	
+	def handleVar(self, name):
+		return Var(name)
+
+	def handleSeq(self, pre, post):
+		return Seq(pre, post)
+		
+	def handleApplCons(self, name, args):
+		return ApplCons(name, args)
+	

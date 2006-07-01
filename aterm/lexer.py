@@ -1,4 +1,4 @@
-"""Custom aterm lexer."""
+"""Term tokenization."""
 
 
 import antlr

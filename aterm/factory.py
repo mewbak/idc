@@ -5,7 +5,8 @@ import antlr
 
 from aterm import exceptions
 from aterm import terms
-from aterm import match
+from aterm.lexer import Lexer
+from aterm.parser import Parser as BaseParser
 
 
 class _Singleton(type):
@@ -138,13 +139,14 @@ class Factory(object):
 		'''Matches the term to a string pattern and a list of arguments. 
 		'''
 		assert isinstance(pattern, basestring)
+		from aterm.match import Parser, Match
 		lexer = Lexer(pattern)
 		parser = Parser(lexer)
 		try:
-			matcher = parser.match_term()
+			matcher = parser.term()
 		except antlr.ANTLRException, exc:
 			raise exceptions.ParseException(str(exc))
-		mo = match.Match()
+		mo = Match()
 		if matcher.visit(term, mo):
 			return mo
 		else:
@@ -154,13 +156,13 @@ class Factory(object):
 		'''Creates a new term from a string pattern and a list of arguments. 
 		First the string pattern is parsed, then the holes in 
 		the pattern are filled with the supplied arguments.
-		'''
-		
+		'''	
 		assert isinstance(pattern, basestring)
+		from aterm.build import Parser
 		lexer = Lexer(pattern)
 		parser = Parser(lexer)
 		try:
-			builder = parser.build_term()
+			builder = parser.term()
 		except antlr.ANTLRException, exc:
 			raise exceptions.ParseException(str(exc))
 			
@@ -180,5 +182,40 @@ class Factory(object):
 factory = Factory()
 
 
-from aterm.lexer import Lexer
-from aterm.parser import Parser
+class Parser(BaseParser):
+	
+	def handleInt(self, value):
+		return factory.makeInt(value)
+
+	def handleReal(self, value):
+		return factory.makeReal(value)
+
+	def handleStr(self, value):
+		return factory.makeStr(value)
+
+	def handleNil(self):
+		return factory.makeNil()
+
+	def handleCons(self, head, tail):
+		return factory.makeCons(head, tail)
+	
+	def handleAppl(self, name, args):
+		return factory.makeAppl(name, args)
+	
+	def handleAnnos(self, term, annos):
+		return term.setAnnotations(annos)
+	
+	def handleWildcard(self):
+		return "_"
+	
+	def handleVar(self, name):
+		return name
+
+	def handleSeq(self, pre, post):
+		# ignore post
+		return pre
+		
+	def handleApplCons(self, name, args):
+		return factory.makeAppl(name, args)
+	
+

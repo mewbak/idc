@@ -2,6 +2,7 @@
 
 
 from aterm.factory import factory
+from aterm import parser
 
 
 class Build(object):
@@ -127,3 +128,41 @@ class Annos(Builder):
 		term = self.term._build(build)
 		annos = self.annos._build(build)
 		return term.setAnnotations(annos)
+
+
+
+class Parser(parser.Parser):
+	
+	def handleInt(self, value):
+		return Int(value)
+
+	def handleReal(self, value):
+		return Real(value)
+
+	def handleStr(self, value):
+		return Str(value)
+
+	def handleNil(self):
+		return Nil()
+
+	def handleCons(self, head, tail):
+		return Cons(head, tail)
+	
+	def handleAppl(self, name, args):
+		return Appl(name, args)
+	
+	def handleAnnos(self, term, annos):
+		return Annos(term, annos)
+	
+	def handleWildcard(self):
+		return Wildcard()
+	
+	def handleVar(self, name):
+		return Var(name)
+
+	def handleSeq(self, pre, post):
+		# ignore pre
+		return post
+		
+	def handleApplCons(self, name, args):
+		return ApplCons(name, args)
