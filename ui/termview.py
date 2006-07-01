@@ -28,17 +28,17 @@ class TermTreeIter:
 			return TermTreeIter(
 				self.path[:-1] + (self.path[-1] + 1,), 
 				self.parents,
-				self.tail.getHead(),
-				self.tail.getTail()
+				self.tail.head,
+				self.tail.tail
 			)
 	
 	def _children(self):
 		term = self.head
-		type = term.getType()
+		type = term.type
 		if type & aterm.types.LIST:
 			return term
 		elif type == aterm.types.APPL:
-			return term.getArgs()
+			return term.factory.makeList(term.args)
 		else:
 			return term.factory.makeNil()
 		
@@ -50,8 +50,8 @@ class TermTreeIter:
 			return TermTreeIter(
 				self.path + (0,),
 				self.parents + ((self.head, self.tail),),
-				children.getHead(),
-				children.getTail()
+				children.head,
+				children.tail
 			)
 
 	def has_child(self):
@@ -72,8 +72,8 @@ class TermTreeIter:
 			return TermTreeIter(
 				self.path + (n,),
 				self.parents + ((self.head, self.tail),),
-				children.getHead(),
-				children.getTail()
+				children.head,
+				children.tail
 			)	
 	
 	def parent(self):
@@ -130,21 +130,21 @@ class TermTreeModel(gtk.GenericTreeModel):
 		'''returns the value stored in a particular column for the node'''
 		
 		term = node.term()
-		type = term.getType()
+		type = term.type
 
 		if column == 0:			
 			if type == aterm.types.INT:
-				return str(term.getValue())
+				return str(term.value)
 			elif type == aterm.types.REAL:
-				return str(term.getValue())
+				return str(term.value)
 			elif type == aterm.types.STR:
-				return repr(term.getValue())
+				return repr(term.value)
 			elif type == aterm.types.NIL:
 				return '[]'
 			elif type == aterm.types.CONS:
 				return '[...]'
 			elif type == aterm.types.APPL:
-				return term.getName().getValue()
+				return term.name
 			else:
 				return '?'
 		elif column == 1:
@@ -161,7 +161,8 @@ class TermTreeModel(gtk.GenericTreeModel):
 			else:
 				return '?'
 		elif column == 2:
-			return ', '.join([str(anno) for anno in term.getAnnotations()])
+			if term.annotations:
+				return ', '.join([str(anno) for anno in term.annotations])
 		else:
 			return None
 	   

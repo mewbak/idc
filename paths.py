@@ -149,117 +149,9 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 annotate = Annotator.annotate
 
 
+
+
 class Projector(aterm.visitor.Visitor):
-	'''Visitor which projects the subterm specified by a path.'''
-
-	def project(cls, term, path):
-		projector = cls()
-		return projector.visit(term, reverse_path(path), 0)
-	project = classmethod(project)
-
-	def visit(self, term, path, index):
-		if not path:
-			return term
-		else:
-			return super(Projector, self).visit(term, path, index)
-	
-	def visitTerm(self, term, path, index):
-		raise TypeError('not a term list or application', term)
-	
-	def visitNil(self, term, path, index):
-		raise IndexError('index out of range', index)
-		
-	def visitCons(self, term, path, index):
-		if index == path.head.value:
-			return self.visit(term.head, path.tail, 0)
-		else:
-			return self.visit(term.tail, path, index + 1)
-
-	def visitAppl(self, term, path, index):
-		return self.visit(term.args[index], path, 0)
-
-
-
-class Transformer(aterm.visitor.IncrementalVisitor):
-
-	def transform(cls, term, path, func):
-		transformer = cls(func)
-		return transformer.visit(term, reverse_path(path), 0)
-	transform = classmethod(transform)
-		
-	def __init__(self, func):
-		super(Transformer, self).__init__()
-		self.callback = func
-
-	def visit(self, term, path, index):
-		if not path:
-			return self.callback(term)
-		else:
-			return super(Transformer, self).visit(term, path, index)
-	
-	def visitTerm(self, term, path, index):
-		raise TypeError('not a term list or application', term)
-	
-	def visitNil(self, term, path, index):
-		raise IndexError('index out of range', index)
-		
-	def visitHead(self, term, path, index):
-		if index == path.head.value:
-			return self.visit(term, path.tail, 0)
-		else:
-			return term
-		
-	def visitTail(self, term, path, index):
-		if index == path.head.value:
-			return term
-		else:
-			return self.visit(term, path, index + 1)
-	
-	def visitAppl(self, term, path, index):
-		old_arg = args[index] 
-		new_arg = self.visit(old_arg, path, 0)
-		if new_arg is not old_arg:
-			args = list(args) 
-			args[index] = new_arg
-			return term.factory.makeAppl(term.name, args, term.annotation)
-		else:
-			return term
-
-
-class Splitter(aterm.visitor.Visitor):
-	'''Splits a list term in two lists.'''
-
-	def split(cls, term, index):
-		splitter = cls(index)
-		return splitter.visit(term, 0)
-	split = classmethod(split)
-		
-	def __init__(self, index):
-		super(Splitter, self).__init__()
-		'''The argument is the index of the first element of the second list.'''
-		self.index = index
-
-	def visitTerm(self, term, index):
-		raise TypeError('not a term list', term)
-	
-	def visitNil(self, term, index):
-		if index == self.index:
-			return term.factory.makeNil(), term
-		else:
-			raise IndexError('index out of range')
-
-	def visitCons(self, term, index):
-		if index == self.index:
-			return term.factory.makeNil(), term
-		else:
-			head, tail = self.visit(term.getTail(), index + 1)
-			return term.factory.makeCons(term.getHead(), head, term.getAnnotations()), tail
-
-
-split = Splitter.split
-
-
-class IndexProjector(aterm.visitor.Visitor):
 	'''Visitor which projects the subterm specified by a path.'''
 
 	def project(cls, term, index):
@@ -291,12 +183,12 @@ def project(term, path):
 	path = _reverse(path)
 	while path:
 		index = path.head.value
-		term = IndexProjector.project(term, index)
+		term = Projector.project(term, index)
 		path = path.tail
 	return term
 
 
-class IndexTransformer(aterm.visitor.IncrementalVisitor):
+class Transformer(aterm.visitor.IncrementalVisitor):
 
 	def __init__(self, index, func):
 		aterm.visitor.IncrementalVisitor.__init__(self)
@@ -339,13 +231,13 @@ def transform(term, path, func):
 	func = func
 	while path:
 		index = path.head.value
-		func = IndexTransformer(index, func)
+		func = Transformer(index, func)
 		path = path.tail
 	term = func(term)
 	return term
 
 
-class IndexSplitter(aterm.visitor.Visitor):
+class Splitter(aterm.visitor.Visitor):
 	'''Splits a list term in two lists.'''
 
 	def split(cls, term, index):
@@ -373,6 +265,8 @@ class IndexSplitter(aterm.visitor.Visitor):
 		else:
 			head, tail = self.visit(term.getTail(), index + 1)
 			return term.factory.makeCons(term.getHead(), head, term.getAnnotations()), tail
+
+split = Splitter.split
 
 
 import unittest
@@ -481,7 +375,7 @@ class TestPath(unittest.TestCase):
 			input = self.factory.parse(inputStr)
 			expectedResult = self.factory.parse(expectedResultStr)
 			
-			result = path.Range(lists.Map(parse.Rule('x -> X(x)')), start, end)(input)
+			result = Range(lists.Map(parse.Rule('x -> X(x)')), start, end)(input)
 			
 			self.failUnlessEqual(result, expectedResult)
 
