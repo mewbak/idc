@@ -28,8 +28,8 @@ aterm returns [ret]
 		{ ret = aterm.factory.factory.makeStr(#s.getText()) }
 	| #( ATLIST l=aterm_list )
 		{ ret = l }
-	| #( n:ATAPPL args=aterm_list )
-		{ name = aterm.factory.factory.makeStr(#n.getText()) }
+	| #( n:ATAPPL args=aterm_args )
+		{ name = #n.getText() }
 		{ ret = aterm.factory.factory.makeAppl(name, args) }
 	;
  
@@ -39,3 +39,12 @@ aterm_list returns [ret]
 	|
 		{ ret = aterm.factory.factory.makeNil() }
 	;
+
+aterm_args returns [ret]
+: 
+		{ ret = [] }
+	( a=aterm 
+		{ ret.append(a) }
+	)*
+;
+	

@@ -10,6 +10,8 @@ from aterm import compare
 from aterm import annotate
 from aterm import hash
 from aterm import write
+from aterm import lists
+from aterm import convert
 
 
 class Term(object):
@@ -105,19 +107,19 @@ class Term(object):
 	def getAnnotation(self, label):
 		'''Gets an annotation associated'''
 		if not isinstance(label, basestring):
-			raise TypeError("label is not a string '%r'", label)
+			raise TypeError("label is not a string", label)
 		annotations = self.annotations
 		while annotations:
 			if self.factory.match(label, annotations.head):
 				return annotations.head				
 			annotations = annotations.tail
-		raise ValueError("undefined annotation '%r'" % label)
+		raise ValueError("undefined annotation", label)
 	
 	def setAnnotation(self, label, annotation):
 		'''Returns a new version of this term with the 
 		annotation associated with this label added or updated.'''
 		if not isinstance(label, basestring):
-			raise TypeError("label is not a string '%r'", label)
+			raise TypeError("label is not a string", label)
 		remover = annotate.Remover(label)
 		if self.annotations:
 			annotations = remover.visit(self.annotations)
@@ -130,7 +132,7 @@ class Term(object):
 		'''Returns a new version of this term with the 
 		annotation associated with this label removed.'''
 		if not isinstance(label, basestring):
-			raise TypeError("label is not a string '%r'", label)
+			raise TypeError("label is not a string", label)
 		remover = annotate.Remover(label)
 		annotation = self.annotations
 		if self.annotations:
@@ -176,6 +178,7 @@ class Term(object):
 		return '<Term %s>' % (fp.getvalue(),)
 
 
+
 class Lit(Term):
 	'''Base class for literal terms.'''
 
@@ -198,7 +201,7 @@ class Integer(Lit):
 
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, (int, long)):
-			raise TypeError('value is not an integer: %r' % value)
+			raise TypeError('value is not an integer', value)
 		Lit.__init__(self, factory, value, annotations)
 
 	def __int__(self):
@@ -217,7 +220,7 @@ class Real(Lit):
 	
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, float):
-			raise TypeError('value is not a float: %r' % value)
+			raise TypeError('value is not a float', value)
 		Lit.__init__(self, factory, value, annotations)
 
 	def __float__(self):
@@ -236,7 +239,7 @@ class Str(Lit):
 	
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, str):
-			raise TypeError('value is not an str: %r' % value)
+			raise TypeError('value is not a string', value)
 		Lit.__init__(self, factory, value, annotations)
 
 	def accept(self, visitor, *args, **kargs):
@@ -248,39 +251,30 @@ class List(Term):
 
 	__slots__ = []
 	
-	def isEmpty(self):	
-		raise NotImplementedError
-	
 	def __nonzero__(self):
-		return not self.isEmpty()
+		return not lists.empty(self)
 
-	def getLength(self):
-		raise NotImplementedError
-	
 	def __len__(self):
-		return self.getLength()
-
-	def getHead(self):
-		raise NotImplementedError
-
-	def getTail(self):
-		raise NotImplementedError
+		return lists.length(self)
 
 	def __getitem__(self, index):
-		raise NotImplementedError
+		return lists.item(self, index)
 
 	def __iter__(self):
-		raise NotImplementedError
+		return lists.Iter(self)
 
 	def insert(self, index, element):
-		raise NotImplementedError
+		return lists.insert(self, index, element)
 	
 	def append(self, element):
-		return self.extend(self.factory.makeCons(element, self.factory.makeNil()))
+		return lists.append(self, element)
 		
-	def extend(self, element):
-		raise NotImplementedError
-		
+	def extend(self, other):
+		return lists.extend(self, other)
+	
+	def reverse(self):
+		return lists.reverse(self)
+	
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitList(self, *args, **kargs)
 
@@ -295,34 +289,6 @@ class Nil(List):
 	def __init__(self, factory, annotations = None):
 		List.__init__(self, factory, annotations)
 
-	def isEmpty(self):
-		return True
-	
-	def getLength(self):
-		return 0
-
-	def getHead(self):
-		raise exceptions.EmptyListException
-	
-	def getTail(self):
-		raise exceptions.EmptyListException
-
-	def __getitem__(self, index):
-		raise IndexError
-
-	def __iter__(self):
-		raise StopIteration
-		yield None
-		
-	def insert(self, index, element):
-		if not index:
-			return self.factory.makeCons(element, self)
-		else:
-			raise IndexError
-		
-	def extend(self, tail):
-		return tail
-		
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitNil(self, *args, **kargs)
 
@@ -336,59 +302,16 @@ class Cons(List):
 	
 	def __init__(self, factory, head, tail = None, annotations = None):
 		List.__init__(self, factory, annotations)
-
 		if not isinstance(head, Term):
-			raise TypeError("head is not a term: %r" % head)
+			raise TypeError("head is not a term", head)
 		self.head = head
 		if tail is None:
 			self.tail = self.factory.makeNil()
 		else:
 			if not isinstance(tail, List):
-				raise TypeError("tail is not a list, variable, or wildcard term: %r" % tail)
+				raise TypeError("tail is not a list term", tail)
 			self.tail = tail
 	
-	def isEmpty(self):
-		return False
-	
-	def getLength(self):
-		return 1 + self.tail.getLength()
-	
-	def getHead(self):
-		return self.head
-	
-	def getTail(self):
-		return self.tail
-
-	def __getitem__(self, index):
-		if index == 0:
-			return self.head
-		else:
-			return self.tail.__getitem__(index - 1)
-
-	def __iter__(self):
-		term = self
-		while term:
-			yield term.head
-			term = term.tail
-		raise StopIteration
-		
-	def insert(self, index, element):
-		if not index:
-			return self.factory.makeCons(element, self)
-		else:
-			return self.factory.makeCons(
-				self.head,
-				self.tail.insert(index - 1, element),
-				self.annotations
-			)
-		
-	def extend(self, tail):
-		return self.factory.makeCons(
-			self.head, 
-			self.tail.extend(tail),
-			self.annotations
-		)
-		
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitCons(self, *args, **kargs)
 
@@ -402,16 +325,16 @@ class Appl(Term):
 	
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
-		if isinstance(name, Str):
-			self.name = name.value
-		else:
-			if not isinstance(name, basestring):
-				raise TypeError("name is not a string, variable, or wildcard term: %r" % name)
-			self.name = name
+		if not isinstance(name, basestring):
+			raise TypeError("name is not a string", name)
+		self.name = name
 		if args is None:
 			self.args = ()
 		else:
 			self.args = tuple(args)
+		for arg in self.args:
+			if not isinstance(arg, Term):
+				raise TypeError("arg is not a term", arg)			
 	
 	def getArity(self):
 		return len(self.args)

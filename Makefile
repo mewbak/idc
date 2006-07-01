@@ -76,11 +76,15 @@ examples:
 
 # Generate reference documentation
 
+EPYDOC = epydoc
+#EPYDOC = $(PYTHON) ./util/epydoc.py
+
 doc: all
 	rm -rf doc/html
 	epydoc \
 		--css blue \
 		--no-private \
+		--no-sourcecode \
 		-o doc/html \
 		aterm \
 		transf \

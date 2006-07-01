@@ -206,16 +206,16 @@ class Parser(BaseParser):
 		return term.setAnnotations(annos)
 	
 	def handleWildcard(self):
-		return "_"
+		return factory.makeStr("_")
 	
 	def handleVar(self, name):
-		return name
+		return factory.makeStr(name)
 
 	def handleSeq(self, pre, post):
 		# ignore post
 		return pre
 		
 	def handleApplCons(self, name, args):
-		return factory.makeAppl(name, args)
+		return factory.makeAppl(name.value, args)
 	
 

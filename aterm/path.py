@@ -263,8 +263,12 @@ class Splitter(aterm.visitor.Visitor):
 		if index == self.index:
 			return term.factory.makeNil(), term
 		else:
-			head, tail = self.visit(term.getTail(), index + 1)
-			return term.factory.makeCons(term.getHead(), head, term.getAnnotations()), tail
+			head, tail = self.visit(term.tail, index + 1)
+			return term.factory.makeCons(
+				term.head, 
+				head, 
+				term.annotations
+			), tail
 
 split = Splitter.split
 

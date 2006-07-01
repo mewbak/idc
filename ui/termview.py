@@ -60,11 +60,11 @@ class TermTreeIter:
 		
 	def n_children(self):
 		children = self._children()
-		return children.getLength()
+		return len(children)
 	
 	def nth_child(self, n):
 		children = self._children()
-		if n > children.getLength():
+		if n > len(children):
 			return None
 		else:
 			for i in range(n):
