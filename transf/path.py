@@ -8,7 +8,8 @@ from the leaves to the root.
 	
 import aterm.factory
 import aterm.visitor
-
+import aterm.convert
+import aterm.project
 import aterm.path
 
 from transf import exception
@@ -137,21 +138,11 @@ class Index(base.Transformation):
 		
 	def apply(self, term, ctx):
 		index = self.index.apply(term, ctx)
-		if index.type != aterm.types.INT:
-			raise exception.Fatal('index not integer', index)
-		index = index.value
-		if term.type == aterm.types.APPL:
-			term = term.args
-		while True:
-			if term.type == aterm.types.NIL:
-				raise exception.Failure('index out of range', index)
-			elif term.type == aterm.LIST:
-				if index == 0:
-					return term.head
-				else:
-					term = term.tail
-			else:
-				raise exception.Failure('not a list term', term)
+		index = aterm.convert.toInt(index)
+		try:
+			return aterm.project.subterm(term, index)
+		except IndexError:
+			raise exception.Failure('index out of bounds', term, index)
 		
 
 class Equals(operate.Unary):
