@@ -2,51 +2,46 @@
 
 
 import refactoring
-import transf
-from transf import *
-from ir.transfs import *
+from refactoring._common import CommonRefactoring
+
+import transf as lib
+import ir.path
 
 
-class ExtractFunction(refactoring.Refactoring):
+lib.parse.Transfs('''
 
-	def name(self):
-		return "Extract Function"
+goto =  
+	ir.path.inSelection ;
+	?GoTo(Sym(label))
+
+applicable =
+	~Module(<lists.Fetch(ir.path.isSelected ; ?Label(_) )>)
+
+input =
+	ir.path.projectSelection ;
+	( Label(label) -> [label] )
 	
-	def get_original_name(self, term, selection):
-		start, end = selection
-		if start != end:
-			return False
+apply =
+	with label in
+		Where(!args; ?[label]) ;
+		~Module(<AtSuffix(
+			with rest in
+				~[Label(?label), *<AtSuffix(
+					~[Ret(_,_), *<?rest ; ![]>]
+				)>] ;
+				![Function(Void, label, [], <project.tail>), *rest] ;
+				debug.Dump()
+			end
+		)>)
+	end
+''')
 
-		selected_term = path.fetch(term, start)
-		mo = selected_term.rmatch("Label(name)")
-		if mo:
-			return mo.kargs['name']
-		else:
-			return None
-		
-	def applicable(self, term, selection):
-		return self.get_original_name(term, selection) is not None
-
-	def input(self, term, selection):
-		factory = term.factory
-		label = self.get_original_name(term, selection)
-		args = factory.make("[label]", label = label)
-		return args
-
-	def apply(self, term, args):
-		factory = term.factory
-		name, = args
-		txn = transf.parse.Rule(r'''
-			[Label(name),*rest] -> [Function(Void,name,[],rest)]
-		''')
-		txn = transf.congruent.Appl('Module', (ExtractBlock(txn,name),))
-		# TODO: Handle seperate blocks
-		return txn(term)
+extractFunction = CommonRefactoring("Extract Function", applicable, input, apply)
 
 
 class TestCase(refactoring.TestCase):
 
-	cls = ExtractFunction
+	refactoring = extractFunction
 		
 	applyTestCases = [
 		(
@@ -90,4 +85,8 @@ class TestCase(refactoring.TestCase):
 			'''
 		),	]
 	
-	
+
+if __name__ == '__main__':
+	refactoring.main(extractFunction)
+
+

@@ -318,19 +318,6 @@ class TestTraverse(TestMixin, unittest.TestCase):
 	def testTopdown(self):
 		self._testMetaTransf(traverse.TopDown, self.topDownTestCases)
 
-	spitTestCases = (
-		('[1,2,3]', 'FAILURE'),
-		('[X,1,2,3]', '[[],X,[1,2,3]]'),
-		('[1,X,2,3]', '[[1,],X,[2,3]]'),
-		('[1,2,X,3]', '[[1,2,],X,[3]]'),
-		('[1,2,3,X]', '[[1,2,3],X,[]]'),
-	)
-
-	def testSplit(self):
-		# FIXME: move this away from here
-		from ir.transfs import Split
-		self._testTransf(Split(match.Term('X')), self.spitTestCases)
-
 	# TODO: testInnerMost
 
 

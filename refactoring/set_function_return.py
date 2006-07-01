@@ -1,9 +1,6 @@
 """Set function return."""
 
 
-"""Consolidate Control Structures."""
-
-
 import refactoring
 from refactoring._common import CommonRefactoring
 

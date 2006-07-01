@@ -77,11 +77,10 @@ class Factory:
 class TestCase(unittest.TestCase):
 	'''Base class for refactoring unittests.'''
 	
-	cls = Refactoring
+	refactoring = None
 	
 	def setUp(self):
 		self.factory = aterm.factory.factory
-		self.refactoring = self.cls()
 	
 	applyTestCases = []
 	
@@ -115,7 +114,7 @@ def main(obj):
 
 	if isinstance(obj, Refactoring):
 		refactoring = obj
-	if issubclass(obj, Refactoring):
+	elif issubclass(obj, Refactoring):
 		refactoring = obj()
 	term = refactoring.apply(term, args)
 	

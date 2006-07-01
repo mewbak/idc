@@ -3,7 +3,6 @@
 
 import transf
 
-import ir.transfs
 import ir.traverse
 
 
