@@ -13,14 +13,6 @@ class Writer(visitor.Visitor):
 		self.fp = fp
 
 
-class _GetSymbol(visitor.Visitor):
-	
-	def visitStr(self, term):
-		return term.value
-
-_getSymbol = _GetSymbol().visit
-
-
 class TextWriter(Writer):
 	'''Writes a term to a text stream.'''
 
@@ -86,6 +78,7 @@ class TextWriter(Writer):
 
 
 class AbbrevTextWriter(TextWriter):
+	'''Write an abbreviated term representation.'''
 	
 	def __init__(self, fp, depth):
 		super(AbbrevTextWriter, self).__init__(fp)

@@ -5,30 +5,31 @@ from aterm import visitor
 
 
 class Annotator(visitor.Visitor):
+	'''Annotate a term.'''
 	
-	def visit(self, term, annotations):
-		if term.annotations is annotations:
+	def visit(self, term, annos):
+		if term.annotations is annos:
 			return term
 		else:
-			return visitor.Visitor.visit(self, term, annotations)
-		
-	def visitInt(self, term, annotations):
-		return term.factory.makeInt(term.value, annotations)
+			return visitor.Visitor.visit(self, term, annos)
+			
+	def visitInt(self, term, annos):
+		return term.factory.makeInt(term.value, annos)
 
-	def visitReal(self, term, annotations):
-		return term.factory.makeReal(term.value, annotations)
+	def visitReal(self, term, annos):
+		return term.factory.makeReal(term.value, annos)
 		
-	def visitStr(self, term, annotations):
-		return term.factory.makeStr(term.value, annotations)
+	def visitStr(self, term, annos):
+		return term.factory.makeStr(term.value, annos)
 	
-	def visitNil(self, term, annotations):
-		return term.factory.makeNil(annotations)
+	def visitNil(self, term, annos):
+		return term.factory.makeNil(annos)
 
-	def visitCons(self, term, annotations):
-		return term.factory.makeCons(term.head, term.tail, annotations)
+	def visitCons(self, term, annos):
+		return term.factory.makeCons(term.head, term.tail, annos)
 
-	def visitAppl(self, term, annotations):
-		return term.factory.makeAppl(term.name, term.args, annotations)
+	def visitAppl(self, term, annos):
+		return term.factory.makeAppl(term.name, term.args, annos)
 
 annotate = Annotator().visit
 

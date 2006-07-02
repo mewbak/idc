@@ -5,7 +5,7 @@ from aterm import visitor
 
 
 class StructuralHash(visitor.Visitor):
-	'''Perform hashing without considering.'''
+	'''Perform hashing without considering annotations.'''
 	
 	def hash(cls, term):
 		return cls().visit(term)
@@ -51,6 +51,3 @@ class Hash(StructuralHash):
 			return hash(term_hash, annos_hash)
 		else:
 			return term_hash
-
-
-# TODO: implement a XML writer

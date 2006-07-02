@@ -36,21 +36,21 @@ class Comparator(visitor.Visitor):
 		return True
 	
 
-class EquivalenceComparator(Comparator):
+class Equivalent(Comparator):
 	'''Comparator for determining term equivalence (which does not 
 	contemplate annotations).
 	'''
 
 	def visit(self, term, other):
-		return \
-			term is other or \
+		return (
+			term is other or
 			Comparator.visit(self, term, other)
+		)
+
+isEquivalent = Equivalent().visit
 
 
-isEquivalent = EquivalenceComparator().visit
-
-
-class EqualityComparator(EquivalenceComparator):
+class Equal(Equivalent):
 	'''Comparator for determining term equality (which contemplates 
 	annotations).
 	'''
@@ -64,8 +64,7 @@ class EqualityComparator(EquivalenceComparator):
 		
 	def visit(self, term, other):
 		return \
-			EquivalenceComparator.visit(self, term, other) and \
+			Equivalent.visit(self, term, other) and \
 			self.compareAnnos(term.annotations, other.annotations)
 
-
-isEqual = EqualityComparator().visit
+isEqual = Equal().visit

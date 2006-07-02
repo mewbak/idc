@@ -1,4 +1,4 @@
-"""Term tokenization."""
+"""Term textual representation tokenization."""
 
 
 import antlr

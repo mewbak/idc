@@ -20,7 +20,6 @@ from transf import annotation
 
 
 _factory = aterm.factory.factory
-_path = _factory.parse('Path(_)')
 
 
 get = annotation.Get('Path')

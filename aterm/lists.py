@@ -1,4 +1,4 @@
-'''List operations.'''
+'''List term operations.'''
 
 
 from aterm import visitor

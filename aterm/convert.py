@@ -5,6 +5,7 @@ from aterm import visitor
 
 
 class ToInt(visitor.Visitor):
+	'''Convert an integer term to its integer value.'''
 	
 	def visitTerm(self, term):
 		raise TypeError('not an integer term', term)
@@ -16,6 +17,7 @@ toInt = ToInt().visit
 
 
 class ToReal(visitor.Visitor):
+	'''Convert a real term to its real value.'''
 	
 	def visitTerm(self, term):
 		raise TypeError('not a real term', term)
@@ -27,6 +29,7 @@ toReal = ToReal().visit
 
 
 class ToStr(visitor.Visitor):
+	'''Convert a string term to its string value.'''
 	
 	def visitTerm(self, term):
 		raise TypeError('not a string term', term)
@@ -38,6 +41,7 @@ toStr = ToStr().visit
 
 
 class ToLit(visitor.Visitor):
+	'''Convert a literal term to its value.'''
 	
 	def visitTerm(self, term):
 		raise TypeError('not a literal term', term)
@@ -49,7 +53,8 @@ toLit = ToLit().visit
 
 
 class ToList(visitor.Visitor):
-	
+	'''Convert a list term to a list of terms.'''
+
 	def visitTerm(self, term):
 		raise TypeError('not a list term', term)
 	
@@ -65,6 +70,8 @@ toList = ToList().visit
 
 
 class ToObj(visitor.Visitor):
+	'''Recursively convert literal and list terms to the corresponding
+	Python objects.'''
 	
 	def visitTerm(self, term):
 		raise TypeError('term not convertible', term)
@@ -80,5 +87,4 @@ class ToObj(visitor.Visitor):
 		tail = self.visit(term.tail)
 		return [head] + tail
 	
-
 toObj = ToObj().visit

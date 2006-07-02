@@ -2,11 +2,13 @@
 
 
 from aterm.factory import factory
+from aterm import exceptions
+from aterm import convert
 from aterm import parser
 
 
 class Build(object):
-	'''Build object.'''
+	'''Build context.'''
 	
 	def __init__(self, args, kargs):
 		self.args = args
@@ -14,6 +16,7 @@ class Build(object):
 
 
 class Builder(object):
+	'''Base class for all term builders.'''
 
 	def build(self, *args, **kargs):
 		build = Build(list(args), kargs)
@@ -24,6 +27,9 @@ class Builder(object):
 	
 
 class Term(Builder):
+	'''Builds a term. Used for building terminal terms such as
+	the literal terms and empty list terms.
+	'''
 	
 	def __init__(self, term):
 		Builder.__init__(self)
@@ -34,22 +40,27 @@ class Term(Builder):
 
 
 def Int(value):
+	'''Integer term builder.'''
 	return Term(factory.makeInt(value))
 
 
 def Real(value):
+	'''Real term builder.'''
 	return Term(factory.makeReal(value))
 
 
 def Str(value):
+	'''String term builder.'''
 	return Term(factory.makeStr(value))
 
 	
 def Nil():
+	'''Empty list term builder.'''
 	return Term(factory.makeNil())
 
 
 class Cons(Builder):
+	'''List construction term builder.'''
 	
 	def __init__(self, head, tail):
 		Builder.__init__(self)
@@ -66,6 +77,7 @@ class Cons(Builder):
 
 
 class Appl(Builder):
+	'''Application term builder.'''
 	
 	def __init__(self, name, args):
 		Builder.__init__(self)
@@ -81,6 +93,10 @@ class Appl(Builder):
 
 
 class ApplCons(Builder):
+	'''Application (construction) term builder. 
+	
+	Same as L{Appl}, but receives name and arguments from other builders.
+	'''
 	
 	def __init__(self, name, args):
 		Builder.__init__(self)
@@ -90,21 +106,22 @@ class ApplCons(Builder):
 		self.args = args
 	
 	def _build(self, build):
-		name = self.name._build(build)
-		args = self.args._build(build)
-		return factory.makeAppl(
-			name.value,
-			tuple(args)
-		)
+		name = convert.toStr(self.name._build(build))
+		args = convert.toList(self.args._build(build))
+		return factory.makeAppl(name, args)
 
 
 class Wildcard(Builder):
+	'''Wildcard term builder. Gets the term from the supplied 
+	argument list.'''
 	
 	def _build(self, build):
 		return build.args.pop(0)
 
 
 class Var(Builder):
+	'''Variable term builder. Gets the from the supplied
+	argument dictionary.'''
 	
 	def __init__(self, name):
 		Builder.__init__(self)
@@ -116,6 +133,7 @@ class Var(Builder):
 
 
 class Annos(Builder):
+	'''Term annotation builder.'''
 	
 	def __init__(self, term, annos):
 		Builder.__init__(self)
@@ -130,8 +148,8 @@ class Annos(Builder):
 		return term.setAnnotations(annos)
 
 
-
 class Parser(parser.Parser):
+	'''Parse a term pattern into a tree of term builders.'''
 	
 	def handleInt(self, value):
 		return Int(value)
@@ -161,8 +179,7 @@ class Parser(parser.Parser):
 		return Var(name)
 
 	def handleSeq(self, pre, post):
-		# ignore pre
-		return post
+		raise exceptions.ParseError('variable sub-pattern in a build pattern')
 		
 	def handleApplCons(self, name, args):
 		return ApplCons(name, args)

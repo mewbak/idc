@@ -334,6 +334,8 @@ def main():
 		dotcode = lang.dot.stringify(term)
 		print dotcode
 
+		#return
+
 		import gtk
 		import ui.dotview
 		win = ui.dotview.DotWindow()

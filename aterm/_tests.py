@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''Unit tests for the aterm package.'''
+'''Unit tests.'''
 
 
 import unittest
@@ -335,7 +335,7 @@ class TestTerm(unittest.TestCase):
 						hash2 = hashf(term2)
 						term_eq = cmpf(term1, term2)
 						hash_eq = hash1 == hash2
-						detail = '%s (0x%08x) and %s (0x%08x)' % (
+						detail = '%s (%d) and %s (%d)' % (
 							term1Str, hash1, term2Str, hash2
 						)
 						if term_eq:

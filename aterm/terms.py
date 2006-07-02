@@ -85,12 +85,8 @@ class Term(object):
 	def __ne__(self, other):
 		return not self.__eq__(other)
 
-	def match(self, other):
-		'''Matches this term pattern against a string or term.'''
-		raise NotImplementedError
-	
 	def rmatch(self, other):
-		'''Matches this term against a string or term pattern.'''
+		'''Matches this term against a string pattern.'''
 		return self.factory.match(other, self)
 
 	def getAnnotations(self):
@@ -141,10 +137,6 @@ class Term(object):
 		else:
 			return self
 		
-	def make(self, *args, **kargs):
-		'''Create a new term based on this term and a list of arguments.'''
-		raise NotImplementedError
-
 	def accept(self, visitor, *args, **kargs):
 		'''Accept a visitor.'''
 		raise NotImplementedError
@@ -176,7 +168,6 @@ class Term(object):
 		except:
 			fp.write('...<error>')
 		return '<Term %s>' % (fp.getvalue(),)
-
 
 
 class Lit(Term):
@@ -250,6 +241,8 @@ class List(Term):
 	'''Base class for list terms.'''
 
 	__slots__ = []
+	
+	# Python's list compatability methods
 	
 	def __nonzero__(self):
 		return not lists.empty(self)

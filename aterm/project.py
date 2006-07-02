@@ -6,6 +6,7 @@ from aterm import visitor
 
 
 class Subterms(visitor.Visitor):
+	'''Project the direct subterms of a term.'''
 	
 	def visitLit(self, term):
 		return factory.makeNil()
@@ -20,6 +21,7 @@ subterms = Subterms().visit
 
 
 class Subterm(visitor.Visitor):
+	'''Project a direct subterm of a term.'''
 
 	def visitTerm(self, term, index):
 		raise IndexError('index out of bounds')	

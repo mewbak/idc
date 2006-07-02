@@ -5,13 +5,9 @@ class BaseException(Exception):
 	'''Base class for all term-related exceptions.'''
 	pass
 
+	# TODO: have all raised exceptions derived from this
 
-class ParseException(BaseException):
+
+class ParseError(BaseException):
 	'''Error parsing textual representation of terms.'''
 	pass
-
-	
-class EmptyListException(BaseException):
-	'''Attempt to access beyond the end of the list.'''
-	pass
-

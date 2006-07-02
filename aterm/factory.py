@@ -109,7 +109,7 @@ class Factory(object):
 		try:
 			return parser.term()
 		except antlr.ANTLRException, exc:
-			raise exceptions.ParseException(str(exc))
+			raise exceptions.ParseError(str(exc))
 	
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
@@ -145,7 +145,7 @@ class Factory(object):
 		try:
 			matcher = parser.term()
 		except antlr.ANTLRException, exc:
-			raise exceptions.ParseException(str(exc))
+			raise exceptions.ParseError(str(exc))
 		mo = Match()
 		if matcher.visit(term, mo):
 			return mo
@@ -164,7 +164,7 @@ class Factory(object):
 		try:
 			builder = parser.term()
 		except antlr.ANTLRException, exc:
-			raise exceptions.ParseException(str(exc))
+			raise exceptions.ParseError(str(exc))
 			
 		i = 0
 		_args = []
@@ -183,6 +183,7 @@ factory = Factory()
 
 
 class Parser(BaseParser):
+	'''Parse a textual description of the term.'''
 	
 	def handleInt(self, value):
 		return factory.makeInt(value)
@@ -206,16 +207,13 @@ class Parser(BaseParser):
 		return term.setAnnotations(annos)
 	
 	def handleWildcard(self):
-		return factory.makeStr("_")
+		raise exceptions.ParseError('wildcard in term')
 	
 	def handleVar(self, name):
-		return factory.makeStr(name)
+		raise exceptions.ParseError('variable in term')
 
 	def handleSeq(self, pre, post):
-		# ignore post
-		return pre
+		assert False
 		
 	def handleApplCons(self, name, args):
-		return factory.makeAppl(name.value, args)
-	
-
+		assert False

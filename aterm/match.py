@@ -6,17 +6,21 @@ from aterm import parser
 
 
 class Match(object):
-	'''Match object.'''
+	'''Match object. Collects matched wildcards and vars
+	as a term is matched against.
+	'''
 	
 	def __init__(self):
 		self.args = []
 		self.kargs = {}
 	
 	def __iter__(self):
+		'''Iterate over the wildcards.'''
 		return iter(self.args)
 
 
 class Matcher(visitor.Visitor):
+	'''Base class for all term matchers.'''
 
 	def match(self, term):
 		match = Match()
@@ -30,6 +34,7 @@ class Matcher(visitor.Visitor):
 
 	
 class Int(Matcher):
+	'''Integer term matcher.'''
 	
 	def __init__(self, value):
 		Matcher.__init__(self)
@@ -41,6 +46,7 @@ class Int(Matcher):
 
 
 class Real(Matcher):
+	'''Real term matcher.'''
 	
 	def __init__(self, value):
 		Matcher.__init__(self)
@@ -52,6 +58,7 @@ class Real(Matcher):
 
 
 class Str(Matcher):
+	'''String term matcher.'''
 	
 	def __init__(self, value):
 		Matcher.__init__(self)
@@ -63,12 +70,14 @@ class Str(Matcher):
 
 
 class Nil(Matcher):
+	'''Empty list term matcher.'''
 	
 	def visitNil(self, term, match):
 		return True
 
 
 class Cons(Matcher):
+	'''List construction term matcher.'''
 	
 	def __init__(self, head, tail):
 		Matcher.__init__(self)
@@ -85,6 +94,7 @@ class Cons(Matcher):
 
 
 class Appl(Matcher):
+	'''Application term matcher.'''
 	
 	def __init__(self, name, args):
 		Matcher.__init__(self)
@@ -104,6 +114,10 @@ class Appl(Matcher):
 
 
 class ApplCons(Matcher):
+	'''Application term (deconstruction) matcher.
+	
+	Same as L{Appl}, but supplies name and arguments to other matchers.
+	'''
 	
 	def __init__(self, name, args):
 		Matcher.__init__(self)
@@ -121,6 +135,7 @@ class ApplCons(Matcher):
 
 
 class Wildcard(Matcher):
+	'''Wildcard (any term) matcher.'''
 	
 	def visitTerm(self, term, match):
 		match.args.append(term)
@@ -128,6 +143,7 @@ class Wildcard(Matcher):
 
 
 class Var(Matcher):
+	'''Variable (any term) matcher.'''
 	
 	def __init__(self, name):
 		Matcher.__init__(self)
@@ -145,6 +161,7 @@ class Var(Matcher):
 
 
 class Seq(Matcher):
+	'''Matcher sequence. Used for variable sub-patterns.'''
 	
 	def __init__(self, pre, post):
 		Matcher.__init__(self)
@@ -163,6 +180,7 @@ class Seq(Matcher):
 
 
 class Parser(parser.Parser):
+	'''Parse a term pattern into a tree of term matchers.'''
 	
 	def handleInt(self, value):
 		return Int(value)
