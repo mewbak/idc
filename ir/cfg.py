@@ -35,7 +35,7 @@ parse.Transfs('''
 markLabelRef = 
 	with name in
 		?Label(name) ;
-		![name, <getStmtId>] => lbls
+		![name, <getStmtId>] ==> lbls
 	end
 
 lookupLabel =
@@ -76,51 +76,51 @@ markStmtFlow.subject = parse.Transf('''
 let this = getStmtId in
 	?Assign
 		< SetCtrlFlow(![next])
-		; !this => next
+		; !this ==> next
 +	?Label
 		< SetCtrlFlow(![next])
-		; !this => next
+		; !this ==> next
 +	?Asm 
 		< SetCtrlFlow(![next])
-		; !this => next
+		; !this ==> next
 +	?If
 		< { true, false: 
 			~_(_, 
-				<let next=!next in markStmtFlow; !next => true end>, 
-				<let next=!next in markStmtFlow; !next => false end>
+				<let next=!next in markStmtFlow; !next ==> true end>, 
+				<let next=!next in markStmtFlow; !next ==> false end>
 			)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
 		}
-		; !this => next
+		; !this ==> next
 +	?While
 		< { true, false:
-			!next => false
-			; ~_(_, <let next=!this in markStmtFlow; !next => true end>)
+			!next ==> false
+			; ~_(_, <let next=!this in markStmtFlow; !next ==> true end>)
 			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
 		}
-		; !this => next
+		; !this ==> next
 +	?NoStmt
 		< SetCtrlFlow(![next])
-		; !this => next
+		; !this ==> next
 +	?Continue 
 		< SetCtrlFlow(![cont])
-		; !this => next
+		; !this ==> next
 +	?Break 
 		< SetCtrlFlow(![brek])
-		; !this => next
+		; !this ==> next
 +	?Ret 
 		< SetCtrlFlow(![retn])
-		; !this => next
+		; !this ==> next
 +	?GoTo
 		< SetCtrlFlow(![<lookupLabel>] + ![])
-		; !this => next
+		; !this ==> next
 +	?Var
 		< SetCtrlFlow(![next])
-		; !this => next
+		; !this ==> next
 +	?Block
 		< ~_(<markStmtsFlow>)
 		; SetCtrlFlow(![next])
-		; !this => next
+		; !this ==> next
 +	?Function
 		< let 
 			next = !next,
@@ -131,10 +131,10 @@ let this = getStmtId in
 			LabelTable(~_(_, _, _, <markStmtsFlow>))
 			; SetCtrlFlow(![next])
 		end
-		# !next => next
+		# !next ==> next
 +	
 		SetCtrlFlow({ n(*) -> [next{Cond(n)}] })
-		; !this => next
+		; !this ==> next
 end
 ''')
 

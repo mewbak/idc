@@ -666,10 +666,10 @@ JMPS[IDX]   addr
 JMP   addr 
             *32* %pc := addr;
 
-LEA.OD   reg32, mem 
+LEAL   reg32, mem 
             *32* reg32 := addr(mem);
 
-LEA.OW   reg16, mem 
+LEAW   reg16, mem 
             *16* reg16 := addr(mem);
 
 LEAVE    

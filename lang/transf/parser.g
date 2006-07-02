@@ -198,8 +198,10 @@ with_def
 
 transf_application
 	: transf_construct 
-		( RDARROW! id 
-			{ ## = #(#[ATAPPL,"Store"], ##) } 
+		( RDARROW! term
+			{ ## = #(#[ATAPPL,"ApplyMatch"], ##) } 
+		| RDDARROW! id
+			{ ## = #(#[ATAPPL,"ApplyStore"], ##) } 
 		)?
 	;
 

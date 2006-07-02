@@ -23,7 +23,21 @@ liftIfThen =
 			![If(Unary(Not(Bool), cond), Block(<project.tail>), NoStmt), *rest]
 		end
 
-# TODO: liftIfElse
+liftIfElse =
+		with 
+			cond, false_stmts,
+			true_label, true_stmts,
+			rest_label, rest_stmts
+		in
+			~[If(cond, <ir.path.inSelection;?GoTo(Sym(true_label))>, NoStmt), *<AtSuffix(
+				~[GoTo(Sym(rest_label)), Label(true_label), *<AtSuffix(
+					?[Label(rest_label), *] => rest_stmts ;
+					![]
+				)>] ; project.tail => true_stmts ;
+				![]
+			)>] ; project.tail => false_stmts ;
+			![If(cond, Block(true_stmts), Block(false_stmts)), *rest_stmts]
+		end
 
 liftLoop =
 		with label, rest in
@@ -57,6 +71,9 @@ noInput = ![]
 csIfThenApply = OnceTD(AtSuffix(liftIfThen))
 csIfThenApplicable = gotoSelected ; csIfThenApply
 
+csIfElseApply = OnceTD(AtSuffix(liftIfElse))
+csIfElseApplicable = gotoSelected ; csIfElseApply
+
 csLoopApply = OnceTD(AtSuffix(liftLoop))
 csLoopApplicable = gotoSelected ; csLoopApply
 
@@ -68,7 +85,8 @@ csAllApplicable = id # functionSelected
 
 ''')
 
-csIf = CommonRefactoring("Consolidate If-Then", csIfThenApplicable, noInput, csIfThenApply)
+csIfThen = CommonRefactoring("Consolidate If-Then", csIfThenApplicable, noInput, csIfThenApply)
+csIfElse = CommonRefactoring("Consolidate If-Else", csIfElseApplicable, noInput, csIfElseApply)
 csLoop = CommonRefactoring("Consolidate Loop", csLoopApplicable, noInput, csLoopApply)
 csWhile = CommonRefactoring("Consolidate While", csWhileApplicable, noInput, csWhileApply)
 csAll = CommonRefactoring("Consolidate All", csAllApplicable, noInput, csAllApply)

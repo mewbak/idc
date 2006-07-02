@@ -50,6 +50,7 @@ _tokenizer = antlrre.Tokenizer(
 
 		(parser.RARROW, r'->', False),
 		(parser.RDARROW, r'=>', False),
+		(parser.RDDARROW, r'==>', False),
 		
 		(parser.OBJ, pyobj, False),
 	],

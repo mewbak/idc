@@ -11,7 +11,6 @@ from lang.ssl.spec.pentium import insn_table
 
 sslTranslationTable = {
 	"orl": "OR.RMOD",
-	"xorl": "XOR.RMOD",
 	"leal": "LEA.OD",
 	"pushl": "PUSH.OD",
 	"popl": "POP.OD",

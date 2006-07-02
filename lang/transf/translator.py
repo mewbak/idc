@@ -226,7 +226,12 @@ class Translator(walker.Walker):
 			r = transf.scope.Local(r, vars)
 		return r
 	
-	def transfStore(self, t, v):
+	def transfApplyMatch(self, t, m):
+		t = self.transf(t)
+		m = self.match(m)
+		return transf.combine.Composition(t, m)
+	
+	def transfApplyStore(self, t, v):
 		t = self.transf(t)
 		v = self.id(v)
 		return transf.combine.Where(transf.combine.Composition(t, transf.variable.Set(v)))

@@ -18,16 +18,16 @@ hasSideEffects = OnceTD(?Call + ?Sym ; Not(ir.sym.isLocalVar))
 parse.Transfs(r'''
 
 SetVarInline(x, y) = 
-	Where(![x, y] => inline) ;
+	Where(![x, y] ==> inline) ;
 	Where(
 		!inline ;
-		Filter(([z, OnceTD(?x) ] -> [z]) => inline)
+		Filter(([z, OnceTD(?x) ] -> [z]) ==> inline)
 	)
 	
 
-ClearVarInline(x) = Where(![x] => inline)
+ClearVarInline(x) = Where(![x] ==> inline)
 
-clearAllInline = Where(![] => inline)
+clearAllInline = Where(![] ==> inline)
 
 inlineVars = AllTD(?Sym; ~inline)
 
@@ -43,7 +43,7 @@ Where(
 	with label in
 		?GoTo(Sym(label)) <
 		!inline ; 
-		Map(![label,<id>,~inline]; ![_,_] => label_inline) +
+		Map(![label,<id>,~inline]; ![_,_] ==> label_inline) +
 		id # FIXME
 	end
 )
