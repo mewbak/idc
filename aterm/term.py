@@ -5,13 +5,12 @@
 
 
 from aterm import types
-from aterm import exceptions
 from aterm import compare
-from aterm import annotate
 from aterm import hash
+from aterm import annotate
 from aterm import write
-from aterm import lists
 from aterm import convert
+from aterm import lists
 
 
 class Term(object):

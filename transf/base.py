@@ -2,7 +2,7 @@
 
 
 import aterm.factory
-import aterm.terms
+import aterm.term
 
 from transf import exception
 from transf import context
@@ -38,7 +38,7 @@ class Transformation(object):
 	def apply(self, trm, ctx):
 		'''Applies the transformation to the given term with the specified context.
 		
-		@param trm: L{Term<aterm.terms.Term>} to be transformed.
+		@param trm: L{Term<aterm.term.Term>} to be transformed.
 		@param ctx: Transformation L{context<context.Context>}.
 		@return: The transformed term on success.
 		@raise exception.Failure: on failure.
@@ -88,7 +88,7 @@ class Transformation(object):
 		attrs = {}
 		for objname in dir(self):
 			obj = getattr(self, objname)
-			if isinstance(obj, (Transformation, aterm.terms.Term)):
+			if isinstance(obj, (Transformation, aterm.term.Term)):
 				try:
 					objrepr = repr(obj)
 				except:

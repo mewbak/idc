@@ -2,7 +2,7 @@
 '''
 
 
-import aterm.terms
+import aterm.term
 
 
 class Expr:
@@ -22,7 +22,7 @@ class Expr:
 	def _cast(self, other):
 		if isinstance(other, Expr):
 			return other
-		if isinstance(other, aterm.terms.Term):
+		if isinstance(other, aterm.term.Term):
 			return Expr(other)
 		if isinstance(other, int):
 			return self._make("Lit(Int(size,sign),value)",

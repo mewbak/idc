@@ -112,13 +112,13 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 	def __init__(self, func = None):
 		super(Annotator, self).__init__()
 		if func is None:
-			self.callback = lambda term: True
+			self.func = lambda term: True
 		else:
-			self.callback = func
+			self.func = func
 
 	def visit(self, term, path, index):
 		term = super(Annotator, self).visit(term, path, index)
-		if self.callback(term):
+		if self.func(term):
 			return term.setAnnotation(_path, term.factory.make(_path, path))
 		else:
 			return term
@@ -193,7 +193,7 @@ class Transformer(aterm.visitor.IncrementalVisitor):
 	def __init__(self, index, func):
 		aterm.visitor.IncrementalVisitor.__init__(self)
 		self.index = index
-		self.callback = func
+		self.func = func
 
 	def __call__(self, term):
 		return self.visit(term, 0)
@@ -206,7 +206,7 @@ class Transformer(aterm.visitor.IncrementalVisitor):
 		
 	def visitHead(self, term, index):
 		if index == self.index:
-			return self.callback(term)
+			return self.func(term)
 		else:
 			return term
 		
@@ -218,7 +218,7 @@ class Transformer(aterm.visitor.IncrementalVisitor):
 	
 	def visitAppl(self, term, index):
 		old_arg = term.args[self.index] 
-		new_arg = self.callback(old_arg)
+		new_arg = self.func(old_arg)
 		if new_arg is not old_arg:
 			args = list(term.args) 
 			args[self.index] = new_arg

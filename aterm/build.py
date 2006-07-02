@@ -2,7 +2,7 @@
 
 
 from aterm.factory import factory
-from aterm import exceptions
+from aterm import exception
 from aterm import convert
 from aterm import parser
 
@@ -179,7 +179,7 @@ class Parser(parser.Parser):
 		return Var(name)
 
 	def handleSeq(self, pre, post):
-		raise exceptions.ParseError('variable sub-pattern in a build pattern')
+		raise exception.ParseError('variable sub-pattern in a build pattern')
 		
 	def handleApplCons(self, name, args):
 		return ApplCons(name, args)

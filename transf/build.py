@@ -2,7 +2,7 @@
 
 
 import aterm.factory
-import aterm.terms
+import aterm.term
 
 from transf import exception
 from transf import base

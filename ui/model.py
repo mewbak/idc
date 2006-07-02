@@ -2,7 +2,7 @@
 
 
 import aterm.factory
-import aterm.terms
+import aterm.term
 import ir.path
 import ir.pprint
 from lang import box

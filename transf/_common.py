@@ -4,7 +4,7 @@ transformations.
 
 
 import aterm.factory
-import aterm.terms
+import aterm.term
 
 from transf import base
 from transf import operate
@@ -17,7 +17,7 @@ class _Term(base.Transformation):
 	
 	def __init__(self, term):
 		base.Transformation.__init__(self)
-		assert isinstance(term, aterm.terms.Term)
+		assert isinstance(term, aterm.term.Term)
 		self.term = term
 
 def Term(term, _Term):

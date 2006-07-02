@@ -37,7 +37,7 @@ class Annotate(base.Transformation):
 			self.operand = operand
 		if root is None:
 			self.root = build.nil
-		elif isinstance(root, aterm.terms.Term):
+		elif isinstance(root, aterm.term.Term):
 			self.root = build.Term(root)
 		else:
 			self.root = root
@@ -61,7 +61,7 @@ class Project(base.Transformation):
 
 	def __init__(self, path):
 		base.Transformation.__init__(self)
-		if isinstance(path, aterm.terms.Term):
+		if isinstance(path, aterm.term.Term):
 			self.path = build.Term(path)
 		else:
 			self.path = path
@@ -79,7 +79,7 @@ class SubTerm(base.Transformation):
 	def __init__(self, operand, path):
 		base.Transformation.__init__(self)
 		self.operand = operand
-		if isinstance(path, aterm.terms.Term):
+		if isinstance(path, aterm.term.Term):
 			self.path = build.Term(path)
 		else:
 			self.path = path

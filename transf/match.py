@@ -3,7 +3,7 @@
 
 import aterm.factory
 import aterm.type
-import aterm.terms
+import aterm.term
 
 from transf import exception
 from transf import base
@@ -46,7 +46,7 @@ class TermSet(base.Transformation):
 			if isinstance(term, basestring):
 				term = _factory.parse(term)
 			else:
-				assert isinstance(term, aterm.terms.Term)
+				assert isinstance(term, aterm.term.Term)
 			self.terms[term] = None
 		
 	def apply(self, term, ctx):

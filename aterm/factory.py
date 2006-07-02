@@ -3,8 +3,8 @@
 
 import antlr
 
-from aterm import exceptions
-from aterm import terms
+from aterm import exception
+from aterm import term
 from aterm.lexer import Lexer
 from aterm.parser import Parser as BaseParser
 
@@ -38,30 +38,30 @@ class Factory(object):
 	
 	def __init__(self):
 		self.parseCache = {}
-		self.__nil = terms.Nil(self)
+		self.__nil = term.Nil(self)
 
 	def makeInt(self, value, annotations = None):
 		'''Creates a new integer literal term'''
-		return terms.Integer(self, value, annotations)
+		return term.Integer(self, value, annotations)
 	
 	def makeReal(self, value, annotations = None):
 		'''Creates a new real literal term'''
-		return terms.Real(self, value, annotations)
+		return term.Real(self, value, annotations)
 
 	def makeStr(self, value, annotations = None):
 		'''Creates a new string literal term'''
-		return terms.Str(self, value, annotations)
+		return term.Str(self, value, annotations)
 
 	def makeNil(self, annotations = None):
 		'''Creates a new empty list term'''
 		if annotations:
-			return terms.Nil(self, annotations)
+			return term.Nil(self, annotations)
 		else:
 			return self.__nil
 
 	def makeCons(self, head, tail = None, annotations = None):
 		'''Creates a new extended list term'''
-		return terms.Cons(self, head, tail, annotations)
+		return term.Cons(self, head, tail, annotations)
 
 	def makeList(self, seq, annotations = None):
 		'''Creates a new list from a sequence.'''
@@ -76,13 +76,13 @@ class Factory(object):
 	
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new appplication term'''
-		return terms.Appl(self, name, args, annotations)
+		return term.Appl(self, name, args, annotations)
 
 	def coerce(self, value, name = None):
 		'''Coerce an object to a term. Value must be an int, a float, a string, 
 		a sequence of terms, or a term.'''
 		
-		if isinstance(value, terms.Term):
+		if isinstance(value, term.Term):
 			return value
 		elif isinstance(value, int):
 			return self.makeInt(value)
@@ -109,7 +109,7 @@ class Factory(object):
 		try:
 			return parser.term()
 		except antlr.ANTLRException, exc:
-			raise exceptions.ParseError(str(exc))
+			raise exception.ParseError(str(exc))
 	
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
@@ -145,7 +145,7 @@ class Factory(object):
 		try:
 			matcher = parser.term()
 		except antlr.ANTLRException, exc:
-			raise exceptions.ParseError(str(exc))
+			raise exception.ParseError(str(exc))
 		mo = Match()
 		if matcher.visit(term, mo):
 			return mo
@@ -164,7 +164,7 @@ class Factory(object):
 		try:
 			builder = parser.term()
 		except antlr.ANTLRException, exc:
-			raise exceptions.ParseError(str(exc))
+			raise exception.ParseError(str(exc))
 			
 		i = 0
 		_args = []
@@ -207,10 +207,10 @@ class Parser(BaseParser):
 		return term.setAnnotations(annos)
 	
 	def handleWildcard(self):
-		raise exceptions.ParseError('wildcard in term')
+		raise exception.ParseError('wildcard in term')
 	
 	def handleVar(self, name):
-		raise exceptions.ParseError('variable in term')
+		raise exception.ParseError('variable in term')
 
 	def handleSeq(self, pre, post):
 		assert False

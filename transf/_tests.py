@@ -45,7 +45,7 @@ class TestMixin:
 			except exception.Failure:
 				result = self.factory.parse('FAILURE')
 				
-			self.failUnless(isinstance(result, aterm.terms.Term), 
+			self.failUnless(isinstance(result, aterm.term.Term), 
 				msg = "not a term: %s -> %s (!= %s)" % (term, result, expectedResult)
 			)
 			
