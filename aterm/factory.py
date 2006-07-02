@@ -5,8 +5,8 @@ import antlr
 
 from aterm import exception
 from aterm import term
-from aterm.lexer import Lexer
-from aterm.parser import Parser as BaseParser
+from aterm import lexer
+from aterm import parser
 
 
 class _Singleton(type):
@@ -105,17 +105,16 @@ class Factory(object):
 	def _parse(self, lexer):
 		'''Creates a new term by parsing a string.'''
 		
-		parser = Parser(lexer)
+		p = Parser(lexer)
 		try:
-			return parser.term()
+			return p.term()
 		except antlr.ANTLRException, exc:
 			raise exception.ParseError(str(exc))
 	
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
 
-		l = Lexer(fp = fp)
-		return self._parse(l)
+		return self._parse(lexer.Lexer(fp = fp))
 
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
@@ -125,8 +124,7 @@ class Factory(object):
 		except KeyError:
 			pass
 		
-		lexer = Lexer(buf)
-		result = self._parse(lexer)
+		result = self._parse(lexer.Lexer(buf))
 		
 		if len(self.parseCache) > self.MAX_PARSE_CACHE_LEN:
 			# TODO: use a LRU cache policy
@@ -140,10 +138,9 @@ class Factory(object):
 		'''
 		assert isinstance(pattern, basestring)
 		from aterm.match import Parser, Match
-		lexer = Lexer(pattern)
-		parser = Parser(lexer)
+		p = Parser(lexer.Lexer(pattern))
 		try:
-			matcher = parser.term()
+			matcher = p.term()
 		except antlr.ANTLRException, exc:
 			raise exception.ParseError(str(exc))
 		mo = Match()
@@ -159,10 +156,9 @@ class Factory(object):
 		'''	
 		assert isinstance(pattern, basestring)
 		from aterm.build import Parser
-		lexer = Lexer(pattern)
-		parser = Parser(lexer)
+		p = Parser(lexer.Lexer(pattern))
 		try:
-			builder = parser.term()
+			builder = p.term()
 		except antlr.ANTLRException, exc:
 			raise exception.ParseError(str(exc))
 			
@@ -182,7 +178,7 @@ class Factory(object):
 factory = Factory()
 
 
-class Parser(BaseParser):
+class Parser(parser.Parser):
 	'''Parse a textual description of the term.'''
 	
 	def handleInt(self, value):
