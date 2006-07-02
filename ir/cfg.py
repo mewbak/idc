@@ -94,11 +94,18 @@ let this = getStmtId in
 		; !this ==> next
 +	?While
 		< { true, false:
-			!next ==> false
-			; ~_(_, <let next=!this in markStmtFlow; !next ==> true end>)
-			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
+			!next ==> false ;
+			~_(_, <let next=!this in markStmtFlow; !next ==> true end>) ;
+			SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
 		}
 		; !this ==> next
++	?DoWhile
+		< { true, false:
+			!next ==> false ;
+			!this ==> next ;
+			~_(_, <let next=!this in markStmtFlow; !next ==> true end>) ;
+			SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
+		}
 +	?NoStmt
 		< SetCtrlFlow(![next])
 		; !this ==> next

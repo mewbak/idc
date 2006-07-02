@@ -53,6 +53,7 @@ expr = lib.match.ApplNames(exprNames)
 aModule = lib.match.ApplName('Module')
 aFunction = lib.match.ApplName('Function')
 aWhile = lib.match.ApplName('While')
+aDoWhile = lib.match.ApplName('DoWhile')
 anIf = lib.match.ApplName('If')
 aBlock = lib.match.ApplName('Block')
 aLabel = lib.match.ApplName('Label')
@@ -98,6 +99,7 @@ compoundStmtNames = [
 	'If',
 	'Module',
 	'While',
+	'DoWhile',
 ]
 
 stmtNames = atomStmtNames + compoundStmtNames
@@ -125,6 +127,8 @@ case "Block":
 case "If": 
 	project.args ; project.tail
 case "While": 
+	project.args ; project.tail
+case "DoWhile": 
 	project.args ; project.tail
 case "Function": 
 	project.args ; project.fourth

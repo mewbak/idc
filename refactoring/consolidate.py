@@ -49,19 +49,23 @@ liftLoop =
 			>]
 		end
 
-liftWhile =
+liftDoWhile =
 		with label, cond, rest in
 			~[Label(label), *<AtSuffix(
 				?[If(_,<goto>,NoStmt), *] ; 
 				?[If(cond,_,_), *rest] ; 
 				![]
 			) ; 
-			# XXX: this should be a DoWhile, and not a While
-			![While(cond, Block(<id>)), *rest]
+			![DoWhile(cond, Block(<id>)), *rest]
 			>]
 		end
 
-liftAll = AtSuffixR(liftIfThen + liftLoop + liftWhile)
+liftAll = AtSuffixR(
+	liftIfThen + 
+	liftIfElse + 
+	liftLoop + 
+	liftDoWhile
+)
 
 gotoSelected = Where(ir.path.MatchSelectionTo(?GoTo(Sym(_))))
 functionSelected = Where(ir.path.MatchSelectionTo(?Function))
@@ -77,8 +81,8 @@ csIfElseApplicable = gotoSelected ; csIfElseApply
 csLoopApply = OnceTD(AtSuffix(liftLoop))
 csLoopApplicable = gotoSelected ; csLoopApply
 
-csWhileApply = OnceTD(AtSuffix(liftWhile))
-csWhileApplicable = gotoSelected ; csWhileApply
+csDoWhileApply = OnceTD(AtSuffix(liftDoWhile))
+csDoWhileApplicable = gotoSelected ; csDoWhileApply
 
 csAllApply = BottomUp(Repeat(liftAll))
 csAllApplicable = id # functionSelected
@@ -88,7 +92,7 @@ csAllApplicable = id # functionSelected
 csIfThen = CommonRefactoring("Consolidate If-Then", csIfThenApplicable, noInput, csIfThenApply)
 csIfElse = CommonRefactoring("Consolidate If-Else", csIfElseApplicable, noInput, csIfElseApply)
 csLoop = CommonRefactoring("Consolidate Loop", csLoopApplicable, noInput, csLoopApply)
-csWhile = CommonRefactoring("Consolidate While", csWhileApplicable, noInput, csWhileApply)
+csDoWhile = CommonRefactoring("Consolidate Do-While", csDoWhileApplicable, noInput, csDoWhileApply)
 csAll = CommonRefactoring("Consolidate All", csAllApplicable, noInput, csAllApply)
 
 

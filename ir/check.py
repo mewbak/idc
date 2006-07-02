@@ -108,6 +108,7 @@ stmt.subject = transf.parse.Transf('''
 	?Assign( <type> , <optExpr> , <expr> ) +
 	?If( <expr> , <stmt> , <stmt> ) +
 	?While( <expr> , <stmt> ) +
+	?DoWhile( <expr> , <stmt> ) +
 	?Block( <stmts> ) +
 	?Ret( <type> , <optExpr> ) +
 	?Label( <name> ) +

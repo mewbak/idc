@@ -109,6 +109,9 @@ propIf =
 propWhile = 
 	/inline\* ~While(<inlineVars>, <propStmt>)
 
+propDoWhile = 
+	/inline\* ~DoWhile(<inlineVars>, <propStmt>)
+
 propFunction = 
 	ir.sym.EnterFunction(
 		with label_inline[] in
@@ -131,6 +134,7 @@ propStmt.subject =
 	?Block < propBlock +
 	?If < propIf +
 	?While < propWhile +
+	?DoWhile < propDoWhile +
 	?Function < propFunction + 
 	?Var < id +
 	?NoStmt

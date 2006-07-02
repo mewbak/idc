@@ -42,6 +42,13 @@ def While(cond = trf.base.ident, stmt = trf.base.ident, **kargs):
 	)
 
 
+def DoWhile(cond = trf.base.ident, stmt = trf.base.ident, **kargs):
+	return Traverse(
+		trf.congruent.Appl('DoWhile', (cond, stmt)),
+		**kargs
+	)
+
+
 def If(cond = trf.base.ident, true = trf.base.ident, false = trf.base.ident, **kargs):
 	return Traverse(
 		trf.congruent.Appl('If', (cond, true, false)),

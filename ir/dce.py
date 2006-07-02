@@ -116,6 +116,15 @@ dceWhile =
 	\needed/* ~While(<setNeededVars>, <dceStmt>) ;
 	Try(elimWhile)
 
+elimDoWhile = {
+	DoWhile(cond,NoStmt) -> Assign(Void,NoExpr,cond)
+}
+
+dceDoWhile = 
+	\needed/* ~DoWhile(_, <dceStmt>) ;
+	~DoWhile(<setNeededVars>, _) ;
+	Try(elimDoWhile)
+
 dceFunction = 
 	ir.sym.EnterFunction(
 	with label_needed[] in
@@ -139,6 +148,7 @@ dceStmt.subject =
 	?Block < dceBlock +
 	?If < dceIf +
 	?While < dceWhile +
+	?DoWhile < dceDoWhile +
 	?Function < dceFunction + 
 	?Var < id +
 	?NoStmt

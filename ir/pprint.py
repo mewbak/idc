@@ -244,6 +244,8 @@ stmtKern = parse.Rule('''
 		-> H([ <<kw>"if">, "(", <<expr>cond>, ")" ])
 |	While(cond, _)
 		-> H([ <<kw>"while">, "(", <<expr>cond>, ")" ])
+|	DoWhile(cond, _)
+		-> H([ <<kw>"while">, "(", <<expr>cond>, ")" ])
 |	Var(type, name, NoExpr)
 		-> H([ <<type>type>, " ", name ])
 |	Var(type, name, val)
@@ -303,6 +305,15 @@ ppWhile = {
 		])
 }
 
+ppDoWhile = {
+	DoWhile(_, body)
+		-> V([
+			H([ <<kw>"do"> ]),
+				I( <<stmt>body> ),
+			!H([ <stmtKern>, ";" ])
+		])
+}
+
 ppFunction = {
 	Function(_, _, _, stmts)
 		-> D(V([
@@ -328,6 +339,8 @@ case "If":
 	ppIf
 case "While":
 	ppWhile
+case "DoWhile":
+	ppDoWhile
 case "Function":
 	ppFunction
 else:
