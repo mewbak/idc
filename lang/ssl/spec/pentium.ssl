@@ -638,14 +638,6 @@ IMULL3   reg32, modrm, i32
             *32* reg32 := modrm *! i32
             IMULTFLAGS32(reg32);
 
-IMUL.Ibow   reg16, modrm, i8 
-            *16* reg16 := modrm{8} *! sgnex(8,16,i8)
-            IMULTFLAGS16(reg16);
-
-IMUL.Ibod   reg32, modrm, i8 
-            *32* reg32 := modrm{32} *! sgnex(8,32,i8)
-            IMULTFLAGS32(reg32);
-
 INT3
 			_ ;			# Not expected to be seen in correct code, but decode anyway
 
@@ -712,18 +704,18 @@ MOVZX.GV.EBOD   reg32, modrm
 MOVZX.GV.EW   reg32, modrm 
             *32* reg32 := zfill(16, 32, modrm{16});
 
-MUL^"AL"   modrm 
+MULB   modrm 
             *8* tmpb := modrm{8}
             *16* %ax := %al * tmpb
             MULTFLAGS8(%ax);
 
-MUL.AXOW   modrm 
+MULW   modrm 
             *32* tmp2 := %eax * modrm{16}
             *16* %ax := tmp2
             *16* %dx := tmp2 >> 16
             MULTFLAGS16(tmp2);
 
-MUL.AXOD   modrm 
+MULL   modrm 
             *32* tmp1 := modrm{32}
             *64* tmpl := zfill(32,64,%eax) * zfill(32,64,tmp1)
             *32* %eax := tmpl
@@ -735,12 +727,12 @@ NEGB   modrm
             *8* modrm := 0 - modrm{8}
             SUBFLAGS8(0, tmpb, modrm{8});
 
-NEG.OW   modrm 
+NEGW   modrm 
             *16* tmph := modrm{16}
             *16* modrm := 0 - modrm{16}
             SUBFLAGS16(0, tmph, modrm);
 
-NEG.OD   modrm 
+NEGL   modrm 
             *32* tmp1 := modrm{32}
             *32* modrm := 0 - modrm{32}
             SUBFLAGS32(0, tmp1, modrm);
@@ -751,35 +743,19 @@ NOP
 NOTB   modrm 
             *8* modrm := ~modrm{8};
 
-NOT.OW   modrm 
+NOTW   modrm 
             *16* modrm := ~modrm{16};
 
-NOT.OD   modrm 
+NOTL   modrm 
             *32* modrm := ~modrm{32};
 
-POP.EVOW   modrm 
+POPW   modrm 
             *16* modrm := m[%esp]
             *32* %esp := %esp + 2;
 
-POP.EVOD   modrm 
+POPL   modrm 
             *32* modrm := m[%esp]
             *32* %esp := %esp + 4;
-
-POP.OW   reg16 
-            *16* reg16 := m[%esp]{16}
-            *32* %esp := %esp + 2;
-
-POP.OD   reg32 
-            *32* reg32 := m[%esp]{32}
-            *32* %esp := %esp + 4;
-
-PUSH.EVOW   modrm 
-            *32* %esp := %esp - 2
-            *16* m[%esp] := modrm{16};
-
-PUSH.EVOD   modrm 
-            *32* %esp := %esp - 4
-            *32* m[%esp] := modrm{32};
 
 PUSH.IXOB   i8 
             *32* %esp := %esp - 4
@@ -790,19 +766,11 @@ PUSH.IXOW   i8
             *16* %esp := %esp - 2
             *16* m[%esp] := sgnex(8, 16, i8);
 
-PUSH.IVOW   i16 
-            *32* %esp := %esp - 2
-            *16* m[%esp] := i16;
-
-PUSH.IVOD   i32 
-            *32* %esp := %esp - 4
-            *32* m[%esp] := i32;
-
-PUSH.OW   reg16 
+PUSHW   reg16 
             *32* %esp := %esp - 2
             *16* m[%esp] := reg16;
 
-PUSH.OD   reg32 
+PUSHL   reg32 
             *32* %esp := %esp - 4
             *32* m[%esp] := reg32;
 

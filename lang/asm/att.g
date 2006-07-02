@@ -63,6 +63,7 @@ PERCENTAGE: '%';
 DOLLAR: '$';
 COMMA: ',';
 COLON: ':';
+SEMI: ';';
 AT: '@';
 
 LPAR: '(';
@@ -165,12 +166,12 @@ start returns [res]
 	:
 		( s=statement
 			{ insns.extend(s) } 
-		)* EOF
+		)* EOF 
 		{ res = self.factory.make("Module(insns)", insns = insns) }
 	;
 
 statement returns [res]
-	: lbls=labels isns=tail EOL
+	: lbls=labels isns=tail ( EOL | SEMI )
 		{
             res = []
             res.extend(lbls)

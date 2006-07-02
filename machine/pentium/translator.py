@@ -10,10 +10,6 @@ from lang.ssl.spec.pentium import insn_table
 
 
 sslTranslationTable = {
-	"orl": "OR.RMOD",
-	"leal": "LEA.OD",
-	"pushl": "PUSH.OD",
-	"popl": "POP.OD",
 	"cbtw": "CBW",
 	"cwtl": "CWDE",
 	"cwtd": "CWD",
@@ -124,6 +120,8 @@ stmtsPreambule =
 preStmt = transf.parse.Rule('''
 	Asm("ret", [])
 		-> Ret(Void, NoExpr)
+|	Asm("rep", [])
+		-> NoStmt
 |	Asm("call", [Ref(addr)])
 		-> Assign(Void, NoExpr, Call(addr,[]))
 |	Asm("imull", [op1,op2])
