@@ -91,7 +91,6 @@ class MainApp(gtk.Window):
 		))
 		actiongroup.get_action('Empty').set_sensitive(False)
 
-
 		# Add the actiongroup to the uimanager
 		uimanager.insert_action_group(actiongroup, 0)
 

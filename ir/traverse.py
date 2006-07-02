@@ -68,6 +68,7 @@ def Stmt(stmt, stmts, default, **kargs):
 		ir.match.aBlock **Block(stmts)**
 		ir.match.anIf **If(trf.base.ident, stmt, stmt)**
 		ir.match.aWhile **While(trf.base.ident, stmt)**
+		ir.match.aDoWhile **DoWhile(trf.base.ident, stmt)**
 		ir.match.aFunction **Function(trf.base.ident, trf.base.ident, trf.base.ident, stmts)**
 		ir.match.aModule **Module(stmts)**
 		default,

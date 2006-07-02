@@ -82,19 +82,63 @@ class DotWindow(gtk.Window):
 	
 	# TODO: add zoom/pan as in http://mirageiv.berlios.de/
 
+	ui = '''
+	<ui>
+		<toolbar name="ToolBar">
+			<toolitem action="ZoomIn"/>
+			<toolitem action="ZoomOut"/>
+			<toolitem action="ZoomFit"/>
+			<toolitem action="Zoom100"/>
+		</toolbar>
+	</ui>
+	'''
+	  
 	hand_cursor = gtk.gdk.Cursor(gtk.gdk.HAND2)
 	regular_cursor = gtk.gdk.Cursor(gtk.gdk.XTERM)
 
 	def __init__(self):
 		gtk.Window.__init__(self)
 
-		self.set_title('Dot')
-		self.set_default_size(512, 512)
-
-		scrolled_window = gtk.ScrolledWindow()
-		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-		self.add(scrolled_window)
+		window = self
 		
+		window.set_title('Dot')
+		window.set_default_size(512, 512)
+		vbox = gtk.VBox()
+		window.add(vbox)
+
+		# Create a UIManager instance
+		uimanager = self.uimanager = gtk.UIManager()
+
+		# Add the accelerator group to the toplevel window
+		accelgroup = uimanager.get_accel_group()
+		window.add_accel_group(accelgroup)
+
+		# Create an ActionGroup
+		actiongroup = gtk.ActionGroup('Actions')
+		self.actiongroup = actiongroup
+
+		# Create actions
+		actiongroup.add_actions((
+			('ZoomIn', gtk.STOCK_ZOOM_IN, None, None, None, self.on_zoom_in),  
+			('ZoomOut', gtk.STOCK_ZOOM_OUT, None, None, None, self.on_zoom_out),  
+			('ZoomFit', gtk.STOCK_ZOOM_FIT, None, None, None, self.on_zoom_fit),  
+			('Zoom100', gtk.STOCK_ZOOM_100, None, None, None, self.on_zoom_100),  
+		))
+
+		# Add the actiongroup to the uimanager
+		uimanager.insert_action_group(actiongroup, 0)
+
+		# Add a UI description
+		uimanager.add_ui_from_string(self.ui)
+
+		# Create a Toolbar
+		toolbar = uimanager.get_widget('/ToolBar')
+		vbox.pack_start(toolbar, False)
+
+		scrolled_window = self.scrolled_window = gtk.ScrolledWindow()
+		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+		vbox.pack_start(scrolled_window)
+
 		eventbox = gtk.EventBox()
 		bgcolor = gtk.gdk.color_parse("white")
 		eventbox.modify_bg(gtk.STATE_NORMAL, bgcolor)
@@ -111,6 +155,9 @@ class DotWindow(gtk.Window):
 		eventbox.connect("event-after", self.on_eventbox_button_press)
 		eventbox.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
 		eventbox.connect("motion-notify-event", self.on_eventbox_motion_notify)
+		
+		self.zoom_ratio = 1.0
+		self.pixbuf = None
 		
 		self.show_all()
 	
@@ -154,13 +201,47 @@ class DotWindow(gtk.Window):
 		self.write_dotcode(lambda fp: lang.dot.write(graph, fp))
 		
 	def on_pixbuf_loader_area_prepared(self, pixbuf_loader):
-		pixbuf = pixbuf_loader.get_pixbuf()
-		self.image.set_from_pixbuf(pixbuf)
+		self.pixbuf = pixbuf_loader.get_pixbuf()
 
 	def on_pixbuf_loader_area_updated(self, pixbuf_loader, x, y, width, height):
+		self.zoom_image()
 		self.image.queue_draw()
 	
+	def zoom_image(self):
+		if self.pixbuf:
+			if self.zoom_ratio == 1.0:
+				self.image.set_from_pixbuf(self.pixbuf)
+			else:
+				w = int(self.pixbuf.get_width() * self.zoom_ratio)
+				h = int(self.pixbuf.get_height() * self.zoom_ratio)
+				scaled_pixbuf = self.pixbuf.scale_simple(w, h, gtk.gdk.INTERP_BILINEAR)
+				self.image.set_from_pixbuf(scaled_pixbuf)
+  	
+	def on_zoom_in(self, action):
+		self.zoom_ratio *= 1.25
+		self.zoom_image()
+		
+	def on_zoom_out(self, action):
+		self.zoom_ratio *= 1/1.25
+		self.zoom_image()
+		
+	def on_zoom_fit(self, action):
+		imgwidth, imgheight = self.scrolled_window.window.get_size()
+		pixwidth = self.pixbuf.get_width()
+		pixheight = self.pixbuf.get_height()
+		self.zoom_ratio = min(
+			float(imgwidth)/float(pixwidth), 
+			float(imgheight)/float(pixheight)
+		)
+		self.zoom_image()
+		
+	def on_zoom_100(self, action):
+		self.zoom_ratio = 1.0
+		self.zoom_image()
+		
 	def on_eventbox_button_press(self, eventbox, event):
+		if not self.pixbuf:
+			return False
 		if event.type not in (gtk.gdk.BUTTON_PRESS, gtk.gdk.BUTTON_RELEASE):
 			return False
 		x, y = int(event.x), int(event.y)
@@ -170,6 +251,8 @@ class DotWindow(gtk.Window):
 		return False
 
 	def on_eventbox_motion_notify(self, eventbox, event):
+		if not self.pixbuf:
+			return False
 		x, y = int(event.x), int(event.y)
 		if self.get_url(x, y) is not None:
 			eventbox.window.set_cursor(self.hand_cursor)
@@ -186,6 +269,8 @@ class DotWindow(gtk.Window):
 		# NOTE: we assume were 0.5 alignment and 0 padding
 		x -= (imgwidth - pixwidth) / 2
 		y -= (imgheight - pixheight) / 2
+		x /= self.zoom_ratio
+		y /= self.zoom_ratio
 		#assert 0 <= x <= imgwidth
 		#assert 0 <= y <= imgheight
 

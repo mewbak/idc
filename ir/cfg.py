@@ -100,11 +100,11 @@ let this = getStmtId in
 		}
 		; !this ==> next
 +	?DoWhile
-		< { true, false:
+		< { false:
 			!next ==> false ;
 			!this ==> next ;
-			~_(_, <let next=!this in markStmtFlow; !next ==> true end>) ;
-			SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
+			~_(_, <markStmtFlow>) ;
+			SetCtrlFlow(![next{Cond("True")}, false{Cond("False")}])
 		}
 +	?NoStmt
 		< SetCtrlFlow(![next])
@@ -182,6 +182,8 @@ makeNodeLabel = parse.Rule('''
 		-> <<ir.pprint.expr>cond>
 |	While(cond,_)
 		-> <<ir.pprint.expr>cond>
+|	DoWhile(cond,_)
+		-> <<ir.pprint.expr>cond>
 |	_
 		-> <ir.pprint.stmtKern>
 |	n(*) 
@@ -192,6 +194,8 @@ makeNodeShape = parse.Rule('''
 	If(cond,_,_)
 		-> "diamond"
 |	While(cond,_)
+		-> "diamond"
+|	DoWhile(cond,_)
 		-> "diamond"
 |	Module
 		-> "point"

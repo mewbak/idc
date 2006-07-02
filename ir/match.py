@@ -115,6 +115,7 @@ reduceStmts = lib.parse.Transf('''
 	Block(stmts) -> stmts |
 	If(_, true, false) -> [true, false] |
 	While(_, stmt) -> [stmt] |
+	DoWhile(_, stmt) -> [stmt] |
 	Function(_, _, _, stmts) -> stmts |
 	Module(stmts) -> stmts
 ) + ![]
