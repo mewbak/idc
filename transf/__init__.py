@@ -52,6 +52,8 @@ from transf import table
 from transf import annotation
 from transf import path
 
+from transf import input
+
 from transf import debug
 
 from transf import parse

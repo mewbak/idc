@@ -224,6 +224,11 @@ expr = parse.Transf('''
 #######################################################################
 # Statements
 
+arg = parse.Rule('''
+	Arg(type, name)
+		-> H([ <<type>type>, " ", name ])
+''')
+
 stmt = util.Proxy()
 
 stmts = parse.Transf('''
@@ -244,7 +249,7 @@ stmtKern = parse.Rule('''
 |	Var(type, name, val)
 		-> H([ <<type>type>, " ", name, "=", <<expr>val> ])
 |	Function(type, name, args, stmts)
-		-> H([ <<type>type>, " ", name, "(", <<commas> args>, ")" ])
+		-> H([ <<type>type>, " ", name, "(", <<Map(arg);commas> args>, ")" ])
 |	Label(name)
 		-> H([ name, ":" ])
 |	GoTo(label)

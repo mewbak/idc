@@ -7,7 +7,7 @@
 from aterm import types
 from aterm import compare
 from aterm import hash
-from aterm import annotate
+from aterm import annotation
 from aterm import write
 from aterm import convert
 from aterm import lists
@@ -88,58 +88,32 @@ class Term(object):
 		'''Matches this term against a string pattern.'''
 		return self.factory.match(other, self)
 
-	def getAnnotations(self):
-		'''Returns the annotation list.'''
-		if self.annotations is None:
-			return self.factory.makeNil()
-		else:
-			return self.annotations
-
-	def setAnnotations(self, annotations):
-		'''Modify the annotation list.'''
-		return annotate.annotate(self, annotations)
-
-	def getAnnotation(self, label):
-		'''Gets an annotation associated'''
-		if not isinstance(label, basestring):
-			raise TypeError("label is not a string", label)
-		annotations = self.annotations
-		while annotations:
-			if self.factory.match(label, annotations.head):
-				return annotations.head				
-			annotations = annotations.tail
-		raise ValueError("undefined annotation", label)
-	
-	def setAnnotation(self, label, annotation):
-		'''Returns a new version of this term with the 
-		annotation associated with this label added or updated.'''
-		if not isinstance(label, basestring):
-			raise TypeError("label is not a string", label)
-		remover = annotate.Remover(label)
-		if self.annotations:
-			annotations = remover.visit(self.annotations)
-		else:
-			annotations = self.factory.makeNil()
-		annotations = self.factory.makeCons(annotation, annotations)
-		return self.setAnnotations(annotations)
-				
-	def removeAnnotation(self, label):
-		'''Returns a new version of this term with the 
-		annotation associated with this label removed.'''
-		if not isinstance(label, basestring):
-			raise TypeError("label is not a string", label)
-		remover = annotate.Remover(label)
-		annotation = self.annotations
-		if self.annotations:
-			annotations = remover.visit(self.annotations)
-			return self.setAnnotations(annotations)
-		else:
-			return self
-		
 	def accept(self, visitor, *args, **kargs):
 		'''Accept a visitor.'''
 		raise NotImplementedError
 
+	def getAnnotations(self):
+		'''Returns the annotation list.'''
+		return annotation.getall(self)
+
+	def setAnnotations(self, annos):
+		'''Modify the annotation list.'''
+		return annotation.setall(self, annos)
+
+	def getAnnotation(self, label):
+		'''Gets an annotation associated'''
+		return annotation.get(self, label)
+	
+	def setAnnotation(self, label, anno):
+		'''Returns a new version of this term with the 
+		annotation associated with this label added or updated.'''
+		return annotation.set(self, label, anno)
+				
+	def removeAnnotation(self, label):
+		'''Returns a new version of this term with the 
+		annotation associated with this label removed.'''
+		return annotation.remove(self, label)
+		
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
 		writer = write.TextWriter(fp)

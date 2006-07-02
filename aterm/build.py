@@ -138,7 +138,7 @@ class Annos(Builder):
 	def __init__(self, term, annos):
 		Builder.__init__(self)
 		assert isinstance(term, Builder)
-		assert isinstance(args, Builder)
+		assert isinstance(annos, Builder)
 		self.term = term
 		self.annos = annos
 	

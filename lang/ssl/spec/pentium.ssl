@@ -300,17 +300,17 @@ SETFFLAGS(op1, op2)  {
 
 ADDB dst, src
             *8* tmp1 := dst
-            *8* dst := dst - src
+            *8* dst := dst + src
             ADDFLAGS8(tmp1, src, dst);
 
 ADDW dst, src
             *16* tmp1 := dst
-            *16* dst := dst - src
+            *16* dst := dst + src
             ADDFLAGS16(tmp1, src, dst);
 
 ADDL dst, src
             *32* tmp1 := dst
-            *32* dst := dst - src
+            *32* dst := dst + src
             ADDFLAGS32(tmp1, src, dst);
 
 SUBB dst, src

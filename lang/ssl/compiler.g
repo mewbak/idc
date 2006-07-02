@@ -237,7 +237,7 @@ var returns [res]
 //    | t:TEMP
 	| v:NAME
 		// XXX: hack
-		{ res = self.factory.makeAppl(self.factory.makeStr(#v.getText())) }
+		{ res = self.factory.makeAppl(#v.getText(), ()) }
     ;
 
 lvalue returns [res]
