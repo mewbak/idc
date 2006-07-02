@@ -30,6 +30,10 @@ class MainApp(gtk.Window):
 				<separator/>
 				<menuitem action="Quit"/>
 			</menu>
+			<menu action="EditMenu">
+				<menuitem action="Undo"/>
+				<menuitem action="Redo"/>
+			</menu>
 			<menu action="RefactorMenu">
 				<menuitem action="Empty"/>
 			</menu>
@@ -58,7 +62,7 @@ class MainApp(gtk.Window):
 		self.set_title('Interactive Decompiler')
 
 		# Create a UIManager instance
-		uimanager = gtk.UIManager()
+		uimanager = self.uimanager = gtk.UIManager()
 
 		# Add the accelerator group to the toplevel window
 		accelgroup = uimanager.get_accel_group()
@@ -76,6 +80,9 @@ class MainApp(gtk.Window):
 			('Save', gtk.STOCK_SAVE, None, None, None, self.on_save),
 			('SaveAs', gtk.STOCK_SAVE_AS, None, None, None, self.on_saveas),
 			('Quit', gtk.STOCK_QUIT, None, None, None, self.on_quit),  
+			('EditMenu', None, '_Edit'),
+			('Undo', gtk.STOCK_UNDO, None, None, None, self.on_undo),  
+			('Redo', gtk.STOCK_REDO, None, None, None, self.on_redo),  
 			('RefactorMenu', None, '_Refactor'),
 			('ViewMenu', None, '_View'),
 			('Empty', None, 'Empty'),  
@@ -113,6 +120,8 @@ class MainApp(gtk.Window):
 
 		statusbar = gtk.Statusbar()
 		vbox.pack_start(statusbar, False, False, 0)
+
+		self.model.connect('notify::history', self.on_history_update)
 
 		window.show_all()
 
@@ -177,8 +186,17 @@ class MainApp(gtk.Window):
 	def on_quit(self, action):
 		self.quit()
 
-	def on_window_destroy(self, event):
-		self.quit()
+	def on_history_update(self, model):
+		menuitem = self.uimanager.get_widget('/MenuBar/EditMenu/Undo')
+		menuitem.set_sensitive(self.model.can_undo())
+		menuitem = self.uimanager.get_widget('/MenuBar/EditMenu/Redo')
+		menuitem.set_sensitive(self.model.can_redo())
+	
+	def on_undo(self, action):
+		self.model.undo()
+		
+	def on_redo(self, action):
+		self.model.redo()
 		
 	def on_about(self, action):
 		aboutdialog = gtk.AboutDialog()
@@ -190,6 +208,9 @@ class MainApp(gtk.Window):
 		#aboutdialog.set_website('http://')
 		aboutdialog.run()
 		aboutdialog.destroy()
+		
+	def on_window_destroy(self, event):
+		self.quit()
 		
 	def run_open_dialog(self, title = None, parent = None, filters = None, folder = None):
 		"""Display a file open dialog."""

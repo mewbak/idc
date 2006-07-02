@@ -23,6 +23,8 @@ class Model:
 		self._default_selection = _factory.makeNil(), _factory.makeNil()
 		self._term = self._default_term
 		self._selection = self._default_selection
+		self._undo_history = []
+		self._redo_history = []
 
 	def connect(self, signal, handler, *args):
 		handlers = self._signal_handlers.setdefault(signal, [])
@@ -63,6 +65,7 @@ class Model:
 	def new(self):
 		"""New document."""
 		self.set_term(self._default_term)
+		self.clean_history()
 		
 	def open_asm(self, filename):
 		"""Open an assembly file."""
@@ -73,12 +76,14 @@ class Model:
 		term = machine.load(_factory, file(filename, 'rt'))
 		term = machine.translate(term)
 		self.set_term(term)
+		self.clean_history()
 	
 	def open_ir(self, filename):
 		"""Open a text file with the intermediate representation."""
 		fp = file(filename, 'rt')
 		term = _factory.readFromTextFile(fp)
 		self.set_term(term)
+		self.clean_history()
 
 	def save_ir(self, filename):
 		"""Save a text file with the intermediate representation."""
@@ -99,7 +104,33 @@ class Model:
 	
 	def apply_refactoring(self, refactoring, args):
 		"""Apply a refactoring."""
-		term = self.get_term()
-		term = refactoring.apply(term, args)
-		self.set_term(term)
-		# TODO: keep an history
+		old_term = self.get_term()
+		new_term = refactoring.apply(old_term, args)
+		self.set_term(new_term)
+		self._undo_history.append(old_term)
+		self._redo_history = []
+		self.notify('notify::history', self)
+
+	def clean_history(self):
+		self._undo_history = []
+		self._redo_history = []
+		self.notify('notify::history', self)
+				
+	def undo(self):
+		if self._undo_history:
+			self._redo_history.append(self.get_term())
+			self.set_term(self._undo_history.pop())
+			self.notify('notify::history', self)
+	
+	def can_undo(self):
+		return bool(self._undo_history)
+			
+	def redo(self):
+		if self._redo_history:
+			self._undo_history.append(self.get_term())
+			self.set_term(self._redo_history.pop())
+			self.notify('notify::history', self)
+				
+	def can_redo(self):
+		return bool(self._redo_history)
+			
