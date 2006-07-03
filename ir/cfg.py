@@ -13,171 +13,19 @@ import lang.dot
 
 
 #######################################################################
-# Statements IDs
-
-stmtIdAnno = 'StmtId'
-
-getStmtId = annotation.Get(stmtIdAnno)
-setStmtId = annotation.Set(stmtIdAnno, arith.Count('stmtid'))
-
-markStmtsIds = scope.Let2((
-		('stmtid', build.zero),
-	),
-	ir.traverse.AllStmtsBU(setStmtId)
-)
-
-
-#######################################################################
-# GoTo's & Labels
-
-parse.Transfs('''
-
-markLabelRef = 
-	with name in
-		?Label(name) ;
-		![name, <getStmtId>] ==> lbls
-	end
-
-lookupLabel =
-	debug.Dump() ;
-	with name in 
-		?GoTo(Sym(name));
-		!name ;
-		~lbls
-	end
-
-LabelTable(op) =
-	with lbls[] in
-		ir.traverse.AllStmtsBU(Try(Where(markLabelRef))) ;
-		op
-	end
-
-''')
-
-
-#######################################################################
-# Statements Flow
-
-ctrlFlowAnno = 'CtrlFlow'
-
-getCtrlFlow = annotation.Get(ctrlFlowAnno)
-SetCtrlFlow = lambda flows: annotation.Set(ctrlFlowAnno, flows)
-
-
-#######################################################################
-# Flow Traversal
-
-GetTerminalNodeId = lambda id: arith.NegInt(id)
-
-markStmtFlow = util.Proxy()
-markStmtsFlow = util.Proxy()
-
-markStmtFlow.subject = parse.Transf('''
-let this = getStmtId in
-	?Assign
-		< SetCtrlFlow(![next])
-		; !this ==> next
-+	?Label
-		< SetCtrlFlow(![next])
-		; !this ==> next
-+	?Asm 
-		< SetCtrlFlow(![next])
-		; !this ==> next
-+	?If
-		< { true, false: 
-			~_(_, 
-				<let next=!next in markStmtFlow; !next ==> true end>, 
-				<let next=!next in markStmtFlow; !next ==> false end>
-			)
-			; SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}]) 
-		}
-		; !this ==> next
-+	?While
-		< { true, false:
-			!next ==> false ;
-			~_(_, <let next=!this in markStmtFlow; !next ==> true end>) ;
-			SetCtrlFlow(![true{Cond("True")}, false{Cond("False")}])
-		}
-		; !this ==> next
-+	?DoWhile
-		< { false:
-			!next ==> false ;
-			!this ==> next ;
-			~_(_, <markStmtFlow>) ;
-			SetCtrlFlow(![next{Cond("True")}, false{Cond("False")}])
-		}
-+	?NoStmt
-		< SetCtrlFlow(![next])
-		; !this ==> next
-+	?Continue 
-		< SetCtrlFlow(![cont])
-		; !this ==> next
-+	?Break 
-		< SetCtrlFlow(![brek])
-		; !this ==> next
-+	?Ret 
-		< SetCtrlFlow(![retn])
-		; !this ==> next
-+	?GoTo
-		< SetCtrlFlow(![<lookupLabel>] + ![])
-		; !this ==> next
-+	?Var
-		< SetCtrlFlow(![next])
-		; !this ==> next
-+	?Block
-		< ~_(<markStmtsFlow>)
-		; SetCtrlFlow(![next])
-		; !this ==> next
-+	?Function
-		< let 
-			next = !next,
-			retn = GetTerminalNodeId(!this),
-			brek = !0,
-			cont = !0
-		in 
-			LabelTable(~_(_, _, _, <markStmtsFlow>))
-			; SetCtrlFlow(![next])
-		end
-		# !next ==> next
-+	
-		SetCtrlFlow({ n(*) -> [next{Cond(n)}] })
-		; !this ==> next
-end
-''')
-
-markStmtsFlow.subject = lists.MapR(markStmtFlow)
-
-markModuleFlow = parse.Transf('''
-	?Module
-		; let
-			next = !0,
-			retn = !0,
-			brek = !0,
-			cont = !0
-		in
-			LabelTable(~_(<markStmtsFlow>))
-		end
-''')
-
-if 0:
-	markStmtFlow.subject = debug.Trace('markStmtFlow', markStmtFlow.subject)
-	markStmtsFlow.subject = debug.Trace('markStmtsFlow', markStmtsFlow.subject)
-
-markFlow = markStmtsIds * markModuleFlow
-
-
-#######################################################################
 # Graph Generation
-
-makeNodeId = strings.tostr
-
-makeAttr = lambda name, value: build._.Attr(name, value)
 
 renderBox = \
 	util.Adaptor(lambda term: term.factory.makeStr(box.stringify(term))) + \
 	build.Str("???")
 
-makeNodeLabel = parse.Rule('''
+parse.Transfs(r"""
+
+getNodeId = 
+	{ Label(label) -> label } < box.escape +
+	Count('stmtid')
+
+makeNodeLabel = {
 	If(cond,_,_)
 		-> <<ir.pprint.expr>cond>
 |	While(cond,_)
@@ -188,14 +36,14 @@ makeNodeLabel = parse.Rule('''
 		-> <ir.pprint.stmtKern>
 |	n(*) 
 		-> n
-''') * renderBox * box.escape
+} ; renderBox ; box.escape
 
-makeNodeShape = parse.Rule('''
-	If(cond,_,_)
+makeNodeShape = {
+	If
 		-> "diamond"
-|	While(cond,_)
+|	While
 		-> "diamond"
-|	DoWhile(cond,_)
+|	DoWhile
 		-> "diamond"
 |	Module
 		-> "point"
@@ -203,68 +51,191 @@ makeNodeShape = parse.Rule('''
 		-> "point"
 |	NoStmt
 		-> "point"
-|	Var(_, _, NoExpr)
-		-> "point"
 |	_
 		-> "box"
-''')
+}
 
-makeNodeUrl = (path.get * box.reprz + build.empty ) * box.escape
+makeNodeUrl = 
+	(path.get < box.reprz + build.empty ) ; 
+	box.escape
 
-makeNodeAttrs = \
-	build.List([
-		makeAttr("label", makeNodeLabel),
-		makeAttr("shape", makeNodeShape),
-		makeAttr("URL", makeNodeUrl),
-	])
+makeNodeAttrs = 
+	![
+		!Attr("label", <makeNodeLabel>),
+		!Attr("shape", <makeNodeShape>),
+		!Attr("URL", <makeNodeUrl>)
+	]
 
-makeEdgeLabel = \
-	annotation.Get('Cond') + \
-	build.Str("")
+MakeEdge(dst) =
+	!Edge(<dst>, [])
+MakeLabelledEdge(dst, label) =
+	!Edge(<dst>, [Attr("label", <label ; box.escape>)])
 
-makeEdgeAttrs = \
-	build.List([
-		makeAttr("label", makeEdgeLabel * box.escape),
-	])
-
-isValidNodeId = -match.zero
-
-makeNodeEdges = \
-	getCtrlFlow * \
-	lists.Filter(
-		build._.Edge(
-			isValidNodeId * makeNodeId,
-			makeEdgeAttrs,
-		)
+AddNode(nodeid, attrs, edges) = 
+	Where(
+		!Node(
+			<nodeid>,
+			<attrs>,
+			<edges>
+		) ;
+		![_,*nodes] ==> nodes
 	)
+	
+GetTerminalNodeId(nodeid) =
+	NegInt(nodeid)
 
-makeNode = build._.Node(
-	getStmtId * makeNodeId, 
-	makeNodeAttrs, 
-	makeNodeEdges
-)
+hasTerminalNode = 
+	?Function
 
-hasTerminalNode = match.ApplName('Function')
-
-makeTerminalNode = hasTerminalNode * build._.Node(
-	GetTerminalNodeId(getStmtId), 
-	build.List([
-		makeAttr("label", build.Str('""')),
-		makeAttr("shape", build.Str("doublecircle")),
-		makeAttr("style", build.Str("filled")),
-		makeAttr("fillcolor", build.Str("black"))
-	]),
-	build.nil
-)
+addTerminalNode = 
+	AddNode(
+		!retn, 
+		![
+			Attr("label", "\"\""),
+			Attr("shape", "doublecircle"),
+			Attr("style", "filled"),
+			Attr("fillcolor", "black")
+		],
+		![]
+	)
+""")
 
 
-# TODO: try to merge both collects in one? it doesn't seem to be more efficient though
-makeNodes = lists.Concat(
-	unify.CollectAll(makeNode, reduce = ir.match.reduceStmts),
-	unify.CollectAll(makeTerminalNode, reduce = ir.match.reduceStmts)
-)
+#######################################################################
+# Flow Traversal
 
-makeGraph = build._.Graph(makeNodes)
+parse.Transfs('''
+
+doStmt = 
+	Proxy()
+
+doStmts = 
+	MapR(doStmt)
+
+MakeNode(edges) =
+	AddNode(!this, makeNodeAttrs, edges)
+
+doDefault =
+	MakeNode(![<MakeEdge(!next)>]) ;
+	!this ==> next
+	
+doIf =
+	with true, false in
+		?If(_,
+			<let next=!next in doStmt; !next ==> true end>, 
+			<let next=!next in doStmt; !next ==> false end>
+		) ;
+		MakeNode(![
+			<MakeLabelledEdge(!true, !"True")>,
+			<MakeLabelledEdge(!false, !"False")>,
+		]) ;
+		! this ==> next
+	end
+
+doNoStmt =
+	id
+
+doWhile =
+	with true in
+		?While(_, <let next=!this in doStmt; !next ==> true end> );
+		MakeNode(![
+			<MakeLabelledEdge(!true, !"True")>,
+			<MakeLabelledEdge(!next, !"False")>,
+		]) ;
+		! this ==> next
+	end		
+		
+
+doDoWhile =
+	with false in
+		! next ==> false ;
+		! this ==> next ;
+		?DoWhile(_, <doStmt> );
+		MakeNode(![
+			<MakeLabelledEdge(!next, !"True")>,
+			<MakeLabelledEdge(!false, !"False")>,
+		])
+	end
+	
+
+doBreak =
+	MakeNode(![<MakeEdge(!brek)>]) ;
+	!this ==> next
+
+doContinue =
+	MakeNode(![<MakeEdge(!cont)>]) ;
+	!this ==> next
+
+doRet =
+	MakeNode(![<MakeEdge(!retn)>]) ;
+	!this ==> next
+
+doGoTo =
+	with 
+		label
+	in
+		?GoTo(Sym(label)) <
+		MakeNode(![<MakeEdge(!label ; box.escape)>]) + 
+		MakeNode(![])
+	end ;
+	!this ==> next
+
+doBlock =
+	?Block(<doStmts>)
+
+doFunction =
+	let 
+		next = !next,
+		retn = GetTerminalNodeId(!this),
+		brek = !0,
+		cont = !0
+	in 
+		?Function(_, _, _, <doStmts>) ;
+		MakeNode(![<MakeEdge(!next)>]) ;
+		addTerminalNode
+	end
+
+doModule = 
+	let
+		next = !0,
+		retn = !0,
+		brek = !0,
+		cont = !0
+	in
+		?Module(<doStmts>) ;
+		addTerminalNode
+	end
+
+doStmt.subject = 
+	let 
+		this = getNodeId
+	in
+		switch project.name
+		case "If": doIf
+		case "While": doWhile
+		case "DoWhile":	doWhile
+		case "Break": doBreak
+		case "GoTo": doGoTo
+		case "Continue": doContinue
+		case "NoStmt": doNoStmt
+		case "Ret": doRet
+		case "Block": doBlock
+		case "Function": doFunction
+		case "Module": doModule
+		else: doDefault
+		end
+	end
+
+makeGraph =
+	let 
+		nodes = ![],
+		stmtid = !0
+	in
+		doModule ;
+		!Graph(nodes)
+	end
+
+''')
 
 
 #######################################################################
@@ -296,14 +267,13 @@ simplifyPoints =
 		~Graph(<findPointNodes; removePointNodes>)
 	end
 
-''')
-
 simplifyGraph = simplifyPoints
+''')
 
 
 #######################################################################
 
-render = markFlow * makeGraph * simplifyGraph
+render = makeGraph * simplifyGraph
 
 #######################################################################
 # Example
@@ -317,19 +287,9 @@ def main():
 		print "* Reading aterm"
 		term = factory.readFromTextFile(file(arg, 'rt'))
 		#print ( ir.pprint.module * renderBox )(term)
-		print term
-		print
-
-		print "* Marking statements"
-		term = markStmtsIds (term)
-		print term
-		print
-		
-		print "* Marking flow"
-		term = markFlow (term)
 		#print term
 		#print
-		
+
 		print "* Making Graph"
 		term = makeGraph(term)
 		#print term
