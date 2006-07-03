@@ -232,6 +232,8 @@ makeGraph =
 		stmtid = !0
 	in
 		doModule ;
+		AddNode(!"edge",![Attr("fontname","Arial")],![]) ;
+		AddNode(!"node",![Attr("fontname","Arial")],![]) ;
 		!Graph(nodes)
 	end
 
