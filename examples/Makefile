@@ -7,7 +7,7 @@ export PYTHONPATH = ..
 ARCH=$(shell uname -m)
 
 CC = gcc
-CFLAGS = -O
+CFLAGS = #-O
 
 ifneq ($(ARCH),i686)
  ifeq ($(ARCH),x86_64)

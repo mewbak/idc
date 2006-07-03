@@ -60,11 +60,52 @@ liftDoWhile =
 			>]
 		end
 
+liftBreak =
+		with label in
+			?[<?While + ?DoWhile>, Label(label), *] ;
+			~[<
+				~While(_,<OnceTD(goto; !Break)>) +
+				~While(_,<OnceTD(goto; !Break)>)
+			>, *]
+		end
+
+liftContinue =
+		with label in
+			~[Label(label), <
+				~While(_,<OnceTD(goto; !Continue)>) +
+				~DoWhile(_,<OnceTD(goto; !Continue)>)
+			>, *]
+		end
+
+doReturn =
+	with label, rest in
+		Where(
+			ir.path.projectSelection ;
+			?GoTo(Sym(label))
+		) ;
+		debug.Dump() ;
+		OnceTD(
+			AtSuffix(
+				Where(
+					~[Label(label), *<AtSuffix(~[?Ret, *<![]>])>] ; 
+					debug.Dump() ;
+					Filter(Not(?Label)) ;
+					Map(?Assign + ?Ret) ;
+					? rest
+				)
+			)
+		) ;
+		OnceTD(goto; !Block(rest))
+	end
+	
+
 liftAll = AtSuffixR(
 	liftIfThen + 
 	liftIfElse + 
 	liftLoop + 
-	liftDoWhile
+	liftDoWhile +
+	liftBreak +
+	liftContinue
 )
 
 gotoSelected = Where(ir.path.MatchSelectionTo(?GoTo(Sym(_))))
@@ -84,6 +125,12 @@ csLoopApplicable = gotoSelected ; csLoopApply
 csDoWhileApply = OnceTD(AtSuffix(liftDoWhile))
 csDoWhileApplicable = gotoSelected ; csDoWhileApply
 
+csContinueApply = OnceTD(AtSuffix(liftContinue))
+csContinueApplicable = gotoSelected ; csContinueApply
+
+csReturnApply = doReturn
+csReturnApplicable = gotoSelected ; csReturnApply
+
 csAllApply = BottomUp(Repeat(liftAll))
 csAllApplicable = id # functionSelected
 
@@ -93,7 +140,9 @@ csIfThen = CommonRefactoring("Consolidate If-Then", csIfThenApplicable, noInput,
 csIfElse = CommonRefactoring("Consolidate If-Else", csIfElseApplicable, noInput, csIfElseApply)
 csLoop = CommonRefactoring("Consolidate Loop", csLoopApplicable, noInput, csLoopApply)
 csDoWhile = CommonRefactoring("Consolidate Do-While", csDoWhileApplicable, noInput, csDoWhileApply)
-csAll = CommonRefactoring("Consolidate All", csAllApplicable, noInput, csAllApply)
+csContinue = CommonRefactoring("Consolidate Continue", csContinueApplicable, noInput, csContinueApply)
+csReturn = CommonRefactoring("Consolidate Return", csReturnApplicable, noInput, csReturnApply)
+#csAll = CommonRefactoring("Consolidate All", csAllApplicable, noInput, csAllApply)
 
 
 if __name__ == '__main__':

@@ -4,6 +4,8 @@
 from transf import exception
 from transf import base
 from transf import util
+from transf import combine
+from transf import iterate
 from transf import congruent
 from transf import lists
 
@@ -80,16 +82,42 @@ def AllTD(operand):
 	'''Apply a transformation to all subterms, but stops recursing 
 	as soon as it finds a subterm to which the transformation succeeds.
 	'''
-	alltd = util.Proxy()
-	alltd.subject = operand + All(alltd)
-	return alltd
+	return iterate.Rec(lambda self: operand + All(self))
 
 
-def OnceTD(operand):
+def AllBU(operand):
+	return iterate.Rec(lambda self: All(self) + operand)
+
+
+def OnceTD(operand, stop = None):
 	'''Performs a left to right depth first search/transformation that 
 	stops as soon as the the transformation has been successfuly applied.
 	'''
-	oncetd = util.Proxy()
-	oncetd.subject = operand + One(oncetd)
-	return oncetd
+	if stop is None:
+		return iterate.Rec(lambda self: operand + One(self))
+	else:
+		return iterate.Rec(lambda self: operand + -stop * One(self))
 
+
+def OnceBU(operand):
+	return iterate.Rec(lambda self: One(self) + operand)
+
+	
+def SomeTD(operand):
+	return iterate.Rec(lambda self: operand + Some(self))
+
+
+def SomeBU(operand):
+	return iterate.Rec(lambda self: Some(self) + operand)
+
+
+def ManyTD(operand):
+	return iterate.Rec(lambda self: combine.GuardedChoice(operand, All(combine.Try(self)), Some(self)))
+
+
+def ManyBU(operand):
+	return iterate.Rec(lambda self: combine.GuardedChoice(Some(self), Try(operand), operand))
+
+
+def Leaves(operand, isLeaf):
+	return iterate.Rec(lambda self: combine.GuardedChoice(isLeaf, operand, All(self)))

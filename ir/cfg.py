@@ -277,7 +277,7 @@ matchPointShapeAttr =
 
 findPointNode = {
 	Node(src, <One(matchPointShapeAttr)>, [Edge(dst, _)]) -> [src, dst]
-} ; =point
+} ==> point
 
 findPointNodes =
 	Map(Try(findPointNode))
