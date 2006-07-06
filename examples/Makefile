@@ -7,18 +7,48 @@ export PYTHONPATH = ..
 ARCH=$(shell uname -m)
 
 CC = gcc
-CFLAGS = #-O
+
+CFLAGS = -O
 
 ifneq ($(ARCH),i686)
  ifeq ($(ARCH),x86_64)
 # force generation of 32bit in 64bit systems
 CFLAGS += -m32
  else
-$(error An Intel x86 or AMD 64 machine is required.)
+$(error An Intel x86 or AMD x86-64 machine is required to compile the examples.)
  endif
 endif
 
-CFLAGS += -fomit-frame-pointer -fno-builtin -fno-hosted -foptimize-register-move -mregparm=3
+# assume no stdlib nor builtins
+CFLAGS += -ffreestanding
+
+# optimization
+CFLAGS += -fomit-frame-pointer
+CFLAGS += -fno-optimize-sibling-calls
+CFLAGS += -fno-merge-constants
+CFLAGS += -fno-inline
+CFLAGS += -foptimize-register-move
+CFLAGS += -fcprop-registers
+
+# i386 code output
+CFLAGS += -march=i386
+
+# use register arguments instead of stack arguments
+CFLAGS += -mregparm=3
+CFLAGS += -fargument-noalias
+
+# don'te generate jump tables
+CFLAGS += -fno-jump-tables
+
+# specify some clobbered/saved registers
+CFLAGS += -fcall-used-eax -fcall-used-ebx -fcall-used-ecx -fcall-used-edx
+CFLAGS += -fcall-saved-edi -fcall-saved-esi
+
+
+# verbose asm output
+#CFLAGS += -fverbose-asm
+
+
 
 AS = as
 ASFLAGS = 

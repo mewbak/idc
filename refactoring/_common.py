@@ -40,7 +40,8 @@ class CommonRefactoring(refactoring.Refactoring):
 		args = args.tail
 		try:
 			return self._apply(term, selection=selection, args=args)
-		except transf.exception.Failure:
+		except transf.exception.Failure, ex:
+			raise
 			return term
 
 		
