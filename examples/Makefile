@@ -44,10 +44,8 @@ CFLAGS += -fno-jump-tables
 CFLAGS += -fcall-used-eax -fcall-used-ebx -fcall-used-ecx -fcall-used-edx
 CFLAGS += -fcall-saved-edi -fcall-saved-esi
 
-
 # verbose asm output
 #CFLAGS += -fverbose-asm
-
 
 
 AS = as

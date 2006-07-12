@@ -35,10 +35,11 @@ def translate(fpin, fpout, verbose = True):
 		fpin.seek(0)
 	
 	mach = machine.pentium.Pentium()
+	term = mach.load(factory, fpin)
 	
 	if verbose:
 		sys.stderr.write('** Low-level IR **\n')	
-		term = mach.load(factory, fpin)
+		sys.stderr.write(str(term) + '\n')
 		pretty_print(term)
 		sys.stderr.write('\n')	
 	
@@ -46,6 +47,7 @@ def translate(fpin, fpout, verbose = True):
 
 	if verbose:
 		sys.stderr.write('** Translated IR **\n')
+		sys.stderr.write(str(term) + '\n')
 		pretty_print(term)
 		sys.stderr.write('\n')	
 

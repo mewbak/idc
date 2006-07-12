@@ -24,6 +24,11 @@ letter, while transformations factories start with a capital.
 More information about Stratego/XT can be found in its 
 U{Manual <http://www.stratego-language.org/Stratego/StrategoDocumentation>} and its
 U{API Documentation <http://nix.cs.uu.nl/dist/stratego/stratego-lib-docs-0.16/docs/>}.
+
+G{packagetree transf}
+
+G{importgraph}
+
 '''
 
 __docformat__ = 'epytext'

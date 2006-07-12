@@ -76,8 +76,8 @@ examples:
 
 # Generate reference documentation
 
-EPYDOC = epydoc
-#EPYDOC = $(PYTHON) ./util/epydoc.py
+#EPYDOC = epydoc
+EPYDOC = ../utils/bin/epydoc
 
 doc: all
 	rm -rf doc/html
@@ -89,7 +89,7 @@ doc: all
 		aterm \
 		transf \
 		walker \
-		box \
+		lang \
 		ui \
 		#ir
 

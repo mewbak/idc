@@ -12,15 +12,16 @@ stmt
 	= Asm(string opcode, expr* operands) 
 	| Assign(type, optExpr dest, expr src)
 	| Label(string name)
-	| GoTo(expr label)
+	| GoTo(expr addr)
 	| Break
 	| Continue
 	| Block(stmt*)
 	| If(expr cond, stmt, stmt)
 	| While(expr, cond, stmt)
+	| DoWhile(expr, cond, stmt)
 	| Ret(type, optExpr value)
 	| Var(type, string name, optExpr value)
-	| Function(type, string name, arg*, stmt body)
+	| Function(type, string name, arg*, stmt* body)
 	| NoStmt
 
 arg
@@ -42,18 +43,15 @@ optExpr
 	| NoExpr
 
 unOp
-	= Not
-	| BitNot(int size)
+	= Not(type)
 	| Neg(type)
 
 binOp
-	= And
-	| Or
-	| BitAnd(int size)
-	| BitOr(int size)
-	| BitXor(int size)
-	| LShift(int size)
-	| RShift(int size)
+	= And(type)
+	| Or(type)
+	| Xor(type)
+	| LShift(type)
+	| RShift(type)
 	| Plus(type)
 	| Minus(type)
 	| Mult(type)
