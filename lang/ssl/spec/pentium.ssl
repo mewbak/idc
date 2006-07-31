@@ -83,8 +83,8 @@ ADDFLAGS8(op1, op2, result)  {
                         | (~(result@[7:7]) & ((op1@[7:7]) | (op2@[7:7])))
             *1* %OF := ((op1@[7:7]) & (op2@[7:7]) & ~(result@[7:7]))
                         | (~(op1@[7:7]) & ~(op2@[7:7]) & (result@[7:7]))
-            *1* %NF := result@[7:7]
-            *1* %ZF := [result = 0?1:0]
+            *1* %NF := result < 0
+            *1* %ZF := result = 0
 #           *1*  %PF := ??
 #           *1*  %AF := ??                  # unpacked BCD
 };
@@ -94,8 +94,8 @@ ADDFLAGS16(op1, op2, result)  {
                         | (~(result@[15:15]) & ((op1@[15:15]) | (op2@[15:15])))
             *1* %OF := ((op1@[15:15]) & (op2@[15:15]) & ~(result@[15:15]))
                         | (~(op1@[15:15]) & ~(op2@[15:15]) & (result@[15:15]))
-            *1* %NF := result@[15:15]
-            *1* %ZF := [result = 0?1:0]
+            *1* %NF := result < 0
+            *1* %ZF := result = 0
 #           *1*  %PF := ??
 #           *1*  %AF := ??                  # unpacked BCD
 };
@@ -105,8 +105,8 @@ ADDFLAGS32(op1, op2, result)  {
                         | (~(result@[31:31]) & ((op1@[31:31]) | (op2@[31:31])))
             *1* %OF := ((op1@[31:31]) & (op2@[31:31]) & ~(result@[31:31]))
                         | (~(op1@[31:31]) & ~(op2@[31:31]) & (result@[31:31]))
-            *1* %NF := result@[31:31]
-            *1* %ZF := [result = 0?1:0]
+            *1* %NF := result < 0
+            *1* %ZF := result = 0
 #           *1*  %PF := ??
 #           *1*  %AF := ??                  # unpacked BCD
 };
@@ -116,8 +116,8 @@ SUBFLAGS8(op1, op2, result)  {
                         | ((result@[7:7]) & (~(op1@[7:7]) | (op2@[7:7])))
             *1* %OF := ((op1@[7:7]) & ~(op2@[7:7]) & ~(result@[7:7]))
                         | (~(op1@[7:7]) & (op2@[7:7]) & (result@[7:7]))
-            *1* %NF := result@[7:7]
-            *1* %ZF := [result = 0?1:0]
+            *1* %NF := result < 0
+            *1* %ZF := result = 0
 #           *1*  %PF := ??
 #           *1*  %AF := ??                  # unpacked BCD
 };
@@ -127,8 +127,8 @@ SUBFLAGS16(op1, op2, result)  {
                         | ((result@[15:15]) & (~(op1@[15:15]) | (op2@[15:15])))
             *1* %OF := ((op1@[15:15]) & ~(op2@[15:15]) & ~(result@[15:15]))
                         | (~(op1@[15:15]) & (op2@[15:15]) & (result@[15:15]))
-            *1* %NF := result@[15:15]
-            *1* %ZF := [result = 0?1:0]
+            *1* %NF := result < 0
+            *1* %ZF := result = 0
 #       *1*  %PF := ??
 #       *1*  %AF := ??                  # unpacked BCD
 };
@@ -138,8 +138,8 @@ SUBFLAGS32(op1, op2, result)  {
                         | ((result@[31:31]) & (~(op1@[31:31]) | (op2@[31:31])))
             *1* %OF := ((op1@[31:31]) & ~(op2@[31:31]) & ~(result@[31:31]))
                         | (~(op1@[31:31]) & (op2@[31:31]) & (result@[31:31]))
-            *1* %NF := result@[31:31]
-            *1* %ZF := [result = 0?1:0]
+            *1* %NF := result < 0
+            *1* %ZF := result = 0
 #           *1*  %PF := ??
 #           *1*  %AF := ??                  # unpacked BCD
 };
@@ -177,18 +177,18 @@ LOGICALFLAGS32(result)  {
 };
 
 IMULTFLAGS8(result)  {
-            *1* %CF := [(result@[7:15] = 0) or (result@[7:15] = 1)?1:0]
-            *1* %OF := [(result@[7:15] = 0) or (result@[7:15] = 1)?1:0]
+            *1* %CF := (result@[8:15] = 0) or (result@[8:15] = 0xFF)
+            *1* %OF := (result@[8:15] = 0) or (result@[8:15] = 0xFF)
 };
 
 IMULTFLAGS16(result)  {
-            *1* %CF := [(result@[15:31] = 0) or (result@[15:31] = 1)?1:0]
-            *1* %OF := [(result@[15:31] = 0) or (result@[15:31] = 1)?1:0]
+            *1* %CF := (result@[15:31] = 0) or (result@[15:31] = 0xFFFF)
+            *1* %OF := (result@[15:31] = 0) or (result@[15:31] = 0xFFFF)
 };
 
 IMULTFLAGS32(result)  {
-            *1* %CF := [(result@[31:63] = 0) or (result@[31:63] = 1)?1:0]
-            *1* %OF := [(result@[31:63] = 0) or (result@[31:63] = 1)?1:0]
+            *1* %CF := (result@[32:63] = 0) or (result@[32:63] = 0xFFFFFFFF)
+            *1* %OF := (result@[32:63] = 0) or (result@[32:63] = 0xFFFFFFFF)
 };
 
 MULTFLAGS8(result)  {
@@ -623,12 +623,14 @@ IMULL   modrm
             IMULTFLAGS32(tmpl);
 
 IMULW2   reg16, modrm 
-            *16* reg16 := modrm *! reg16
-            IMULTFLAGS16(reg16);
+            *32* tmpl := reg16{32} *! modrm{32}
+            *16* reg16 := reg16 *! modrm
+            IMULTFLAGS16(tmpl);
 
 IMULL2   reg32, modrm 
-            *32* reg32 := modrm *! reg32
-            IMULTFLAGS32(reg32);
+            *64* tmpl := reg32{64} *! modrm{64}
+            *32* reg32 := reg32 *! modrm
+            IMULTFLAGS32(tmpl);
 
 IMULW3   reg16, modrm, i16 
             *16* reg16 := modrm *! i16
@@ -641,19 +643,25 @@ IMULL3   reg32, modrm, i32
 INT3
 			_ ;			# Not expected to be seen in correct code, but decode anyway
 
-COND1 := { "~%CF & ~%ZF", "~%CF & ~%ZF", "~%CF", "~%CF", "%CF",
-            "%CF", "%CF | %ZF", "%CF | %ZF", "%CF", "~%cx", "%ZF",
-            "%ZF", "~(%NF ^ %OF) & ~%ZF", "~(%NF ^ %OF) & ~%ZF",
-            "~(%NF ^ %OF)", "~(%NF ^ %OF)", "%NF ^ %OF", "%NF ^ %OF",
-            "(%NF ^ %OF) | %ZF", "(%NF ^ %ZF) | %ZF", "~%CF", "~%ZF",
-            "~%ZF", "~%OF", "~%PF", "~%PF", "~%NF", "%OF", "%PF", "%PF", "%NF" };
-JMPS := { "JA", "JNBE", "JAE", "JNB", "JB", "JNAE", "JBE",
-            "JNA", "JC", "JCXZ", "JE", "JZ", "JG", "JNLE", "JGE",
-            "JNL", "JL", "JNGE", "JLE", "JNG", "JNC", "JNE", "JNZ",
-            "JNO", "JNP", "JPO", "JNS", "JO", "JP", "JPE", "JS" };
+COND1 := { 
+            "~L%CF and ~L%ZF", "~L%CF and ~L%ZF", "~L%CF", "~L%CF", "%CF", 
+	    "%CF", "%CF or %ZF", "%CF or %ZF", "%CF", "~L%cx", 
+	    "%ZF", "%ZF", "~L(%NF = %OF) and ~L%ZF", "~L(%NF = %OF) and ~L%ZF", "~L(%NF = %OF)", 
+	    "~L(%NF = %OF)", "%NF = %OF", "%NF = %OF", "(%NF = %OF) or %ZF", "(%NF = %ZF) or %ZF", 
+	    "~L%CF", "~L%ZF", "~L%ZF", "~L%OF", "~L%PF", 
+	    "~L%PF", "~L%NF", "%OF", "%PF", "%PF", 
+	    "%NF" };
+JMPS := {
+            "JA", "JNBE", "JAE", "JNB", "JB", 
+	    "JNAE", "JBE", "JNA", "JC", "JCXZ", 
+	    "JE", "JZ", "JG", "JNLE", "JGE",
+            "JNL", "JL", "JNGE", "JLE", "JNG", 
+	    "JNC", "JNE", "JNZ", "JNO", "JNP", 
+	    "JPO", "JNS", "JO", "JP", "JPE", 
+	    "JS" };
 
 JMPS[IDX]   addr 
-            *32* %pc := [(COND1[IDX] = 1)?addr:%pc];
+            *32* %pc := [COND1[IDX]?addr:%pc];
 
 JMP   addr 
             *32* %pc := addr;
@@ -669,8 +677,8 @@ LEAVE
             *32* %ebp := m[%esp]
             *32* %esp := %esp + 4;
 
-COND4 := { "%ecx ~= 0", "%ecx ~= 0 & %ZF", "%ecx ~= 0 & %ZF",
-           "%ecx ~= 0 & ~%ZF", "%ecx ~= 0 & ~%ZF" };
+COND4 := { "%ecx ~= 0", "%ecx ~= 0 and %ZF", "%ecx ~= 0 and %ZF",
+           "%ecx ~= 0 and ~%ZF", "%ecx ~= 0 and ~%ZF" };
 LOOPS := { "LOOP", "LOOPE", "LOOPZ", "LOOPNE", "LOOPNZ" };
 
 LOOPS[IDX]   addr 

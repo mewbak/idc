@@ -10,6 +10,97 @@ import ir.path
 
 lib.parse.Transfs('''
 
+
+#######################################################################
+# Labels
+
+updateNeededLabels = 
+Where(
+	with label in
+		?GoTo(Sym(label)) ;
+		![label,label] ==> needed_label
+	end
+)
+
+#######################################################################
+# Statements
+
+dceStmt = Proxy()
+dceStmts = Proxy()
+
+dceLabel = 
+	Try(
+		?Label(<Not(~needed_label)>) ;
+		!NoStmt
+	)
+
+elimBlock = {
+	Block([]) -> NoStmt |
+	Block([stmt]) -> stmt
+}
+
+dceBlock = 
+	~Block(<dceStmts>) ;
+	Try(elimBlock)
+
+elimIf = {
+	If(cond,NoStmt,NoStmt) -> Assign(Void,NoExpr,cond) |
+	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
+}
+
+dceIf = 
+	~If(_, <dceStmt>, <dceStmt>) ;
+	Try(elimIf)
+
+elimWhile = {
+	While(cond,NoStmt) -> Assign(Void,NoExpr,cond)
+}
+
+dceWhile = 
+	~While(_, <dceStmt>) ;
+	Try(elimWhile)
+
+elimDoWhile = {
+	DoWhile(cond,NoStmt) -> Assign(Void,NoExpr,cond)
+}
+
+dceDoWhile = 
+	~DoWhile(_, <dceStmt>) ;
+	Try(elimDoWhile)
+
+dceFunction = 
+	with needed_label[] in
+		AllTD(updateNeededLabels) ;
+		~Function(_, _, _, <dceStmts>)
+	end
+
+# If none of the above applies, assume all vars are needed
+dceDefault = 
+	id
+
+dceStmt.subject = 
+	?Label < dceLabel +
+	?Block < dceBlock +
+	?If < dceIf +
+	?While < dceWhile +
+	?DoWhile < dceDoWhile +
+	?Function < dceFunction + 
+	id
+
+dceStmts.subject = 
+	MapR(dceStmt) ;
+	Filter(Not(?NoStmt))
+
+dceModule = 
+	~Module(<dceStmts>)
+
+dce =
+	with needed_label[] in
+		AllTD(updateNeededLabels) ;
+		dceModule
+	end
+
+
 goto =  
 	ir.path.inSelection ;
 	?GoTo(Sym(label))
@@ -115,34 +206,40 @@ noInput = ![]
 
 csIfThenApply = OnceTD(AtSuffix(liftIfThen))
 csIfThenApplicable = gotoSelected ; csIfThenApply
+csIfThenApply = csIfThenApply; dce
 
 csIfElseApply = OnceTD(AtSuffix(liftIfElse))
 csIfElseApplicable = gotoSelected ; csIfElseApply
+csIfElseApply = csIfElseApply; dce
 
 csLoopApply = OnceTD(AtSuffix(liftLoop))
 csLoopApplicable = gotoSelected ; csLoopApply
+csLoopApply = csLoopApply; dce
 
-csDoWhileApply = OnceTD(AtSuffix(liftDoWhile))
+csDoWhileApply = OnceTD(AtSuffix(liftDoWhile)) 
 csDoWhileApplicable = gotoSelected ; csDoWhileApply
+csDoWhileApply = csDoWhileApply; dce
 
 csContinueApply = OnceTD(AtSuffix(liftContinue))
 csContinueApplicable = gotoSelected ; csContinueApply
+csContinueApply = csContinueApply; dce
 
 csReturnApply = doReturn
 csReturnApplicable = gotoSelected ; csReturnApply
+csReturnApply = csReturnApply; dce
 
 csAllApply = BottomUp(Repeat(liftAll))
 csAllApplicable = id # functionSelected
 
 ''')
 
-csIfThen = CommonRefactoring("Consolidate If-Then", csIfThenApplicable, noInput, csIfThenApply)
-csIfElse = CommonRefactoring("Consolidate If-Else", csIfElseApplicable, noInput, csIfElseApply)
-csLoop = CommonRefactoring("Consolidate Loop", csLoopApplicable, noInput, csLoopApply)
-csDoWhile = CommonRefactoring("Consolidate Do-While", csDoWhileApplicable, noInput, csDoWhileApply)
-csContinue = CommonRefactoring("Consolidate Continue", csContinueApplicable, noInput, csContinueApply)
-csReturn = CommonRefactoring("Consolidate Return", csReturnApplicable, noInput, csReturnApply)
-#csAll = CommonRefactoring("Consolidate All", csAllApplicable, noInput, csAllApply)
+csIfThen = CommonRefactoring("Structure If-Then", csIfThenApplicable, noInput, csIfThenApply)
+csIfElse = CommonRefactoring("Structure If-Else", csIfElseApplicable, noInput, csIfElseApply)
+csLoop = CommonRefactoring("Structure Loop", csLoopApplicable, noInput, csLoopApply)
+csDoWhile = CommonRefactoring("Structure Do-While", csDoWhileApplicable, noInput, csDoWhileApply)
+csContinue = CommonRefactoring("Structure Continue", csContinueApplicable, noInput, csContinueApply)
+csReturn = CommonRefactoring("Structure Return", csReturnApplicable, noInput, csReturnApply)
+#csAll = CommonRefactoring("Structure All", csAllApplicable, noInput, csAllApply)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 int factorial(int n)
 {
-	register int i, f;
+	register int f;
 	f = 1;
-	for(i = 2; i <= n; i++)
-		f *= i;
+	while(n)
+		f *= n--;
 	return f;
 }

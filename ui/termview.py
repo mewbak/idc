@@ -68,7 +68,7 @@ class TermTreeIter:
 			return None
 		else:
 			for i in range(n):
-				children = children.getTail()
+				children = children.tail
 			return TermTreeIter(
 				self.path + (n,),
 				self.parents + ((self.head, self.tail),),

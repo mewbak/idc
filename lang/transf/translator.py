@@ -528,7 +528,11 @@ class Translator(walker.Walker):
 		if v not in vars:
 			vars.append(v)
 			
-	def collectAnnosVar(self, t, a, vars):
+	def collectAs(self, v, t, vars):
+		self.collect(v, vars)
+		self.collect(t, vars)
+
+	def collectAnnos(self, t, a, vars):
 		self.collect(t, vars)
 		self.collect(a, vars)
 

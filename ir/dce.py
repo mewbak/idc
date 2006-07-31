@@ -91,7 +91,8 @@ dceRet =
 	~Ret(_, <setNeededVars>)
 
 elimBlock = {
-	Block([]) -> NoStmt
+	Block([]) -> NoStmt |
+	Block([stmt]) -> stmt
 }
 
 dceBlock = 
@@ -121,8 +122,8 @@ elimDoWhile = {
 }
 
 dceDoWhile = 
-	\needed/* ~DoWhile(_, <dceStmt>) ;
 	~DoWhile(<setNeededVars>, _) ;
+	\needed/* ~DoWhile(_, <dceStmt>) ;
 	Try(elimDoWhile)
 
 dceFunction = 
