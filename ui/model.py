@@ -100,6 +100,11 @@ class Model:
 		writer = box.Writer(formatter)
 		writer.write(boxes)
 
+	def export_history(self, filename):
+		terms = _factory.makeList(self._undo_history + [self.get_term()])
+		fp = file(filename, 'wt')
+		terms.writeToTextFile(fp)		
+		
 	# TODO: Write a PDF exporter, probably using latex.
 	
 	def apply_refactoring(self, refactoring, args):

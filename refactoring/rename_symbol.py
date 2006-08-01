@@ -20,7 +20,10 @@ input =
 apply = 
 	with src, dst in
 		Where(!args; ?[src, dst]) ;
-		AllTD(~Sym(<?src; !dst>))
+		AllTD(
+			~Sym(<?src; !dst>) +
+			~Arg(_, <?src; !dst>)
+		)
 	end
 ''')
 

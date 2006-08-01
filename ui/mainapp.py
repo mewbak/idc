@@ -171,6 +171,7 @@ class MainApp(gtk.Window):
 				[
 					('Decompilation Project', ['*.aterm']),
 					('C Source File', ['*.c']),
+					('History', ['*.aterms']),
 					('All Files', ['*']),
 				], 
 				'./examples',
@@ -181,6 +182,8 @@ class MainApp(gtk.Window):
 				self.model.save_ir(path)
 			if path.endswith('.c'):
 				self.model.export_c(path)
+			if path.endswith('.aterms'):
+				self.model.export_history(path)
 
 	def on_quit(self, action):
 		self.quit()

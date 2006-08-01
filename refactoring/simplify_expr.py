@@ -12,7 +12,9 @@ simplify = {
 	Binary(Eq(Int(_,_)),Binary(Minus(Int(_,_)),x,y),Lit(Int(_,_),0)) 
 		-> Binary(Eq(t),x,y) |
 	Unary(Not(Bool),Binary(Eq(t),x,y))
-		-> Binary(NotEq(t),x,y)
+		-> Binary(NotEq(t),x,y) |
+	Binary(And(_),x,x)
+		-> x
 }
 
 applicable = 

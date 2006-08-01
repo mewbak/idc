@@ -207,13 +207,14 @@ doModule =
 	end
 
 doStmt.subject = 
+	debug.Dump() ;
 	let 
 		this = getNodeId
 	in
 		switch project.name
 		case "If": doIf
 		case "While": doWhile
-		case "DoWhile":	doWhile
+		case "DoWhile":	doDoWhile
 		case "Break": doBreak
 		case "GoTo": doGoTo
 		case "Continue": doContinue
