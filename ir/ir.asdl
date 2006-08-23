@@ -17,8 +17,8 @@ stmt
 	| Continue
 	| Block(stmt*)
 	| If(expr cond, stmt, stmt)
-	| While(expr, cond, stmt)
-	| DoWhile(expr, cond, stmt)
+	| While(expr cond, stmt)
+	| DoWhile(expr cond, stmt)
 	| Ret(type, optExpr value)
 	| Var(type, string name, optExpr value)
 	| Function(type, string name, arg*, stmt* body)
