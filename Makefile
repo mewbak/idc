@@ -88,7 +88,6 @@ doc: all
 		-o doc/html \
 		aterm \
 		transf \
-		walker \
 		lang \
 		ui \
 		#ir
@@ -108,13 +107,24 @@ deps: .deps.mak
 
 # Make a tarball
 
-dist: all doc
+dist: zip
+
+tarball: all
+	rm -f ../idc.tar.bz2
 	tar -cjf ../idc.tar.bz2 \
-		--exclude './bin' \
 		--exclude '.*.sw?' \
 		--exclude '.svn' \
 		--exclude '*.pyc' \
+		--exclude 'doc' \
 		.
+
+zip: all
+	rm -f ../idc.zip
+	zip -r ../idc.zip . \
+		-x '.*' \
+		-x '*/.svn/*' \
+		-x '*.pyc' \
+		-x 'doc/*'
 
 .PHONY: dist
 
