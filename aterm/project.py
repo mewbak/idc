@@ -5,7 +5,7 @@ from aterm.factory import factory
 from aterm import visitor
 
 
-class Subterms(visitor.Visitor):
+class _Subterms(visitor.Visitor):
 	'''Project the direct subterms of a term.'''
 	
 	def visitLit(self, term):
@@ -17,10 +17,10 @@ class Subterms(visitor.Visitor):
 	def visitAppl(self, term):
 		return factory.makeList(term.args)
 
-subterms = Subterms().visit
+subterms = _Subterms().visit
 
 
-class Subterm(visitor.Visitor):
+class _Subterm(visitor.Visitor):
 	'''Project a direct subterm of a term.'''
 
 	def visitTerm(self, term, index):
@@ -35,4 +35,4 @@ class Subterm(visitor.Visitor):
 	def visitAppl(self, term, index):
 		return term.args[index]
 
-subterm = Subterm().visit
+subterm = _Subterm().visit

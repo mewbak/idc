@@ -1,4 +1,8 @@
-'''Term building transformations.'''
+'''Term building transformations.
+
+The transformations in this module build new terms from scratch, without taking
+in consideration the input term.
+'''
 
 
 import aterm.factory

@@ -84,7 +84,7 @@ class Factory(object):
 		
 		if isinstance(value, term.Term):
 			return value
-		elif isinstance(value, int):
+		elif isinstance(value, (int, long)):
 			return self.makeInt(value)
 		elif isinstance(value, float):
 			return self.makeReal(value)

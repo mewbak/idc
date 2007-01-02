@@ -4,80 +4,80 @@
 from aterm import visitor
 
 
-class Typer(visitor.Visitor):
+class _Typer(visitor.Visitor):
 	'''Base class for all type verificators.'''
 	
 	def visitTerm(self, term):
 		return False
 
 
-class Int(Typer):
+class _Int(_Typer):
 	'''Integer term type verifier.'''
 	
 	def visitInt(self, term):
 		return True
 
-anInt = Int().visit
+anInt = _Int().visit
 
 
-class Real(Typer):
+class _Real(_Typer):
 	'''Real term type verifier.'''
 	
 	def visitReal(self, term):
 		return True
 
-aReal = Real().visit
+aReal = _Real().visit
 
 
-class Str(Typer):
+class _Str(_Typer):
 	'''String term type verifier.'''
 
 	def visitStr(self, term):
 		return True
 
-aStr = Str().visit
+aStr = _Str().visit
 
 
-class Lit(Typer):
+class _Lit(_Typer):
 	'''Literal term type verifier.'''
 	
 	def visitLit(self, term):
 		return True
 
-aLit = Lit().visit
+aLit = _Lit().visit
 
 
-class Nil(Typer):
+class _Nil(_Typer):
 	'''Empty list term type verifier.'''
 	
 	def visitNil(self, term):
 		return True
 
-aNil = Nil().visit
+aNil = _Nil().visit
 
 
-class Cons(Typer):
+class _Cons(_Typer):
 	'''List construction term type verifier.'''
 	
 	def visitCons(self, term):
 		return True
 
-aCons = Cons().visit
+aCons = _Cons().visit
 
 
-class List(Typer):
+class _List(_Typer):
 	'''List term type verifier.'''
 	
 	def visitList(self, term):
 		return True
 
-aList = List().visit
+aList = _List().visit
 
 
-class Appl(Typer):
+class _Appl(_Typer):
 	'''Application term type verifier.'''
 	
 	def visitAppl(self, term):
 		return True
 
-anAppl = Appl().visit
+anAppl = _Appl().visit

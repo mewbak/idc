@@ -4,7 +4,7 @@
 from aterm import visitor
 
 
-class ToInt(visitor.Visitor):
+class _ToInt(visitor.Visitor):
 	'''Convert an integer term to its integer value.'''
 	
 	def visitTerm(self, term):
@@ -13,10 +13,10 @@ class ToInt(visitor.Visitor):
 	def visitInt(self, term):
 		return term.value
 
-toInt = ToInt().visit
+toInt = _ToInt().visit
 
 
-class ToReal(visitor.Visitor):
+class _ToReal(visitor.Visitor):
 	'''Convert a real term to its real value.'''
 	
 	def visitTerm(self, term):
@@ -25,10 +25,10 @@ class ToReal(visitor.Visitor):
 	def visitReal(self, term):
 		return term.value
 
-toReal = ToReal().visit
+toReal = _ToReal().visit
 
 
-class ToStr(visitor.Visitor):
+class _ToStr(visitor.Visitor):
 	'''Convert a string term to its string value.'''
 	
 	def visitTerm(self, term):
@@ -37,10 +37,10 @@ class ToStr(visitor.Visitor):
 	def visitStr(self, term):
 		return term.value
 
-toStr = ToStr().visit
+toStr = _ToStr().visit
 
 
-class ToLit(visitor.Visitor):
+class _ToLit(visitor.Visitor):
 	'''Convert a literal term to its value.'''
 	
 	def visitTerm(self, term):
@@ -49,10 +49,10 @@ class ToLit(visitor.Visitor):
 	def visitLit(self, term):
 		return term.value
 
-toLit = ToLit().visit
+toLit = _ToLit().visit
 
 
-class ToList(visitor.Visitor):
+class _ToList(visitor.Visitor):
 	'''Convert a list term to a list of terms.'''
 
 	def visitTerm(self, term):
@@ -66,10 +66,10 @@ class ToList(visitor.Visitor):
 		tail = self.visit(term.tail)
 		return [head] + tail
 
-toList = ToList().visit
+toList = _ToList().visit
 
 
-class ToObj(visitor.Visitor):
+class _ToObj(visitor.Visitor):
 	'''Recursively convert literal and list terms to the corresponding
 	Python objects.'''
 	
@@ -87,4 +87,4 @@ class ToObj(visitor.Visitor):
 		tail = self.visit(term.tail)
 		return [head] + tail
 	
-toObj = ToObj().visit
+toObj = _ToObj().visit

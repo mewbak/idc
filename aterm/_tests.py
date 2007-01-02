@@ -401,7 +401,25 @@ class TestPath(unittest.TestCase):
 	
 	def setUp(self):
 		self.factory = aterm.factory.factory
-		
+	
+	testCompareTestCases = [
+		([1,2],[], path.ANCESTOR),
+		([1,2],[0], path.PRECEDENT),
+		([1,2],[1], path.ANCESTOR),
+		([1,2],[1,1], path.PRECEDENT),
+		([1,2],[1,2], path.EQUAL),
+		([1,2],[1,2,0], path.DESCENDENT),
+		([1,2],[1,3], path.SUBSEQUENT),
+		([1,2],[2], path.SUBSEQUENT),
+	]
+	
+	def testCompare(self):
+		for path1, path2, expectedResult in self.testCompareTestCases:
+			path1 = path.Path(path1)
+			path2 = path.Path(path2)
+			result = path1.compare(path2)
+			self.failUnlessEqual(result, expectedResult, '%s vs %s == %s (!= %s)' % (path1, path2, result, expectedResult))
+	
 	def checkTransformation(self, func, testCases):
 		for termStr, pathStr, expectedResultStr in testCases:
 			term = self.factory.parse(termStr)

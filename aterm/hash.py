@@ -7,9 +7,9 @@ from aterm import visitor
 class StructuralHash(visitor.Visitor):
 	'''Perform hashing without considering annotations.'''
 	
+	@classmethod
 	def hash(cls, term):
 		return cls().visit(term)
-	hash = classmethod(hash)
 
 	# TODO: use a more efficient hash function
 
@@ -41,8 +41,6 @@ class StructuralHash(visitor.Visitor):
 
 class Hash(StructuralHash):
 	'''Perform hashing.'''
-	
-	# TODO: use a more efficient hash function
 	
 	def visit(self, term):
 		term_hash = StructuralHash.visit(self, term)

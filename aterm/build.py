@@ -1,4 +1,4 @@
-'''Term pattern makeing.'''
+'''Term building from patterns.'''
 
 
 from aterm.factory import factory

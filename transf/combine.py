@@ -30,7 +30,6 @@ def Not(operand):
 
 
 class _Try(operate.Unary):
-	'''Attempt a transformation, otherwise return the term unmodified.'''
 	
 	__slots__ = []
 	
@@ -41,6 +40,7 @@ class _Try(operate.Unary):
 			return term
 
 def Try(operand):
+	'''Attempt a transformation, otherwise return the term unmodified.'''
 	if operand is base.ident:
 		return operand
 	if operand is base.fail:
@@ -146,6 +146,11 @@ def GuardedChoice(operand1, operand2, operand3):
 
 
 def UndeterministicChoice(operands):
+	'''Chooses one of the operand transformations such that the one it chooses 
+	succeeds. If all operand transformations fail, then the choice fails as 
+	well. Operationally, the operand transformations are tried, by an 
+	unspecified order.
+	'''
 	return operate.Nary(operands, Choice, base.fail)
 
 
@@ -162,6 +167,9 @@ class _If(operate.Binary):
 			return self.roperand.apply(term, ctx)
 
 def If(loperand, roperand):
+	'''If the first transformation succeeds, then applies the second 
+	transformation. Otherwise, return the input term unmodified.
+	'''
 	if loperand is base.ident:
 		return roperand
 	if loperand is base.fail:
@@ -186,6 +194,9 @@ class _IfElse(operate.Ternary):
 			return self.operand2.apply(term, ctx)
 
 def IfElse(operand1, operand2, operand3):
+	'''If the first transformation succeeds, then apply the second 
+	transformation. Otherwise, applies the third transformation.
+	'''
 	if operand1 is base.ident:
 		return operand2
 	if operand1 is base.fail:
@@ -197,15 +208,15 @@ def IfElse(operand1, operand2, operand3):
 
 class _IfElifElse(base.Transformation):
 
-	__slots__ = ['conds', 'otherwise']
+	__slots__ = ['clauses', 'otherwise']
 	
-	def __init__(self, conds, otherwise):
+	def __init__(self, clauses, otherwise):
 		base.Transformation.__init__(self)
-		self.conds = conds
+		self.clauses = clauses
 		self.otherwise = otherwise
 		
 	def apply(self, term, ctx):
-		for if_cond, if_then in self.conds:
+		for if_cond, if_then in self.clauses:
 			try:
 				if_cond.apply(term, ctx)
 			except exception.Failure:
@@ -214,15 +225,22 @@ class _IfElifElse(base.Transformation):
 				return if_then.apply(term, ctx)
 		return self.otherwise.apply(term, ctx)
 
-def IfElifElse(conds, otherwise = None):
+def IfElifElse(clauses, otherwise = None):
+	'''Nested if-then-else combinator.
+	
+	@param clauses: sequence of (premise, consequence) transformation tuples 
+	to be tried in order.
+	@param otherwise: optional transformation to be applied if all the above 
+	premises fail.
+	'''
 	if otherwise is None:
 		otherwise = base.ident
-	if len(conds) == 0:
+	if len(clauses) == 0:
 		return otherwise
-	if len(conds) == 1:
-		((cond, true),) = conds
+	if len(clauses) == 1:
+		((cond, true),) = clauses
 		return IfElse(cond, true, otherwise)
-	return _IfElifElse(conds, otherwise)
+	return _IfElifElse(clauses, otherwise)
 
 
 class _Switch(base.Transformation):
@@ -244,7 +262,14 @@ class _Switch(base.Transformation):
 		else:
 			return action.apply(term, ctx)
 
-def Switch(expr, cases, otherwise = None):	
+def Switch(expr, cases, otherwise = None):
+	'''Switch combination.
+	
+	@param cases: sequence of (match term, consequence transformation) 
+	tuples; order is irrelevant.
+	@param otherwise: optional transformation to be applied if the term does 
+	not match any of the input cases.
+	'''
 	if otherwise is None:
 		otherwise = base.fail
 	_cases = {}

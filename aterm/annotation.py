@@ -36,7 +36,6 @@ class _Setter(visitor.Visitor):
 	def visitAppl(self, term):
 		return term.factory.makeAppl(term.name, term.args, self.annos)
 
-
 def setall(term, annos):
 	'''Return a copy of the term with the given annotations.'''
 	if not annos:
