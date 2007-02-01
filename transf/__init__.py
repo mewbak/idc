@@ -1,4 +1,4 @@
-'''Term transformation framework. 
+'''Term transformation framework.
 
 This framework allows to create complex term transformations from simple blocks.
 It is inspired on the U{Stratego/XT<http://www.stratego-
@@ -21,7 +21,7 @@ To help distinguish between transformations and transformation factories,
 throughout the code, transformations instances' names start with a lower-case
 letter, while transformations factories start with a capital.
 
-More information about Stratego/XT can be found in its 
+More information about Stratego/XT can be found in its
 U{Manual <http://www.stratego-language.org/Stratego/StrategoDocumentation>} and its
 U{API Documentation <http://nix.cs.uu.nl/dist/stratego/stratego-lib-docs-0.16/docs/>}.
 
@@ -37,7 +37,6 @@ __docformat__ = 'epytext'
 from transf import exception
 from transf import base
 from transf import util
-from transf import variable
 from transf import scope
 
 from transf import combine
@@ -52,7 +51,6 @@ from transf import unify
 
 from transf import arith
 from transf import strings
-from transf import table
 
 from transf import annotation
 from transf import path

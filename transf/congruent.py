@@ -5,7 +5,7 @@ import aterm.types
 
 from transf import exception
 from transf import base
-from transf import variable
+from transf.types import variable
 from transf import operate
 from transf import combine
 from transf import _common
@@ -14,17 +14,17 @@ from transf import _helper
 
 
 class _ConsL(_common._Cons):
-	
+
 	def apply(self, term, ctx):
 		try:
 			old_head = term.head
 			old_tail = term.tail
 		except AttributeError:
 			raise exception.Failure('not a list cons term', term)
-		
+
 		new_head = self.head.apply(old_head, ctx)
 		new_tail = self.tail.apply(old_tail, ctx)
-		
+
 		if new_head is not old_head or new_tail is not old_tail:
 			return term.factory.makeCons(
 				new_head,
@@ -39,17 +39,17 @@ def ConsL(head, tail):
 
 
 class _ConsR(_common._Cons):
-	
+
 	def apply(self, term, ctx):
 		try:
 			old_head = term.head
 			old_tail = term.tail
 		except AttributeError:
 			raise exception.Failure('not a list cons term', term)
-		
+
 		new_tail = self.tail.apply(old_tail, ctx)
 		new_head = self.head.apply(old_head, ctx)
-		
+
 		if new_head is not old_head or new_tail is not old_tail:
 			return term.factory.makeCons(
 				new_head,
@@ -68,7 +68,7 @@ Cons = ConsL
 
 def List(elms, tail = None):
 	return _common.List(elms, tail, Cons, match.nil)
-	
+
 
 class Appl(_common.Appl):
 	'''Traverse a term application.'''
@@ -79,7 +79,7 @@ class Appl(_common.Appl):
 			old_args = term.args
 		except AttributeError:
 			raise exception.Failure('not an application term', term)
-		
+
 		if name != self.name:
 			raise exception.Failure
 
@@ -92,7 +92,7 @@ class Appl(_common.Appl):
 			new_arg = self_arg.apply(old_arg, ctx)
 			new_args.append(new_arg)
 			modified = modified or new_arg is not old_arg
-		
+
 		if modified:
 			return term.factory.makeAppl(
 				name,
@@ -111,13 +111,13 @@ class ApplCons(_common.ApplCons):
 			old_args = term.args
 		except AttributeError:
 			raise exception.Failure('not an application term', term)
-		
+
 		factory = term.factory
 		old_name = factory.makeStr(old_name)
 		old_args = factory.makeList(old_args)
 		new_name = self.name.apply(old_name, ctx)
 		new_args = self.args.apply(old_args, ctx)
-		
+
 		if new_name is not old_name or new_args is not old_args:
 			new_name = new_name.value
 			new_args = tuple(new_args)
@@ -134,7 +134,7 @@ Var = variable.Traverse
 
 
 class Annos(_common.Annos):
-	
+
 	def apply(self, term, ctx):
 		old_annos = term.getAnnotations()
 		new_annos = self.annos.apply(old_annos, ctx)
@@ -154,7 +154,7 @@ _ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, Var, match.Ter
 
 class Subterms(base.Transformation):
 	'''Congruent transformation of subterms.'''
-	
+
 	def __init__(self, children, leaf):
 		'''
 		@param children: transformation to be applied to the term children.
@@ -164,7 +164,7 @@ class Subterms(base.Transformation):
 		self.leaf = leaf
 		self.list = children
 		self.appl = ApplCons(base.ident, children)
-		
+
 	def apply(self, term, ctx):
 		if term.type == aterm.types.APPL:
 			return self.appl.apply(term, ctx)

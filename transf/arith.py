@@ -5,7 +5,7 @@ import aterm
 
 from transf import exception
 from transf import base
-from transf import variable
+from transf.types import variable
 from transf import operate
 from transf import project
 
@@ -18,7 +18,7 @@ class _Unary(operate.Unary):
 	def __init__(self, operand, func):
 		operate.Unary.__init__(self, operand)
 		self.func = func
-		
+
 	def apply(self, term, ctx):
 		x = self.operand.apply(term, ctx)
 		try:
@@ -32,7 +32,7 @@ class _Binary(operate.Binary):
 	def __init__(self, loperand, roperand, func):
 		operate.Binary.__init__(self, loperand, roperand)
 		self.func = func
-		
+
 	def apply(self, term, ctx):
 		x = self.loperand.apply(term, ctx)
 		y = self.roperand.apply(term, ctx)

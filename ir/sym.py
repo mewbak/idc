@@ -15,7 +15,7 @@ isLocalVar = ir.match.aSym * (isReg + isTmp)
 
 updateLocalVar = (
 	isLocalVar * 
-	table.Set('local')
+	types.table.Set('local')
 )
 
 updateLocalVars = traverse.AllTD(updateLocalVar)

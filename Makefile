@@ -81,7 +81,7 @@ EPYDOC = ../utils/bin/epydoc
 
 doc: all
 	rm -rf doc/html
-	$(EPYDOC) \
+	$(EPYDOC) -v \
 		--css blue \
 		--no-private \
 		--no-sourcecode \
@@ -93,6 +93,14 @@ doc: all
 		#ir
 
 .PHONY: doc
+
+
+# Run pylint
+
+pylint:
+	pylint --rcfile=pylintrc aterm transf
+
+.PHONY: pylint
 
 
 # Automated dependency generation

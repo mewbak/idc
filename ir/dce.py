@@ -9,15 +9,15 @@ import ir.sym
 #######################################################################
 # Needed/uneeded table
 
-setUnneededVar = table.Del('needed')
-setNeededVar = table.Set('needed')
+setUnneededVar = types.table.Del('needed')
+setNeededVar = types.table.Set('needed')
 
 setNeededVars = debug.Log('Finding needed vars in %s\n', base.ident) * \
 	traverse.AllTD(ir.match.aSym * setNeededVar * 
 	debug.Log('Found var needed %s\n', base.ident))
 
-setAllUnneededVars = table.Clear('needed')
-setAllNeededVars = table.Add('needed', 'local')
+setAllUnneededVars = types.table.Clear('needed')
+setAllNeededVars = types.table.Add('needed', 'local')
 
 parse.Transfs(r'''
 
@@ -44,7 +44,7 @@ Where(
 		?Label(label) ; debug.Dump(); 
 		!needed ; 
 		Map(![label,<id>] ; 
-		table.Set('label_needed'))
+		types.table.Set('label_needed'))
 	end
 )
 ''')

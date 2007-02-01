@@ -10,7 +10,7 @@ import aterm.term
 
 from transf import exception
 from transf import base
-from transf import variable
+from transf.types import variable
 from transf import _common
 from transf import _helper
 
@@ -22,11 +22,11 @@ class _Term(_common._Term):
 
 	# NOTE: especial care should when deriving this class
 	# to avoid breaking optimizations
-	
+
 	def __init__(self, term):
 		base.Transformation.__init__(self)
 		self.term = term
-	
+
 	def apply(self, term, ctx):
 		return self.term
 
@@ -42,7 +42,7 @@ one = Int(1)
 two = Int(2)
 three = Int(3)
 four = Int(4)
-	
+
 
 def Real(value):
 	return _common.Real(value, _Term)
@@ -63,7 +63,7 @@ nil = Nil()
 
 
 class _ConsL(_common._Cons):
-	
+
 	def apply(self, term, ctx):
 		head = self.head.apply(term, ctx)
 		tail = self.tail.apply(term, ctx)
@@ -74,7 +74,7 @@ def ConsL(head, tail):
 
 
 class _ConsR(_common._Cons):
-	
+
 	def apply(self, term, ctx):
 		tail = self.tail.apply(term, ctx)
 		head = self.head.apply(term, ctx)
@@ -89,7 +89,7 @@ Cons = ConsL
 
 def List(elms, tail = None):
 	return _common.List(elms, tail, Cons, nil)
-	
+
 
 class Appl(_common.Appl):
 
@@ -113,7 +113,7 @@ Var = variable.Build
 
 
 class Annos(_common.Annos):
-	
+
 	def apply(self, term, ctx):
 		return term.setAnnotations(self.annos.apply(term, ctx))
 

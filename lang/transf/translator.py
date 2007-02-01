@@ -1,4 +1,4 @@
-"""Translates the transformation describing aterms into the 
+"""Translates the transformation describing aterms into the
 respective transformation objects."""
 
 
@@ -6,9 +6,14 @@ respective transformation objects."""
 
 
 import antlr
+
 import aterm.factory
 from aterm import walker
+
 import transf
+import transf.types.variable
+import transf.types.term
+import transf.types.table
 
 
 class SemanticException(antlr.SemanticException):
@@ -17,7 +22,7 @@ class SemanticException(antlr.SemanticException):
 		antlr.SemanticException.__init__(self)
 		self.node = node
 		self.msg = msg
-	   
+
 	def __str__(self):
 		line = self.node.getLine()
 		col  = self.node.getColumn()
@@ -37,7 +42,7 @@ class Meta:
 		self.locals = locals
 		self.args = args
 		self.term = term
-	
+
 	def __call__(self, *args):
 		if len(args) != len(self.args):
 			raise TypeError("%d arguments required (%d given)" % (len(self.args), len(args)))
@@ -53,7 +58,7 @@ MATCH, BUILD, TRAVERSE = range(3)
 
 
 class Translator(walker.Walker):
-	
+
 	def __init__(self, **kwargs):
 		self.globals = kwargs.get("globals", {})
 		self.locals = kwargs.get("locals", {})
@@ -67,13 +72,13 @@ class Translator(walker.Walker):
 				return self.stack[i][name]
 			except KeyError:
 				pass
-		
+
 		# lookup in the caller namespace
 		try:
 			return eval(name, self.globals, self.locals)
 		except NameError:
 			pass
-	
+
 		# lookup in the builtins module
 		from lang.transf import builtins
 		try:
@@ -88,22 +93,22 @@ class Translator(walker.Walker):
 			pass
 		except AttributeError:
 			pass
-		
+
 		return None
-	
+
 	def define_name(self, name, value):
 		# define transf in the local namespace
 		eval(compile(name + " = _", "", "single"), {"_": value}, self.locals)
 
 	translate = walker.Dispatch('translate')
-	
+
 	transf_defs = translate
 	meta_def = translate
-	
+
 	def translateDefs(self, tdefs):
 		for tdef in tdefs:
 			self.translate(tdef)
-	
+
 	def translateTransfDef(self, n, t):
 		n = self.id(n)
 		t = self.transf(t)
@@ -113,7 +118,7 @@ class Translator(walker.Walker):
 		n = self.id(n)
 		T = self.meta(a, t)
 		self.define_name(n, T)
-	
+
 	def translateMetaDef(self, a, t):
 		return self.meta(a, t)
 
@@ -127,52 +132,52 @@ class Translator(walker.Walker):
 			t,
 		)
 
-	
+
 	transf = walker.Dispatch('transf')
-	
+
 	def transfIdent(self):
 		return transf.base.ident
-		
+
 	def transfFail(self):
 		return transf.base.fail
 
 	def transfMatch(self, t):
 		return self.match(t)
-		
+
 	def transfBuild(self, t):
 		return self.build(t)
-		
+
 	def transfTraverse(self, t):
 		return self.traverse(t)
-		
+
 	def transfSet(self, v):
 		v = self.id(v)
-		return transf.variable.Set(v)
+		return transf.types.variable.Set(v)
 
 	def transfUnset(self, v):
 		v = self.id(v)
-		return transf.variable.Unset(v)
-		
+		return transf.types.variable.Unset(v)
+
 	def transfComposition(self, l, r):
 		l = self.transf(l)
 		r = self.transf(r)
 		return transf.combine.Composition(l, r)
-		
+
 	def transfChoice(self, o):
 		o = map(self.transf, o)
 		return transf.combine.UndeterministicChoice(o)
-		
+
 	def transfLeftChoice(self, l, r):
 		l = self.transf(l)
 		r = self.transf(r)
 		return transf.combine.Choice(l, r)
-		
+
 	def transfGuardedChoice(self, l, m, r):
 		l = self.transf(l)
 		m = self.transf(m)
 		r = self.transf(r)
 		return transf.combine.GuardedChoice(l, m, r)
-		
+
 	def transfTransf(self, n):
 		n = self.id(n)
 		txn = self.bind_name(n)
@@ -181,11 +186,11 @@ class Translator(walker.Walker):
 		if not isinstance(txn, transf.base.Transformation):
 			raise SemanticException(n, "%s is not a transformation" % n)
 		return txn
-		
+
 	def transfTransfFac(self, i, a):
 		n = self.id(i)
 		a = map(self.arg, a)
-		
+
 		Txn = self.bind_name(n)
 		if Txn is None:
 			raise SemanticException(i, "could not find %s" % n)
@@ -198,7 +203,7 @@ class Translator(walker.Walker):
 		#if not isinstance(txn, transf.base.Transformation):
 		#	raise SemanticException(i, "%s did not return a transformation" % n)
 		return txn
-	
+
 	def transfScope(self, vars, t):
 		vars = self.id_list(vars)
 		t = self.transf(t)
@@ -211,13 +216,13 @@ class Translator(walker.Walker):
 		m = self.match(m)
 		b = self.build(b)
 		return transf.combine.Composition(m, b)
-		
+
 	def transfRuleWhere(self, m, b, w):
 		m = self.match(m)
 		b = self.match(b)
 		w = self.transf(w)
 		return transf.combine.Composition(m, transf.combine.Composition(transf.combine.Where(w), b))
-		
+
 	def transfAnon(self, r):
 		vars = []
 		self.collect(r, vars)
@@ -225,22 +230,22 @@ class Translator(walker.Walker):
 		if vars:
 			r = transf.scope.Local(r, vars)
 		return r
-	
+
 	def transfApplyMatch(self, t, m):
 		t = self.transf(t)
 		m = self.match(m)
 		return transf.combine.Composition(t, m)
-	
+
 	def transfApplyStore(self, t, v):
 		t = self.transf(t)
 		v = self.id(v)
-		return transf.combine.Where(transf.combine.Composition(t, transf.variable.Set(v)))
-	
+		return transf.combine.Where(transf.combine.Composition(t, transf.types.variable.Set(v)))
+
 	def transfBuildApply(self, t, b):
 		t = self.transf(t)
 		b = self.build(b)
 		return transf.combine.Composition(b, t)
-		
+
 	def transfIf(self, conds, other):
 		conds = map(self.doIfClause, conds)
 		other = self.transf(other)
@@ -251,7 +256,7 @@ class Translator(walker.Walker):
 		c = self.transf(c)
 		a = self.transf(a)
 		return (c, a)
-		
+
 	def transfSwitch(self, expr, cases, other):
 		expr = self.transf(expr)
 		cases = map(self.doSwitchClause, cases)
@@ -263,7 +268,7 @@ class Translator(walker.Walker):
 		c = map(self.static, c)
 		a = self.transf(a)
 		return (c, a)
-		
+
 	def transfLet(self, v, t):
 		v = map(self.doLetDef, v)
 		t = self.transf(t)
@@ -275,19 +280,19 @@ class Translator(walker.Walker):
 		i = self.id(i)
 		t = self.transf(t)
 		return (i, t)
-		
-	def transfJoin(self, l, r, u, i):	
+
+	def transfJoin(self, l, r, u, i):
 		l = self.transf(l)
 		r = self.transf(r)
 		u = self.id_list(u)
 		i = self.id_list(i)
-		return transf.table.Join(l, r, u, i)
-		
-	def transfIterate(self, o, u, i):	
+		return transf.types.table.Join(l, r, u, i)
+
+	def transfIterate(self, o, u, i):
 		o = self.transf(o)
 		u = self.id_list(u)
 		i = self.id_list(i)
-		return transf.table.Iterate(o, u, i)
+		return transf.types.table.Iterate(o, u, i)
 
 	def transfRec(self, i, t):
 		i = self.id(i)
@@ -299,8 +304,8 @@ class Translator(walker.Walker):
 		return ret
 
 	# #( VARMETHOD v=id m=id a=arg_list )
-	#	{ ret = transf.variable.Wrap(v, m, *a) }
-	
+	#	{ ret = transf.types.variable.Wrap(v, m, *a) }
+
 	def transfWith(self, vs, t):
 		vs = map(self.doWithDef, vs)
 		t = self.transf(t)
@@ -312,68 +317,68 @@ class Translator(walker.Walker):
 		c = self.constructor(c)
 		return (v, c)
 
-	
+
 	arg = walker.Dispatch('arg')
-	
+
 	def argObj(self, o):
 		o = self._str(o)
 		return eval(o, self.globals, self.locals)
-	
+
 	def argVar(self, v):
 		v = self._str(v)
 		return v
-	
+
 	def arg_Term(self, t):
 		return self.transf(t)
 
 
 	constructor = walker.Dispatch('constructor')
-		
+
 	def constructorTermTransf(self, t):
 		t = self.transf(t)
-		return transf.term.Transf(t)
+		return transf.types.term.Transf(t)
 
 	def constructorTerm(self):
-		return transf.term.new
-		
+		return transf.types.term.new
+
 	def constructorTableCopy(self, v):
 		v = self.id(v)
-		return transf.table.Copy(v)
+		return transf.types.table.Copy(v)
 
 	def constructorTable(self):
-		return transf.table.new
+		return transf.types.table.new
 
 
 	static = walker.Dispatch('static')
-		
+
 	def staticInt(self, i):
 		i = self._int(i)
 		return aterm.factory.factory.makeInt(i)
-	
+
 	def staticReal(self, r):
 		r = self._real(r)
 		return aterm.factory.factory.makeReal(r)
-	
+
 	def staticStr(self, s):
 		s = self._str(s)
 		return aterm.factory.factory.makeStr(s)
-	
+
 	def staticNil(self):
 		return aterm.factory.factory.makeNil()
-	
+
 	def staticCons(self, h, t):
 		h = self.static(h)
 		t = self.static(t)
 		return aterm.factory.factory.makeCons(h, t)
-	
+
 	def staticUndef(self):
 		return aterm.factory.factory.makeNil()
-		
+
 	def staticAppl(self, n, a):
 		n = self.static(n)
 		a = self.static(a)
 		return aterm.factory.factory.makeAppl(n.value, a)
-		
+
 	def staticWildcard(self):
 		raise SemanticException(None, "wildcard in static term")
 
@@ -394,7 +399,7 @@ class Translator(walker.Walker):
 
 	def build(self, t):
 		return self.termTransf(t, mode = BUILD)
-		
+
 	def traverse(self, t):
 		return self.termTransf(t, mode = TRAVERSE)
 
@@ -407,27 +412,27 @@ class Translator(walker.Walker):
 			return transf.build.Int(i)
 		else:
 			return transf.match.Int(i)
-	
+
 	def termTransfReal(self, r, mode):
 		r = self._real(r)
 		if mode == BUILD:
 			return transf.build.Real(r)
 		else:
 			return transf.match.Real(r)
-	
+
 	def termTransfStr(self, s, mode):
 		s = self._str(s)
 		if mode == BUILD:
 			return transf.build.Str(s)
 		else:
 			return transf.match.Str(s)
-	
+
 	def termTransfNil(self, mode):
 		if mode == BUILD:
 			return transf.build.nil
 		else:
 			return transf.match.nil
-	
+
 	def termTransfCons(self, h, t, mode):
 		h = self.termTransf(h, mode)
 		t = self.termTransf(t, mode)
@@ -437,7 +442,7 @@ class Translator(walker.Walker):
 			return transf.build.Cons(h, t)
 		elif mode == TRAVERSE:
 			return transf.congruent.Cons(h, t)
-	
+
 	def termTransfAppl(self, name, args, mode):
 		name = self._str(name)
 		args = [self.termTransf(arg, mode) for arg in args]
@@ -447,14 +452,14 @@ class Translator(walker.Walker):
 			return transf.build.Appl(name, args)
 		elif mode == TRAVERSE:
 			return transf.congruent.Appl(name, args)
-		
+
 	def termTransfApplName(self, name, mode):
 		name = self._str(name)
 		if mode == BUILD:
 			return transf.build.Appl(name, ())
 		else:
 			return transf.match.ApplName(name)
-		
+
 	def termTransfApplCons(self, n, a, mode):
 		n = self.termTransf(n, mode)
 		a = self.termTransf(a, mode)
@@ -464,7 +469,7 @@ class Translator(walker.Walker):
 			return transf.build.ApplCons(n, a)
 		elif mode == TRAVERSE:
 			return transf.congruent.ApplCons(n, a)
-		
+
 	def termTransfWildcard(self, mode):
 		return transf.base.ident
 
@@ -480,7 +485,7 @@ class Translator(walker.Walker):
 	def termTransfAs(self, v, t, mode):
 		v = self.termTransf(v, mode)
 		t = self.termTransf(t, mode)
-		return transf.combine.Composition(t, v)	
+		return transf.combine.Composition(t, v)
 
 	def termTransfTransf(self, t, mode):
 		t = self.transf(t)
@@ -504,7 +509,7 @@ class Translator(walker.Walker):
 
 
 	collect = walker.Dispatch('collect')
-		
+
 	def collectRule(self, m, b, vars):
 		self.collect(m, vars)
 
@@ -514,20 +519,20 @@ class Translator(walker.Walker):
 	def collectCons(self, h, t, vars):
 		self.collect(h, vars)
 		self.collect(t, vars)
-	
+
 	def collectAppl(self, name, args, vars):
 		for arg in args:
 			self.collect(arg, vars)
-		
+
 	def collectApplCons(self, n, a, vars):
 		self.collect(n, vars)
 		self.collect(a, vars)
-		
+
 	def collectVar(self, v, vars):
 		v = self._str(v)
 		if v not in vars:
 			vars.append(v)
-			
+
 	def collectAs(self, v, t, vars):
 		self.collect(v, vars)
 		self.collect(t, vars)

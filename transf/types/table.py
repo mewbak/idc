@@ -6,7 +6,7 @@ import aterm.factory
 from transf import exception
 from transf import context
 from transf import base
-from transf import variable
+from transf.types import variable
 from transf import operate
 from transf import combine
 from transf import build
@@ -17,17 +17,17 @@ _factory = aterm.factory.factory
 
 class Table(variable.Variable):
 	'''A table is mapping of terms to terms.'''
-	
+
 	def __init__(self, terms = ()):
 		variable.Variable.__init__(self)
 		self.terms = dict(terms)
-	
+
 	def copy(self):
 		return Table(self.terms)
-	
+
 	def _set(self, key, val):
 		self.terms[key] = val
-	
+
 	def _pop(self, key):
 		try:
 			return self.terms.pop(key)
@@ -48,28 +48,28 @@ class Table(variable.Variable):
 				self._pop(key)
 		else:
 			self.unset()
-		
+
 	def unset(self):
 		'''Clears all elements of the table.'''
 		self.terms.clear()
-		
+
 	def match(self, term):
 		'''Lookups the key matching the term in the table.'''
 		self.traverse(term)
-	
+
 	def build(self):
 		'''Builds a list all keys in the table.'''
 		return _factory.makeList(self.terms.keys())
-		
+
 	def traverse(self, term):
-		'''Lookups the key matching to the term in the table and return its 
+		'''Lookups the key matching to the term in the table and return its
 		associated value.
 		'''
 		try:
 			return self.terms[term]
 		except KeyError:
 			raise exception.Failure("term not in table", term)
-	
+
 	def add(self, other):
 		self.terms.update(other.terms)
 
@@ -138,18 +138,18 @@ class Add(variable.Operation):
 		other = ctx.get(self.other)
 		var.add(other)
 		return term
-	
-	
+
+
 class Join(operate.Binary):
-	'''Transformation composition which joins (unites/intersects) tables in 
+	'''Transformation composition which joins (unites/intersects) tables in
 	the process.
 	'''
-	
+
 	def __init__(self, loperand, roperand, unames, inames):
 		operate.Binary.__init__(self, loperand, roperand)
 		self.unames = unames
 		self.inames = inames
-	
+
 	def apply(self, term, ctx):
 		# duplicate tables
 		lvars = []
@@ -188,20 +188,20 @@ class Join(operate.Binary):
 			tbl.unset()
 			tbl.add(ltbl)
 			tbl.sub(rtbl)
-		
+
 		return term
 
 
 class Iterate(operate.Unary):
-	'''Transformation composition which joins (unites/intersects) tables in 
+	'''Transformation composition which joins (unites/intersects) tables in
 	the process.
 	'''
-	
+
 	def __init__(self, operand, unames, inames):
 		operate.Unary.__init__(self, operand)
 		self.unames = unames
 		self.inames = inames
-	
+
 	def apply(self, term, ctx):
 		# duplicate tables
 		lvars = []
@@ -249,7 +249,7 @@ class Iterate(operate.Unary):
 		for tbl, ltbl, rtbl in itbls:
 			tbl.unset()
 			tbl.add(ltbl)
-	
+
 		return res
 
 

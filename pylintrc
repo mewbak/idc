@@ -34,7 +34,7 @@ load-plugins=
 [REPORTS]
 
 # Tells wether to display a full report or only the messages
-reports=yes
+reports=no
 
 # Use HTML as output format instead of text
 html=no
@@ -44,7 +44,7 @@ html=no
 parseable=no
 
 # Colorizes text output using ansi escape codes
-color=no
+color=yes
 
 # Put messages in a separate file for each module / package specified on the
 # command line instead of printing them on stdout. Reports (if any) will be
@@ -151,7 +151,7 @@ bad-functions=map,filter,apply,input
 [DESIGN]
 
 # Enable / disable this checker
-enable-design=yes
+enable-design=no
 
 # Maximum number of arguments for function / method
 max-args=5
@@ -289,7 +289,7 @@ ignore-comments=yes
 [FORMAT]
 
 # Enable / disable this checker
-enable-format=yes
+enable-format=no
 
 # Maximum number of characters on a single line.
 max-line-length=80
