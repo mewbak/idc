@@ -1,4 +1,7 @@
+from transf import lib
 from transf import parse
+
+simplify = lib.base.ident
 
 parse.Transfs('''
 applName =
@@ -28,6 +31,5 @@ simplifyChoice = {
 }
 
 simplify = BottomUp(Try(simplifyChoice))
-simplify = id
 
 ''', simplify=False)

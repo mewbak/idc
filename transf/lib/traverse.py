@@ -2,12 +2,13 @@
 
 
 from transf import exception
-from transf import base
-from transf import util
-from transf import combine
-from transf import iterate
-from transf import congruent
-from transf import lists
+from transf import transformation
+from transf.lib import base
+from transf.lib import util
+from transf.lib import combine
+from transf.lib import iterate
+from transf.lib import congruent
+from transf.lib import lists
 
 
 def All(operand):
@@ -19,7 +20,7 @@ def One(operand):
 	'''Applies a transformation to exactly one direct subterm of a term.'''
 	one = util.Proxy()
 	one.subject = congruent.Subterms(
-		congruent.Cons(operand, base.ident) + congruent.Cons(base.ident, one), 
+		congruent.Cons(operand, base.ident) + congruent.Cons(base.ident, one),
 		base.fail
 	)
 	return one
@@ -79,7 +80,7 @@ def InnerMost(operand):
 
 
 def AllTD(operand):
-	'''Apply a transformation to all subterms, but stops recursing 
+	'''Apply a transformation to all subterms, but stops recursing
 	as soon as it finds a subterm to which the transformation succeeds.
 	'''
 	return iterate.Rec(lambda self: operand + All(self))
@@ -90,7 +91,7 @@ def AllBU(operand):
 
 
 def OnceTD(operand, stop = None):
-	'''Performs a left to right depth first search/transformation that 
+	'''Performs a left to right depth first search/transformation that
 	stops as soon as the the transformation has been successfuly applied.
 	'''
 	if stop is None:
@@ -102,7 +103,7 @@ def OnceTD(operand, stop = None):
 def OnceBU(operand):
 	return iterate.Rec(lambda self: One(self) + operand)
 
-	
+
 def SomeTD(operand):
 	return iterate.Rec(lambda self: operand + Some(self))
 
@@ -116,7 +117,7 @@ def ManyTD(operand):
 
 
 def ManyBU(operand):
-	return iterate.Rec(lambda self: combine.GuardedChoice(Some(self), Try(operand), operand))
+	return iterate.Rec(lambda self: combine.GuardedChoice(Some(self), combine.Try(operand), operand))
 
 
 def Leaves(operand, isLeaf):

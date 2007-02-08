@@ -4,7 +4,6 @@
 import aterm.factory
 import aterm.term
 
-from transf import exception
 from transf import context
 
 
@@ -31,8 +30,8 @@ class Transformation(object):
 		if isinstance(trm, basestring):
 			trm = aterm.factory.factory.parse(trm)
 		from transf.types import term
-		vars = [(name, term.Term(value)) for name, value in kargs.iteritems()]
-		ctx = context.Context(vars)
+		vrs = [(name, term.Term(value)) for name, value in kargs.iteritems()]
+		ctx = context.Context(vrs)
 		return self.apply(trm, ctx)
 
 	def apply(self, trm, ctx):
@@ -47,22 +46,22 @@ class Transformation(object):
 
 	def __neg__(self):
 		'''Negation operator. Shorthand for L{combine.Not}'''
-		from transf import combine
+		from transf.lib import combine
 		return combine.Not(self)
 
 	def __pos__(self):
 		'''Positive operator. Shorthand for L{combine.Try}'''
-		from transf import combine
+		from transf.lib import combine
 		return combine.Try(self)
 
 	def __add__(self, other):
 		'''Addition operator. Shorthand for L{combine.Choice}'''
-		from transf import combine
+		from transf.lib import combine
 		return combine.Choice(self, other)
 
 	def __mul__(self, other):
 		'''Multiplication operator. Shorthand for L{combine.Composition}'''
-		from transf import combine
+		from transf.lib import combine
 		return combine.Composition(self, other)
 
 	def __pow__(self, other):
@@ -77,7 +76,7 @@ class Transformation(object):
 		@see: U{http://docs.python.org/ref/summary.html} for a summary of Python's
 		operators precedence.
 		'''
-		from transf import combine
+		from transf.lib import combine
 		if isinstance(other, tuple):
 			return combine.GuardedChoice(self, *other)
 		else:
@@ -97,22 +96,4 @@ class Transformation(object):
 		names = attrs.keys()
 		names.sort()
 		return '<' + name + '(' + ', '.join(["%s=%s" % (name, attrs[name]) for name in names]) + ')>'
-
-
-class Ident(Transformation):
-	'''Identity transformation. Always returns the input term unaltered.'''
-
-	def apply(self, trm, ctx):
-		return trm
-
-id = ident = Ident()
-
-
-class Fail(Transformation):
-	'''Failure transformation. Always raises an L{exception.Failure}.'''
-
-	def apply(self, trm, ctx):
-		raise exception.Failure
-
-fail = Fail()
 

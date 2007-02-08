@@ -4,7 +4,7 @@
 import refactoring
 from refactoring._common import CommonRefactoring
 
-import transf as lib
+from transf import lib
 import ir.traverse
 import ir.path
 
@@ -14,14 +14,14 @@ lib.parse.Transfs('''
 applicable =
 	ir.path.projectSelection ; ?Function(_, _, _, _)
 
-input = 
+input =
 	with name, arg in
 		ir.path.projectSelection ; ?Function(_, ?name, _, _) ;
 		lib.input.Str(!"Add Function Argument", !"Argument Symbol?") ; ?arg ;
 		![name, arg]
-	end 
+	end
 
-apply = 
+apply =
 	with name, type, arg in
 		Where(!args; ?[name, arg]) ;
 		Where(!Int(32,Signed); ?type) ;
@@ -37,7 +37,7 @@ apply =
 ''')
 
 addFunctionArg = CommonRefactoring(
-	"Add Function Argument", 
+	"Add Function Argument",
 	applicable, input, apply
 )
 

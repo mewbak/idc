@@ -4,29 +4,30 @@
 
 import sys
 
-import transf
+import transf.transformation
+import transf.lib.base
 
 
-class LogFail(transf.base.Transformation):
+class LogFail(transf.transformation.Transformation):
 
 	def __init__(self, msg):
-		transf.base.Transformation.__init__(self)
+		transf.transformation.Transformation.__init__(self)
 		self.msg = msg
-	
+
 	def apply(self, term, context):
 		sys.stderr.write('%s: %r\n' % (self.msg, term))
 		raise transf.exception.Failure
 
 
 if __name__ != '__main__':
-	LogFail = lambda msg: transf.base.fail
+	LogFail = lambda msg: transf.lib.base.fail
 
 
-name = transf.match.aStr
+name = transf.lib.match.aStr
 
-size = transf.match.anInt
+size = transf.lib.match.anInt
 
-lit = transf.match.anInt + transf.match.aReal + transf.match.aStr
+lit = transf.lib.match.anInt + transf.lib.match.aReal + transf.lib.match.aStr
 
 sign = transf.parse.Transf('''
 	?Signed +
@@ -34,8 +35,8 @@ sign = transf.parse.Transf('''
 	?NoSign
 ''') + LogFail('bad sign')
 
-type = transf.util.Proxy()
-types = transf.lists.Map(type)
+type = transf.lib.util.Proxy()
+types = transf.lib.lists.Map(type)
 type.subject = transf.parse.Transf('''
 	?Void +
 	?Bool +
@@ -61,13 +62,13 @@ binOp = transf.parse.Transf('''
 	?Xor( <type> ) +
 	?LShift( <type> ) +
 	?RShift( <type> ) +
-	
+
 	?Plus( <type> ) +
 	?Minus( <type> ) +
 	?Mult( <type> ) +
 	?Div( <type> ) +
 	?Mod( <type> ) +
-	
+
 	?Eq( <type> ) +
 	?NotEq( <type> ) +
 	?Lt( <type> ) +
@@ -76,9 +77,9 @@ binOp = transf.parse.Transf('''
 	?GtEq( <type> )
 ''') + LogFail('bad binary operator')
 
-expr = transf.util.Proxy()
+expr = transf.lib.util.Proxy()
 addr = expr
-exprs = transf.lists.Map(expr)
+exprs = transf.lib.lists.Map(expr)
 expr.subject = transf.parse.Transf('''
 	?Lit( <type> , <lit> ) +
 	?Sym( <name> ) +
@@ -99,9 +100,9 @@ optExpr = transf.parse.Transf('''
 arg = transf.parse.Transf('''
 	?Arg( <type> , <name> )
 ''') + LogFail('bad argument')
-	
-stmt = transf.util.Proxy()
-stmts = transf.lists.Map(stmt)
+
+stmt = transf.lib.util.Proxy()
+stmts = transf.lib.lists.Map(stmt)
 stmt.subject = transf.parse.Transf('''
 	?Var( <type> , <name> , <optExpr> ) +
 	?Function( <type> , <name> , <Map(arg)>, <stmts> ) +
@@ -127,9 +128,9 @@ module = transf.parse.Transf('''
 if __name__ == '__main__':
 	import aterm.factory
 	import sys
-	
+
 	factory = aterm.factory.factory
-	
+
 	for arg in sys.argv[1:]:
 		term = factory.readFromTextFile(file(arg, 'rt'))
 		sys.stderr.write('Checking %s ...\n' % arg)
@@ -140,5 +141,5 @@ if __name__ == '__main__':
 		else:
 			sys.stderr.write('OK\n')
 		sys.stderr.write('\n')
-		
+
 

@@ -10,10 +10,11 @@ import antlr
 import aterm.factory
 from aterm import walker
 
-import transf
+import transf.transformation
 import transf.types.variable
 import transf.types.term
 import transf.types.table
+import transf.lib
 
 
 class SemanticException(antlr.SemanticException):
@@ -88,7 +89,7 @@ class Translator(walker.Walker):
 
 		# lookup in the transf module
 		try:
-			return eval(name, transf.__dict__)
+			return eval(name, transf.lib.__dict__)
 		except NameError:
 			pass
 		except AttributeError:
@@ -136,10 +137,10 @@ class Translator(walker.Walker):
 	transf = walker.Dispatch('transf')
 
 	def transfIdent(self):
-		return transf.base.ident
+		return transf.lib.base.ident
 
 	def transfFail(self):
-		return transf.base.fail
+		return transf.lib.base.fail
 
 	def transfMatch(self, t):
 		return self.match(t)
@@ -161,29 +162,29 @@ class Translator(walker.Walker):
 	def transfComposition(self, l, r):
 		l = self.transf(l)
 		r = self.transf(r)
-		return transf.combine.Composition(l, r)
+		return transf.lib.combine.Composition(l, r)
 
 	def transfChoice(self, o):
 		o = map(self.transf, o)
-		return transf.combine.UndeterministicChoice(o)
+		return transf.lib.combine.UndeterministicChoice(o)
 
 	def transfLeftChoice(self, l, r):
 		l = self.transf(l)
 		r = self.transf(r)
-		return transf.combine.Choice(l, r)
+		return transf.lib.combine.Choice(l, r)
 
 	def transfGuardedChoice(self, l, m, r):
 		l = self.transf(l)
 		m = self.transf(m)
 		r = self.transf(r)
-		return transf.combine.GuardedChoice(l, m, r)
+		return transf.lib.combine.GuardedChoice(l, m, r)
 
 	def transfTransf(self, n):
 		n = self.id(n)
 		txn = self.bind_name(n)
 		if txn is None:
 			raise SemanticException(n, "could not find %s" % n)
-		if not isinstance(txn, transf.base.Transformation):
+		if not isinstance(txn, transf.transformation.Transformation):
 			raise SemanticException(n, "%s is not a transformation" % n)
 		return txn
 
@@ -208,48 +209,48 @@ class Translator(walker.Walker):
 		vars = self.id_list(vars)
 		t = self.transf(t)
 		if vars:
-			return transf.scope.Local(t, vars)
+			return transf.lib.scope.Local(t, vars)
 		else:
 			return t
 
 	def transfRule(self, m, b):
 		m = self.match(m)
 		b = self.build(b)
-		return transf.combine.Composition(m, b)
+		return transf.lib.combine.Composition(m, b)
 
 	def transfRuleWhere(self, m, b, w):
 		m = self.match(m)
 		b = self.match(b)
 		w = self.transf(w)
-		return transf.combine.Composition(m, transf.combine.Composition(transf.combine.Where(w), b))
+		return transf.lib.combine.Composition(m, transf.lib.combine.Composition(lib.transf.combine.Where(w), b))
 
 	def transfAnon(self, r):
 		vars = []
 		self.collect(r, vars)
 		r = self.transf(r)
 		if vars:
-			r = transf.scope.Local(r, vars)
+			r = transf.lib.scope.Local(r, vars)
 		return r
 
 	def transfApplyMatch(self, t, m):
 		t = self.transf(t)
 		m = self.match(m)
-		return transf.combine.Composition(t, m)
+		return transf.lib.combine.Composition(t, m)
 
 	def transfApplyStore(self, t, v):
 		t = self.transf(t)
 		v = self.id(v)
-		return transf.combine.Where(transf.combine.Composition(t, transf.types.variable.Set(v)))
+		return transf.lib.combine.Where(transf.lib.combine.Composition(t, transf.types.variable.Set(v)))
 
 	def transfBuildApply(self, t, b):
 		t = self.transf(t)
 		b = self.build(b)
-		return transf.combine.Composition(b, t)
+		return transf.lib.combine.Composition(b, t)
 
 	def transfIf(self, conds, other):
 		conds = map(self.doIfClause, conds)
 		other = self.transf(other)
-		return transf.combine.IfElifElse(conds, other)
+		return transf.lib.combine.IfElifElse(conds, other)
 
 	def doIfClause(self, t):
 		c, a = t.rmatch("IfClause(_, _)")
@@ -261,7 +262,7 @@ class Translator(walker.Walker):
 		expr = self.transf(expr)
 		cases = map(self.doSwitchClause, cases)
 		other = self.transf(other)
-		return transf.combine.Switch(expr, cases, other)
+		return transf.lib.combine.Switch(expr, cases, other)
 
 	def doSwitchClause(self, t):
 		c, a = t.rmatch("SwitchCase(_, _)")
@@ -273,7 +274,7 @@ class Translator(walker.Walker):
 		v = map(self.doLetDef, v)
 		t = self.transf(t)
 		v = dict(v)
-		return transf.scope.Let(t, **v)
+		return transf.lib.scope.Let(t, **v)
 
 	def doLetDef(self, t):
 		i, t = t.rmatch("LetDef(_,_)")
@@ -296,7 +297,7 @@ class Translator(walker.Walker):
 
 	def transfRec(self, i, t):
 		i = self.id(i)
-		ret = transf.util.Proxy()
+		ret = transf.lib.util.Proxy()
 		self.stack.append({i: ret})
 		t = self.transf(t)
 		self.stack.pop()
@@ -309,7 +310,7 @@ class Translator(walker.Walker):
 	def transfWith(self, vs, t):
 		vs = map(self.doWithDef, vs)
 		t = self.transf(t)
-		return transf.scope.With(vs, t)
+		return transf.lib.scope.With(vs, t)
 
 	def doWithDef(self, t):
 		v, c = t.rmatch("WithDef(_,_)")
@@ -409,83 +410,83 @@ class Translator(walker.Walker):
 	def termTransfInt(self, i, mode):
 		i = self._int(i)
 		if mode == BUILD:
-			return transf.build.Int(i)
+			return transf.lib.build.Int(i)
 		else:
-			return transf.match.Int(i)
+			return transf.lib.match.Int(i)
 
 	def termTransfReal(self, r, mode):
 		r = self._real(r)
 		if mode == BUILD:
-			return transf.build.Real(r)
+			return transf.lib.build.Real(r)
 		else:
-			return transf.match.Real(r)
+			return transf.lib.match.Real(r)
 
 	def termTransfStr(self, s, mode):
 		s = self._str(s)
 		if mode == BUILD:
-			return transf.build.Str(s)
+			return transf.lib.build.Str(s)
 		else:
-			return transf.match.Str(s)
+			return transf.lib.match.Str(s)
 
 	def termTransfNil(self, mode):
 		if mode == BUILD:
-			return transf.build.nil
+			return transf.lib.build.nil
 		else:
-			return transf.match.nil
+			return transf.lib.match.nil
 
 	def termTransfCons(self, h, t, mode):
 		h = self.termTransf(h, mode)
 		t = self.termTransf(t, mode)
 		if mode == MATCH:
-			return transf.match.Cons(h, t)
+			return transf.lib.match.Cons(h, t)
 		elif mode == BUILD:
-			return transf.build.Cons(h, t)
+			return transf.lib.build.Cons(h, t)
 		elif mode == TRAVERSE:
-			return transf.congruent.Cons(h, t)
+			return transf.lib.congruent.Cons(h, t)
 
 	def termTransfAppl(self, name, args, mode):
 		name = self._str(name)
 		args = [self.termTransf(arg, mode) for arg in args]
 		if mode == MATCH:
-			return transf.match.Appl(name, args)
+			return transf.lib.match.Appl(name, args)
 		elif mode == BUILD:
-			return transf.build.Appl(name, args)
+			return transf.lib.build.Appl(name, args)
 		elif mode == TRAVERSE:
-			return transf.congruent.Appl(name, args)
+			return transf.lib.congruent.Appl(name, args)
 
 	def termTransfApplName(self, name, mode):
 		name = self._str(name)
 		if mode == BUILD:
-			return transf.build.Appl(name, ())
+			return transf.lib.build.Appl(name, ())
 		else:
-			return transf.match.ApplName(name)
+			return transf.lib.match.ApplName(name)
 
 	def termTransfApplCons(self, n, a, mode):
 		n = self.termTransf(n, mode)
 		a = self.termTransf(a, mode)
 		if mode == MATCH:
-			return transf.match.ApplCons(n, a)
+			return transf.lib.match.ApplCons(n, a)
 		elif mode == BUILD:
-			return transf.build.ApplCons(n, a)
+			return transf.lib.build.ApplCons(n, a)
 		elif mode == TRAVERSE:
-			return transf.congruent.ApplCons(n, a)
+			return transf.lib.congruent.ApplCons(n, a)
 
 	def termTransfWildcard(self, mode):
-		return transf.base.ident
+		return transf.lib.base.ident
 
 	def termTransfVar(self, v, mode):
 		v = self._str(v)
 		if mode == MATCH:
-			return transf.match.Var(v)
+			return transf.lib.match.Var(v)
 		elif mode == BUILD:
-			return transf.build.Var(v)
+			return transf.lib.build.Var(v)
 		elif mode == TRAVERSE:
-			return transf.congruent.Var(v)
+			return transf.lib.congruent.Var(v)
 
 	def termTransfAs(self, v, t, mode):
 		v = self.termTransf(v, mode)
 		t = self.termTransf(t, mode)
-		return transf.combine.Composition(t, v)
+		return transf.lib.combine.Composition(t, v)
 
 	def termTransfTransf(self, t, mode):
 		t = self.transf(t)
@@ -495,12 +496,12 @@ class Translator(walker.Walker):
 		t = self.termTransf(t, mode)
 		a = self.termTransf(a, mode)
 		if mode == MATCH:
-			r = transf.match.Annos(a)
+			r = transf.lib.match.Annos(a)
 		elif mode == BUILD:
-			r = transf.build.Annos(a)
+			r = transf.lib.build.Annos(a)
 		elif mode == TRAVERSE:
-			r = transf.traverse.Annos(a)
-		return transf.combine.Composition(t, r)
+			r = transf.lib.traverse.Annos(a)
+		return transf.lib.combine.Composition(t, r)
 
 	def termTransf_Term(self, t, mode):
 		# fallback to a regular transformation

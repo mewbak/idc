@@ -6,13 +6,14 @@ import aterm.type
 import aterm.term
 
 from transf import exception
-from transf import base
+from transf import transformation
+from transf.lib import base
 from transf.types import variable
-from transf import combine
-from transf import project
-from transf import _common
-from transf import _helper
-from transf import util
+from transf.lib import combine
+from transf.lib import project
+from transf.lib import _common
+from transf.lib import _helper
+from transf.lib import util
 
 
 _factory = aterm.factory.factory
@@ -37,10 +38,10 @@ def Term(term):
 	return _common.Term(term, _Term)
 
 
-class TermSet(base.Transformation):
+class TermSet(transformation.Transformation):
 
 	def __init__(self, terms):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		self.terms = {}
 		for term in terms:
 			if isinstance(term, basestring):
@@ -189,7 +190,7 @@ class Annos(_common.Annos):
 
 
 def Anno(anno):
-	from transf import traverse
+	from transf.lib import traverse
 	return Annos(traverse.One(combine.Where(anno)))
 
 

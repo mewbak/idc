@@ -7,26 +7,27 @@ See also U{http://nix.cs.uu.nl/dist/stratego/strategoxt-manual-unstable-latest/m
 import aterm.lists
 
 from transf import exception
-from transf import base
-from transf import util
+from transf import transformation
+from transf.lib import base
+from transf.lib import util
 from transf import operate
-from transf import combine
-from transf import project
-from transf import match
-from transf import build
-from transf import congruent
-from transf import scope
-from transf import unify
+from transf.lib import combine
+from transf.lib import project
+from transf.lib import match
+from transf.lib import build
+from transf.lib import congruent
+from transf.lib import scope
+from transf.lib import unify
 
 
 length = unify.Count(base.ident)
 
 
-class Reverse(base.Transformation):
+class Reverse(transformation.Transformation):
 
 	def apply(self, term, ctx):
 		return aterm.lists.reverse(term)
-		
+
 reverse = Reverse()
 
 
@@ -85,7 +86,7 @@ def FetchElem(operand):
 
 
 class _Concat2(operate.Binary):
-	
+
 	def apply(self, term, ctx):
 		head = self.loperand.apply(term, ctx)
 		tail = self.roperand.apply(term, ctx)
@@ -147,7 +148,7 @@ def SplitBefore(operand):
 	return scope.Local3((tail,),
 		build.List((
 			AtSuffix(
-				congruent.Cons(operand, base.ident) * 
+				congruent.Cons(operand, base.ident) *
 				match.Var(tail) * build.nil
 			),
 			build.Var(tail)
@@ -192,7 +193,7 @@ def SplitAll(operand, ):
 		)
 	)
 	return splitall
-		
+
 
 def SplitAllAfter(operand, ):
 	splitall = util.Proxy()
@@ -204,7 +205,7 @@ def SplitAllAfter(operand, ):
 		)
 	)
 	return splitall
-		
+
 
 def SplitAllKeep(operand, ):
 	splitall = util.Proxy()
@@ -212,9 +213,9 @@ def SplitAllKeep(operand, ):
 		combine.GuardedChoice(
 			SplitKeep(operand),
 			congruent.Cons(
-				base.ident, 
+				base.ident,
 				congruent.Cons(
-					base.ident, 
+					base.ident,
 					project.head * splitall
 				)
 			),
@@ -222,19 +223,19 @@ def SplitAllKeep(operand, ):
 		)
 	)
 	return splitall
-		
 
-class Lookup(base.Transformation):
-	
+
+class Lookup(transformation.Transformation):
+
 	def __init__(self, key, table):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		self.key = key
 		self.table = table
-	
+
 	def apply(self, term, ctx):
 		key = self.key.apply(term, ctx)
 		table = self.table.apply(term, ctx)
-		
+
 		for name, value in table:
 			if key.isEquivalent(name):
 				return value

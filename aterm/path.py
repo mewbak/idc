@@ -19,14 +19,14 @@ EQUAL = 0
 DESCENDENT = 1
 SUBSEQUENT = 2
 
-	
+
 class Path(object):
 
 	__slots__ = ['indices']
 
 	def __init__(self, indices):
 		self.indices = indices
-		
+
 	def compare(self, other):
 		'''Rich path comparison.'''
 		otherit = iter(other.indices)
@@ -39,35 +39,35 @@ class Path(object):
 			if otherelm < selfelm:
 				return PRECEDENT
 			if otherelm > selfelm:
-				return SUBSEQUENT		
-			
+				return SUBSEQUENT
+
 		try:
 			otherit.next()
 		except StopIteration:
 			pass
 		else:
 			return DESCENDENT
-		
-		return EQUAL		
-	
+
+		return EQUAL
+
 	def equals(self, other):
 		return compare(self, other) == EQUAL
-	
+
 	def contains(self, other):
 		return compare(self, other) in (DESCENDENT, EQUAL)
-	
+
 	def contained(self, other):
-		return compare(self, other) in (ANCESTOR, EQUAL)	
-	
+		return compare(self, other) in (ANCESTOR, EQUAL)
+
 	def contains_range(self, start, end):
 		return contains(self, start) and contains(self, end)
-	
+
 	def contained_in_range(self, start, end):
 		return (
 			compare(self, start) in (ANCESTOR, EQUAL, PRECEDENT) and
 			compare(self, end) in (ANCESTOR, EQUAL, SUBSEQUENT)
 		)
-	
+
 	@classmethod
 	def fromTerm(cls, trm):
 		res = []
@@ -81,19 +81,19 @@ class Path(object):
 			res.append(idx.value)
 			tail = tail.tail
 		return res
-	
+
 	def toTerm(self):
 		return _factory.makeList(self.indices)
-	
+
 	@classmethod
 	def fromStr(cls, s):
 		return [int(x) for x in s.split('/') if x != '']
-	
+
 	def toStr(self):
 		return '/' + ''.join([str(elm) + '/' for elm in self.indices])
-	
+
 	__str__ = toStr
-		
+
 
 def check(path):
 	if path.type == aterm.types.NIL:
@@ -140,7 +140,7 @@ def compare(path, ref_path):
 	if path:
 		return DESCENDENT
 	return EQUAL
-	
+
 
 def equals(path1, path2):
 	return compare(path1, path2) == EQUAL
@@ -152,7 +152,7 @@ def contains(path, subpath):
 
 def contained(subpath, path):
 	return compare(subpath, path) in (DESCENDENT, EQUAL)
-	
+
 
 def contains_range(path, startpath, endpath):
 	return contains(path, startpath) and contains(path, endpath)
@@ -179,7 +179,7 @@ def ancestor(path1, path2):
 
 
 class Annotator(aterm.visitor.IncrementalVisitor):
-	'''Visitor which recursively annotates the terms and all subterms with their 
+	'''Visitor which recursively annotates the terms and all subterms with their
 	path.'''
 
 	@classmethod
@@ -188,7 +188,7 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 		if root is None:
 			root = term.factory.makeNil()
 		return annotator.visit(term, root, 0)
-		
+
 	def __init__(self, func = None):
 		super(Annotator, self).__init__()
 		if func is None:
@@ -202,14 +202,14 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 			return term.setAnnotation(_path, term.factory.make(_path, path))
 		else:
 			return term
-		
+
 	def visitTerm(self, term, path, index):
 		return term
-	
+
 	def visitHead(self, term, path, index):
 		path = term.factory.makeCons(term.factory.makeInt(index), path)
 		return self.visit(term, path, 0)
-	
+
 	def visitTail(self, term, path, index):
 		# no need to annotate tails
 		return super(Annotator, self).visit(term, path, index + 1)
@@ -218,8 +218,8 @@ class Annotator(aterm.visitor.IncrementalVisitor):
 		return term.factory.makeAppl(
 			term.name,
 			[self.visit(
-					arg, 
-					term.factory.makeCons(term.factory.makeInt(index), path), 
+					arg,
+					term.factory.makeCons(term.factory.makeInt(index), path),
 					0
 				) for index, arg in zip(range(len(term.args)), term.args)
 			],
@@ -238,17 +238,17 @@ class Projector(aterm.visitor.Visitor):
 	def project(cls, term, index):
 		projector = cls(index)
 		return projector.visit(term, 0)
-	
+
 	def __init__(self, index):
 		aterm.visitor.Visitor.__init__(self)
 		self.index = index
 
 	def visitTerm(self, term, index):
 		raise TypeError('not a term list or application', term)
-	
+
 	def visitNil(self, term, index):
 		raise IndexError('index out of range', self.index, index)
-		
+
 	def visitCons(self, term, index):
 		if index == self.index:
 			return term.head
@@ -280,27 +280,27 @@ class Transformer(aterm.visitor.IncrementalVisitor):
 
 	def visitTerm(self, term, index):
 		raise TypeError('not a term list or application', term)
-	
+
 	def visitNil(self, term, index):
 		raise IndexError('index out of range', index)
-		
+
 	def visitHead(self, term, index):
 		if index == self.index:
 			return self.func(term)
 		else:
 			return term
-		
+
 	def visitTail(self, term, index):
 		if index >= self.index:
 			return term
 		else:
 			return self.visit(term, index + 1)
-	
+
 	def visitAppl(self, term, index):
-		old_arg = term.args[self.index] 
+		old_arg = term.args[self.index]
 		new_arg = self.func(old_arg)
 		if new_arg is not old_arg:
-			args = list(term.args) 
+			args = list(term.args)
 			args[self.index] = new_arg
 			return term.factory.makeAppl(term.name, args, term.annotations)
 		else:
@@ -324,7 +324,7 @@ class Splitter(aterm.visitor.Visitor):
 	def split(cls, term, index):
 		splitter = cls(index)
 		return splitter.visit(term, 0)
-		
+
 	def __init__(self, index):
 		super(Splitter, self).__init__()
 		'''The argument is the index of the first element of the second list.'''
@@ -332,7 +332,7 @@ class Splitter(aterm.visitor.Visitor):
 
 	def visitTerm(self, term, index):
 		raise TypeError('not a term list', term)
-	
+
 	def visitNil(self, term, index):
 		if index == self.index:
 			return term.factory.makeNil(), term
@@ -345,8 +345,8 @@ class Splitter(aterm.visitor.Visitor):
 		else:
 			head, tail = self.visit(term.tail, index + 1)
 			return term.factory.makeCons(
-				term.head, 
-				head, 
+				term.head,
+				head,
 				term.annotations
 			), tail
 

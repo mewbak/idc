@@ -1,7 +1,7 @@
 '''Matching tranformations.'''
 
 
-import transf as lib
+from transf import lib
 
 
 #######################################################################
@@ -123,17 +123,17 @@ reduceStmts = lib.parse.Transf('''
 
 reduceStmts = lib.parse.Transf('''
 switch Try(project.name)
-case "Block": 
+case "Block":
 	project.args ; project.first
-case "If": 
+case "If":
 	project.args ; project.tail
-case "While": 
+case "While":
 	project.args ; project.tail
-case "DoWhile": 
+case "DoWhile":
 	project.args ; project.tail
-case "Function": 
+case "Function":
 	project.args ; project.fourth
-case "Module": 
+case "Module":
 	project.args ; project.first
 else:
 	![]

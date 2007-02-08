@@ -514,15 +514,6 @@ class TestPath(unittest.TestCase):
 		('[0,1,2]', 3, 3, '[0,1,2]'),
 	]
 
-#	def _testRange(self):
-#		for inputStr, start, end, expectedResultStr in self.rangeTestCases:
-#			input = self.factory.parse(inputStr)
-#			expectedResult = self.factory.parse(expectedResultStr)
-#
-#			result = Range(map(transf.parse.Rule('x -> X(x)')), start, end)(input)
-#
-#			self.failUnlessEqual(result, expectedResult)
-
 
 if __name__ == '__main__':
 	unittest.main()

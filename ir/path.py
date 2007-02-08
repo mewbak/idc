@@ -1,7 +1,7 @@
 '''Path/selection related transformations.'''
 
 
-import transf as lib
+from transf import lib
 import ir.match
 
 
@@ -25,7 +25,7 @@ lib.parse.Transfs(r'''
 
 projectSelection = lib.path.Project(!selection)
 
-MatchSelectionTo(s) = projectSelection ; s 
+MatchSelectionTo(s) = projectSelection ; s
 
 ''')
 
@@ -37,13 +37,13 @@ lib.parse.Transfs(r'''
 
 getSelection = !selection
 
-isSelected = 
-	Where( 
-		lib.path.get ; 
-		lib.path.Equals(getSelection) 
+isSelected =
+	Where(
+		lib.path.get ;
+		lib.path.Equals(getSelection)
 	)
 
-inSelection = 
+inSelection =
 	Where(
 		lib.path.get ;
 		lib.path.Contained(getSelection)

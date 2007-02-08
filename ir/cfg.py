@@ -5,7 +5,7 @@ import aterm
 import transf
 from lang import box
 
-from transf import *
+from transf.lib import *
 
 import ir.traverse
 import ir.pprint
@@ -21,7 +21,7 @@ renderBox = \
 
 parse.Transfs(r"""
 
-getNodeId = 
+getNodeId =
 	{ Label(label) -> label } < box.escape +
 	Count('stmtid')
 
@@ -34,7 +34,7 @@ makeNodeLabel = {
 		-> <<ir.pprint.expr>cond>
 |	_
 		-> <ir.pprint.stmtKern>
-|	n(*) 
+|	n(*)
 		-> n
 } ; renderBox ; box.escape
 
@@ -55,11 +55,11 @@ makeNodeShape = {
 		-> "box"
 }
 
-makeNodeUrl = 
-	(path.get < box.reprz + build.empty ) ; 
+makeNodeUrl =
+	(path.get < box.reprz + build.empty ) ;
 	box.escape
 
-makeNodeAttrs = 
+makeNodeAttrs =
 	![
 		!Attr("label", <makeNodeLabel>),
 		!Attr("shape", <makeNodeShape>),
@@ -71,7 +71,7 @@ MakeEdge(dst) =
 MakeLabelledEdge(dst, label) =
 	!Edge(<dst>, [Attr("label", <label ; box.escape>)])
 
-AddNode(nodeid, attrs, edges) = 
+AddNode(nodeid, attrs, edges) =
 	Where(
 		!Node(
 			<nodeid>,
@@ -80,16 +80,16 @@ AddNode(nodeid, attrs, edges) =
 		) ;
 		![_,*nodes] ==> nodes
 	)
-	
+
 GetTerminalNodeId(nodeid) =
 	NegInt(nodeid)
 
-hasTerminalNode = 
+hasTerminalNode =
 	?Function
 
-addTerminalNode = 
+addTerminalNode =
 	AddNode(
-		!retn, 
+		!retn,
 		![
 			Attr("label", "\"\""),
 			Attr("shape", "doublecircle"),
@@ -106,10 +106,10 @@ addTerminalNode =
 
 parse.Transfs('''
 
-doStmt = 
+doStmt =
 	Proxy()
 
-doStmts = 
+doStmts =
 	MapR(doStmt)
 
 MakeNode(edges) =
@@ -118,11 +118,11 @@ MakeNode(edges) =
 doDefault =
 	MakeNode(![<MakeEdge(!next)>]) ;
 	!this ==> next
-	
+
 doIf =
 	with true, false in
 		?If(_,
-			<let next=!next in doStmt; !next ==> true end>, 
+			<let next=!next in doStmt; !next ==> true end>,
 			<let next=!next in doStmt; !next ==> false end>
 		) ;
 		MakeNode(![
@@ -143,8 +143,8 @@ doWhile =
 			<MakeLabelledEdge(!next, !"False")>,
 		]) ;
 		! this ==> next
-	end		
-		
+	end
+
 
 doDoWhile =
 	with false in
@@ -156,7 +156,7 @@ doDoWhile =
 			<MakeLabelledEdge(!false, !"False")>,
 		])
 	end
-	
+
 
 doBreak =
 	MakeNode(![<MakeEdge(!brek)>]) ;
@@ -171,11 +171,11 @@ doRet =
 	!this ==> next
 
 doGoTo =
-	with 
+	with
 		label
 	in
 		?GoTo(Sym(label)) <
-		MakeNode(![<MakeEdge(!label ; box.escape)>]) + 
+		MakeNode(![<MakeEdge(!label ; box.escape)>]) +
 		MakeNode(![])
 	end ;
 	!this ==> next
@@ -184,18 +184,18 @@ doBlock =
 	?Block(<doStmts>)
 
 doFunction =
-	let 
+	let
 		next = !next,
 		retn = GetTerminalNodeId(!this),
 		brek = !0,
 		cont = !0
-	in 
+	in
 		?Function(_, _, _, <doStmts>) ;
 		MakeNode(![<MakeEdge(!next)>]) ;
 		addTerminalNode
 	end
 
-doModule = 
+doModule =
 	let
 		next = !0,
 		retn = !0,
@@ -206,9 +206,9 @@ doModule =
 		addTerminalNode
 	end
 
-doStmt.subject = 
+doStmt.subject =
 	debug.Dump() ;
-	let 
+	let
 		this = getNodeId
 	in
 		switch project.name
@@ -228,7 +228,7 @@ doStmt.subject =
 	end
 
 makeGraph =
-	let 
+	let
 		nodes = ![],
 		stmtid = !0
 	in
@@ -246,7 +246,7 @@ makeGraph =
 
 parse.Transfs('''
 
-matchPointShapeAttr = 
+matchPointShapeAttr =
 	?Attr("shape", "point")
 
 findPointNode = {
@@ -256,13 +256,13 @@ findPointNode = {
 findPointNodes =
 	Map(Try(findPointNode))
 
-replaceEdge = 
+replaceEdge =
 	~Edge(<~point>, _)
 
-removePointNode = 
+removePointNode =
 	~Node(<Not(?point)>, _, <Map(Try(replaceEdge))>)
 
-removePointNodes = 
+removePointNodes =
 	Filter(removePointNode)
 
 simplifyPoints =
@@ -302,7 +302,7 @@ def main():
 		term = simplifyGraph (term)
 		#print term
 		#print
-		
+
 		print "* Generating DOT"
 		term = simplifyGraph (term)
 		dotcode = lang.dot.stringify(term)

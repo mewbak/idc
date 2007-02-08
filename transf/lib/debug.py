@@ -8,8 +8,9 @@ import os.path
 import time
 
 import aterm.term
+
 from transf import exception
-from transf import base
+from transf import transformation
 from transf import operate
 
 
@@ -27,7 +28,7 @@ def excepthook(type, value, tb):
 	or type == SyntaxError or type == KeyboardInterrupt:
 		# we are in interactive mode or we don't have a tty-like
 		# device, so we call the default hook
-		sys.__excepthook__(type, value, tb)
+		oldexcepthook(type, value, tb)
 	else:
 		import traceback, pdb
 		# we are NOT in interactive mode, print the exception...
@@ -36,7 +37,8 @@ def excepthook(type, value, tb):
 		# ...then start the debugger in post-mortem mode.
 		pdb.pm()
 
-#sys.excepthook = excepthook
+if 0:
+	oldexcepthook, sys.excepthook = sys.excepthook, excepthook
 
 
 class DebugMixin(object):
@@ -46,7 +48,7 @@ class DebugMixin(object):
 
 	def dump_term(self, term):
 		log.write('    term = %r\n' % term)
-		
+
 	def dump_context(self, ctx):
 		log.write('    ctx = {')
 		sep = ''
@@ -54,16 +56,16 @@ class DebugMixin(object):
 			sep = '\n    '
 			log.write('\n      %r: %r,' % (name, var))
 		log.write(sep + '}\n')
-	
 
-class Log(base.Transformation):
+
+class Log(transformation.Transformation):
 	'''Log message.'''
-	
+
 	def __init__(self, msg, *args):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		self.msg = msg
 		self.args = args
-		
+
 	def apply(self, trm, ctx):
 		args = []
 		for arg in self.args:
@@ -78,20 +80,20 @@ class Log(base.Transformation):
 		msg = self.msg % tuple(args)
 		log.write(msg)
 		return trm
-	
-		
-class Dump(base.Transformation, DebugMixin):
+
+
+class Dump(transformation.Transformation, DebugMixin):
 	'''Dump the current term and context.'''
-	
+
 	def __init__(self):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		try:
 			caller = inspect.currentframe().f_back
 			self.filename = os.path.basename(caller.f_code.co_filename)
 			self.lineno = caller.f_lineno
 		finally:
 			del caller
-	
+
 	def apply(self, term, ctx):
 		self.dump_line(self.filename, self.lineno)
 		self.dump_term(term)
@@ -104,7 +106,7 @@ class Trace(operate.Unary, DebugMixin):
 	def __init__(self, operand, name=None):
 		operate.Unary.__init__(self, operand)
 		self.time = False
-		
+
 		if name is None:
 			try:
 				caller = inspect.currentframe().f_back
@@ -163,8 +165,3 @@ class Traceback(operate.Unary, DebugMixin):
 				except:
 					pass
 			raise
-
-
-if __name__ == '__main__':
-    trf = Trace(base.fail)
-    trf.apply(None, None)

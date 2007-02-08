@@ -1,4 +1,4 @@
-'''Common code for term matching, building, and congruent traversal 
+'''Common code for term matching, building, and congruent traversal
 transformations.
 '''
 
@@ -6,17 +6,18 @@ transformations.
 import aterm.factory
 import aterm.term
 
-from transf import base
+from transf import transformation
 from transf import operate
+from transf.lib import base
 
 
 _factory = aterm.factory.factory
 
 
-class _Term(base.Transformation):
-	
+class _Term(transformation.Transformation):
+
 	def __init__(self, term):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		assert isinstance(term, aterm.term.Term)
 		self.term = term
 
@@ -36,18 +37,18 @@ def Real(value, _Term):
 
 def Str(value, _Term):
 	return _Term(_factory.makeStr(value))
-	
+
 
 def Nil(_Term):
 	return _Term(_factory.makeNil())
 
 
-class _Cons(base.Transformation):
-	
+class _Cons(transformation.Transformation):
+
 	def __init__(self, head, tail):
-		base.Transformation.__init__(self)
-		assert isinstance(head, base.Transformation)
-		assert isinstance(tail, base.Transformation)
+		transformation.Transformation.__init__(self)
+		assert isinstance(head, transformation.Transformation)
+		assert isinstance(tail, transformation.Transformation)
 		self.head = head
 		self.tail = tail
 
@@ -67,27 +68,27 @@ def List(elms, tail, Cons, nil):
 	return operate.Nary(iter(elms), Cons, tail)
 
 
-class Appl(base.Transformation):
+class Appl(transformation.Transformation):
 
 	def __init__(self, name, args):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		assert isinstance(name, basestring)
 		self.name = name
 		self.args = tuple(args)
 
 
-class ApplCons(base.Transformation):
+class ApplCons(transformation.Transformation):
 
 	def __init__(self, name, args):
-		base.Transformation.__init__(self)
-		assert isinstance(name, base.Transformation)
-		assert isinstance(args, base.Transformation)
+		transformation.Transformation.__init__(self)
+		assert isinstance(name, transformation.Transformation)
+		assert isinstance(args, transformation.Transformation)
 		self.name = name
 		self.args = args
 
 
-class Annos(base.Transformation):
-	
+class Annos(transformation.Transformation):
+
 	def __init__(self, annos):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		self.annos = annos

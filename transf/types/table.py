@@ -5,11 +5,12 @@ import aterm.factory
 
 from transf import exception
 from transf import context
-from transf import base
-from transf.types import variable
+from transf import transformation
 from transf import operate
-from transf import combine
-from transf import build
+from transf.types import variable
+from transf.lib import base
+from transf.lib import combine
+from transf.lib import build
 
 
 _factory = aterm.factory.factory

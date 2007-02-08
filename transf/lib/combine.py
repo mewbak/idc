@@ -2,14 +2,14 @@
 
 
 from transf import exception
-from transf import base
+from transf import transformation
 from transf import operate
-
+from transf.lib import base
 
 class _Not(operate.Unary):
 
 	__slots__ = []
-	
+
 	def apply(self, term, ctx):
 		try:
 			self.operand.apply(term, ctx)
@@ -30,9 +30,9 @@ def Not(operand):
 
 
 class _Try(operate.Unary):
-	
+
 	__slots__ = []
-	
+
 	def apply(self, term, ctx):
 		try:
 			return self.operand.apply(term, ctx)
@@ -51,7 +51,7 @@ def Try(operand):
 class _Where(operate.Unary):
 
 	__slots__ = []
-	
+
 	def apply(self, term, ctx):
 		self.operand.apply(term, ctx)
 		return term
@@ -68,15 +68,15 @@ def Where(operand):
 class _Composition(operate.Binary):
 
 	__slots__ = []
-	
+
 	def apply(self, term, ctx):
 		term = self.loperand.apply(term, ctx)
 		return self.roperand.apply(term, ctx)
 
 def Composition(loperand, roperand):
 	'''Transformation composition.'''
-	assert isinstance(loperand, base.Transformation)
-	assert isinstance(roperand, base.Transformation)
+	assert isinstance(loperand, transformation.Transformation)
+	assert isinstance(roperand, transformation.Transformation)
 	if loperand is base.ident:
 		return roperand
 	if roperand is base.ident:
@@ -87,12 +87,12 @@ def Composition(loperand, roperand):
 		roperand = _Composition(loperand.roperand, roperand)
 		loperand = loperand.loperand
 	return _Composition(loperand, roperand)
-	
+
 
 class _Choice(operate.Binary):
 
 	__slots__ = []
-	
+
 	def apply(self, term, ctx):
 		try:
 			return self.loperand.apply(term, ctx)
@@ -101,8 +101,8 @@ class _Choice(operate.Binary):
 
 def Choice(loperand, roperand):
 	'''Attempt the first transformation, transforming the second on failure.'''
-	assert isinstance(loperand, base.Transformation)
-	assert isinstance(roperand, base.Transformation)
+	assert isinstance(loperand, transformation.Transformation)
+	assert isinstance(roperand, transformation.Transformation)
 	if loperand is base.ident:
 		return base.ident
 	if loperand is base.fail:
@@ -115,12 +115,12 @@ def Choice(loperand, roperand):
 		roperand = _Choice(loperand.roperand, roperand)
 		loperand = loperand.loperand
 	return _Choice(loperand, roperand)
-	
+
 
 class _GuardedChoice(operate.Ternary):
 
 	__slots__ = []
-	
+
 	def apply(self, term, ctx):
 		try:
 			term = self.operand1.apply(term, ctx)
@@ -130,10 +130,10 @@ class _GuardedChoice(operate.Ternary):
 			return self.operand2.apply(term, ctx)
 
 def GuardedChoice(operand1, operand2, operand3):
-	'''If operand1 succeeds then operand2 is applied, otherwise operand3 is 
+	'''If operand1 succeeds then operand2 is applied, otherwise operand3 is
 	applied. If operand2 fails, the complete expression fails; no backtracking to
 	operand3 takes place.
-	''' 
+	'''
 	if operand1 is base.ident:
 		return operand2
 	if operand1 is base.fail:
@@ -146,9 +146,9 @@ def GuardedChoice(operand1, operand2, operand3):
 
 
 def UndeterministicChoice(operands):
-	'''Chooses one of the operand transformations such that the one it chooses 
-	succeeds. If all operand transformations fail, then the choice fails as 
-	well. Operationally, the operand transformations are tried, by an 
+	'''Chooses one of the operand transformations such that the one it chooses
+	succeeds. If all operand transformations fail, then the choice fails as
+	well. Operationally, the operand transformations are tried, by an
 	unspecified order.
 	'''
 	return operate.Nary(operands, Choice, base.fail)
@@ -157,7 +157,7 @@ def UndeterministicChoice(operands):
 class _If(operate.Binary):
 
 	__slots__ = []
-	
+
 	def apply(self, term, ctx):
 		try:
 			self.loperand.apply(term, ctx)
@@ -167,7 +167,7 @@ class _If(operate.Binary):
 			return self.roperand.apply(term, ctx)
 
 def If(loperand, roperand):
-	'''If the first transformation succeeds, then applies the second 
+	'''If the first transformation succeeds, then applies the second
 	transformation. Otherwise, return the input term unmodified.
 	'''
 	if loperand is base.ident:
@@ -184,7 +184,7 @@ def If(loperand, roperand):
 class _IfElse(operate.Ternary):
 
 	__slots__ = []
-	
+
 	def apply(self, term, ctx):
 		try:
 			self.operand1.apply(term, ctx)
@@ -194,7 +194,7 @@ class _IfElse(operate.Ternary):
 			return self.operand2.apply(term, ctx)
 
 def IfElse(operand1, operand2, operand3):
-	'''If the first transformation succeeds, then apply the second 
+	'''If the first transformation succeeds, then apply the second
 	transformation. Otherwise, applies the third transformation.
 	'''
 	if operand1 is base.ident:
@@ -206,15 +206,15 @@ def IfElse(operand1, operand2, operand3):
 	return _IfElse(operand1, operand2, operand3)
 
 
-class _IfElifElse(base.Transformation):
+class _IfElifElse(transformation.Transformation):
 
 	__slots__ = ['clauses', 'otherwise']
-	
+
 	def __init__(self, clauses, otherwise):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		self.clauses = clauses
 		self.otherwise = otherwise
-		
+
 	def apply(self, term, ctx):
 		for if_cond, if_then in self.clauses:
 			try:
@@ -227,10 +227,10 @@ class _IfElifElse(base.Transformation):
 
 def IfElifElse(clauses, otherwise = None):
 	'''Nested if-then-else combinator.
-	
-	@param clauses: sequence of (premise, consequence) transformation tuples 
+
+	@param clauses: sequence of (premise, consequence) transformation tuples
 	to be tried in order.
-	@param otherwise: optional transformation to be applied if all the above 
+	@param otherwise: optional transformation to be applied if all the above
 	premises fail.
 	'''
 	if otherwise is None:
@@ -243,16 +243,16 @@ def IfElifElse(clauses, otherwise = None):
 	return _IfElifElse(clauses, otherwise)
 
 
-class _Switch(base.Transformation):
+class _Switch(transformation.Transformation):
 
 	__slots__ = ['expr', 'cases', 'otherwise']
-	
+
 	def __init__(self, expr, cases, otherwise):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		self.expr = expr
 		self.cases = cases
 		self.otherwise = otherwise
-		
+
 	def apply(self, term, ctx):
 		switch_term = self.expr.apply(term, ctx)
 		try:
@@ -264,10 +264,10 @@ class _Switch(base.Transformation):
 
 def Switch(expr, cases, otherwise = None):
 	'''Switch combination.
-	
-	@param cases: sequence of (match term, consequence transformation) 
+
+	@param cases: sequence of (match term, consequence transformation)
 	tuples; order is irrelevant.
-	@param otherwise: optional transformation to be applied if the term does 
+	@param otherwise: optional transformation to be applied if the term does
 	not match any of the input cases.
 	'''
 	if otherwise is None:

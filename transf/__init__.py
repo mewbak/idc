@@ -32,35 +32,3 @@ G{importgraph}
 '''
 
 __docformat__ = 'epytext'
-
-
-from transf import exception
-from transf import base
-from transf import util
-from transf import scope
-
-from transf import combine
-from transf import project
-from transf import match
-from transf import build
-from transf import congruent
-
-from transf import lists
-from transf import traverse
-from transf import unify
-
-from transf import arith
-from transf import strings
-
-from transf import annotation
-from transf import path
-
-from transf import input
-
-from transf import debug
-
-from transf import parse
-
-
-
-

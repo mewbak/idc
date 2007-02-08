@@ -4,7 +4,8 @@
 
 import math
 
-from transf import *
+from transf.lib import *
+from transf import parse
 
 from lang import box
 from lang.box import op
@@ -30,11 +31,12 @@ def _entropy(seq, states):
 			entropy -= prob*math.log(prob)
 	return entropy
 
+@util.Adaptor
 def intrepr(term):
-	'''Represent integers, choosing the most suitable (lowest entropy) 
+	'''Represent integers, choosing the most suitable (lowest entropy)
 	representation.
 	'''
-	
+
 	val = term.value
 
 	d = "%d" % abs(val)
@@ -45,9 +47,8 @@ def intrepr(term):
 		rep = hex(val)
 	else:
 		rep = str(val)
-	
+
 	return term.factory.makeStr(rep)
-intrepr = util.Adaptor(intrepr)	
 
 intlit = intrepr * box.const
 
@@ -83,7 +84,7 @@ type = rec type : {
 		-> <<kw> "double">
 |	Char(size)
 		-> <<kw> "char">
-|	Pointer(size, type) 
+|	Pointer(size, type)
 		-> H([ <<type> type>, " ", <<op> "*"> ])
 |	Array(type)
 		-> H([ <<type> type>, "[", "]" ])
@@ -104,24 +105,24 @@ unOpPrec = parse.Rule('''
 ''')
 
 binOpPrec = parse.Rule('''
-	And(Bool) -> 10 		
-|	Or(Bool) -> 11 		
-|	And(_) -> 7 		
-|	Or(_) -> 9 		
-|	Xor(_) -> 8 		
-|	LShift -> 4 		
-|	RShift -> 4 		
+	And(Bool) -> 10
+|	Or(Bool) -> 11
+|	And(_) -> 7
+|	Or(_) -> 9
+|	Xor(_) -> 8
+|	LShift -> 4
+|	RShift -> 4
 |	Plus -> 4 # force parenthesis inside shifts (was 3)
 |	Minus -> 4 # force parenthesis inside shifts (was 3)
-|	Mult -> 2 		
-|	Div -> 2 		
-|	Mod -> 2 		
-|	Eq -> 6 
-|	NotEq -> 6 
-|	Lt -> 5 
-|	LtEq -> 5 
-|	Gt -> 5 
-|	GtEq -> 5 	
+|	Mult -> 2
+|	Div -> 2
+|	Mod -> 2
+|	Eq -> 6
+|	NotEq -> 6
+|	Lt -> 5
+|	LtEq -> 5
+|	Gt -> 5
+|	GtEq -> 5
 ''')
 
 exprPrec = parse.Rule('''
@@ -173,8 +174,8 @@ binOp = parse.Rule('''
 exprKern = util.Proxy()
 
 parse.Transfs('''
-SubExpr(Cmp) = 
-	let 
+SubExpr(Cmp) =
+	let
 		pprec = !prec, # parent precedence
 		prec = exprPrec
 	in
@@ -213,7 +214,7 @@ exprKern.subject = Path(parse.Rule('''
 '''))
 
 expr = parse.Transf('''
-	let 
+	let
 		prec = exprPrec
 	in
 		exprKern
@@ -232,7 +233,7 @@ arg = parse.Rule('''
 stmt = util.Proxy()
 
 stmts = parse.Transf('''
-	!V( <Map(stmt)> ) 
+	!V( <Map(stmt)> )
 ''')
 
 stmtKern = parse.Rule('''
@@ -262,7 +263,7 @@ stmtKern = parse.Rule('''
 		-> H([ <<kw>"return">, " ", <<expr>value> ])
 |	NoStmt
 		-> ""
-|	Asm(opcode, operands) 
+|	Asm(opcode, operands)
 		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<Map(expr)>operands>]>, ")" ])
 ''')
 
@@ -276,12 +277,12 @@ ppLabel = {
 ppBlock = {
 	Block( stmts )
 		-> V([
-			D("{"), 
-				<<stmts>stmts>, 
+			D("{"),
+				<<stmts>stmts>,
 			D("}")
 		])
 }
-		
+
 ppIf = {
 	If(_, true, NoStmt)
 		-> V([
@@ -317,7 +318,7 @@ ppDoWhile = {
 ppFunction = {
 	Function(_, _, _, stmts)
 		-> D(V([
-			<stmtKern>, 
+			<stmtKern>,
 			"{",
 				I(V([ <<stmts>stmts> ])),
 			"}"
@@ -343,8 +344,8 @@ stmt.subject = Path(parse.Transf('''
 
 module = Path(parse.Rule('''
 	Module(stmts)
-		-> V([ 
-			I( <<stmts>stmts> ) 
+		-> V([
+			I( <<stmts>stmts> )
 		])
 '''))
 
@@ -361,34 +362,34 @@ if __name__ == '__main__':
 	print commas('[1,2,3]')
 
 	factory = aterm.factory.factory
-	
+
 	exprTestCases = [
 		('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Sym("x"))', '1 + x\n'),
 		('Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])}', ''),
 		('Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}', '')
 	]
-	
+
 	for inputStr, output in exprTestCases:
 		input = factory.parse(inputStr)
-			
+
 		print check.expr(input)
 		result = expr(inputStr)
 		print result
 		print box.stringify(result)
 		print output
 		print
-		
-	
+
+
 	stmtTestCases = [
 		('Label("label")', 'label:\n'),
 		('Asm("ret",[])', 'asm("ret");\n'),
 		('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);\n'),
-		('Function(Void,"main",[],[])', 'void main()\n{\n}\n'),	
+		('Function(Void,"main",[],[])', 'void main()\n{\n}\n'),
 		('Assign(Void,Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('Assign(Blob(32{Path([0,0,1,0])}){Path([0,1,0])},Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('If(Binary(Eq(Int(32,Signed)),Binary(Or(Int(32,NoSign)),Binary(Xor(Int(32,NoSign)),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),GoTo(Sym(".L4")),NoStmt)', ''),
 	]
-	
+
 	for inputStr, output in stmtTestCases:
 		input = factory.parse(inputStr)
 
@@ -398,5 +399,5 @@ if __name__ == '__main__':
 		print result
 		print box.stringify(result)
 		print output
-		print 
-	
+		print
+

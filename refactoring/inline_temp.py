@@ -4,7 +4,7 @@
 import refactoring
 from refactoring._common import CommonRefactoring
 
-import transf as lib
+from transf import lib
 import ir.traverse
 import ir.path
 

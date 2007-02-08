@@ -1,7 +1,9 @@
 '''Module for handling assembly language code.'''
 
 
-import transf
+import transf.transformation
+import transf.lib
+import transf.parse
 
 import ir.traverse
 
@@ -17,17 +19,17 @@ sslTranslationTable = {
 }
 
 
-class SslLookup(transf.base.Transformation):
+class SslLookup(transf.transformation.Transformation):
 
 	tmp_no = 0
-	
+
 	def __init__(self):
-		transf.base.Transformation.__init__(self)
+		transf.transformation.Transformation.__init__(self)
 
 	def apply(self, term, ctx):
 		if not term.rmatch('Asm(_, [*])'):
 			raise transf.exception.Failure
-			
+
 		opcode, operands = term.args
 
 		opcode = opcode.value
@@ -35,7 +37,7 @@ class SslLookup(transf.base.Transformation):
 			opcode = sslTranslationTable[opcode]
 		except KeyError:
 			opcode = opcode.upper()
-			
+
 		try:
 			params, temps, pattern = insn_table[opcode]
 		except KeyError:
@@ -50,7 +52,7 @@ class SslLookup(transf.base.Transformation):
 			name = "tmp%d" % self.tmp_no
 			kargs[temp] = term.factory.make("Sym(_){Tmp}", name)
 
-		return term.factory.make(pattern, **kargs)	
+		return term.factory.make(pattern, **kargs)
 
 
 simplifyExpr = transf.parse.Rule('''
@@ -62,10 +64,10 @@ simplifyExpr = transf.parse.Rule('''
 simplifyStmt = transf.parse.Rule('''
 	Assign(type, dst, Cond(cond, src, dst))
 		-> If(cond, Assign(type, dst, src), NoStmt)
-	
+
 |	Assign(type, dst, Cond(cond, src, dst))
 		-> If(Unary(Not, cond), Assign(type, dst, src), NoStmt)
-		
+
 |	Assign(_, Sym("pc"), expr)
 		-> GoTo(Addr(expr))
 
@@ -80,7 +82,7 @@ simplifyStmt = transf.parse.Rule('''
 		-> expr
 ''')
 
-simplify = transf.traverse.InnerMost(simplifyExpr + simplifyStmt)
+simplify = transf.lib.traverse.InnerMost(simplifyExpr + simplifyStmt)
 
 sslLookup = SslLookup()
 #sslLookup = transf.debug.Trace(sslLookup, 'sslLookup')
@@ -132,12 +134,12 @@ preStmt = transf.parse.Rule('''
 		-> Asm("sarl", [op1,Lit(Int(32,Signed),1)])
 ''')
 
-doStmt = transf.parse.Transf(''' 
+doStmt = transf.parse.Transf('''
 	sslLookup + ![<id>]
 ''')
 
 module = ir.traverse.Module(
-	stmts = transf.lists.MapConcat(+preStmt * doStmt * simplify), 
+	stmts = transf.lib.lists.MapConcat(+preStmt * doStmt * simplify),
 )
 
 

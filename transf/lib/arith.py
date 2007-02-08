@@ -4,10 +4,10 @@
 import aterm
 
 from transf import exception
-from transf import base
+from transf.lib import base
 from transf.types import variable
 from transf import operate
-from transf import project
+from transf.lib import project
 
 
 # TODO: complete

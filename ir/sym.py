@@ -1,7 +1,8 @@
 '''Symbol handling transformations.'''
 
 
-from transf import *
+from transf import types
+from transf.lib import *
 import ir.match
 
 
@@ -14,7 +15,7 @@ isTmp = combine.Where(annotation.Get('Tmp'))
 isLocalVar = ir.match.aSym * (isReg + isTmp)
 
 updateLocalVar = (
-	isLocalVar * 
+	isLocalVar *
 	types.table.Set('local')
 )
 

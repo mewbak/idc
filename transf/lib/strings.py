@@ -4,15 +4,15 @@
 import aterm.convert
 
 from transf import exception
-from transf import base
+from transf import transformation
 from transf import operate
-from transf import combine
-from transf import build
-from transf import unify
+from transf.lib import combine
+from transf.lib import build
+from transf.lib import unify
 
 
-class ToStr(base.Transformation):
-	
+class ToStr(transformation.Transformation):
+
 	def apply(self, term, ctx):
 		try:
 			return term.factory.makeStr(str(term.value))
@@ -23,7 +23,7 @@ tostr = ToStr()
 
 
 class _Concat2(operate.Binary):
-	
+
 	def apply(self, term, ctx):
 		head = self.loperand.apply(term, ctx)
 		tail = self.roperand.apply(term, ctx)

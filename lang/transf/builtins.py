@@ -1,20 +1,20 @@
 '''Builtin namespace.'''
 
 
-from transf.base import *
+from transf.lib.base import *
 
-from transf.util import *
+from transf.lib.util import *
 
-from transf.combine import *
+from transf.lib.combine import *
 
-from transf.traverse import *
+from transf.lib.traverse import *
 
-from transf.unify import *
+from transf.lib.unify import *
 
-from transf.lists import *
+from transf.lib.lists import *
 
-from transf.strings import tostr
+from transf.lib.strings import tostr
 
-from transf.arith import *
+from transf.lib.arith import *
 
-from transf.iterate import *
+from transf.lib.iterate import *

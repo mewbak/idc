@@ -1,7 +1,7 @@
 '''Common transformations.'''
 
 
-import transf as trf
+from transf import lib as trf
 import ir.match
 
 
@@ -105,7 +105,7 @@ def OneGlobalStmt(operand):
 
 def OneFunction(operand, type = trf.base.ident, name = trf.base.ident, args = trf.base.ident, stmts = trf.base.ident):
 	return OneGlobalStmt(
-		ir.match.Function(type, name, args, stmts), 
+		ir.match.Function(type, name, args, stmts),
 		operand
 	)
 

@@ -2,7 +2,7 @@
 
 
 import refactoring
-import transf
+import transf.exception
 import aterm.path
 
 
@@ -13,10 +13,10 @@ class CommonRefactoring(refactoring.Refactoring):
 		self._applicable = applicable
 		self._input = input
 		self._apply = apply
-		
+
 	def name(self):
 		return self._name
-	
+
 	def applicable(self, term, selection):
 		start, end = selection
 		selection = aterm.path.ancestor(start, end)
@@ -44,5 +44,4 @@ class CommonRefactoring(refactoring.Refactoring):
 			raise
 			return term
 
-		
-		
+

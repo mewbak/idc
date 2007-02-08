@@ -14,8 +14,10 @@ except ImportError:
 	from StringIO import StringIO
 
 import aterm.types
-from aterm import walker
-import transf
+import aterm.walker
+
+from transf import transformation
+from transf import lib
 
 
 class Formatter:
@@ -23,15 +25,15 @@ class Formatter:
 
 	def __init__(self):
 		self.indent_level = 0
-	
+
 	def write(self, s):
 		'''Write text.'''
 		raise NotImplementedError
-	
+
 	def indent(self):
 		'''Increase the indentation level.'''
 		self.indent_level += 1
-	
+
 	def dedent(self):
 		'''Decrease the indentation level.'''
 		self.indent_level -= 1
@@ -40,13 +42,13 @@ class Formatter:
 		'''Write the indentation characters.'''
 		if self.indent_level > 0:
 			self.write('\t'*self.indent_level)
-	
+
 	def write_eol(self):
 		'''Write the end-of-line character.'''
 		self.write('\n')
-	
+
 	def handle_tag_start(self, name, value):
-		'''Handle the start of a tag. Tags can be used for describing token types, 
+		'''Handle the start of a tag. Tags can be used for describing token types,
 		or the originating term path.'''
 		pass
 
@@ -61,30 +63,30 @@ class TextFormatter(Formatter):
 	def __init__(self, fp):
 		Formatter.__init__(self)
 		self.fp = fp
-	
+
 	def write(self, s):
 		self.fp.write(s)
 
 
 class AnsiTextFormatter(TextFormatter):
-	'''Formatter for plain-text files which outputs ANSI escape codes. See 
-	http://en.wikipedia.org/wiki/ANSI_escape_code for more information 
+	'''Formatter for plain-text files which outputs ANSI escape codes. See
+	http://en.wikipedia.org/wiki/ANSI_escape_code for more information
 	concerning ANSI escape codes.
 	'''
 
 	csi = '\33['
-	
+
 	types = {
 		'operator': '31m', # red
 		'keyword': '1m', # bold
 		'symbol': '34m', # blue
 		'literal': '32m', # green
 	}
-	
+
 	def handle_tag_start(self, name, value):
 		if name == 'type':
 			try:
-				code = self.types[value] 
+				code = self.types[value]
 			except KeyError:
 				code = '0m'
 			self.write(self.csi + code)
@@ -94,20 +96,20 @@ class AnsiTextFormatter(TextFormatter):
 			self.write(self.csi + '0m')
 
 
-class Writer(walker.Walker):
+class Writer(aterm.walker.Walker):
 	'''Writes boxes trhough a formatter.'''
 
 	NONE, VERT, HORIZ = range(3)
-	
+
 	def __init__(self, formatter):
-		walker.Walker.__init__(self)
+		aterm.walker.Walker.__init__(self)
 		self.formatter = formatter
-	
+
 	def write(self, box, mode = NONE):
 		self._write(box, mode = mode)
-	
-	_write = walker.Dispatch('write')
-	
+
+	_write = aterm.walker.Dispatch('write')
+
 	def writeV(self, boxes, mode):
 		if mode == self.HORIZ:
 			raise Warning('vbox inside hbox', boxes)
@@ -115,17 +117,17 @@ class Writer(walker.Walker):
 			mode = self.VERT
 		for box in boxes:
 			self.write(box, mode)
-	
+
 	def writeI(self, box, mode):
 		self.formatter.indent()
 		self.write(box, mode)
 		self.formatter.dedent()
-	
+
 	def writeD(self, box, mode):
 		self.formatter.dedent()
 		self.write(box, mode)
 		self.formatter.indent()
-	
+
 	def writeT(self, name, value, box, mode):
 		name = self._str(name)
 		try:
@@ -143,7 +145,7 @@ class Writer(walker.Walker):
 			self.write(box, mode = self.HORIZ)
 		if mode == self.VERT:
 			self.formatter.write_eol()
-	
+
 	def write_Str(self, s, mode):
 		if mode == self.VERT:
 			self.formatter.write_indent()
@@ -167,12 +169,12 @@ def stringify(boxes, Formatter = TextFormatter):
 
 def Tag(name, value, operand = None):
 	if isinstance(name, basestring):
-		name = transf.build.Str(name)
+		name = lib.build.Str(name)
 	if isinstance(value, basestring):
-		value = transf.build.Str(value)
+		value = lib.build.Str(value)
 	if operand is None:
-		operand = transf.base.ident
-	return transf.build.Appl('T', (name, value, operand))
+		operand = lib.base.ident
+	return lib.build.Appl('T', (name, value, operand))
 
 op = Tag('type', 'operator')
 kw = Tag('type', 'keyword')
@@ -181,11 +183,11 @@ string = Tag('type', 'string')
 sym = Tag('type', 'symbol')
 
 def Path(operand):
-	return Tag('path', transf.path.get, operand ) + operand
+	return Tag('path', lib.path.get, operand ) + operand
 
+@lib.util.Adaptor
 def reprz(term):
 	return term.factory.makeStr(str(term))
-reprz = transf.util.Adaptor(reprz)
 
 def escape(term):
 	s = str(term.value)
@@ -195,9 +197,9 @@ def escape(term):
 	s = s.replace('\n', '\\n')
 	s = '"' + s + '"'
 	return term.factory.makeStr(s)
-escape = transf.util.Adaptor(escape)
+escape = lib.util.Adaptor(escape)
 
-class Lit(transf.base.Transformation):
+class Lit(transformation.Transformation):
 	def apply(self, term, ctx):
 		if term.type == aterm.types.INT:
 			term = term.factory.makeStr(str(term.value))
@@ -208,27 +210,27 @@ class Lit(transf.base.Transformation):
 		if term.type == aterm.types.STR:
 			term = escape.apply(term, ctx)
 			return string.apply(term, ctx)
-		raise transf.exception.Failure
+		raise lib.exception.Failure
 lit = Lit()
 
 
 def Prefix(sep):
-	return transf.unify.Foldr(
-		transf.base.ident,
-		lambda head, tail: transf.build.List([sep, head], tail=tail)
+	return lib.unify.Foldr(
+		lib.base.ident,
+		lambda head, tail: lib.build.List([sep, head], tail=tail)
 	)
 
 
 def Join(sep):
 	return \
-		transf.match.nil + \
-		transf.congruent.Cons(
-			transf.base.ident,
+		lib.match.nil + \
+		lib.congruent.Cons(
+			lib.base.ident,
 			Prefix(sep)
 		)
 
 def HBox(boxes):
-	return transf.build.Appl('H', (boxes,))
+	return lib.build.Appl('H', (boxes,))
 
-commas = HBox(Join(transf.build.Str(', ')))
-spaces = HBox(Join(transf.build.Str(' ')))
+commas = HBox(Join(lib.build.Str(', ')))
+spaces = HBox(Join(lib.build.Str(' ')))

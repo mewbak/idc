@@ -1,7 +1,9 @@
 '''Helper transformation factory for short-cutting code.'''
 
 
-from transf import base
+import aterm.term
+from transf import transformation
+from transf.lib import base
 
 
 class Factory(object):
@@ -16,7 +18,7 @@ class Factory(object):
 		self.__Term = Term
 
 	def __coerce(self, arg):
-		if isinstance(arg, base.Transformation):
+		if isinstance(arg, transformation.Transformation):
 			return arg
 		if isinstance(arg, int):
 			return self.__Int(arg)
@@ -29,7 +31,7 @@ class Factory(object):
 		if isinstance(arg, aterm.term.Term):
 			self.__Term(arg)
 		raise TypeError, 'cannot coerce arg %r' % arg
-		
+
 	def __getattribute__(self, name):
 		inicial = name[0]
 		if inicial == '_':
@@ -48,7 +50,7 @@ class Factory(object):
 			return self.__List(map(self.__coerce, key))
 		else:
 			return self.__List([self.__coerce(key)])
-	
+
 	def __apply__(self, *args):
 		return self.__List(map(self.__coerce, args))
 

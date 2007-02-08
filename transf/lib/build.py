@@ -9,10 +9,11 @@ import aterm.factory
 import aterm.term
 
 from transf import exception
-from transf import base
+from transf import transformation
+from transf.lib import base
 from transf.types import variable
-from transf import _common
-from transf import _helper
+from transf.lib import _common
+from transf.lib import _helper
 
 
 _factory = aterm.factory.factory
@@ -24,7 +25,7 @@ class _Term(_common._Term):
 	# to avoid breaking optimizations
 
 	def __init__(self, term):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		self.term = term
 
 	def apply(self, term, ctx):

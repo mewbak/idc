@@ -2,15 +2,15 @@
 
 
 from transf import exception
-from transf import base
-from transf import scope
-from transf import combine
-from transf import match
-from transf import build
-from transf import congruent
-from transf import project
-from transf import lists
-from transf import debug
+from transf.lib import base
+from transf.lib import scope
+from transf.lib import combine
+from transf.lib import match
+from transf.lib import build
+from transf.lib import congruent
+from transf.lib import project
+from transf.lib import lists
+from transf.lib import debug
 
 
 def Set(label, *values):
@@ -37,7 +37,7 @@ def Get(label):
 		project.Fetch(match.ApplName(label)) *
 		project.args *
 		combine.If(
-			match.Cons(base.ident, match.nil), 
+			match.Cons(base.ident, match.nil),
 			project.head
 		)
 	)

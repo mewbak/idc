@@ -4,12 +4,12 @@
 import aterm.project
 
 from transf import exception
-from transf import base
-from transf import util
+from transf import transformation
+from transf.lib import util
 
 
-class Head(base.Transformation):
-	
+class Head(transformation.Transformation):
+
 	def apply(self, term, ctx):
 		try:
 			return term.head
@@ -19,8 +19,8 @@ class Head(base.Transformation):
 head = Head()
 
 
-class Tail(base.Transformation):
-	
+class Tail(transformation.Transformation):
+
 	def apply(self, term, ctx):
 		try:
 			return term.tail
@@ -53,9 +53,9 @@ def Fetch(operand):
 	fetch.subject = head * operand + tail * fetch
 	return fetch
 
-	
-class Name(base.Transformation):
-	
+
+class Name(transformation.Transformation):
+
 	def apply(self, term, ctx):
 		try:
 			name = term.name
@@ -67,8 +67,8 @@ class Name(base.Transformation):
 name = Name()
 
 
-class Args(base.Transformation):
-	
+class Args(transformation.Transformation):
+
 	def apply(self, term, ctx):
 		try:
 			args = term.args
@@ -80,16 +80,16 @@ class Args(base.Transformation):
 args = Args()
 
 
-class Subterms(base.Transformation):
-	
+class Subterms(transformation.Transformation):
+
 	def apply(self, term, ctx):
 		return aterm.project.subterms(term)
 
 subterms = Subterms()
 
 
-class Annos(base.Transformation):
-	
+class Annos(transformation.Transformation):
+
 	def apply(self, term, ctx):
 		return term.getAnnotations()
 

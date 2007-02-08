@@ -1,7 +1,8 @@
 '''Dead Code Elimination.'''
 
 
-from transf import *
+from transf import types
+from transf.lib import *
 import ir.match
 import ir.sym
 
@@ -13,7 +14,7 @@ setUnneededVar = types.table.Del('needed')
 setNeededVar = types.table.Set('needed')
 
 setNeededVars = debug.Log('Finding needed vars in %s\n', base.ident) * \
-	traverse.AllTD(ir.match.aSym * setNeededVar * 
+	traverse.AllTD(ir.match.aSym * setNeededVar *
 	debug.Log('Found var needed %s\n', base.ident))
 
 setAllUnneededVars = types.table.Clear('needed')
@@ -41,9 +42,9 @@ Where(
 setLabelNeeded = parse.Transf('''
 Where(
 	with label in
-		?Label(label) ; debug.Dump(); 
-		!needed ; 
-		Map(![label,<id>] ; 
+		?Label(label) ; debug.Dump();
+		!needed ;
+		Map(![label,<id>] ;
 		types.table.Set('label_needed'))
 	end
 )
@@ -73,19 +74,19 @@ dceAssign = {x:
 	end
 }
 
-dceAsm = 
+dceAsm =
 	?Asm ;
 	setAllNeededVars
 
-dceLabel = 
+dceLabel =
 	?Label ;
 	setLabelNeeded
 
-dceGoTo = 
+dceGoTo =
 	?GoTo ;
 	getLabelNeeded
 
-dceRet = 
+dceRet =
 	?Ret ;
 	setAllUnneededVars ;
 	~Ret(_, <setNeededVars>)
@@ -95,7 +96,7 @@ elimBlock = {
 	Block([stmt]) -> stmt
 }
 
-dceBlock = 
+dceBlock =
 	~Block(<dceStmts>) ;
 	Try(elimBlock)
 
@@ -104,7 +105,7 @@ elimIf = {
 	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
 }
 
-dceIf = 
+dceIf =
 	~If(_, <dceStmt>, _) \needed/ ~If(_, _, <dceStmt>) ;
 	~If(<setNeededVars>, _, _) ;
 	Try(elimIf)
@@ -113,7 +114,7 @@ elimWhile = {
 	While(cond,NoStmt) -> Assign(Void,NoExpr,cond)
 }
 
-dceWhile = 
+dceWhile =
 	\needed/* ~While(<setNeededVars>, <dceStmt>) ;
 	Try(elimWhile)
 
@@ -121,26 +122,26 @@ elimDoWhile = {
 	DoWhile(cond,NoStmt) -> Assign(Void,NoExpr,cond)
 }
 
-dceDoWhile = 
+dceDoWhile =
 	~DoWhile(<setNeededVars>, _) ;
 	\needed/* ~DoWhile(_, <dceStmt>) ;
 	Try(elimDoWhile)
 
-dceFunction = 
+dceFunction =
 	ir.sym.EnterFunction(
 	with label_needed[] in
 		~Function(_, _, _, <
-			\label_needed/* with needed[] in dceStmts end 
+			\label_needed/* with needed[] in dceStmts end
 		>)
 		; debug.Dump()
 	end
 	)
 
 # If none of the above applies, assume all vars are needed
-dceDefault = 
+dceDefault =
 	setAllNeededVars
 
-dceStmt.subject = 
+dceStmt.subject =
 	?Assign < dceAssign +
 	?Asm < dceAsm +
 	?Label < dceLabel +
@@ -150,15 +151,15 @@ dceStmt.subject =
 	?If < dceIf +
 	?While < dceWhile +
 	?DoWhile < dceDoWhile +
-	?Function < dceFunction + 
+	?Function < dceFunction +
 	?Var < id +
 	?NoStmt
 
-dceStmts.subject = 
+dceStmts.subject =
 	MapR(dceStmt) ;
 	Filter(Not(?NoStmt))
 
-dceModule = 
+dceModule =
 	~Module(<dceStmts>)
 
 dce =

@@ -2,42 +2,41 @@
 
 
 import aterm
-import transf
-
+from transf import lib
 from lang import box
 
 
-ppId = transf.strings.tostr
+ppId = lib.strings.tostr
 
-ppAttr = transf.parse.Rule('''
-		Attr(name, value) 
+ppAttr = lib.parse.Rule('''
+		Attr(name, value)
 			-> H([ <<id> name>, "=", <<id> value> ])
 ''')
 
-ppAttrs = transf.parse.Transf('''
+ppAttrs = lib.parse.Transf('''
 		!H([ "[", <Map(ppAttr); box.commas>, "]" ])
 ''')
 
-ppNode = transf.parse.Rule('''
+ppNode = lib.parse.Rule('''
 		Node(nid, attrs, _)
 			-> H([ <<id> nid>, <<ppAttrs> attrs> ])
 ''')
 
-ppNodes = transf.lists.Map(ppNode)
+ppNodes = lib.lists.Map(ppNode)
 
-ppNodeEdge = transf.parse.Rule('''
-		Edge(dst, attrs) 
+ppNodeEdge = lib.parse.Rule('''
+		Edge(dst, attrs)
 			-> H([ <<id> src>, "->", <<id> dst>, <<ppAttrs> attrs> ])
 ''')
 
-ppNodeEdges = transf.parse.Rule('''
-		Node(src, _, edges) 
+ppNodeEdges = lib.parse.Rule('''
+		Node(src, _, edges)
 			-> <<Map(ppNodeEdge)> edges>
 ''')
 
-ppEdges = transf.lists.Map(ppNodeEdges) * transf.lists.concat
+ppEdges = lib.lists.Map(ppNodeEdges) * lib.lists.concat
 
-ppGraph = transf.parse.Rule(r'''
+ppGraph = lib.parse.Rule(r'''
 		Graph(nodes)
 			-> V([
 				H([ "digraph", " ", "{" ]),

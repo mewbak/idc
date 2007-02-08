@@ -3,10 +3,10 @@
 
 import gtk
 
-import transf.input
+import transf.lib.input
 
 
-class Inputter(transf.input.Inputter):
+class Inputter(transf.lib.input.Inputter):
 	'''GTK-based user data inputter.'''
 
 	def inputStr(self, title, text):
@@ -15,32 +15,32 @@ class Inputter(transf.input.Inputter):
 			title,
 			parent,
 			gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-			(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, 
+			(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
 			gtk.STOCK_OK, gtk.RESPONSE_OK)
 		)
 		dialog.set_default_response(gtk.RESPONSE_OK)
-			
+
 		textlabel = gtk.Label(text)
 		dialog.vbox.pack_start(textlabel)
-			
+
 		textentry = gtk.Entry()
 		textentry.set_activates_default(True)
 		dialog.vbox.add(textentry)
-	
+
 		dialog.show_all()
-		
+
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
 			result = textentry.get_text()
 		else:
 			result = None
-		
+
 		dialog.destroy()
 		return result
-		
+
 
 # override default text inputter
-transf.input.inputter = Inputter()
+transf.lib.input.inputter = Inputter()
 
 
 if __name__ == '__main__':

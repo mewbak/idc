@@ -4,7 +4,8 @@
 import sys
 
 from transf import exception
-from transf import base
+from transf import transformation
+from transf.lib import build
 
 
 class Inputter(object):
@@ -12,28 +13,28 @@ class Inputter(object):
 
 	def inputStr(self, title, text):
 		raise NotImplementedError
-	
+
 	# TODO: other kind of inputs
-	# TODO: dinamically generate complex dialogs from a term 
+	# TODO: dinamically generate complex dialogs from a term
 	# description
-	
+
 
 class CliInputter(Inputter):
 	'''Simple command-line-interface inputter.'''
-	
+
 	def inputStr(self, title, text):
 		sys.stdout.write(title + '\n')
 		sys.stdout.write(text + '\n')
 		return sys.stdin.readline()[:-1]
-	
+
 
 inputter = Inputter()
 
 
-class Str(base.Transformation):
-	
+class Str(transformation.Transformation):
+
 	def __init__(self, title=None, text=None):
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		if title is None:
 			self.title = build.empty
 		else:
@@ -42,7 +43,7 @@ class Str(base.Transformation):
 			self.text = build.empty
 		else:
 			self.text = text
-	
+
 	def apply(self, trm, ctx):
 		title = self.title.apply(trm, ctx)
 		text = self.text.apply(trm, ctx)

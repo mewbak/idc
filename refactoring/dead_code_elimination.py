@@ -2,8 +2,6 @@
 
 
 import refactoring
-import transf
-from transf import path
 import ir.dce
 
 
@@ -11,7 +9,7 @@ class DeadCodeElimination(refactoring.Refactoring):
 
 	def name(self):
 		return "Dead Code Elimination"
-	
+
 	def applicable(self, term, selection):
 		return True
 
@@ -22,7 +20,7 @@ class DeadCodeElimination(refactoring.Refactoring):
 
 	def apply(self, term, args):
 		factory = term.factory
-		txn = ir.dce.dce		
+		txn = ir.dce.dce
 		return txn(term)
 
 

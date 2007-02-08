@@ -2,7 +2,7 @@
 
 
 from transf import exception
-from transf import base
+from transf import transformation
 from transf.types import variable
 
 

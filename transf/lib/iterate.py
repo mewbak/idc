@@ -1,8 +1,8 @@
 '''Transformations for iterating terms.'''
 
 
-from transf import util
-from transf import combine
+from transf.lib import util
+from transf.lib import combine
 
 
 def Repeat(operand):
@@ -14,7 +14,7 @@ def Repeat(operand):
 
 def Rec(Def):
 	'''Recursive transformation.
-	
+
 	@param Def: transformation factory whose single argument is its own definition.
 	'''
 	rec = util.Proxy()

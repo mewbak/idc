@@ -4,13 +4,14 @@
 import aterm.types
 
 from transf import exception
-from transf import base
+from transf import transformation
+from transf.lib import base
 from transf.types import variable
 from transf import operate
-from transf import combine
-from transf import _common
-from transf import match
-from transf import _helper
+from transf.lib import combine
+from transf.lib import _common
+from transf.lib import match
+from transf.lib import _helper
 
 
 class _ConsL(_common._Cons):
@@ -145,14 +146,14 @@ class Annos(_common.Annos):
 
 
 def Anno(anno):
-	from transf.traverse import One
+	from transf.lib.traverse import One
 	return Annos(One(anno))
 
 
 _ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, Var, match.Term)
 
 
-class Subterms(base.Transformation):
+class Subterms(transformation.Transformation):
 	'''Congruent transformation of subterms.'''
 
 	def __init__(self, children, leaf):
@@ -160,7 +161,7 @@ class Subterms(base.Transformation):
 		@param children: transformation to be applied to the term children.
 		@param leaf: transformation to be applied if the term has no children.
 		'''
-		base.Transformation.__init__(self)
+		transformation.Transformation.__init__(self)
 		self.leaf = leaf
 		self.list = children
 		self.appl = ApplCons(base.ident, children)
