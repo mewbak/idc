@@ -1,8 +1,5 @@
-"""Set function return."""
+"""Set Function Return"""
 
-
-import refactoring
-from refactoring._common import CommonRefactoring
 
 from transf import lib
 import ir.traverse
@@ -39,11 +36,3 @@ apply =
 	end
 ''')
 
-setFunctionReturn = CommonRefactoring(
-	"Set Function Return",
-	applicable, input, apply
-)
-
-
-if __name__ == '__main__':
-	refactoring.main(setFunctionReturn)

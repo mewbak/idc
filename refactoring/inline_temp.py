@@ -1,8 +1,5 @@
-"""Inline Temp."""
+"""Inline Temp"""
 
-
-import refactoring
-from refactoring._common import CommonRefactoring
 
 from transf import lib
 import ir.traverse
@@ -16,13 +13,13 @@ lib.parse.Transfs('''
 # Inline (var, expr) table
 
 
-SetVarInline(x, y) = 
+SetVarInline(x, y) =
 	Where(![x, y] ==> inline) ;
 	Where(
 		!inline ;
 		Filter(([z, OnceTD(?x) ] -> [z]) ==> inline)
 	)
-	
+
 
 ClearVarInline(x) = Where(![x] ==> inline)
 
@@ -39,7 +36,7 @@ setLabelInline =
 Where(
 	with label in
 		?GoTo(Sym(label)) <
-		!inline ; 
+		!inline ;
 		Map(![label,<id>,~inline]; ![_,_] ==> label_inline) +
 		id # FIXME
 	end
@@ -49,7 +46,7 @@ getLabelInline =
 Where(
 	with label in
 		?Label(label) ;
-		!label_inline ; 
+		!label_inline ;
 		Filter( ([label,x,y] -> [x,y]) ) ;
 		Map(id /inline\ ([x,y] -> <SetVarInline(!x, !y)>) )
 	end
@@ -61,11 +58,11 @@ Where(
 
 propStmt = Proxy()
 
-propStmts = 
+propStmts =
 	Map(propStmt) ;
 	Filter(Not(?NoStmt))
 
-propAssign = 
+propAssign =
 	with x, y in
 		~Assign(_, x, y@<inlineVars>) ;
 		if ir.path.isSelected then
@@ -74,52 +71,52 @@ propAssign =
 		else
 			Try(ClearVarInline(!x))
 		end
-	end 
+	end
 
-propAsm = 
+propAsm =
 	?Asm ;
 	clearAllInline
 
-propLabel = 
+propLabel =
 	?Label ;
 	getLabelInline
 
-propGoTo = 
+propGoTo =
 	~GoTo(<inlineVars>) ;
 	setLabelInline
 
-propRet = 
+propRet =
 	~Ret(_, <inlineVars>)
 
-propBlock = 
+propBlock =
 	~Block(<propStmts>)
 
-propIf = 
+propIf =
 	~If(<inlineVars>, _, _) ;
 	~If(_, <propStmt>, _) /inline\ ~If(_, _, <propStmt>)
 
-propWhile = 
+propWhile =
 	/inline\* ~While(<inlineVars>, <propStmt>)
 
-propDoWhile = 
+propDoWhile =
 	/inline\* (
 		~DoWhile(_, <propStmt>) ;
 		~DoWhile(<inlineVars>, _)
 	)
 
-propFunction = 
+propFunction =
 	ir.sym.EnterFunction(
 		with label_inline[] in
 			~Function(_, _, _, <
-				\label_inline/* with inline[] in propStmts end 
+				\label_inline/* with inline[] in propStmts end
 			>)
 		end
 	)
 
-propDefault = 
+propDefault =
 	clearAllInline
 
-propStmt.subject = 
+propStmt.subject =
 	switch project.name
 		case "Assign": propAssign
 		case "Asm": propAsm
@@ -134,7 +131,7 @@ propStmt.subject =
 		case "Break", "Continue", "NoStmt": id
 	end
 
-propModule = 
+propModule =
 	ir.sym.EnterModule(
 		~Module(<propStmts>)
 	)
@@ -149,23 +146,14 @@ prop =
 # Refactoring
 
 applicable =
-	ir.path.projectSelection ; 
+	ir.path.projectSelection ;
 	?Assign(_, Sym(_), _)
 	#OnceTD(?Assign(_, Sym(_), _))
 
-input = 
+input =
 	![]
 
-apply = 
+apply =
 	prop
 
 ''')
-
-inlineTemp = CommonRefactoring(
-	"Inline Temp", 
-	applicable, input, apply
-)
-
-
-if __name__ == '__main__':
-	refactoring.main(inlineTemp)

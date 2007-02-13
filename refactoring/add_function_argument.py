@@ -1,8 +1,5 @@
-"""Add function argument."""
+"""Add Function Argument"""
 
-
-import refactoring
-from refactoring._common import CommonRefactoring
 
 from transf import lib
 import ir.traverse
@@ -35,12 +32,3 @@ apply =
 		))
 	end
 ''')
-
-addFunctionArg = CommonRefactoring(
-	"Add Function Argument",
-	applicable, input, apply
-)
-
-
-if __name__ == '__main__':
-	refactoring.main(addFunctionArg)

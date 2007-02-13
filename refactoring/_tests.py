@@ -13,6 +13,13 @@ def main():
 	for name in os.listdir(refactoring.__path__[0]):
 		if name.endswith('.py') and not name.startswith('_'):
 			suite.addTest(unittest.defaultTestLoader.loadTestsFromName('refactoring.' + name[:-3]))
+	factory = refactoring.Factory()
+	for r in factory.refactorings.itervalues():
+		try:
+			r.module.applyTestCases
+			suite.addTest(r.getTests())
+		except AttributeError:
+			pass
 	unittest.TextTestRunner(verbosity=2).run(suite)
 
 

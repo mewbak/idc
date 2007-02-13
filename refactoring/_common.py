@@ -45,3 +45,4 @@ class CommonRefactoring(refactoring.Refactoring):
 			return term
 
 
+

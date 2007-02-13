@@ -1,8 +1,6 @@
-"""Global Symbol renaming."""
+"""Rename Symbol"""
 
 
-import refactoring
-from refactoring._common import CommonRefactoring
 from transf import lib
 import ir.path
 
@@ -27,23 +25,9 @@ apply =
 	end
 ''')
 
-renameSymbol = CommonRefactoring(
-	"Rename Symbol",
-	applicable, input, apply
-)
-
-
-class TestCase(refactoring.TestCase):
-
-	refactoring = renameSymbol
-
-	applyTestCases = [
-		('Sym("a")', '["a", "b"]', 'Sym("b")'),
-		('Sym("c")', '["a", "b"]', 'Sym("c")'),
-		('[Sym("a"),Sym("c")]', '["a", "b"]', '[Sym("b"),Sym("c")]'),
-		('C(Sym("a"),Sym("c"))', '["a", "b"]', 'C(Sym("b"),Sym("c"))'),
-	]
-
-
-if __name__ == '__main__':
-	refactoring.main(Rename)
+applyTestCases = [
+	('Sym("a")', '[[], "a", "b"]', 'Sym("b")'),
+	('Sym("c")', '[[], "a", "b"]', 'Sym("c")'),
+	('[Sym("a"),Sym("c")]', '[[], "a", "b"]', '[Sym("b"),Sym("c")]'),
+	('C(Sym("a"),Sym("c"))', '[[], "a", "b"]', 'C(Sym("b"),Sym("c"))'),
+]

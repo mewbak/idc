@@ -1,8 +1,5 @@
-"""Extract a function body."""
+"""Extract Function"""
 
-
-import refactoring
-from refactoring._common import CommonRefactoring
 
 from transf import lib
 import ir.path
@@ -10,7 +7,7 @@ import ir.path
 
 lib.parse.Transfs('''
 
-goto =  
+goto =
 	ir.path.inSelection ;
 	?GoTo(Sym(label))
 
@@ -20,7 +17,7 @@ applicable =
 input =
 	ir.path.projectSelection ;
 	( Label(label) -> [label] )
-	
+
 apply =
 	with label in
 		Where(!args; ?[label]) ;
@@ -29,64 +26,55 @@ apply =
 				~[Label(?label), *<AtSuffix(
 					~[Ret(_,_), *<?rest ; ![]>]
 				)>] ;
-				![Function(Void, label, [], <project.tail>), *rest] ;
-				debug.Dump()
+				![Function(Void, label, [], <project.tail>), *rest]
 			end
 		)>)
 	end
 ''')
 
-extractFunction = CommonRefactoring("Extract Function", applicable, input, apply)
+#extractFunction = CommonRefactoring("Extract Function", applicable, input, apply)
 
 
-class TestCase(refactoring.TestCase):
-
-	refactoring = extractFunction
-		
-	applyTestCases = [
-		(
-			'''
-			Module([
-				Label("main"),
+applyTestCases = [
+	(
+		'''
+		Module([
+			Label("main"),
+			Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+			Ret(Int(32,Signed),Sym("eax"))
+		])
+		''',
+		'[[0,0],"main"]',
+		'''
+		Module([
+			Function(Void,"main",[],[
 				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
 				Ret(Int(32,Signed),Sym("eax"))
 			])
-			''',
-			'["main"]',
-			'''
-			Module([
-				Function(Void,"main",[],[
-					Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-					Ret(Int(32,Signed),Sym("eax"))
-				])
-			])
-			'''
-		),
-		(
-			'''
-			Module([
-				Asm("pre",[]),
-				Label("main"),
+		])
+		'''
+	),
+	(
+		'''
+		Module([
+			Asm("pre",[]),
+			Label("main"),
+			Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+			Ret(Int(32,Signed),Sym("eax")),
+			Asm("post",[]),
+		])
+		''',
+		'[[0,1],"main"]',
+		'''
+		Module([
+			Asm("pre",[]),
+			Function(Void,"main",[],[
 				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-				Ret(Int(32,Signed),Sym("eax")),
-				Asm("post",[]),
-			])
-			''',
-			'["main"]',
-			'''
-			Module([
-				Asm("pre",[]),
-				Function(Void,"main",[],[
-					Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-					Ret(Int(32,Signed),Sym("eax"))
-				]),
-				Asm("post",[]),
-			])
-			'''
-		),	]
-	
-
-if __name__ == '__main__':
-	refactoring.main(extractFunction)
-
+				Ret(Int(32,Signed),Sym("eax"))
+			]),
+			Asm("post",[]),
+		])
+		'''
+	)
+]
 
