@@ -63,13 +63,19 @@ sign = {
 |	NoSign -> ""
 }
 
-size = {
-	8 -> <<kw> "char">
-|	16 -> H([ <<kw> "short">, " ", <<kw> "int"> ])
-|	32 -> <<kw> "int">
-|	64 -> H([ <<kw> "long">, " ", <<kw> "int"> ])
-|	n -> H([ "int", <<strings.tostr> n> ])
-}
+size =
+	switch id
+	case 8:
+		!<<kw> "char">
+	case 16:
+		!H([ <<kw> "short">, " ", <<kw> "int"> ])
+	case 32:
+		!<<kw> "int">
+	case 64:
+		!H([ <<kw> "long">, " ", <<kw> "int"> ])
+	else:
+		!H([ "int", <<strings.tostr> n> ])
+	end
 
 type = rec type : {
 	Void
