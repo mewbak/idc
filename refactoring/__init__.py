@@ -9,7 +9,7 @@ import transf.exception
 
 
 class Refactoring:
-	"""Base class for concrete refactorings."""
+	"""Abstract base class for refactorings."""
 
 	def __init__(self):
 		pass
@@ -33,6 +33,7 @@ class Refactoring:
 
 
 class ModuleRefactoring(Refactoring):
+	'''A refactoring that lives in a module of its own.'''
 
 	def __init__(self, module):
 		self.module = module
@@ -103,22 +104,11 @@ class Factory:
 				if name != '__init__' and ext == '.py':
 					module = __import__(__name__ + '.' + name)
 					module = getattr(module, name)
-					for nam, obj in module.__dict__.iteritems():
-						try:
-							if isinstance(obj, Refactoring):
-								refactoring = obj
-								self.refactorings[refactoring.name()] = refactoring
-							if issubclass(obj, Refactoring):
-								refactoring = obj()
-								self.refactorings[refactoring.name()] = refactoring
-						except TypeError:
-							pass
 					try:
 						refactoring = ModuleRefactoring(module)
 						self.refactorings[refactoring.name()] = refactoring
 					except ValueError:
 						pass
-
 
 	def applicables(self, term, selection):
 		"""Enumerate the applicable refactorings to the given term and
@@ -133,55 +123,3 @@ class Factory:
 		"""Return the refactoring with the specified name."""
 		return self.refactorings[name]
 
-
-
-
-class TestCase(unittest.TestCase):
-	'''Base class for refactoring unittests.'''
-
-	refactoring = None
-
-	def setUp(self):
-		self.factory = aterm.factory.factory
-
-	applyTestCases = []
-
-	def testApply(self):
-		for termStr, argsStr, expectedResultStr in self.applyTestCases:
-			term = self.factory.parse(termStr)
-			args = self.factory.parse(argsStr)
-			expectedResult = self.factory.parse(expectedResultStr)
-
-			result = self.refactoring.apply(term, args)
-
-			self.failUnlessEqual(result, expectedResult)
-
-
-def main(obj):
-	import aterm.factory
-	import sys
-	import ir.pprint
-	from lang import box
-	factory = aterm.factory.factory
-	if len(sys.argv) < 1:
-		sys.exit(1)
-	term = factory.readFromTextFile(file(sys.argv[1], 'rt'))
-	args = factory.parse('[' + ','.join(sys.argv[2:]) + ']')
-
-	sys.stdout.write('*** BEFORE ***\n')
-	box.write(
-		ir.pprint.module(term),
-		box.AnsiTextFormatter(sys.stdout)
-	)
-
-	if isinstance(obj, Refactoring):
-		refactoring = obj
-	elif issubclass(obj, Refactoring):
-		refactoring = obj()
-	term = refactoring.apply(term, args)
-
-	sys.stdout.write('*** AFTER ***\n')
-	box.write(
-		ir.pprint.module(term),
-		box.AnsiTextFormatter(sys.stdout)
-	)
