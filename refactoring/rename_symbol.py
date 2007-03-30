@@ -4,6 +4,7 @@
 from transf import lib
 import ir.path
 
+
 lib.parse.Transfs(r'''
 
 applicable = ir.path.projectSelection ; ?Sym(_)
@@ -23,6 +24,7 @@ apply =
 			~Arg(_, <?src; !dst>)
 		)
 	end
+
 ''')
 
 applyTestCases = [

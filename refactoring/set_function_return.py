@@ -34,5 +34,30 @@ apply =
 			~Assign(!type, !Sym(ret), _)
 		))
 	end
+
 ''')
+
+
+applyTestCases = [
+	(
+		'''
+		Module([
+			Function(Void,"main",[],[
+				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+				Ret(Void,NoExpr)
+			]),
+		])
+		''',
+		'[[0,0],"main","eax"]',
+		'''
+		Module([
+			Function(Int(32,Signed),"main",[],[
+				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+				Ret(Int(32,Signed),Sym("eax"))
+			]),
+		])
+		'''
+	)
+]
+
 

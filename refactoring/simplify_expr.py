@@ -1,8 +1,9 @@
-"Simplify Expression"
+"""Simplify Expression"""
 
 
 from transf import lib
 import ir.path
+
 
 lib.parse.Transfs(r'''
 
@@ -27,13 +28,9 @@ apply =
 		ir.path.isSelected ;
 		InnerMost(simplify)
 	)
+
 ''')
 
-
-#simplifyExpr = CommonRefactoring(
-#	"Simplify Expression",
-#	applicable, input, apply
-#)
 
 applyTestCases = [
 	('Binary(And(Int(32,Signed)),Sym("x"),Sym("x"))', '[[]]', 'Sym("x")'),

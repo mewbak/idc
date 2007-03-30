@@ -31,4 +31,28 @@ apply =
 			~Call(Sym(?name), <Concat(id,![Sym(arg)])>)
 		))
 	end
+
 ''')
+
+
+applyTestCases = [
+	(
+		'''
+		Module([
+			Function(Void,"main",[],[
+				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+				Ret(Void,NoExpr)
+			]),
+		])
+		''',
+		'[[0,0],"main","eax"]',
+		'''
+		Module([
+			Function(Void,"main",[Arg(Int(32,Signed),"eax")],[
+				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+				Ret(Void,NoExpr)
+			]),
+		])
+		'''
+	)
+]

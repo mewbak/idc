@@ -2,7 +2,7 @@
 
 
 import refactoring
-from refactoring.dead_label_elimination import dce
+from refactoring.dead_label_elimination import dle
 
 from transf import lib
 import ir.path
@@ -34,7 +34,7 @@ input = ![]
 
 apply = OnceTD(AtSuffix(liftLoop))
 applicable = gotoSelected ; apply
-apply = apply; dce
+apply = apply; dle
 
 
 ''')

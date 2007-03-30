@@ -5,11 +5,11 @@ INSTALLATION INSTRUCTIONS
 Dependencies
 ~~~~~~~~~~~~
 
- * python
+ * Python 2.4
 
  * antlr <http://www.antlr.org>
 
- * make
+ * GNU make
  
  * pygtk for gui
  

@@ -10,7 +10,7 @@ lib.parse.Transfs('''
 #######################################################################
 # Labels
 
-updateNeededLabels = 
+updateNeededLabels =
 Where(
 	with label in
 		?GoTo(Sym(label)) ;
@@ -21,10 +21,10 @@ Where(
 #######################################################################
 # Statements
 
-dceStmt = Proxy()
-dceStmts = Proxy()
+dleStmt = Proxy()
+dleStmts = Proxy()
 
-dceLabel = 
+dleLabel =
 	Try(
 		?Label(<Not(~needed_label)>) ;
 		!NoStmt
@@ -35,8 +35,8 @@ elimBlock = {
 	Block([stmt]) -> stmt
 }
 
-dceBlock = 
-	~Block(<dceStmts>) ;
+dleBlock =
+	~Block(<dleStmts>) ;
 	Try(elimBlock)
 
 elimIf = {
@@ -44,56 +44,56 @@ elimIf = {
 	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
 }
 
-dceIf = 
-	~If(_, <dceStmt>, <dceStmt>) ;
+dleIf =
+	~If(_, <dleStmt>, <dleStmt>) ;
 	Try(elimIf)
 
 elimWhile = {
 	While(cond,NoStmt) -> Assign(Void,NoExpr,cond)
 }
 
-dceWhile = 
-	~While(_, <dceStmt>) ;
+dleWhile =
+	~While(_, <dleStmt>) ;
 	Try(elimWhile)
 
 elimDoWhile = {
 	DoWhile(cond,NoStmt) -> Assign(Void,NoExpr,cond)
 }
 
-dceDoWhile = 
-	~DoWhile(_, <dceStmt>) ;
+dleDoWhile =
+	~DoWhile(_, <dleStmt>) ;
 	Try(elimDoWhile)
 
-dceFunction = 
+dleFunction =
 	with needed_label[] in
 		AllTD(updateNeededLabels) ;
-		~Function(_, _, _, <dceStmts>)
+		~Function(_, _, _, <dleStmts>)
 	end
 
 # If none of the above applies, assume all vars are needed
-dceDefault = 
+dleDefault =
 	id
 
-dceStmt.subject = 
-	?Label < dceLabel +
-	?Block < dceBlock +
-	?If < dceIf +
-	?While < dceWhile +
-	?DoWhile < dceDoWhile +
-	?Function < dceFunction + 
+dleStmt.subject =
+	?Label < dleLabel +
+	?Block < dleBlock +
+	?If < dleIf +
+	?While < dleWhile +
+	?DoWhile < dleDoWhile +
+	?Function < dleFunction +
 	id
 
-dceStmts.subject = 
-	MapR(dceStmt) ;
+dleStmts.subject =
+	MapR(dleStmt) ;
 	Filter(Not(?NoStmt))
 
-dceModule = 
-	~Module(<dceStmts>)
+dleModule =
+	~Module(<dleStmts>)
 
-dce =
+dle =
 	with needed_label[] in
 		AllTD(updateNeededLabels) ;
-		dceModule
+		dleModule
 	end
 
 

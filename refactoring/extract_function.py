@@ -32,28 +32,8 @@ apply =
 	end
 ''')
 
-#extractFunction = CommonRefactoring("Extract Function", applicable, input, apply)
-
 
 applyTestCases = [
-	(
-		'''
-		Module([
-			Label("main"),
-			Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-			Ret(Int(32,Signed),Sym("eax"))
-		])
-		''',
-		'[[0,0],"main"]',
-		'''
-		Module([
-			Function(Void,"main",[],[
-				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-				Ret(Int(32,Signed),Sym("eax"))
-			])
-		])
-		'''
-	),
 	(
 		'''
 		Module([
