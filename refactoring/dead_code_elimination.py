@@ -167,27 +167,30 @@ dce =
     with needed[], local[], label_needed[] in
         dceModule
     end
-''')
 
 
-applicable = lib.base.ident
-
-input = lib.build.empty
-
+applicable = id
+input = ![]
 apply = dce
 
 
-applyTestCases = [
-    (
-        '''
-        Module([
-            NoStmt
+testNoStmt =
+    !Module([NoStmt]) ;
+    dce ;
+    ?Module([])
+
+testAssign =
+    !Module([
+        Function(Int(32,Signed),"f",[],[
+            Assign(Int(32,Signed),Sym("ebx"){Reg},Lit(Int(32,Signed),1)),
+            Ret(Int(32,Signed),Sym("eax"){Reg})
         ])
-        ''',
-        '[[]]',
-        '''
-        Module([
-       ])
-        '''
-    )
-]
+    ]) ;
+    dce ;
+    ?Module([
+         Function(Int(32,Signed),"f",[],[
+            Ret(Int(32,Signed),Sym("eax"){Reg})
+        ])
+    ])
+
+''')

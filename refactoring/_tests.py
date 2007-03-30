@@ -15,11 +15,7 @@ def main():
 			suite.addTest(unittest.defaultTestLoader.loadTestsFromName('refactoring.' + name[:-3]))
 	factory = refactoring.Factory()
 	for r in factory.refactorings.itervalues():
-		try:
-			r.module.applyTestCases
-			suite.addTest(r.getTests())
-		except AttributeError:
-			pass
+		suite.addTests(r.getTests())
 	unittest.TextTestRunner(verbosity=2).run(suite)
 
 

@@ -6,6 +6,7 @@ import unittest
 
 import aterm.factory
 import transf.exception
+import transf.transformation
 
 
 class Refactoring:
@@ -30,6 +31,26 @@ class Refactoring:
 	def apply(self, term, args):
 		"""Apply the refactory."""
 		raise NotImplementedError
+
+
+class TransformationTest(unittest.TestCase):
+	'''A test case based on a transformation.'''
+
+	def __init__(self, transf, transfName = None):
+		unittest.TestCase.__init__(self)
+		self.__transf = transf
+		self.__transfName = transfName
+
+	def runTest(self):
+		try:
+			self.__transf(aterm.factory.factory.makeStr("Ignored"))
+		except transf.exception.Failure, ex:
+			self.fail(msg = str(ex))
+		else:
+			pass
+
+	def shortDescription(self):
+		return self.__transfName
 
 
 class ModuleRefactoring(Refactoring):
@@ -87,7 +108,16 @@ class ModuleRefactoring(Refactoring):
 			assert result == expectedResult
 
 	def getTests(self):
-		return unittest.FunctionTestCase(self.testApply, description=self.module.__name__)
+		tests = []
+		if hasattr(self.module, 'applyTestCases'):
+			tests.append(unittest.FunctionTestCase(self.testApply, description=self.module.__name__))
+		for name in dir(self.module):
+			if name.startswith('test'):
+				obj = getattr(self.module, name)
+				if isinstance(obj, transf.transformation.Transformation):
+					test = TransformationTest(obj, self.module.__name__ + '.' + name)
+					tests.append(test)
+		return tests
 
 
 class Factory:
