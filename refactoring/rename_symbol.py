@@ -7,7 +7,9 @@ import ir.path
 
 lib.parse.Transfs(r'''
 
-applicable = ir.path.projectSelection ; ?Sym(_)
+applicable =
+	ir.path.projectSelection ;
+	?Sym(_)
 
 input =
 	with src, dst in
@@ -25,11 +27,28 @@ apply =
 		)
 	end
 
-''')
 
-applyTestCases = [
-	('Sym("a")', '[[], "a", "b"]', 'Sym("b")'),
-	('Sym("c")', '[[], "a", "b"]', 'Sym("c")'),
-	('[Sym("a"),Sym("c")]', '[[], "a", "b"]', '[Sym("b"),Sym("c")]'),
-	('C(Sym("a"),Sym("c"))', '[[], "a", "b"]', 'C(Sym("b"),Sym("c"))'),
-]
+doTestApply =
+	with args = !["a", "b"] in apply end
+
+testNoRename =
+	!Sym("c") ;
+	doTestApply ;
+	?Sym("c")
+
+testRename =
+	!Sym("a") ;
+	doTestApply ;
+	?Sym("b")
+
+testRenameInList =
+	![Sym("a"),Sym("c")] ;
+	doTestApply ;
+	?[Sym("b"),Sym("c")]
+
+testRenameInAppl =
+	!C(Sym("a"),Sym("c")) ;
+	doTestApply ;
+	?C(Sym("b"),Sym("c"))
+
+''')

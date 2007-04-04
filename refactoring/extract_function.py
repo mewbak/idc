@@ -30,31 +30,24 @@ apply =
 			end
 		)>)
 	end
-''')
 
 
-applyTestCases = [
-	(
-		'''
-		Module([
-			Asm("pre",[]),
-			Label("main"),
+testApply =
+	!Module([
+		Asm("pre",[]),
+		Label("main"),
+		Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+		Ret(Int(32,Signed),Sym("eax")),
+		Asm("post",[]),
+	]) ;
+	with selection = ![0,1], args = !["main"] in apply end ;
+	?Module([
+		Asm("pre",[]),
+		Function(Void,"main",[],[
 			Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-			Ret(Int(32,Signed),Sym("eax")),
-			Asm("post",[]),
-		])
-		''',
-		'[[0,1],"main"]',
-		'''
-		Module([
-			Asm("pre",[]),
-			Function(Void,"main",[],[
-				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-				Ret(Int(32,Signed),Sym("eax"))
-			]),
-			Asm("post",[]),
-		])
-		'''
-	)
-]
+			Ret(Int(32,Signed),Sym("eax"))
+		]),
+		Asm("post",[]),
+	])
 
+''')

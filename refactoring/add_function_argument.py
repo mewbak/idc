@@ -32,27 +32,20 @@ apply =
 		))
 	end
 
+
+testApply =
+	!Module([
+		Function(Void,"main",[],[
+			Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+			Ret(Void,NoExpr)
+		]),
+	]) ;
+	with selection = ![0,0], args = !["main","eax"] in apply end ;
+	?Module([
+		Function(Void,"main",[Arg(Int(32,Signed),"eax")],[
+			Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+			Ret(Void,NoExpr)
+		]),
+	])
+
 ''')
-
-
-applyTestCases = [
-	(
-		'''
-		Module([
-			Function(Void,"main",[],[
-				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-				Ret(Void,NoExpr)
-			]),
-		])
-		''',
-		'[[0,0],"main","eax"]',
-		'''
-		Module([
-			Function(Void,"main",[Arg(Int(32,Signed),"eax")],[
-				Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
-				Ret(Void,NoExpr)
-			]),
-		])
-		'''
-	)
-]

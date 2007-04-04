@@ -97,4 +97,22 @@ dle =
 	end
 
 
+testUnusedLabel =
+    !Module([
+    	Label("A")
+    ]) ;
+    dle ;
+    ?Module([])
+
+testUsedLabel =
+    !Module([
+    	GoTo(Sym("A")),
+    	Label("A")
+    ]) ;
+    dle ;
+    ?Module([
+    	GoTo(Sym("A")),
+    	Label("A")
+    ])
+
 ''')

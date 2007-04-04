@@ -29,9 +29,10 @@ apply =
 		InnerMost(simplify)
 	)
 
+
+testAnd =
+	!Binary(And(Int(32,Signed)),Sym("x"),Sym("x")) ;
+	OnceTD(simplify) ;
+	?Sym("x")
+
 ''')
-
-
-applyTestCases = [
-	('Binary(And(Int(32,Signed)),Sym("x"),Sym("x"))', '[[]]', 'Sym("x")'),
-]
