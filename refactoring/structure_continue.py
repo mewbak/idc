@@ -44,7 +44,6 @@ xtestApply =
 	]) ;
 	ir.path.annotate ;
 	debug.Dump() ;
-	# 2,0,1,0,0
 	with selection = ![0,1,1,0,1] in apply end ;
 	debug.Dump() ;
 	?Module([

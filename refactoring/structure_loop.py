@@ -37,4 +37,18 @@ applicable = gotoSelected ; apply
 apply = apply; dle
 
 
+testApply =
+	!Module([
+		Label("next"),
+		Assign(Int(32,Signed), Sym("a"), Sym("b")),
+		GoTo(Sym("next"))
+	]) ;
+	ir.path.annotate ;
+	with selection = ![2,0] in apply end ;
+	?Module([
+		While(Lit(Bool,1),
+			Assign(Int(32,Signed), Sym("a"), Sym("b"))
+		)
+	])
+
 ''')

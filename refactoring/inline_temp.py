@@ -156,4 +156,20 @@ input =
 apply =
 	prop
 
+
+#######################################################################
+# Tests
+
+testApply =
+	!Module([
+		Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
+		Assign(Int(32,Signed),Sym("ebx"),Sym("eax"))
+	]) ;
+	ir.path.annotate ;
+	with selection = ![0,0] in apply end ;
+	?Module([
+		Assign(Int(32,Signed),Sym("ebx"),Lit(Int(32,Signed),1))
+	])
+
+
 ''')
