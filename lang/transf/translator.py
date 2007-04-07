@@ -205,14 +205,6 @@ class Translator(walker.Walker):
 		#	raise SemanticException(i, "%s did not return a transformation" % n)
 		return txn
 
-	def transfScope(self, vars, t):
-		vars = self.id_list(vars)
-		t = self.transf(t)
-		if vars:
-			return transf.lib.scope.Local(vars, t)
-		else:
-			return t
-
 	def transfRule(self, m, b):
 		m = self.match(m)
 		b = self.build(b)

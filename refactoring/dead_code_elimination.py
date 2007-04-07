@@ -58,22 +58,23 @@ parse.Transfs(r'''
 dceStmt = Proxy()
 dceStmts = Proxy()
 
-dceAssign = {x:
-    ?Assign(_, x, _) ;
-    if <ir.sym.isLocalVar> x then
-        if <isVarNeeded> x then
-            debug.Log(`'******* var needed %s\n'`, !x) ;
-            Where(<setUnneededVar> x );
-            ~Assign(_, _, <setNeededVars>)
+dceAssign =
+    with x in
+        ?Assign(_, x, _) ;
+        if <ir.sym.isLocalVar> x then
+            if <isVarNeeded> x then
+                debug.Log(`'******* var needed %s\n'`, !x) ;
+                Where(<setUnneededVar> x );
+                ~Assign(_, _, <setNeededVars>)
+            else
+                debug.Log(`'******* var uneeded %s\n'`, !x) ;
+                !NoStmt
+            end
         else
-            debug.Log(`'******* var uneeded %s\n'`, !x) ;
-            !NoStmt
+            debug.Log(`'******* var not local %s\n'`, !x) ;
+            ~Assign(_, <setNeededVars>, <setNeededVars>)
         end
-    else
-        debug.Log(`'******* var not local %s\n'`, !x) ;
-        ~Assign(_, <setNeededVars>, <setNeededVars>)
     end
-}
 
 dceAsm =
     ?Asm ;

@@ -103,11 +103,7 @@ transf_construct
 		| LPAREN! args RPAREN!
 			{ ## = #(#[ATAPPL,"TransfFac"], ##) }
 		)
-	| LCURLY!
-		( ( id_list COLON! ) => id_list COLON! transf
-			{ ## = #(#[ATAPPL,"Scope"], ##) }
-		| rule_set
-		) RCURLY!
+	| LCURLY! rule_set RCURLY!
 	| LPAREN!
 		( ( term RARROW ) => rule_set
 		| transf
