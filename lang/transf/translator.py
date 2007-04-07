@@ -209,7 +209,7 @@ class Translator(walker.Walker):
 		vars = self.id_list(vars)
 		t = self.transf(t)
 		if vars:
-			return transf.lib.scope.Local(t, vars)
+			return transf.lib.scope.Local(vars, t)
 		else:
 			return t
 
@@ -229,7 +229,7 @@ class Translator(walker.Walker):
 		self.collect(r, vars)
 		r = self.transf(r)
 		if vars:
-			r = transf.lib.scope.Local(r, vars)
+			r = transf.lib.scope.Local(vars, r)
 		return r
 
 	def transfApplyMatch(self, t, m):

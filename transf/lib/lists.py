@@ -132,7 +132,7 @@ def AtSuffixR(operand):
 
 def Split(operand):
 	tail = scope.Anonymous('tail')
-	return scope.Local3((tail,),
+	return scope.Local((tail,),
 		build.List((
 			AtSuffix(
 				match.Cons(operand, match.Var(tail)) *
@@ -145,7 +145,7 @@ def Split(operand):
 
 def SplitBefore(operand):
 	tail = scope.Anonymous('tail')
-	return scope.Local3((tail,),
+	return scope.Local((tail,),
 		build.List((
 			AtSuffix(
 				congruent.Cons(operand, base.ident) *
@@ -158,7 +158,7 @@ def SplitBefore(operand):
 
 def SplitAfter(operand):
 	tail = scope.Anonymous('tail')
-	return scope.Local3((tail,),
+	return scope.Local((tail,),
 		build.List((
 			AtSuffix(
 				congruent.Cons(operand, match.Var(tail) * build.nil)
@@ -171,7 +171,7 @@ def SplitAfter(operand):
 def SplitKeep(operand):
 	elem = scope.Anonymous('elem')
 	tail = scope.Anonymous('tail')
-	return scope.Local3((elem, tail),
+	return scope.Local((elem, tail),
 		build.List((
 			AtSuffix(
 				match.Cons(operand * match.Var(elem), match.Var(tail)) *

@@ -38,22 +38,8 @@ class _Local(operate.Unary):
 		ctx = context.Context(vars, ctx)
 		return self.operand.apply(term, ctx)
 
-
-def Local(operand, names = None):
+def Local(names, operand):
 	'''Introduces a new variable scope before the transformation.'''
-	if not names:
-		return operand
-	vars = [(name, term.Term) for name in names]
-	return _Local(vars, operand)
-
-
-def Local2(vars, operand):
-	if not vars:
-		return operand
-	return _Local(vars, operand)
-
-
-def Local3(names, operand):
 	if not names:
 		return operand
 	vars = [(name, term.Term) for name in names]
