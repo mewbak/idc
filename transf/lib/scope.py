@@ -60,28 +60,6 @@ def Local3(names, operand):
 	return _Local(vars, operand)
 
 
-class _Let(operate.Unary):
-
-	def __init__(self, defs, operand):
-		operate.Unary.__init__(self, operand)
-		self.defs = defs
-
-	def apply(self, trm, ctx):
-		vars = [(name, term.Term(transf.apply(trm, ctx))) for name, transf in self.defs]
-		ctx = context.Context(vars, ctx)
-		return self.operand.apply(trm, ctx)
-
-def Let(operand, **defs):
-	if not defs:
-		return operand
-	return _Let(defs.items(), operand)
-
-def Let2(defs, operand):
-	if not defs:
-		return operand
-	return _Let(defs, operand)
-
-
 class _With(operate.Unary):
 
 	def __init__(self, vars, operand):

@@ -1,5 +1,5 @@
-/* 
- * Grammar for generating term transformations. The syntax is inspired on 
+/*
+ * Grammar for generating term transformations. The syntax is inspired on
  * the Stratego language.
  */
 
@@ -16,7 +16,7 @@ header {
             antlr.SemanticException.__init__(self)
             self.node = node
             self.msg = msg
-           
+
         def __str__(self):
             line = self.node.getLine()
             col  = self.node.getColumn()
@@ -65,7 +65,7 @@ meta_def
 transf_def
 	: id EQUAL! transf
 		{ ## = #(#[ATAPPL,"TransfDef"], ##) }
-	| id LPAREN! id_list RPAREN! EQUAL! transf	
+	| id LPAREN! id_list RPAREN! EQUAL! transf
 		{ ## = #(#[ATAPPL,"TransfFacDef"], ##) }
 	;
 
@@ -97,15 +97,15 @@ transf_construct
 	| FAIL!
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
 	| transf_atom
-	| id 
-		( 
+	| id
+		(
 			{ ## = #(#[ATAPPL,"Transf"], ##) }
 		| LPAREN! args RPAREN!
 			{ ## = #(#[ATAPPL,"TransfFac"], ##) }
 		)
 	| LCURLY!
 		( ( id_list COLON! ) => id_list COLON! transf
-			{ ## = #(#[ATAPPL,"Scope"], ##) } 
+			{ ## = #(#[ATAPPL,"Scope"], ##) }
 		| rule_set
 		) RCURLY!
 	| LPAREN!
@@ -118,8 +118,6 @@ transf_construct
 		{ ## = #(#[ATAPPL,"If"], ##) }
 	| SWITCH! transf switch_cases switch_else END!
 		{ ## = #(#[ATAPPL,"Switch"], ##) }
-	| LET! let_defs IN! transf END!
-		{ ## = #(#[ATAPPL,"Let"], ##) }
 	| WITH! with_defs IN! transf END!
 		{ ## = #(#[ATAPPL,"With"], ##) }
 	| REC! id COLON! transf_construct
@@ -143,28 +141,28 @@ if_clauses
 	: if_clause (ELIF! if_clause)*
 		{ ## = #(#[ATLIST], ##) }
 	;
-	
+
 if_clause
-	: transf THEN! transf 
+	: transf THEN! transf
 		{ ## = #(#[ATAPPL,"IfClause"], ##) }
 	;
-	
+
 if_else
 	: ELSE! transf
 	|
 		{ ## = #(#[ATAPPL,"Ident"], ##) }
 	;
-	
+
 switch_cases
 	: ( switch_case )*
 		{ ## = #(#[ATLIST], ##) }
 	;
-	
+
 switch_case
 	: CASE! switch_case_terms COLON! transf
 		{ ## = #(#[ATAPPL,"SwitchCase"], ##) }
 	;
-	
+
 switch_case_terms
 	: term ( COMMA! term )*
 		{ ## = #(#[ATLIST], ##) }
@@ -174,16 +172,6 @@ switch_else
 	: ELSE! COLON! transf
 	|
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
-	;
-
-let_defs
-	: let_def ( COMMA! let_def )*
-		{ ## = #(#[ATLIST], ##) }
-	;
-
-let_def
-	: id EQUAL! transf
-		{ ## = #(#[ATAPPL,"LetDef"], ##) }
 	;
 
 with_defs
@@ -197,29 +185,29 @@ with_def
 	;
 
 transf_application
-	: transf_construct 
+	: transf_construct
 		( RDARROW! term
-			{ ## = #(#[ATAPPL,"ApplyMatch"], ##) } 
+			{ ## = #(#[ATAPPL,"ApplyMatch"], ##) }
 		| RDDARROW! id
-			{ ## = #(#[ATAPPL,"ApplyStore"], ##) } 
+			{ ## = #(#[ATAPPL,"ApplyStore"], ##) }
 		)?
 	;
 
 transf_merge
-	:! l:transf_application 
+	:! l:transf_application
 		( n:merge_names r:transf_application
-		{ ## = #(#[ATAPPL,"Join"], #l, #r, #n) } 
+		{ ## = #(#[ATAPPL,"Join"], #l, #r, #n) }
 		|
-		{ ## = #l } 
+		{ ## = #l }
 		)
 	|! n2:merge_names STAR! o:transf_application
-		{ ## = #(#[ATAPPL,"Iterate"], #o, #n2) } 
+		{ ## = #(#[ATAPPL,"Iterate"], #o, #n2) }
 	;
 
 merge_names
 	: merge_union_names merge_opt_isect_names
 	|! i:merge_isect_names u:merge_opt_union_names
-		
+
 		{ ## = #i }
 		{ ##.setNextSibling(#u) }
 	;
@@ -234,36 +222,36 @@ merge_isect_names
 
 merge_opt_union_names
 	: merge_union_names
-	| 
+	|
 		{ ## = #(#[ATLIST]) }
 	;
 
 merge_opt_isect_names
 	: merge_isect_names
-	| 
+	|
 		{ ## = #(#[ATLIST]) }
 	;
 
 transf_composition
-	: transf_merge 
-		( SEMI! transf_composition 
-			{ ## = #(#[ATAPPL,"Composition"], ##) }	
+	: transf_merge
+		( SEMI! transf_composition
+			{ ## = #(#[ATAPPL,"Composition"], ##) }
 		)?
 	;
 
 transf_choice
-	: transf_composition 
+	: transf_composition
 		( LANGLE! transf_composition PLUS! transf_choice
-			{ ## = #(#[ATAPPL,"GuardedChoice"], ##) }	
-		| PLUS! transf_choice 
-			{ ## = #(#[ATAPPL,"LeftChoice"], ##) }	
+			{ ## = #(#[ATAPPL,"GuardedChoice"], ##) }
+		| PLUS! transf_choice
+			{ ## = #(#[ATAPPL,"LeftChoice"], ##) }
 		)?
 	;
 
 transf_undeterministic_choice
-	: transf_choice 
+	: transf_choice
 		( ( VERT! transf_choice )+
-			{ ## = #(#[ATAPPL,"Choice"], #(#[ATLIST],##)) }	
+			{ ## = #(#[ATAPPL,"Choice"], #(#[ATLIST],##)) }
 		)?
 	;
 
@@ -272,12 +260,12 @@ transf_expr
 	;
 
 constructor
-	: 
+	:
 		{ ## = #(#[ATAPPL,"Term"], ##) }
 	| EQUAL! transf
 		{ ## = #(#[ATAPPL,"TermTransf"], ##) }
-	| LSQUARE! RSQUARE! 
-		( EQUAL! id 
+	| LSQUARE! RSQUARE!
+		( EQUAL! id
 		{ ## = #(#[ATAPPL,"TableCopy"], ##) }
 		|
 		{ ## = #(#[ATAPPL,"Table"], ##) }
@@ -287,7 +275,7 @@ constructor
 	;
 
 rule
-	: term RARROW! term 
+	: term RARROW! term
 		( WHERE! transf_choice
 			{ ## = #(#[ATAPPL,"RuleWhere"], ##) }
 		|
@@ -301,14 +289,14 @@ anon_rule
 	;
 
 rule_set
-	: anon_rule 
+	: anon_rule
 		( ( VERT! anon_rule )+
 		{ ## = #(#[ATAPPL,"Choice"], #(#[ATLIST],##)) }
 		)?
 	;
 
 term
-	: term_atom 
+	: term_atom
 		( options { warnWhenFollowAmbig=false; }
 		: term_anno
 			{ ## = #(#[ATAPPL,"Annos"], ##) }
@@ -330,7 +318,7 @@ term_atom
 	| term_appl
 	| term_appl_cons
 	| term_var
-		(AT! term 
+		(AT! term
 			{ ## = #(#[ATAPPL,"As"], ##) }
 		)?
 	| term_wildcard
@@ -352,7 +340,7 @@ term_tuple
 	: term_args
 		{ ## = #(#[ATAPPL,"Appl"], #[ATSTR,""], ##) }
 	;
-	
+
 term_appl
 	: term_name term_args
 		{ ## = #(#[ATAPPL,"Appl"], ##) }
@@ -362,7 +350,7 @@ term_appl_cons
 	: ( term_var | term_wildcard ) LPAREN! term_list RPAREN!
 		{ ## = #(#[ATAPPL,"ApplCons"], ##) }
 	;
-	
+
 term_args
 	: LPAREN! ( term ( COMMA! term )* )? RPAREN!
 		{ ## = #(#[ATLIST],##) }
@@ -370,16 +358,16 @@ term_args
 
 term_wildcard
 	: WILDCARD!
-		{ ## = #(#[ATAPPL,"Wildcard"]) }	
+		{ ## = #(#[ATAPPL,"Wildcard"]) }
 	;
-	
+
 term_anno
 	: LCURLY! term_list RCURLY!
 	;
 
 term_implicit_wildcard
 	:
-		{ ## = #(#[ATAPPL,"Wildcard"]) }	
+		{ ## = #(#[ATAPPL,"Wildcard"]) }
 	;
 
 term_opt_args
@@ -387,19 +375,19 @@ term_opt_args
 	|
 		{ ## = #(#[ATLIST]) }
 	;
-	
+
 term_implicit_nil
 	:
-		{ ## = #(#[ATAPPL,"Nil"]) }	
+		{ ## = #(#[ATAPPL,"Nil"]) }
 	;
 
 term_list
 	: term_implicit_nil
 	| term ( COMMA! term_list | term_implicit_nil )
-		{ ## = #(#[ATAPPL,"Cons"], ##) }	
+		{ ## = #(#[ATAPPL,"Cons"], ##) }
 	| STAR! term_opt_wildcard
 	;
-	
+
 term_opt_wildcard
 	: term
 	| term_implicit_wildcard
@@ -411,7 +399,7 @@ id_list
 	;
 
 id
-	: ( ID | LID | UID ) 
+	: ( ID | LID | UID )
 		{ ## = #(#[ATSTR], ##) }
 	;
 

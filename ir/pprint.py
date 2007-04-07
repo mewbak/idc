@@ -181,7 +181,7 @@ exprKern = util.Proxy()
 
 parse.Transfs('''
 SubExpr(Cmp) =
-	let
+	with
 		pprec = !prec, # parent precedence
 		prec = exprPrec
 	in
@@ -220,7 +220,7 @@ exprKern.subject = Path(parse.Rule('''
 '''))
 
 expr = parse.Transf('''
-	let
+	with
 		prec = exprPrec
 	in
 		exprKern

@@ -23,35 +23,35 @@ _tokenizer = antlrre.Tokenizer(
 	# Token regular expression table
 	tokens = [
 		# whitespace and comments
-		(parser.SKIP, 
+		(parser.SKIP,
 			r'[ \t\f\r\n]+|'
 			r'#[^\r\n]*',
 		False),
-		
+
 		# REAL
 		(parser.REAL, r'-?(?:'
 			r'(?:[0-9]+\.[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?|'
 			r'[0-9]+[eE][-+]?[0-9]+'
-		r')', False), 
-		
+		r')', False),
+
 		# INT
 		(parser.INT, r'-?[0-9]+', False),
-	
+
 		# STR
-		(parser.STR, r'"[^"\\]*(?:\\.[^"\\]*)*"', False), 
-		
+		(parser.STR, r'"[^"\\]*(?:\\.[^"\\]*)*"', False),
+
 		# IDs
-		(parser.ID, 
+		(parser.ID,
 			r'_[a-zA-Z0-9_]+|'
 			r'[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)+',
-		False), 
-		(parser.UID, r'[A-Z][a-zA-Z0-9_]*', False), 
-		(parser.LID, r'[a-z][a-zA-Z0-9_]*', True), 
+		False),
+		(parser.UID, r'[A-Z][a-zA-Z0-9_]*', False),
+		(parser.LID, r'[a-z][a-zA-Z0-9_]*', True),
 
 		(parser.RARROW, r'->', False),
 		(parser.RDARROW, r'=>', False),
 		(parser.RDDARROW, r'==>', False),
-		
+
 		(parser.OBJ, pyobj, False),
 	],
 
@@ -73,7 +73,7 @@ _tokenizer = antlrre.Tokenizer(
 
 		'\\': parser.RSLASH,
 		'/': parser.LSLASH,
-		
+
 		'?': parser.QUEST,
 		'!': parser.BANG,
 		'+': parser.PLUS,
@@ -85,7 +85,7 @@ _tokenizer = antlrre.Tokenizer(
 		'@': parser.AT,
 		'=': parser.EQUAL,
 	},
-	
+
 	# literals table
 	literals = {
 		"id": parser.IDENT,
@@ -95,7 +95,6 @@ _tokenizer = antlrre.Tokenizer(
 		"elif": parser.ELIF,
 		"else": parser.ELSE,
 		"end": parser.END,
-		"let": parser.LET,
 		"in": parser.IN,
 		"where": parser.WHERE,
 		"with": parser.WITH,
@@ -109,7 +108,7 @@ _tokenizer = antlrre.Tokenizer(
 class Lexer(antlrre.TokenStream):
 
 	tokenizer = _tokenizer
-	
+
 	def filterToken(self, type, text, pos, endpos):
 		if False and type != antlr.SKIP:
 			print parser._tokenNames[type], text

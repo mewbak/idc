@@ -2,6 +2,7 @@
 
 
 from transf import exception
+from transf import types
 from transf.lib import base
 from transf.lib import scope
 from transf.lib import combine
@@ -15,8 +16,8 @@ from transf.lib import debug
 
 def Set(label, *values):
 	annos = scope.Anonymous('annos')
-	return scope.Let2((
-			(annos, build.List(values)),
+	return scope.With((
+			(annos, types.term.Transf(build.List(values))),
 		),
 		congruent.Annos(
 			lists.Fetch(congruent.ApplCons(match.Str(label), build.Var(annos))) +

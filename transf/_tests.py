@@ -508,7 +508,6 @@ class TestParse(TestMixin, unittest.TestCase):
 		'!1{A,B,C}',
 		'if ?c then !x end',
 		'if ?c then !x else !y end',
-		'let x=!X, y=!Y in ![x,y] end',
 		'?1 < !2 + !3',
 		'?1 < !2 + !3 + !4',
 		'?1 + !2 + !3 + !4',

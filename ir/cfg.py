@@ -122,8 +122,8 @@ doDefault =
 doIf =
 	with true, false in
 		?If(_,
-			<let next=!next in doStmt; !next ==> true end>,
-			<let next=!next in doStmt; !next ==> false end>
+			<with next=!next in doStmt; !next ==> true end>,
+			<with next=!next in doStmt; !next ==> false end>
 		) ;
 		MakeNode(![
 			<MakeLabelledEdge(!true, !"True")>,
@@ -137,7 +137,7 @@ doNoStmt =
 
 doWhile =
 	with true in
-		?While(_, <let next=!this in doStmt; !next ==> true end> );
+		?While(_, <with next=!this in doStmt; !next ==> true end> );
 		MakeNode(![
 			<MakeLabelledEdge(!true, !"True")>,
 			<MakeLabelledEdge(!next, !"False")>,
@@ -184,7 +184,7 @@ doBlock =
 	?Block(<doStmts>)
 
 doFunction =
-	let
+	with
 		next = !next,
 		retn = GetTerminalNodeId(!this),
 		brek = !0,
@@ -196,7 +196,7 @@ doFunction =
 	end
 
 doModule =
-	let
+	with
 		next = !0,
 		retn = !0,
 		brek = !0,
@@ -208,7 +208,7 @@ doModule =
 
 doStmt.subject =
 	debug.Dump() ;
-	let
+	with
 		this = getNodeId
 	in
 		switch project.name
@@ -228,7 +228,7 @@ doStmt.subject =
 	end
 
 makeGraph =
-	let
+	with
 		nodes = ![],
 		stmtid = !0
 	in

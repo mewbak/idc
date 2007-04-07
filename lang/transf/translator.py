@@ -270,18 +270,6 @@ class Translator(walker.Walker):
 		a = self.transf(a)
 		return (c, a)
 
-	def transfLet(self, v, t):
-		v = map(self.doLetDef, v)
-		t = self.transf(t)
-		v = dict(v)
-		return transf.lib.scope.Let(t, **v)
-
-	def doLetDef(self, t):
-		i, t = t.rmatch("LetDef(_,_)")
-		i = self.id(i)
-		t = self.transf(t)
-		return (i, t)
-
 	def transfJoin(self, l, r, u, i):
 		l = self.transf(l)
 		r = self.transf(r)
