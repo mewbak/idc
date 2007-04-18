@@ -7,6 +7,7 @@ from antlraterm import Walker as Converter
 from lang.transf.lexer import Lexer
 from lang.transf.parser import Parser
 from lang.transf.translator import Translator
+from lang.transf.compiler import Compiler
 
 
 __all__ = [
@@ -30,6 +31,19 @@ def _translator():
 	caller = sys._getframe(2)
 	translator = Translator(globals=caller.f_globals, locals=caller.f_locals)
 	return translator
+
+
+def compile(buf, simplify=False):
+	parser = _parser(buf)
+	parser.transf()
+	ast = parser.getAST()
+	term = _converter.aterm(ast)
+	if simplify:
+		import lang.transf.simplifier
+		old = term
+		term = lang.transf.simplifier.simplify(term)
+	compiler = Compiler()
+	return compiler.transf(term)
 
 
 def Transfs(buf, simplify=True):

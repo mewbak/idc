@@ -544,6 +544,22 @@ class TestParse(TestMixin, unittest.TestCase):
 			#print "OUTPUT:", output
 			#print
 
+	def testCompile(self):
+		for input in self.parseTestCases:
+			print "INPUT:", input
+			try:
+				output = repr(parse.compile(input))
+			except:
+				print input
+				raise
+			print "OUTPUT:", output
+			try:
+				eval(output)
+			except:
+				print input
+				print output
+				raise
+
 
 class TestPath(TestMixin, unittest.TestCase):
 
