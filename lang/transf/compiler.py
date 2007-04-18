@@ -81,8 +81,15 @@ class Compiler(walker.Walker):
 
 	def compileTransfFacDef(self, n, a, t):
 		n = self.id(n)
-		T = self.meta(a, t)
-		return "%s = %s" % (n, T)
+		try:
+			n.index(".")
+		except ValueError:
+			a = ",".join(map(self.id, a))
+			t = self.transf(t)
+			return "def %s(%s):\n\treturn %s" % (n, a, t)
+		else:
+			T = self.meta(a, t)
+			return "%s = %s" % (n, T)
 
 	def compileMetaDef(self, a, t):
 		return self.meta(a, t)
@@ -164,7 +171,8 @@ class Compiler(walker.Walker):
 		self.collect(r, vars)
 		r = self.transf(r)
 		if vars:
-			r = "transf.lib.scope.Local([%s], %s)" % (",".join(vars), r)
+			vars = "[" + ",".join([repr(var) for var in vars]) + "]"
+			r = "transf.lib.scope.Local(%s, %s)" % (vars, r)
 		return r
 
 	def transfApplyMatch(self, t, m):
@@ -220,13 +228,14 @@ class Compiler(walker.Walker):
 
 	def transfRec(self, i, t):
 		i = self.id(i)
+		t = self.transf(t)
 		return "transf.lib.iterate.Rec(lambda %s: %s)" % (i, t)
 
 	# #( VARMETHOD v=id m=id a=arg_list )
 	#	{ ret = transf.types.variable.Wrap(v, m, *a) }
 
 	def transfWith(self, vs, t):
-		vs = map(self.doWithDef, vs)
+		vs = "[" + ",".join(map(self.doWithDef, vs)) + "]"
 		t = self.transf(t)
 		return "transf.lib.scope.With(%s, %s)" % (vs, t)
 
@@ -241,11 +250,11 @@ class Compiler(walker.Walker):
 
 	def argObj(self, o):
 		o = self._str(o)
-		return eval(o, self.globals, self.locals)
+		return o
 
 	def argVar(self, v):
 		v = self._str(v)
-		return v
+		return repr(v)
 
 	def arg_Term(self, t):
 		return self.transf(t)

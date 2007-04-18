@@ -6,14 +6,7 @@ import sys
 from antlraterm import Walker as Converter
 from lang.transf.lexer import Lexer
 from lang.transf.parser import Parser
-from lang.transf.translator import Translator
 from lang.transf.compiler import Compiler
-
-
-__all__ = [
-	'Transf',
-	'Rule',
-]
 
 
 _converter = Converter()
@@ -26,63 +19,82 @@ def _parser(buf):
 	return parser
 
 
-def _translator():
-	'''Generate a walker passing the caller's caller namespace.'''
-	caller = sys._getframe(2)
-	translator = Translator(globals=caller.f_globals, locals=caller.f_locals)
-	return translator
-
-
-def compile(buf, simplify=False):
+def _compile(buf, method, simplify=True):
 	parser = _parser(buf)
-	parser.transf()
+	getattr(parser, method)()
 	ast = parser.getAST()
 	term = _converter.aterm(ast)
-	if simplify:
+	if False:
+		# FIXME: re-enable the simplifier
 		import lang.transf.simplifier
 		old = term
 		term = lang.transf.simplifier.simplify(term)
 	compiler = Compiler()
-	return compiler.transf(term)
+	code = getattr(compiler, method)(term)
+	return code
+
+
+def _populate_globals(glbls):
+	"""Populate the global namespace."""
+	# TODO: reduce the name polution
+	import transf
+	glbls.setdefault('transf', transf)
+	from transf import lib
+	for n, v in lib.__dict__.iteritems():
+		glbls.setdefault(n, v)
+	from lang.transf import builtins
+	for n, v in builtins.__dict__.iteritems():
+		glbls.setdefault(n, v)
+	return glbls
+
+
+def _eval(code):
+	'''Eval the compiled code in the caller's namespace.'''
+	caller = sys._getframe(2)
+	globals_ = _populate_globals(caller.f_globals)
+	locals_ = caller.f_locals
+	try:
+		txn = eval(code, globals_, locals_)
+	except:
+		sys.stderr.write("input code: %s\n" % code)
+		raise
+	return txn
+
+
+def _exec(code):
+	'''Exec the compiled code in the caller's namespace.'''
+	caller = sys._getframe(2)
+	globals_ = _populate_globals(caller.f_globals)
+	locals_ = caller.f_locals
+	try:
+		exec code in globals_, locals_
+	except:
+		sys.stderr.write("input code: %s\n" % code)
+		raise
+
+
+def compile(buf, simplify=True):
+	code = _compile(buf, "transf", simplify)
+	return code
 
 
 def Transfs(buf, simplify=True):
 	'''Parse transformation definitions from a string.'''
-	parser = _parser(buf)
-	parser.transf_defs()
-	ast = parser.getAST()
-	term = _converter.aterm(ast)
-	if simplify:
-		import lang.transf.simplifier
-		old = term
-		term = lang.transf.simplifier.simplify(term)
-	translator = _translator()
-	translator.transf_defs(term)
+	code = _compile(buf, "transf_defs", simplify)
+	_exec(code)
 
 
-def Transf(buf):
+def Transf(buf, simplify=True):
 	'''Parse a transformation from a string.'''
-	parser = _parser(buf)
-	parser.transf()
-	ast = parser.getAST()
-	term = _converter.aterm(ast)
-	if True:
-		import lang.transf.simplifier
-		old = term
-		term = lang.transf.simplifier.simplify(term)
-	translator = _translator()
-	txn = translator.transf(term)
+	code = _compile(buf, "transf", simplify)
+	txn = _eval(code)
 	return txn
 
 
-def Meta(buf):
+def Meta(buf, simplify=True):
 	'''Parse a meta transformation from a string.'''
-	parser = _parser(buf)
-	parser.meta_def()
-	ast = parser.getAST()
-	term = _converter.aterm(ast)
-	translator = _translator()
-	txn = translator.meta_def(term)
+	code = _compile(buf, "meta_def", simplify)
+	txn = _eval(code)
 	return txn
 
 

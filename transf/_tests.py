@@ -550,18 +550,18 @@ class TestParse(TestMixin, unittest.TestCase):
 
 	def testCompile(self):
 		for input in self.parseTestCases:
-			print "INPUT:", input
+			#print "INPUT:", input
 			try:
 				output = repr(parse.compile(input))
 			except:
 				print input
 				raise
-			print "OUTPUT:", output
+			#print "OUTPUT:", output
 			try:
 				eval(output)
 			except:
-				print input
-				print output
+				print "INPUT:", input
+				print "OUTPUT:", output
 				raise
 
 

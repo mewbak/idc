@@ -91,9 +91,10 @@ class Factory:
 					module = getattr(module, name)
 					try:
 						refactoring = ModuleRefactoring(module)
-						self.refactorings[refactoring.name()] = refactoring
 					except ValueError:
 						pass
+					else:
+						self.refactorings[refactoring.name()] = refactoring
 
 	def applicables(self, term, selection):
 		"""Enumerate the applicable refactorings to the given term and

@@ -1,4 +1,4 @@
-'''Builtin namespace.'''
+# Builtin namespace
 
 
 from transf.lib.base import *
