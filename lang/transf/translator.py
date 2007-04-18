@@ -184,6 +184,9 @@ class Translator(walker.Walker):
 		txn = self.bind_name(n)
 		if txn is None:
 			raise SemanticException(n, "could not find %s" % n)
+		if callable(txn):
+			# accept meta transformations
+			return txn
 		if not isinstance(txn, transf.transformation.Transformation):
 			raise SemanticException(n, "%s is not a transformation" % n)
 		return txn

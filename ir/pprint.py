@@ -57,6 +57,7 @@ intlit = intrepr * box.const
 # Types
 
 parse.Transfs('''
+
 sign = {
 	Signed -> H([ <<kw> "signed">, " " ])
 |	Unsigned -> H([ <<kw> "unsigned"> , " " ])
@@ -74,7 +75,7 @@ size =
 	case 64:
 		!H([ <<kw> "long">, " ", <<kw> "int"> ])
 	else:
-		!H([ "int", <<strings.tostr> n> ])
+		!H([ "int", <strings.tostr> ])
 	end
 
 type = rec type : {
@@ -98,6 +99,7 @@ type = rec type : {
 		-> H([ "blob", <<strings.tostr> size> ])
 |	_ -> "???"
 }
+
 ''')
 
 #######################################################################
@@ -105,12 +107,14 @@ type = rec type : {
 #
 # See http://www.difranco.net/cop2220/op-prec.htm
 
-unOpPrec = parse.Rule('''
+parse.Transfs('''
+
+unOpPrec = {
 	Not -> 1
 |	Neg -> 1
-''')
+}
 
-binOpPrec = parse.Rule('''
+binOpPrec = {
 	And(Bool) -> 10
 |	Or(Bool) -> 11
 |	And(_) -> 7
@@ -129,9 +133,9 @@ binOpPrec = parse.Rule('''
 |	LtEq -> 5
 |	Gt -> 5
 |	GtEq -> 5
-''')
+}
 
-exprPrec = parse.Rule('''
+exprPrec = {
 	Lit(_, _) -> 0
 |	Sym(_) -> 0
 |	Cast(_, _) -> 1
@@ -141,22 +145,26 @@ exprPrec = parse.Rule('''
 |	Binary(op, _, _) -> <<binOpPrec>op>
 |	Cond(_, _, _) -> 13
 |	Call(_, _) -> 0
+}
+
+stmtPrec =
+	!99
+
 ''')
 
-stmtPrec = parse.Transf('''
-	!99
-''')
 
 #######################################################################
 # Expressions
 
-unOp = parse.Rule('''
+parse.Transfs('''
+
+unOp = {
 	Not(Bool) -> "!"
 |	Not(_) -> "~"
 |	Neg -> "-"
-''')
+}
 
-binOp = parse.Rule('''
+binOp = {
 	And(Bool) -> "&&"
 |	Or(Bool) -> "||"
 |	And(_) -> "&"
@@ -175,11 +183,10 @@ binOp = parse.Rule('''
 |	LtEq -> "<="
 |	Gt -> ">"
 |	GtEq -> ">="
-''')
+}
 
 exprKern = util.Proxy()
 
-parse.Transfs('''
 SubExpr(Cmp) =
 	with
 		pprec = !prec, # parent precedence
@@ -192,11 +199,10 @@ SubExpr(Cmp) =
 		end
 	end
 
-''')
 subExpr = SubExpr(arith.Gt)
 subExprEq = SubExpr(arith.Geq)
 
-exprKern.subject = Path(parse.Rule('''
+exprKern.subject = Path({
 	Lit(Int(_,_), value)
 		-> <<intlit> value>
 |	Lit(type, value)
@@ -217,9 +223,9 @@ exprKern.subject = Path(parse.Rule('''
 		-> H([ <<op>"&">, <<subExpr>addr> ])
 |	Ref(expr)
 		-> H([ <<op>"*">, <<subExpr>expr> ])
-'''))
+})
 
-expr = parse.Transf('''
+expr =
 	with
 		prec = exprPrec
 	in
@@ -231,18 +237,19 @@ expr = parse.Transf('''
 #######################################################################
 # Statements
 
-arg = parse.Rule('''
+parse.Transfs('''
+arg = {
 	Arg(type, name)
 		-> H([ <<type>type>, " ", name ])
-''')
+}
 
 stmt = util.Proxy()
 
-stmts = parse.Transf('''
+stmts =
 	!V( <Map(stmt)> )
-''')
 
-stmtKern = parse.Rule('''
+
+stmtKern = {
 	Assign(Void, NoExpr, src)
 		-> H([ <<expr>src> ])
 |	Assign(_, dst, src)
@@ -271,10 +278,8 @@ stmtKern = parse.Rule('''
 		-> ""
 |	Asm(opcode, operands)
 		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<Map(expr)>operands>]>, ")" ])
-''')
+}
 
-
-parse.Transfs('''
 ppLabel = {
 	Label
 		-> D( <stmtKern> )
@@ -334,9 +339,7 @@ ppFunction = {
 ppDefault =
 	!H([ <stmtKern>, ";" ])
 
-''')
-
-stmt.subject = Path(parse.Transf('''
+stmt.subject = Path(
 	switch project.name
 		case "Label": ppLabel
 		case "Block": ppBlock
@@ -346,14 +349,15 @@ stmt.subject = Path(parse.Transf('''
 		case "Function": ppFunction
 		else: ppDefault
 	end
-'''))
+)
 
-module = Path(parse.Rule('''
+module = Path({
 	Module(stmts)
 		-> V([
 			I( <<stmts>stmts> )
 		])
-'''))
+})
+''')
 
 
 #######################################################################
@@ -362,7 +366,7 @@ module = Path(parse.Rule('''
 
 if __name__ == '__main__':
 	import aterm.factory
-	import box
+	from lang import box
 	import check
 
 	print commas('[1,2,3]')

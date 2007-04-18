@@ -54,14 +54,15 @@ class SslLookup(transf.transformation.Transformation):
 
 		return term.factory.make(pattern, **kargs)
 
+transf.parse.Transfs('''
 
-simplifyExpr = transf.parse.Rule('''
+simplifyExpr = {
 	Not(Int(1,_)) -> Not(Bool)
 |	Or(Int(1,_)) -> Or(Bool)
 |	And(Int(1,_)) -> And(Bool)
-''')
+}
 
-simplifyStmt = transf.parse.Rule('''
+simplifyStmt = {
 	Assign(type, dst, Cond(cond, src, dst))
 		-> If(cond, Assign(type, dst, src), NoStmt)
 
@@ -80,6 +81,8 @@ simplifyStmt = transf.parse.Rule('''
 		-> expr
 |	Addr(Ref(expr))
 		-> expr
+}
+
 ''')
 
 simplify = transf.lib.traverse.InnerMost(simplifyExpr + simplifyStmt)
@@ -88,6 +91,7 @@ sslLookup = SslLookup()
 #sslLookup = transf.debug.Trace(sslLookup, 'sslLookup')
 
 transf.parse.Transfs('''
+
 reg32Names = ![
 	"eax", "ebx", "ecx", "edx",
 	"esi", "edi", "ebp", "esp"
@@ -117,9 +121,7 @@ stmtsPreambule =
 		flagNames ; Map(declFlag)
 	)
 
-''')
-
-preStmt = transf.parse.Rule('''
+preStmt = {
 	Asm("ret", [])
 		-> Ret(Void, NoExpr)
 |	Asm("rep", [])
@@ -132,10 +134,11 @@ preStmt = transf.parse.Rule('''
 		-> Asm("imull3", [op1,op2,op3])
 |	Asm("sarl", [op1])
 		-> Asm("sarl", [op1,Lit(Int(32,Signed),1)])
-''')
+}
 
-doStmt = transf.parse.Transf('''
+doStmt =
 	sslLookup + ![<id>]
+
 ''')
 
 module = ir.traverse.Module(

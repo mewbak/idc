@@ -6,37 +6,41 @@ from transf import lib
 from lang import box
 
 
+lib.parse.Transfs('''
+
 ppId = lib.strings.tostr
 
-ppAttr = lib.parse.Rule('''
+ppAttr = {
 		Attr(name, value)
 			-> H([ <<id> name>, "=", <<id> value> ])
-''')
+}
 
-ppAttrs = lib.parse.Transf('''
+ppAttrs = {
 		!H([ "[", <Map(ppAttr); box.commas>, "]" ])
-''')
+}
 
-ppNode = lib.parse.Rule('''
+ppNode = {
 		Node(nid, attrs, _)
 			-> H([ <<id> nid>, <<ppAttrs> attrs> ])
-''')
+}
 
 ppNodes = lib.lists.Map(ppNode)
 
-ppNodeEdge = lib.parse.Rule('''
+ppNodeEdge = [
 		Edge(dst, attrs)
 			-> H([ <<id> src>, "->", <<id> dst>, <<ppAttrs> attrs> ])
-''')
+}
 
-ppNodeEdges = lib.parse.Rule('''
+ppNodeEdges = {
 		Node(src, _, edges)
 			-> <<Map(ppNodeEdge)> edges>
-''')
+}
 
-ppEdges = lib.lists.Map(ppNodeEdges) * lib.lists.concat
+ppEdges =
+	lib.lists.Map(ppNodeEdges) ;
+	lib.lists.concat
 
-ppGraph = lib.parse.Rule(r'''
+ppGraph = {
 		Graph(nodes)
 			-> V([
 				H([ "digraph", " ", "{" ]),
@@ -44,6 +48,8 @@ ppGraph = lib.parse.Rule(r'''
 				V( <<ppEdges> nodes> ),
 				H([ "}" ])
 			])
-''')
+}
 
 pprint = ppGraph
+
+''')

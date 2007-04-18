@@ -75,36 +75,6 @@ def Transf(buf):
 	return txn
 
 
-def Rules(buf):
-	'''Parse rules definitions from a string.'''
-	parser = _parser(buf)
-	parser.rule_defs()
-	ast = parser.getAST()
-	term = _converter.aterm(ast)
-	if True:
-		import lang.transf.simplifier
-		old = term
-		term = lang.transf.simplifier.simplify(term)
-	translator = _translator()
-	txn = translator.transf_defs(term)
-	return txn
-
-
-def Rule(buf, simplify=True):
-	'''Parse a transformation rule from a string.'''
-	parser = _parser(buf)
-	parser.rule_set()
-	ast = parser.getAST()
-	term = _converter.aterm(ast)
-	if simplify:
-		import lang.transf.simplifier
-		old = term
-		term = lang.transf.simplifier.simplify(term)
-	translator = _translator()
-	txn = translator.transf(term)
-	return txn
-
-
 def Meta(buf):
 	'''Parse a meta transformation from a string.'''
 	parser = _parser(buf)
