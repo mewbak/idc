@@ -74,7 +74,7 @@ size =
 		!<<kw> "int">
 	case 64:
 		!H([ <<kw> "long">, " ", <<kw> "int"> ])
-	else:
+	else
 		!H([ "int", <strings.tostr> ])
 	end
 
@@ -347,7 +347,7 @@ stmt.subject = Path(
 		case "While": ppWhile
 		case "DoWhile": ppDoWhile
 		case "Function": ppFunction
-		else: ppDefault
+		else ppDefault
 	end
 )
 

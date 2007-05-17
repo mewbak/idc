@@ -135,7 +135,7 @@ case "Function":
 	project.args ; project.fourth
 case "Module":
 	project.args ; project.first
-else:
+else
 	![]
 end
 ''')

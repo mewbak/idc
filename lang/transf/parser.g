@@ -165,7 +165,7 @@ switch_case_terms
 	;
 
 switch_else
-	: ELSE! COLON! transf
+	: ELSE! (COLON!)? transf
 	|
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
 	;

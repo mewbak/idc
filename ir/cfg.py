@@ -223,7 +223,7 @@ doStmt.subject =
 		case "Block": doBlock
 		case "Function": doFunction
 		case "Module": doModule
-		else: doDefault
+		else doDefault
 		end
 	end
 
