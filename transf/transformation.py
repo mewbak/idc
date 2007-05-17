@@ -45,22 +45,22 @@ class Transformation(object):
 		raise NotImplementedError
 
 	def __neg__(self):
-		'''Negation operator. Shorthand for L{combine.Not}'''
+		'''Negation operator. Shorthand for L{lib.combine.Not}'''
 		from transf.lib import combine
 		return combine.Not(self)
 
 	def __pos__(self):
-		'''Positive operator. Shorthand for L{combine.Try}'''
+		'''Positive operator. Shorthand for L{lib.combine.Try}'''
 		from transf.lib import combine
 		return combine.Try(self)
 
 	def __add__(self, other):
-		'''Addition operator. Shorthand for L{combine.Choice}'''
+		'''Addition operator. Shorthand for L{lib.combine.Choice}'''
 		from transf.lib import combine
 		return combine.Choice(self, other)
 
 	def __mul__(self, other):
-		'''Multiplication operator. Shorthand for L{combine.Composition}'''
+		'''Multiplication operator. Shorthand for L{lib.combine.Composition}'''
 		from transf.lib import combine
 		return combine.Composition(self, other)
 

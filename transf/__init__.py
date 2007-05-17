@@ -4,7 +4,7 @@ This framework allows to create complex term transformations from simple blocks.
 It is inspired on the U{Stratego/XT<http://www.stratego-
 language.org/Stratego/StrategoXT>}, adapted to Python idiosyncracies.
 
-The basic block is a L{transformation<base.Transformation>} -- an object which
+The basic block is a L{transformation<transformation.Transformation>} -- an object which
 attemtps to transform a L{aterm.term.Term} within a specified
 L{context<context.Context>} and returns the transformed term on success or
 raises an L{exception<exception.Failure>} on failure. A
