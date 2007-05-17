@@ -15,9 +15,8 @@ ppAttr = {
 			-> H([ <<id> name>, "=", <<id> value> ])
 }
 
-ppAttrs = {
+ppAttrs =
 		!H([ "[", <Map(ppAttr); box.commas>, "]" ])
-}
 
 ppNode = {
 		Node(nid, attrs, _)
@@ -26,7 +25,7 @@ ppNode = {
 
 ppNodes = lib.lists.Map(ppNode)
 
-ppNodeEdge = [
+ppNodeEdge = {
 		Edge(dst, attrs)
 			-> H([ <<id> src>, "->", <<id> dst>, <<ppAttrs> attrs> ])
 }
