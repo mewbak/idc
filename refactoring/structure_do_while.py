@@ -43,7 +43,6 @@ testApply =
 	]) ;
 	ir.path.annotate ;
 	with selection = ![1,2,0] in apply end ;
-	debug.Dump() ;
 	?Module([
 		DoWhile(Sym("a"),
 			Assign(Int(32,Signed), Sym("a"), Sym("b"))
