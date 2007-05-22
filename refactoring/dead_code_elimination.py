@@ -8,53 +8,58 @@ import ir.match
 import ir.sym
 
 
+parse.Transfs(r'''
+
 #######################################################################
 # Needed/uneeded table
 
 setUnneededVar = types.table.Del('needed')
+
 setNeededVar = types.table.Set('needed')
 
-setNeededVars = debug.Log('Finding needed vars in %s\n', base.ident) * \
-    traverse.AllTD(ir.match.aSym * setNeededVar *
-    debug.Log('Found var needed %s\n', base.ident))
+setNeededVars =
+    #debug.Log(`'Finding needed vars in %s\n'`, id) ;
+    traverse.AllTD(
+		ir.match.aSym ;
+        # debug.Log(`'Found var needed %s\n'`, id) ;
+		setNeededVar
+	)
 
 setAllUnneededVars = types.table.Clear('needed')
+
 setAllNeededVars = types.table.Add('needed', 'local')
 
-parse.Transfs(r'''
-
-isVarNeeded = ir.match.aSym ; (?needed + Not(ir.sym.isLocalVar))
-''')
+isVarNeeded =
+    ir.match.aSym ;
+    (?needed + Not(ir.sym.isLocalVar))
 
 
 #######################################################################
 # Labels
 
-getLabelNeeded = parse.Transf('''
-Where(
-    with label in
-        ?GoTo(Sym(label)) <
-            !label_needed ; Map(Try(?[label,<setNeededVar>])) +
-            setAllNeededVars
-    end
-)
-''')
+getLabelNeeded =
+    Where(
+        with label in
+            ?GoTo(Sym(label)) <
+                !label_needed ; Map(Try(?[label,<setNeededVar>])) +
+                setAllNeededVars
+        end
+    )
 
-setLabelNeeded = parse.Transf('''
-Where(
-    with label in
-        ?Label(label) ; debug.Dump();
-        !needed ;
-        Map(![label,<id>] ;
-        types.table.Set('label_needed'))
-    end
-)
-''')
+setLabelNeeded =
+    Where(
+        with label in
+            ?Label(label) ;
+            !needed ;
+            Map(![label,<id>] ;
+            types.table.Set('label_needed'))
+        end
+    )
+
 
 #######################################################################
 # Statements
 
-parse.Transfs(r'''
 dceStmt = Proxy()
 dceStmts = Proxy()
 
@@ -63,15 +68,15 @@ dceAssign =
         ?Assign(_, x, _) ;
         if <ir.sym.isLocalVar> x then
             if <isVarNeeded> x then
-                debug.Log(`'******* var needed %s\n'`, !x) ;
+                #debug.Log(`'******* var needed %s\n'`, !x) ;
                 Where(<setUnneededVar> x );
                 ~Assign(_, _, <setNeededVars>)
             else
-                debug.Log(`'******* var uneeded %s\n'`, !x) ;
+                #debug.Log(`'******* var uneeded %s\n'`, !x) ;
                 !NoStmt
             end
         else
-            debug.Log(`'******* var not local %s\n'`, !x) ;
+            #debug.Log(`'******* var not local %s\n'`, !x) ;
             ~Assign(_, <setNeededVars>, <setNeededVars>)
         end
     end
@@ -135,7 +140,6 @@ dceFunction =
         ~Function(_, _, _, <
             \label_needed/* with needed[] in dceStmts end
         >)
-        ; debug.Dump()
     end
     )
 
@@ -170,10 +174,16 @@ dce =
     end
 
 
+#######################################################################
+# Refactoring
+
 applicable = id
 input = ![]
 apply = dce
 
+
+#######################################################################
+# Tests
 
 testNoStmt =
     !Module([NoStmt]) ;
