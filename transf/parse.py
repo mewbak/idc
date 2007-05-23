@@ -1,4 +1,4 @@
-'''Term parsing.'''
+'''Transformation parsing.'''
 
 
 import sys
@@ -62,7 +62,7 @@ def _eval(code):
 
 
 def _exec(code):
-	'''Exec the compiled code in the caller's namespace.'''
+	'''Execute the compiled code in the caller's namespace.'''
 	caller = sys._getframe(2)
 	globals_ = _populate_globals(caller.f_globals)
 	locals_ = caller.f_locals
@@ -71,11 +71,6 @@ def _exec(code):
 	except:
 		sys.stderr.write("input code: %s\n" % code)
 		raise
-
-
-def compile(buf, simplify=True):
-	code = _compile(buf, "transf", simplify)
-	return code
 
 
 def Transfs(buf, simplify=True):
@@ -89,12 +84,3 @@ def Transf(buf, simplify=True):
 	code = _compile(buf, "transf", simplify)
 	txn = _eval(code)
 	return txn
-
-
-def Meta(buf, simplify=True):
-	'''Parse a meta transformation from a string.'''
-	code = _compile(buf, "meta_def", simplify)
-	txn = _eval(code)
-	return txn
-
-

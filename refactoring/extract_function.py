@@ -1,11 +1,11 @@
 """Extract Function"""
 
 
-from transf import lib
+from transf import parse
 import ir.path
 
 
-lib.parse.Transfs('''
+parse.Transfs('''
 
 goto =
 	ir.path.inSelection ;

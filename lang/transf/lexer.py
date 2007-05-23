@@ -96,7 +96,6 @@ _tokenizer = antlrre.Tokenizer(
 		"else": parser.ELSE,
 		"end": parser.END,
 		"in": parser.IN,
-		"where": parser.WHERE,
 		"with": parser.WITH,
 		"rec": parser.REC,
 		"switch": parser.SWITCH,

@@ -5,54 +5,12 @@ respective transformation objects."""
 # pylint: disable-msg=R0201
 
 
-import antlr
-
-import aterm.factory
 from aterm import walker
 
-import transf.transformation
-import transf.types.variable
-import transf.types.term
-import transf.types.table
-import transf.lib
 
+class SemanticException(Exception):
 
-class SemanticException(antlr.SemanticException):
-
-	def __init__(self, node, msg):
-		antlr.SemanticException.__init__(self)
-		self.node = node
-		self.msg = msg
-
-	def __str__(self):
-		line = self.node.getLine()
-		col  = self.node.getColumn()
-		text = self.node.getText()
-		return "line %s:%s: \"%s\": %s" % (line, col, text, self.msg)
-
-	__repr__ = __str__
-
-SemanticException = Exception
-
-
-class Meta:
-	"""A parsed transformation factory."""
-
-	def __init__(self, globals, locals, args, term):
-		self.globals = globals
-		self.locals = locals
-		self.args = args
-		self.term = term
-
-	def __call__(self, *args):
-		if len(args) != len(self.args):
-			raise TypeError("%d arguments required (%d given)" % (len(self.args), len(args)))
-		translator = Translator(
-			globals = self.globals,
-			locals = self.locals,
-		)
-		translator.stack.append(dict(zip(self.args, args)))
-		return translator.transf(self.term)
+	pass
 
 
 MATCH, BUILD, TRAVERSE = range(3)
@@ -66,7 +24,6 @@ class Compiler(walker.Walker):
 	compile = walker.Dispatch('compile')
 
 	transf_defs = compile
-	meta_def = compile
 
 	def compileDefs(self, tdefs):
 		stmts = []
@@ -77,29 +34,18 @@ class Compiler(walker.Walker):
 	def compileTransfDef(self, n, t):
 		n = self.id(n)
 		t = self.transf(t)
-		return "%s = %s" % (n, t)
+		return "%s = transf.lib.scope.Scope(%s)" % (n, t)
 
 	def compileTransfFacDef(self, n, a, t):
 		n = self.id(n)
+		a = ",".join(map(self.id, a))
+		t = self.transf(t)
 		try:
 			n.index(".")
 		except ValueError:
-			a = ",".join(map(self.id, a))
-			t = self.transf(t)
 			return "def %s(%s):\n\treturn %s" % (n, a, t)
 		else:
-			T = self.meta(a, t)
-			return "%s = %s" % (n, T)
-
-	def compileMetaDef(self, a, t):
-		return self.meta(a, t)
-
-
-	def meta(self, a, t):
-		a = ",".join(map(self.id, a))
-		t = self.transf(t)
-		return "lambda %s: %s" % (a, t)
-
+			return "%s = lambda %s: %s" % (n, a, t)
 
 	transf = walker.Dispatch('transf')
 
@@ -132,7 +78,7 @@ class Compiler(walker.Walker):
 		return "transf.lib.combine.Composition(%s, %s)" % (l, r)
 
 	def transfChoice(self, o):
-		o = "[" + ",".join(map(self.transf, o)) + "]"
+		o = "[" + ",".join(["transf.lib.scope.Scope(%s)" % self.transf(_o) for _o in o]) + "]"
 		return "transf.lib.combine.UndeterministicChoice(%s)" % o
 
 	def transfLeftChoice(self, l, r):

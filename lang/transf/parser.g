@@ -52,26 +52,11 @@ transf_defs
 		{ ## = #(#[ATAPPL,"Defs"],#(#[ATLIST], ##)) }
 	;
 
-rule_defs
-	: ( rule_def )* EOF!
-		{ ## = #(#[ATAPPL,"Defs"],#(#[ATLIST], ##)) }
-	;
-
-meta_def
-	: id_list COLON! transf EOF!
-		{ ## = #(#[ATAPPL,"MetaDef"], ##) }
-	;
-
 transf_def
 	: id EQUAL! transf
 		{ ## = #(#[ATAPPL,"TransfDef"], ##) }
 	| id LPAREN! id_list RPAREN! EQUAL! transf
 		{ ## = #(#[ATAPPL,"TransfFacDef"], ##) }
-	;
-
-rule_def
-	: id EQUAL^ rule_set
-		{ ## = #(#[ATAPPL,"RuleDef"], ##) }
 	;
 
 transf
@@ -92,7 +77,9 @@ transf_atom
 	;
 
 transf_construct
-	: IDENT!
+	: (term RARROW!) => term RARROW! term
+		{ ## = #(#[ATAPPL,"Rule"], ##) }
+	| IDENT!
 		{ ## = #(#[ATAPPL,"Ident"], ##) }
 	| FAIL!
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
@@ -104,10 +91,7 @@ transf_construct
 			{ ## = #(#[ATAPPL,"TransfFac"], ##) }
 		)
 	| LCURLY! rule_set RCURLY!
-	| LPAREN!
-		( ( term RARROW ) => rule_set
-		| transf
-		) RPAREN!
+	| LPAREN! transf RPAREN!
 	| LANGLE! transf RANGLE! term
 		{ ## = #(#[ATAPPL,"BuildApply"], ##) }
 	| IF! if_clauses if_else END!
@@ -252,7 +236,7 @@ transf_undeterministic_choice
 	;
 
 transf_expr
-	: transf_choice
+	: transf_undeterministic_choice
 	;
 
 constructor
@@ -272,7 +256,7 @@ constructor
 
 rule
 	: term RARROW! term
-		( WHERE! transf_choice
+		( IF! transf_choice
 			{ ## = #(#[ATAPPL,"RuleWhere"], ##) }
 		|
 			{ ## = #(#[ATAPPL,"Rule"], ##) }

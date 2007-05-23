@@ -1,11 +1,11 @@
 """Rename Symbol"""
 
 
-from transf import lib
+from transf import parse
 import ir.path
 
 
-lib.parse.Transfs(r'''
+parse.Transfs(r'''
 
 applicable =
 	ir.path.projectSelection ;
@@ -14,7 +14,7 @@ applicable =
 input =
 	with src, dst in
 		ir.path.projectSelection ; ?Sym(src) ;
-		lib.input.Str(!"Set Function Return", !"Return Symbol?") ; ?dst ;
+		input.Str(!"Set Function Return", !"Return Symbol?") ; ?dst ;
 		![src, dst]
 	end
 

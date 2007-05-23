@@ -39,7 +39,7 @@ def translate(fpin, fpout, verbose = True):
 	
 	if verbose:
 		sys.stderr.write('** Low-level IR **\n')	
-		sys.stderr.write(str(term) + '\n')
+		#sys.stderr.write(str(term) + '\n')
 		pretty_print(term)
 		sys.stderr.write('\n')	
 	
@@ -47,7 +47,7 @@ def translate(fpin, fpout, verbose = True):
 
 	if verbose:
 		sys.stderr.write('** Translated IR **\n')
-		sys.stderr.write(str(term) + '\n')
+		#sys.stderr.write(str(term) + '\n')
 		pretty_print(term)
 		sys.stderr.write('\n')	
 

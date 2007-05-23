@@ -1,10 +1,10 @@
 """Dead Label Elimination"""
 
 
-from transf import lib
+from transf import parse
 
 
-lib.parse.Transfs('''
+parse.Transfs('''
 
 
 #######################################################################

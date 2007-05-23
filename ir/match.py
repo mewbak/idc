@@ -2,6 +2,7 @@
 
 
 from transf import lib
+from transf import parse
 
 
 #######################################################################
@@ -110,7 +111,7 @@ aStmt = lib.match.ApplNames(stmtNames)
 
 # list a statement's sub-statements
 
-reduceStmts = lib.parse.Transf('''
+reduceStmts = parse.Transf('''
 (
 	Block(stmts) -> stmts |
 	If(_, true, false) -> [true, false] |
@@ -121,7 +122,7 @@ reduceStmts = lib.parse.Transf('''
 ) + ![]
 ''')
 
-reduceStmts = lib.parse.Transf('''
+reduceStmts = parse.Transf('''
 switch Try(project.name)
 case "Block":
 	project.args ; project.first

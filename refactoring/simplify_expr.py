@@ -1,11 +1,11 @@
 """Simplify Expression"""
 
 
-from transf import lib
+from transf import parse
 import ir.path
 
 
-lib.parse.Transfs(r'''
+parse.Transfs(r'''
 
 simplify = {
 	Binary(Eq(Int(_,_)),Binary(Minus(Int(_,_)),x,y),Lit(Int(_,_),0))

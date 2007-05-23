@@ -5,7 +5,8 @@ import aterm
 import transf
 from lang import box
 
-from transf.lib import *
+from transf import lib
+from transf import parse
 
 import ir.traverse
 import ir.pprint
@@ -15,9 +16,10 @@ import lang.dot
 #######################################################################
 # Graph Generation
 
-renderBox = \
-	util.Adaptor(lambda term: term.factory.makeStr(box.stringify(term))) + \
-	build.Str("???")
+renderBox = (
+	lib.util.Adaptor(lambda term: term.factory.makeStr(box.stringify(term))) +
+	lib.build.Str("???")
+)
 
 parse.Transfs(r"""
 

@@ -82,7 +82,6 @@ EPYDOC = ../utils/bin/epydoc
 doc: all
 	rm -rf doc/html
 	$(EPYDOC) -v \
-		--css blue \
 		--no-private \
 		--no-sourcecode \
 		-o doc/html \

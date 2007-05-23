@@ -8,6 +8,7 @@ import antlr
 
 import aterm.factory
 
+from transf import parse
 from transf.lib import *
 from transf.lib.base import ident, fail
 
@@ -141,31 +142,31 @@ class TestCombine(TestMixin, unittest.TestCase):
 		func = lambda x, y: x or y
 		self._testCombination(combine._Choice, 2, func)
 		self._testCombination(combine.Choice, 2, func)
-		self._testCombination(parse.Meta('x, y: x + y'), 2, func)
+		self._testCombination(lambda x, y: parse.Transf('x + y'), 2, func)
 
 	def testComposition(self):
 		func = lambda x, y: x and y and max(x, y) or 0
 		self._testCombination(combine._Composition, 2, func)
 		self._testCombination(combine.Composition, 2, func)
-		self._testCombination(parse.Meta('x, y: x ; y'), 2, func)
+		self._testCombination(lambda x, y: parse.Transf('x ; y'), 2, func)
 
 	def testGuardedChoice(self):
 		func = lambda x, y, z: (x and y and max(x, y) or 0) or (not x and z)
 		self._testCombination(combine._GuardedChoice, 3, func)
 		self._testCombination(combine.GuardedChoice, 3, func)
-		self._testCombination(parse.Meta('x, y, z: x < y + z'), 3, func)
+		self._testCombination(lambda x, y, z: parse.Transf('x < y + z'), 3, func)
 
 	def testIf(self):
 		func = lambda x, y: (x and y) or (not x)
 		self._testCombination(combine._If, 2, func)
 		self._testCombination(combine.If, 2, func)
-		self._testCombination(parse.Meta('x, y: if x then y end'), 2, func)
+		self._testCombination(lambda x, y: parse.Transf('if x then y end'), 2, func)
 
 	def testIfElse(self):
 		func = lambda x, y, z: (x and y) or (not x and z)
 		self._testCombination(combine._IfElse, 3, func)
 		self._testCombination(combine.IfElse, 3, func)
-		self._testCombination(parse.Meta('x, y, z: if x then y else z end'), 3, func)
+		self._testCombination(lambda x, y, z: parse.Transf("if x then y else z end"), 3, func)
 
 
 class TestMatch(TestMixin, unittest.TestCase):
@@ -547,22 +548,6 @@ class TestParse(TestMixin, unittest.TestCase):
 				raise
 			#print "OUTPUT:", output
 			#print
-
-	def testCompile(self):
-		for input in self.parseTestCases:
-			#print "INPUT:", input
-			try:
-				output = repr(parse.compile(input))
-			except:
-				print input
-				raise
-			#print "OUTPUT:", output
-			try:
-				eval(output)
-			except:
-				print "INPUT:", input
-				print "OUTPUT:", output
-				raise
 
 
 class TestPath(TestMixin, unittest.TestCase):

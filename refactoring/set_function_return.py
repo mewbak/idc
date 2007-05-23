@@ -1,12 +1,12 @@
 """Set Function Return"""
 
 
-from transf import lib
+from transf import parse
 import ir.traverse
 import ir.path
 
 
-lib.parse.Transfs('''
+parse.Transfs('''
 
 applicable =
 	ir.path.projectSelection ; ?Function(Void, _, _, _)
@@ -14,7 +14,7 @@ applicable =
 input =
 	with name, ret in
 		ir.path.projectSelection ; ?Function(_, name, _, _) ;
-		lib.input.Str(!"Set Function Return", !"Return Symbol?") ; ?ret ;
+		input.Str(!"Set Function Return", !"Return Symbol?") ; ?ret ;
 		![name, ret]
 	end
 

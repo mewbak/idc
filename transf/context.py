@@ -27,13 +27,18 @@ class Context(object):
 
 	def get(self, name):
 		'''Lookup the variable with this name.'''
-		try:
-			return self.vars[name]
-		except KeyError:
-			if self.parent is not None:
-				return self.parent.get(name)
-			else:
-				raise exception.Fatal('undeclared variable', name)
+		frame = self
+		while frame is not None:
+			try:
+				return frame.vars[name]
+			except KeyError:
+				frame = frame.parent
+		# create a new variable
+		# XXX: clean up this
+		import transf.types.term
+		var = transf.types.term.Term()
+		self.vars[name] = var
+		return var
 
 	__getitem__ = get
 

@@ -1,9 +1,8 @@
 """Dead code elimination."""
 
 
-from transf import lib
+from transf import parse
 from transf import types
-from transf.lib import *
 import ir.match
 import ir.sym
 

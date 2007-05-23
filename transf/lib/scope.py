@@ -27,6 +27,20 @@ class Anonymous(str):
 		return self is not other
 
 
+class Scope(operate.Unary):
+	'''Introduces a new variable scope before the transformation.'''
+
+	def apply(self, term, ctx):
+		ctx = context.Context([], ctx)
+		return self.operand.apply(term, ctx)
+
+	def _get_subject(self):
+		return self.operand.subject
+	def _set_subject(self, subject):
+		self.operand.subject = subject
+	subject = property(_get_subject, _set_subject)
+
+
 class _Local(operate.Unary):
 
 	def __init__(self, vars, operand):
@@ -40,8 +54,6 @@ class _Local(operate.Unary):
 
 def Local(names, operand):
 	'''Introduces a new variable scope before the transformation.'''
-	if not names:
-		return operand
 	vars = [(name, term.Term) for name in names]
 	return _Local(vars, operand)
 
@@ -63,20 +75,4 @@ def With(vars, operand):
 		return operand
 	return _With(vars, operand)
 
-
-class Dynamic(operate.Unary):
-	'''Introduces a dynamic scope around a transformation, allowing them
-	to be called outside the original scope, while preserving the original
-	context.
-
-	@param operand: a transformation.
-	@param ctx: the context to be passed to the operand.
-	'''
-
-	def __init__(self, operand, ctx):
-		operate.Unary.__init__(self, operand)
-		self.ctx = ctx
-
-	def apply(self, term, ctx):
-		return self.operand.apply(term, self.ctx)
 

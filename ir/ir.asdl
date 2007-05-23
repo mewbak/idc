@@ -1,5 +1,5 @@
 -- ir.asdl
--- 
+--
 -- Definition of the intermediate representation in the Abstract Syntax
 -- Description Language (ASDL). Mostly for reference at the moment.
 --
@@ -9,8 +9,8 @@ module
 	= Module(stmt*)
 
 stmt
-	= Asm(string opcode, expr* operands) 
-	| Assign(type, optExpr dest, expr src)
+	= Asm(string opcode, expr* operands)
+	| Assign(type, expr? dest, expr src)
 	| Label(string name)
 	| GoTo(expr addr)
 	| Break
@@ -19,14 +19,14 @@ stmt
 	| If(expr cond, stmt, stmt)
 	| While(expr cond, stmt)
 	| DoWhile(expr cond, stmt)
-	| Ret(type, optExpr value)
-	| Var(type, string name, optExpr value)
+	| Ret(type, expr? value)
+	| Var(type, string name, expr? value)
 	| Function(type, string name, arg*, stmt* body)
 	| NoStmt
 
 arg
 	= Arg(type, name)
-	
+
 expr
 	= Lit(type, object value)
 	| Sym(string name)
@@ -37,10 +37,6 @@ expr
 	| Call(expr func, expr* params)
 	| Addr(expr)
 	| Ref(expr)
-	
-optExpr
-	= expr
-	| NoExpr
 
 unOp
 	= Not(type)
@@ -76,7 +72,7 @@ type
 	| Union(type*)
 	| FuncPointer(type, type*)
 	| Blob(size)
-	
+
 sign
 	= Signed
 	| Unsigned

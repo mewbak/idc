@@ -1,58 +1,54 @@
 '''Path/selection related transformations.'''
 
 
-from transf import lib
+from transf import parse
 import ir.match
 
+
+parse.Transfs(r'''
 
 #######################################################################
 # Path annotation
 
 # Only annotate term applications
-annotate = lib.path.Annotate(
-	lib.match.ApplNames(
+annotate = path.Annotate(
+	match.ApplNames(`
 		ir.match.stmtNames +
 		ir.match.exprNames +
 		ir.match.typeNames
-	)
+	`)
 )
 
 
 #######################################################################
 # Selection
 
-lib.parse.Transfs(r'''
-
-projectSelection = lib.path.Project(!selection)
+projectSelection = path.Project(!selection)
 
 MatchSelectionTo(s) = projectSelection ; s
-
-''')
 
 
 #######################################################################
 # Selection context
 
-lib.parse.Transfs(r'''
-
 getSelection = !selection
 
 isSelected =
 	Where(
-		lib.path.get ;
-		lib.path.Equals(getSelection)
+		path.get ;
+		path.Equals(getSelection)
 	)
 
 inSelection =
 	Where(
-		lib.path.get ;
-		lib.path.Contained(getSelection)
+		path.get ;
+		path.Contained(getSelection)
 	)
 
 hasSelection =
 	Where(
-		lib.path.get ;
-		lib.path.Contains(getSelection)
+		path.get ;
+		path.Contains(getSelection)
 	)
 
 ''')

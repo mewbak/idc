@@ -27,5 +27,3 @@ from transf.lib import path
 from transf.lib import input
 
 from transf.lib import debug
-
-from transf import parse

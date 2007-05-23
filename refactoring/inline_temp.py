@@ -1,12 +1,12 @@
 """Inline Temp"""
 
 
-from transf import lib
+from transf import parse
 import ir.traverse
 import ir.path
 
 
-lib.parse.Transfs('''
+parse.Transfs('''
 
 
 #######################################################################

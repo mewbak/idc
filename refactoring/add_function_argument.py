@@ -1,12 +1,12 @@
 """Add Function Argument"""
 
 
-from transf import lib
+from transf import parse
 import ir.traverse
 import ir.path
 
 
-lib.parse.Transfs('''
+parse.Transfs('''
 
 applicable =
 	ir.path.projectSelection ; ?Function(_, _, _, _)
@@ -14,7 +14,7 @@ applicable =
 input =
 	with name, arg in
 		ir.path.projectSelection ; ?Function(_, ?name, _, _) ;
-		lib.input.Str(!"Add Function Argument", !"Argument Symbol?") ; ?arg ;
+		input.Str(!"Add Function Argument", !"Argument Symbol?") ; ?arg ;
 		![name, arg]
 	end
 

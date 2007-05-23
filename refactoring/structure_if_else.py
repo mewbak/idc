@@ -4,11 +4,11 @@
 import refactoring
 from refactoring.dead_label_elimination import dle
 
-from transf import lib
+from transf import parse
 import ir.path
 
 
-lib.parse.Transfs('''
+parse.Transfs('''
 
 
 goto =

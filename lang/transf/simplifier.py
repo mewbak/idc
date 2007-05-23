@@ -9,22 +9,22 @@ applName =
 	?Anon(Rule(Appl(Str(_), Ident), _))
 
 
-applNames = 
+applNames =
 	?Choice(<Map(applName)>)
-	
+
 simplifyRule = {
 	Rule(Appl(Str(name), Undef), build) ->
-		SwitchCase([Str(name)], Build(build)) 
+		SwitchCase([Str(name)], Build(build))
 |	Anon(Rule(Appl(Str(name), Undef), build)) ->
-		SwitchCase([Str(name)], Build(build)) 
+		SwitchCase([Str(name)], Build(build))
 }
-	
+
 
 simplifyChoice = {
-	Choice(rules) -> 
+	Choice(rules) ->
 		Switch(
-			Transf("project.name"), 
-			<<Filter(simplifyRule)> rules>, 
+			Transf("project.name"),
+			<<Filter(simplifyRule)> rules>,
 			Choice(<<Filter(Not(simplifyRule))>rules>)
 		)
 		#where <Some(simplifyRule)> rules

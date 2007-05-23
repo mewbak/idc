@@ -1,14 +1,13 @@
 '''Dot pretty-printing.'''
 
 
-import aterm
-from transf import lib
+from transf import parse
 from lang import box
 
 
-lib.parse.Transfs('''
+parse.Transfs('''
 
-ppId = lib.strings.tostr
+ppId = strings.tostr
 
 ppAttr = {
 		Attr(name, value)
@@ -23,7 +22,7 @@ ppNode = {
 			-> H([ <<id> nid>, <<ppAttrs> attrs> ])
 }
 
-ppNodes = lib.lists.Map(ppNode)
+ppNodes = lists.Map(ppNode)
 
 ppNodeEdge = {
 		Edge(dst, attrs)
@@ -36,8 +35,8 @@ ppNodeEdges = {
 }
 
 ppEdges =
-	lib.lists.Map(ppNodeEdges) ;
-	lib.lists.concat
+	lists.Map(ppNodeEdges) ;
+	lists.concat
 
 ppGraph = {
 		Graph(nodes)
