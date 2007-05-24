@@ -106,8 +106,8 @@ pylint:
 
 deps: .deps.mak
 
-.deps.mak: Makefile util/makedeps.pl $(shell find -iname '*.g')
-	find -iname '*.g' | xargs perl util/makedeps.pl > $@
+.deps.mak: Makefile util/makedeps.py $(shell find -iname '*.g')
+	find -iname '*.g' | xargs $(PYTHON) util/makedeps.py > $@
 
 .PHONY: deps
 
