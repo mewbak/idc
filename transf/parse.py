@@ -19,7 +19,7 @@ def _parser(buf):
 	return parser
 
 
-def _compile(buf, method, simplify=True):
+def _compile(buf, method, simplify=True, verbose=False):
 	parser = _parser(buf)
 	getattr(parser, method)()
 	ast = parser.getAST()
@@ -31,6 +31,9 @@ def _compile(buf, method, simplify=True):
 		term = lang.transf.simplifier.simplify(term)
 	compiler = Compiler()
 	code = getattr(compiler, method)(term)
+	if verbose:
+		sys.stderr.write("input code:\n%s\n" % buf)
+		sys.stderr.write("output code:\n%s\n" % code)
 	return code
 
 
@@ -48,39 +51,34 @@ def _populate_globals(glbls):
 	return glbls
 
 
-def _eval(code):
-	'''Eval the compiled code in the caller's namespace.'''
-	caller = sys._getframe(2)
-	globals_ = _populate_globals(caller.f_globals)
-	locals_ = caller.f_locals
-	try:
-		txn = eval(code, globals_, locals_)
-	except:
-		sys.stderr.write("input code: %s\n" % code)
-		raise
-	return txn
-
-
-def _exec(code):
+def _exec(code, globals_, locals_):
 	'''Execute the compiled code in the caller's namespace.'''
-	caller = sys._getframe(2)
-	globals_ = _populate_globals(caller.f_globals)
-	locals_ = caller.f_locals
 	try:
 		exec code in globals_, locals_
+	except NameError:
+		sys.stderr.write("globals: %s\n" % globals_.keys())
+		sys.stderr.write("locals: %s\n" % locals_.keys())
+		sys.stderr.write("input code:\n%s\n" % code)
+		raise
 	except:
-		sys.stderr.write("input code: %s\n" % code)
+		sys.stderr.write("input code:\n%s\n" % code)
 		raise
 
 
-def Transfs(buf, simplify=True):
+def Transfs(buf, simplify=True, verbose=False):
 	'''Parse transformation definitions from a string.'''
-	code = _compile(buf, "transf_defs", simplify)
-	_exec(code)
+	code = _compile(buf, "transf_defs", simplify=simplify, verbose=verbose)
+	caller = sys._getframe(1)
+	globals_ = _populate_globals(caller.f_globals)
+	locals_ = caller.f_locals
+	_exec(code, globals_, locals_)
 
 
-def Transf(buf, simplify=True):
+def Transf(buf, simplify=True, verbose=False):
 	'''Parse a transformation from a string.'''
-	code = _compile(buf, "transf", simplify)
-	txn = _eval(code)
-	return txn
+	code = _compile("_tmp = %s" % buf, "transf_defs", simplify=simplify, verbose=verbose)
+	caller = sys._getframe(1)
+	globals_ = _populate_globals(caller.f_globals)
+	locals_ = caller.f_locals.copy()
+	_exec(code, globals_, locals_)
+	return locals_["_tmp"]

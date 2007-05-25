@@ -65,9 +65,9 @@ class Transformation(object):
 		return combine.Composition(self, other)
 
 	def __pow__(self, other):
-		'''Exponentiation operater. Shorthand for L{combine.GuardedChoice}.
+		'''Exponentiation operater. Shorthand for L{lib.combine.GuardedChoice}.
 
-		For example, C{t1 **t2** t3} is equivalent, to C{combine.GuardedChoice(t1, t2,
+		For example, C{t1 **t2** t3} is equivalent, to C{lib.combine.GuardedChoice(t1, t2,
 		t3)}. The exponentiation operator is right associative, so C{t1 **t2** t3
 		**t4** t5} is the same as C{t1 **t2** (t3 **t4** t5)}. However note that its
 		precedence is higher than other operators, therefore parenthesis must be used

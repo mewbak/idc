@@ -1,65 +1,47 @@
-'''Context term variables.'''
+'''Term variables.'''
 
 
 from transf import exception
 from transf import transformation
-from transf.types import variable
+from transf import variable
+from transf.util import TransformationMethod
 
 
 class Term(variable.Variable):
-	'''Term variable.'''
 
-	__slots__ = ['term']
+	@TransformationMethod
+	def init(self, trm, ctx):
+		ctx.set(self.name, None)
+		return trm
 
-	def __init__(self, term = None):
-		variable.Variable.__init__(self)
-		self.term = term
+	@TransformationMethod
+	def set(self, trm, ctx):
+		ctx.set(self.name, trm)
+		return trm
 
-	def set(self, term):
-		self.term = term
+	@TransformationMethod
+	def unset(self, trm, ctx):
+		ctx.set(self.name, None)
+		return trm
 
-	def unset(self):
-		self.term = None
-
-	def match(self, term):
+	@TransformationMethod
+	def match(self, trm, ctx):
 		'''Match the term against this variable value, setting it,
 		if it is undefined.'''
-		if self.term is None:
-			self.term = term
-		elif self.term != term:
-			raise exception.Failure('variable mismatch', term, self.term)
+		old = ctx.get(self.name)
+		if old is None:
+			ctx.set(self.name, trm)
+		elif old != trm:
+			raise exception.Failure('variable mismatch', trm, old)
+		return trm
 
-	def build(self):
+	@TransformationMethod
+	def build(self, trm, ctx):
 		'''Returns this variable term, if defined.'''
-		if self.term is None:
+		trm = ctx.get(self.name)
+		if trm is None:
 			raise exception.Failure('undefined variable')
-		else:
-			return self.term
+		return trm
 
-	def traverse(self, term):
-		'''Same as match.'''
-		self.match(term)
-		return term
-
-	def __repr__(self):
-		return '<%s.%s %r>' % (__name__, self.__class__.__name__, self.term)
-
-
-class New(variable.Constructor):
-	'''Creates a new term variable without an initial value.'''
-	def create(self, term, ctx):
-		return Term()
-
-new = New()
-
-
-class Transf(variable.Constructor):
-	'''Creates a new term variable with a initial value
-	given by a transformation.'''
-	def __init__(self, transf):
-		variable.Constructor.__init__(self)
-		self.transf = transf
-	def create(self, term, ctx):
-		term = self.transf.apply(term, ctx)
-		return Term(term)
+	congruent = match
 

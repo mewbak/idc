@@ -8,7 +8,7 @@ from transf.lib import *
 from transf import parse
 
 from lang import box
-from lang.box import op
+from lang.box import op as ppOp
 from lang.box import kw
 from lang.box import lit
 from lang.box import sym
@@ -53,18 +53,17 @@ def intrepr(term):
 intlit = intrepr * box.const
 
 
+parse.Transfs('''
+
 #######################################################################
 # Types
 
-parse.Transfs('''
-
-sign = {
+ppSign =
 	Signed -> H([ <<kw> "signed">, " " ])
 |	Unsigned -> H([ <<kw> "unsigned"> , " " ])
 |	NoSign -> ""
-}
 
-size =
+ppSize =
 	switch id
 	case 8:
 		!<<kw> "char">
@@ -78,13 +77,13 @@ size =
 		!H([ "int", <strings.tostr> ])
 	end
 
-type = rec type : {
+ppType = rec ppType : {
 	Void
 		-> <<kw> "void">
 |	Bool
 		-> <<kw> "bool">
 |	Int(size, sign)
-		-> H([ <<sign> sign>, <<size> size> ])
+		-> H([ <<ppSign> sign>, <<ppSize> size> ])
 |	Float(32)
 		-> <<kw> "float">
 |	Float(64)
@@ -92,29 +91,25 @@ type = rec type : {
 |	Char(size)
 		-> <<kw> "char">
 |	Pointer(size, type)
-		-> H([ <<type> type>, " ", <<op> "*"> ])
+		-> H([ <<ppType> type>, " ", <<ppOp> "*"> ])
 |	Array(type)
-		-> H([ <<type> type>, "[", "]" ])
+		-> H([ <<ppType> type>, "[", "]" ])
 |	Blob(size)
 		-> H([ "blob", <<strings.tostr> size> ])
 |	_ -> "???"
 }
 
-''')
 
 #######################################################################
 # Operator precendence.
 #
 # See http://www.difranco.net/cop2220/op-prec.htm
 
-parse.Transfs('''
-
-unOpPrec = {
+precUnaryOp =
 	Not -> 1
 |	Neg -> 1
-}
 
-binOpPrec = {
+precBinaryOp =
 	And(Bool) -> 10
 |	Or(Bool) -> 11
 |	And(_) -> 7
@@ -133,38 +128,28 @@ binOpPrec = {
 |	LtEq -> 5
 |	Gt -> 5
 |	GtEq -> 5
-}
 
-exprPrec = {
+precExpr =
 	Lit(_, _) -> 0
 |	Sym(_) -> 0
 |	Cast(_, _) -> 1
 |	Addr(_) -> 1
 |	Ref(_) -> 1
-|	Unary(op, _) -> <<unOpPrec>op>
-|	Binary(op, _, _) -> <<binOpPrec>op>
+|	Unary(op, _) -> <<precUnaryOp>op>
+|	Binary(op, _, _) -> <<precBinaryOp>op>
 |	Cond(_, _, _) -> 13
 |	Call(_, _) -> 0
-}
-
-stmtPrec =
-	!99
-
-''')
 
 
 #######################################################################
 # Expressions
 
-parse.Transfs('''
-
-unOp = {
+ppUnaryOp =
 	Not(Bool) -> "!"
 |	Not(_) -> "~"
 |	Neg -> "-"
-}
 
-binOp = {
+ppBinaryOp =
 	And(Bool) -> "&&"
 |	Or(Bool) -> "||"
 |	And(_) -> "&"
@@ -183,26 +168,27 @@ binOp = {
 |	LtEq -> "<="
 |	Gt -> ">"
 |	GtEq -> ">="
-}
 
 exprKern = util.Proxy()
 
 SubExpr(Cmp) =
+	?[pprec, rest] ;
 	with
-		pprec = !prec, # parent precedence
-		prec = exprPrec
+		prec = <precExpr>rest
 	in
 		if Cmp(!prec, !pprec) then
-			!H([ "(", <exprKern>, ")" ])
+			!H([ "(", <<exprKern>[prec,rest]>, ")" ])
 		else
-			exprKern
+			<exprKern>[prec,rest]
 		end
 	end
 
 subExpr = SubExpr(arith.Gt)
 subExprEq = SubExpr(arith.Geq)
 
-exprKern.subject = Path({
+exprKern.subject =
+	[prec,rest] -> rest ;
+	Path({
 	Lit(Int(_,_), value)
 		-> <<intlit> value>
 |	Lit(type, value)
@@ -210,136 +196,122 @@ exprKern.subject = Path({
 |	Sym(name)
 		-> <<sym> name>
 |	Cast(type, expr)
-		-> H([ "(", <<type>type>, ")", " ", <<subExpr>expr> ])
+		-> H([ "(", <<ppType>type>, ")", " ", <<subExpr>[prec,expr]> ])
 |	Unary(op, expr)
-		-> H([ <<unOp>op>, <<subExpr>expr> ])
+		-> H([ <<ppUnaryOp>op>, <<subExpr>[prec,expr]> ])
 |	Binary(op, lexpr, rexpr)
-		-> H([ <<subExpr>lexpr>, " ", <<binOp>op>, " ", <<subExprEq>rexpr> ])
+		-> H([ <<subExpr>[prec,lexpr]>, " ", <<ppBinaryOp>op>, " ", <<subExprEq>[prec,rexpr]> ])
 |	Cond(cond, texpr, fexpr)
-		-> H([ <<subExpr>cond>, " ", <<op>"?">, " ", <<subExpr>texpr>, " ", <<op>":">, " ", <<subExpr>fexpr> ])
+		-> H([ <<subExpr>[prec,cond]>, " ", <<ppOp>"?">, " ", <<subExpr>[prec,texpr]>, " ", <<ppOp>":">, " ", <<subExpr>[prec,fexpr]> ])
 |	Call(addr, args)
-		-> H([ <<subExpr>addr>, "(", <<Map(subExpr);commas> args>, ")" ])
+		-> H([ <<subExpr>[prec,addr]>, "(", <<Map(<subExpr>[prec,<id>]);commas> args>, ")" ])
 |	Addr(addr)
-		-> H([ <<op>"&">, <<subExpr>addr> ])
+		-> H([ <<ppOp>"&">, <<subExpr>[prec,addr]> ])
 |	Ref(expr)
-		-> H([ <<op>"*">, <<subExpr>expr> ])
+		-> H([ <<ppOp>"*">, <<subExpr>[prec,expr]> ])
 })
 
-expr =
-	with
-		prec = exprPrec
-	in
-		exprKern
-	end
-''')
+ppExpr =
+	<exprKern>[<precExpr>,<id>]
 
 
 #######################################################################
 # Statements
 
-parse.Transfs('''
-arg = {
+ppArg =
 	Arg(type, name)
-		-> H([ <<type>type>, " ", name ])
-}
+		-> H([ <<ppType>type>, " ", name ])
 
-stmt = util.Proxy()
+ppStmt = util.Proxy()
 
-stmts =
-	!V( <Map(stmt)> )
+ppStmts =
+	!V( <Map(ppStmt)> )
 
 
-stmtKern = {
+stmtKern =
 	Assign(Void, NoExpr, src)
-		-> H([ <<expr>src> ])
+		-> H([ <<ppExpr>src> ])
 |	Assign(_, dst, src)
-		-> H([ <<expr>dst>, " ", <<op>"=">, " ", <<expr>src> ])
+		-> H([ <<ppExpr>dst>, " ", <<ppOp>"=">, " ", <<ppExpr>src> ])
 |	If(cond, _, _)
-		-> H([ <<kw>"if">, "(", <<expr>cond>, ")" ])
+		-> H([ <<kw>"if">, "(", <<ppExpr>cond>, ")" ])
 |	While(cond, _)
-		-> H([ <<kw>"while">, "(", <<expr>cond>, ")" ])
+		-> H([ <<kw>"while">, "(", <<ppExpr>cond>, ")" ])
 |	DoWhile(cond, _)
-		-> H([ <<kw>"while">, "(", <<expr>cond>, ")" ])
+		-> H([ <<kw>"while">, "(", <<ppExpr>cond>, ")" ])
 |	Var(type, name, NoExpr)
-		-> H([ <<type>type>, " ", name ])
+		-> H([ <<ppType>type>, " ", name ])
 |	Var(type, name, val)
-		-> H([ <<type>type>, " ", name, "=", <<expr>val> ])
+		-> H([ <<ppType>type>, " ", name, "=", <<ppExpr>val> ])
 |	Function(type, name, args, stmts)
-		-> H([ <<type>type>, " ", name, "(", <<Map(arg);commas> args>, ")" ])
+		-> H([ <<ppType>type>, " ", name, "(", <<Map(ppArg);commas> args>, ")" ])
 |	Label(name)
 		-> H([ name, ":" ])
 |	GoTo(label)
-		-> H([ <<kw>"goto">, " ", <<expr>label> ])
+		-> H([ <<kw>"goto">, " ", <<ppExpr>label> ])
 |	Ret(_, NoExpr)
 		-> H([ <<kw>"return"> ])
 |	Ret(_, value)
-		-> H([ <<kw>"return">, " ", <<expr>value> ])
+		-> H([ <<kw>"return">, " ", <<ppExpr>value> ])
 |	NoStmt
 		-> ""
 |	Asm(opcode, operands)
-		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<Map(expr)>operands>]>, ")" ])
-}
+		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<Map(ppExpr)>operands>]>, ")" ])
 
-ppLabel = {
+ppLabel =
 	Label
 		-> D( <stmtKern> )
-}
 
-ppBlock = {
+ppBlock =
 	Block( stmts )
 		-> V([
 			D("{"),
-				<<stmts>stmts>,
+				<<ppStmts>stmts>,
 			D("}")
 		])
-}
 
-ppIf = {
+ppIf =
 	If(_, true, NoStmt)
 		-> V([
 			<stmtKern>,
-				I( <<stmt>true> )
+				I( <<ppStmt>true> )
 		])
 |	If(_, true, false)
 		-> V([
 			<stmtKern>,
-				I( <<stmt>true> ),
+				I( <<ppStmt>true> ),
 			H([ <<kw>"else"> ]),
-				I( <<stmt>false> )
+				I( <<ppStmt>false> )
 		])
-}
 
-ppWhile = {
+ppWhile =
 	While(_, body)
 		-> V([
 			<stmtKern>,
-				I( <<stmt>body> )
+				I( <<ppStmt>body> )
 		])
-}
 
-ppDoWhile = {
+ppDoWhile =
 	DoWhile(_, body)
 		-> V([
 			H([ <<kw>"do"> ]),
-				I( <<stmt>body> ),
+				I( <<ppStmt>body> ),
 			!H([ <stmtKern>, ";" ])
 		])
-}
 
-ppFunction = {
+ppFunction =
 	Function(_, _, _, stmts)
 		-> D(V([
 			<stmtKern>,
 			"{",
-				I(V([ <<stmts>stmts> ])),
+				I(V([ <<ppStmts>stmts> ])),
 			"}"
 		]))
-}
 
 ppDefault =
 	!H([ <stmtKern>, ";" ])
 
-stmt.subject = Path(
+ppStmt.subject = Path(
 	switch project.name
 		case "Label": ppLabel
 		case "Block": ppBlock
@@ -354,9 +326,10 @@ stmt.subject = Path(
 module = Path({
 	Module(stmts)
 		-> V([
-			I( <<stmts>stmts> )
+			I( <<ppStmts>stmts> )
 		])
 })
+
 ''')
 
 
@@ -404,8 +377,8 @@ if __name__ == '__main__':
 		input = factory.parse(inputStr)
 
 		print input
-		print check.stmt(input)
-		result = stmt(input)
+		print check.ppStmt(input)
+		result = ppStmt(input)
 		print result
 		print box.stringify(result)
 		print output

@@ -57,6 +57,15 @@ transf_def
 		{ ## = #(#[ATAPPL,"TransfDef"], ##) }
 	| id LPAREN! id_list RPAREN! EQUAL! transf
 		{ ## = #(#[ATAPPL,"TransfFacDef"], ##) }
+	| GLOBAL! id type
+		{ ## = #(#[ATAPPL,"VarDef"], ##) }
+	;
+
+type
+	:
+		{ ## = #(#[ATSTR],#[ATSTR,"Term"]) }
+	| LSQUARE! RSQUARE!
+		{ ## = #(#[ATSTR],#[ATSTR,"Table"]) }
 	;
 
 transf
@@ -98,8 +107,12 @@ transf_construct
 		{ ## = #(#[ATAPPL,"If"], ##) }
 	| SWITCH! transf switch_cases switch_else END!
 		{ ## = #(#[ATAPPL,"Switch"], ##) }
-	| WITH! with_defs IN! transf END!
+	| WITH! var_defs IN! transf END!
 		{ ## = #(#[ATAPPL,"With"], ##) }
+	| LOCAL! id_list IN! transf END!
+		{ ## = #(#[ATAPPL,"Local"], ##) }
+	| GLOBAL! id_list IN! transf END!
+		{ ## = #(#[ATAPPL,"Global"], ##) }
 	| REC! id COLON! transf_construct
 		{ ## = #(#[ATAPPL,"Rec"], ##) }
 	;
@@ -154,13 +167,13 @@ switch_else
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
 	;
 
-with_defs
-	: with_def (COMMA! with_def )*
+var_defs
+	: var_def (COMMA! var_def )*
 		{ ## = #(#[ATLIST], ##) }
 	;
 
-with_def
-	: id constructor
+var_def
+	: id EQUAL! transf
 		{ ## = #(#[ATAPPL,"WithDef"], ##) }
 	;
 
@@ -239,21 +252,6 @@ transf_expr
 	: transf_undeterministic_choice
 	;
 
-constructor
-	:
-		{ ## = #(#[ATAPPL,"Term"], ##) }
-	| EQUAL! transf
-		{ ## = #(#[ATAPPL,"TermTransf"], ##) }
-	| LSQUARE! RSQUARE!
-		( EQUAL! id
-		{ ## = #(#[ATAPPL,"TableCopy"], ##) }
-		|
-		{ ## = #(#[ATAPPL,"Table"], ##) }
-		)
-	| LPAREN! RPAREN! ( EQUAL! transf )?
-		{ ## = #(#[ATAPPL,"Dynamic"], ##) }
-	;
-
 rule
 	: term RARROW! term
 		( IF! transf_choice
@@ -265,7 +263,6 @@ rule
 
 anon_rule
 	: rule
-		{ ## = #(#[ATAPPL,"Anon"], ##) }
 	;
 
 rule_set

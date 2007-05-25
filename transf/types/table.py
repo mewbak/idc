@@ -7,10 +7,12 @@ from transf import exception
 from transf import context
 from transf import transformation
 from transf import operate
-from transf.types import variable
-from transf.lib import base
-from transf.lib import combine
-from transf.lib import build
+from transf import variable
+#from transf.lib import base
+#from transf.lib import combine
+#from transf.lib import build
+#from transf.lib import build
+from transf.util import TransformationMethod
 
 
 _factory = aterm.factory.factory
@@ -19,126 +21,81 @@ _factory = aterm.factory.factory
 class Table(variable.Variable):
 	'''A table is mapping of terms to terms.'''
 
-	def __init__(self, terms = ()):
-		variable.Variable.__init__(self)
-		self.terms = dict(terms)
+	def _table(self, ctx):
+		tbl = ctx.get(self.name)
+		if tbl is None:
+			tbl = {}
+			ctx.set(self.name, tbl)
+		return tbl
 
-	def copy(self):
-		return Table(self.terms)
-
-	def _set(self, key, val):
-		self.terms[key] = val
-
-	def _pop(self, key):
-		try:
-			return self.terms.pop(key)
-		except KeyError:
-			raise exception.Failure("term not in table", key)
-
-	def set(self, term):
+	@TransformationMethod
+	def set(self, trm, ctx):
 		'''Setting a [key, value] list will add the pair to the table. Setting
 		a [key] list will remove the key and its value from the table.'''
 		# TODO: better exception handling
-		if term:
-			key = term.head
-			tail = term.tail
+		tbl = self._table(ctx)
+		if trm:
+			key = trm.head
+			tail = trm.tail
 			if tail:
-				val = tail.head
-				self._set(key, val)
+				val = trm.head
+				tbl[key] = val
 			else:
-				self._pop(key)
+				try:
+					return tbl.pop(key)
+				except KeyError:
+					raise exception.Failure("term not in table", key)
 		else:
 			self.unset()
+		return trm
 
-	def unset(self):
+	@TransformationMethod
+	def unset(self, trm, ctx):
 		'''Clears all elements of the table.'''
-		self.terms.clear()
+		ctx.set(self.name, {})
+		return trm
 
-	def match(self, term):
+	@TransformationMethod
+	def match(self, trm, ctx):
 		'''Lookups the key matching the term in the table.'''
-		self.traverse(term)
+		tbl = self._table(ctx)
+		return trm
 
-	def build(self):
+	@TransformationMethod
+	def build(self, trm, ctx):
 		'''Builds a list all keys in the table.'''
-		return _factory.makeList(self.terms.keys())
+		tbl = self._table(ctx)
+		return _factory.makeList(tbl.keys())
 
-	def traverse(self, term):
+	@TransformationMethod
+	def traverse(self, trm, ctx):
 		'''Lookups the key matching to the term in the table and return its
 		associated value.
 		'''
+		tbl = self._table(ctx)
 		try:
-			return self.terms[term]
+			return tbl[trm]
 		except KeyError:
-			raise exception.Failure("term not in table", term)
+			raise exception.Failure("term not in table", trm)
 
-	def add(self, other):
-		self.terms.update(other.terms)
-
-	def sub(self, other):
-		for key in self.terms.iterkeys():
-			if key not in other.terms:
-				del self.terms[key]
-
-	def equals(self, other):
-		if len(self.terms) != len(other.terms):
-			return False
-		for key, value in self.terms.iteritems():
-			try:
-				if value != other.terms[key]:
-					return False
-			except KeyError:
-				return False
-		return True
-
-	def __repr__(self):
-		return '<%s.%s %r>' % (__name__, self.__class__.__name__, self.terms)
-
-
-class New(variable.Constructor):
-	'''Creates an empty table variable.'''
-	def create(self, term, ctx):
-		return Table()
-
-new = New()
-
-
-class Copy(variable.Constructor):
-	'''Creates a table variable copied from other table variable.'''
-	def __init__(self, name):
-		variable.Constructor.__init__(self)
-		self.name = name
-	def create(self, term, ctx):
-		var = ctx.get(self.name)
-		return var.copy()
-
-
-def Get(name):
-	return variable.Traverse(name)
-
-
-def Set(name, key = None):
-	if key is None:
-		key = base.ident
-	return combine.Where(build.List((key, base.ident)) * variable.Set(name))
-
-
-def Del(name):
-	return combine.Where(build.List((base.ident,)) * variable.Set(name))
-
-
-def Clear(name):
-	return variable.Unset(name)
-
-
-class Add(variable.Operation):
-	def __init__(self, name, other):
-		variable.Operation.__init__(self, name)
-		self.other = other
-	def apply(self, term, ctx):
-		var = ctx.get(self.name)
-		other = ctx.get(self.other)
-		var.add(other)
-		return term
+#	def add(self, other):
+#		self.terms.update(other.terms)
+#
+#	def sub(self, other):
+#		for key in self.terms.iterkeys():
+#			if key not in other.terms:
+#				del self.terms[key]
+#
+#	def equals(self, other):
+#		if len(self.terms) != len(other.terms):
+#			return False
+#		for key, value in self.terms.iteritems():
+#			try:
+#				if value != other.terms[key]:
+#					return False
+#			except KeyError:
+#				return False
+#		return True
 
 
 class Join(operate.Binary):
@@ -252,5 +209,3 @@ class Iterate(operate.Unary):
 			tbl.add(ltbl)
 
 		return res
-
-

@@ -7,8 +7,8 @@ import aterm.term
 
 from transf import exception
 from transf import transformation
+from transf import variable
 from transf.lib import base
-from transf.types import variable
 from transf.lib import combine
 from transf.lib import project
 from transf.lib import _common
@@ -151,7 +151,7 @@ class Appl(_common.Appl):
 			raise exception.Failure('not an application term', term)
 		else:
 			if self.name != term_name:
-				raise exception.Failure
+				raise exception.Failure('application name mismatch', self.name, term_name)
 			if len(self.args) != len(term_args):
 				raise exception.Failure
 			for self_arg, term_arg in zip(self.args, term_args):
@@ -179,7 +179,9 @@ class ApplCons(_common.ApplCons):
 			return term
 
 
-Var = variable.Match
+def Var(var):
+	assert isinstance(var, variable.Variable)
+	return var.match
 
 
 class Annos(_common.Annos):

@@ -8,13 +8,14 @@ import antlr
 
 import aterm.factory
 
+from transf import transformation
 from transf import parse
 from transf.lib import *
 from transf.lib.base import ident, fail
 
 
-def Rule(r):
-	return parse.Transf("{" + r + "}")
+Transf = parse.Transf
+Rule = Transf
 
 
 class TestMixin:
@@ -74,11 +75,11 @@ class TestCombine(TestMixin, unittest.TestCase):
 
 	def testIdent(self):
 		self._testTransf(ident, self.identTestCases)
-		self._testTransf(parse.Transf('id'), self.identTestCases)
+		self._testTransf(Transf('id'), self.identTestCases)
 
 	def testFail(self):
 		self._testTransf(fail, self.failTestCases)
-		self._testTransf(parse.Transf('fail'), self.failTestCases)
+		self._testTransf(Transf('fail'), self.failTestCases)
 
 	unaryTestCases = [
 		[0], [1], [2],
@@ -142,31 +143,31 @@ class TestCombine(TestMixin, unittest.TestCase):
 		func = lambda x, y: x or y
 		self._testCombination(combine._Choice, 2, func)
 		self._testCombination(combine.Choice, 2, func)
-		self._testCombination(lambda x, y: parse.Transf('x + y'), 2, func)
+		self._testCombination(lambda x, y: Transf('x + y'), 2, func)
 
 	def testComposition(self):
 		func = lambda x, y: x and y and max(x, y) or 0
 		self._testCombination(combine._Composition, 2, func)
 		self._testCombination(combine.Composition, 2, func)
-		self._testCombination(lambda x, y: parse.Transf('x ; y'), 2, func)
+		self._testCombination(lambda x, y: Transf('x ; y'), 2, func)
 
 	def testGuardedChoice(self):
 		func = lambda x, y, z: (x and y and max(x, y) or 0) or (not x and z)
 		self._testCombination(combine._GuardedChoice, 3, func)
 		self._testCombination(combine.GuardedChoice, 3, func)
-		self._testCombination(lambda x, y, z: parse.Transf('x < y + z'), 3, func)
+		self._testCombination(lambda x, y, z: Transf('x < y + z'), 3, func)
 
 	def testIf(self):
 		func = lambda x, y: (x and y) or (not x)
 		self._testCombination(combine._If, 2, func)
 		self._testCombination(combine.If, 2, func)
-		self._testCombination(lambda x, y: parse.Transf('if x then y end'), 2, func)
+		self._testCombination(lambda x, y: Transf('if x then y end'), 2, func)
 
 	def testIfElse(self):
 		func = lambda x, y, z: (x and y) or (not x and z)
 		self._testCombination(combine._IfElse, 3, func)
 		self._testCombination(combine.IfElse, 3, func)
-		self._testCombination(lambda x, y, z: parse.Transf("if x then y else z end"), 3, func)
+		self._testCombination(lambda x, y, z: Transf("if x then y else z end"), 3, func)
 
 
 class TestMatch(TestMixin, unittest.TestCase):
@@ -183,30 +184,30 @@ class TestMatch(TestMixin, unittest.TestCase):
 
 	def testInt(self):
 		self._testMatchTransf(match.Int(1), '1')
-		self._testMatchTransf(parse.Transf('?1'), '1')
+		self._testMatchTransf(Transf('?1'), '1')
 
 	def testReal(self):
 		self._testMatchTransf(match.Real(0.1), '0.1')
-		self._testMatchTransf(parse.Transf('?0.1'), '0.1')
+		self._testMatchTransf(Transf('?0.1'), '0.1')
 
 	def testStr(self):
 		self._testMatchTransf(match.Str("a"), '"a"')
-		self._testMatchTransf(parse.Transf('?"a"'), '"a"')
+		self._testMatchTransf(Transf('?"a"'), '"a"')
 
 	def testNil(self):
 		self._testMatchTransf(match.nil, '[]')
-		self._testMatchTransf(parse.Transf('?[]'), '[]')
+		self._testMatchTransf(Transf('?[]'), '[]')
 
 	def testCons(self):
 		self._testMatchTransf(match.Cons(match.Int(1),match.nil), '[1]')
-		self._testMatchTransf(parse.Transf('?[1]'), '[1]')
+		self._testMatchTransf(Transf('?[1]'), '[1]')
 
 	def testList(self):
 		self._testMatchTransf(match.List([match.Int(1),match.Int(2)]), '[1,2]')
 		self._testMatchTransf(match._[()], '[]')
 		self._testMatchTransf(match._[1], '[1]')
 		self._testMatchTransf(match._[1,2], '[1,2]')
-		self._testMatchTransf(parse.Transf('?[1,2]'), '[1,2]')
+		self._testMatchTransf(Transf('?[1,2]'), '[1,2]')
 
 	def testAppl(self):
 		self._testMatchTransf(match.Appl("C", ()), 'C')
@@ -214,9 +215,9 @@ class TestMatch(TestMixin, unittest.TestCase):
 		self._testMatchTransf(match._.C(), 'C')
 		self._testMatchTransf(match._.C(1), 'C(1)')
 		self._testMatchTransf(match._.C(1,2), 'C(1,2)')
-		self._testMatchTransf(parse.Transf('?C()'), 'C')
-		self._testMatchTransf(parse.Transf('?C(1)'), 'C(1)')
-		self._testMatchTransf(parse.Transf('?C(1,2)'), 'C(1,2)')
+		self._testMatchTransf(Transf('?C()'), 'C')
+		self._testMatchTransf(Transf('?C(1)'), 'C(1)')
+		self._testMatchTransf(Transf('?C(1,2)'), 'C(1,2)')
 
 
 class TestTraverse(TestMixin, unittest.TestCase):
@@ -507,7 +508,6 @@ class TestParse(TestMixin, unittest.TestCase):
 		'!"," => sep',
 		'Where(!"," => sep)',
 		'Where( !"," => sep ); id',
-		'with sep in Where( !"," => sep ); id end',
 		'~C(1, <id>)',
 		'!1{A,B,C}',
 		'if ?c then !x end',
@@ -519,8 +519,8 @@ class TestParse(TestMixin, unittest.TestCase):
 		'!1 / a \\ !2',
 		'!1 / a \\ \\ b / !2',
 		'=a',
-		#'/a',
-		'with a, b=!1, c[], d[] = e in id end',
+		'with a=!1, b=!2 in id end',
+		'global a, b in id end',
 	]
 
 	def testParse(self):
@@ -540,7 +540,7 @@ class TestParse(TestMixin, unittest.TestCase):
 			#print "ATERM:", term
 
 			try:
-				output = repr(parse.Transf(input))
+				output = repr(Transf(input))
 			except:
 				print input
 				if ast is not None:

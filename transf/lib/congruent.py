@@ -5,9 +5,9 @@ import aterm.types
 
 from transf import exception
 from transf import transformation
-from transf.lib import base
-from transf.types import variable
+from transf import variable
 from transf import operate
+from transf.lib import base
 from transf.lib import combine
 from transf.lib import _common
 from transf.lib import match
@@ -131,7 +131,9 @@ class ApplCons(_common.ApplCons):
 			return term
 
 
-Var = variable.Traverse
+def Var(var):
+	assert isinstance(var, variable.Variable)
+	return var.congruent
 
 
 class Annos(_common.Annos):

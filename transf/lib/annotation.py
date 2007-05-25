@@ -15,10 +15,9 @@ from transf.lib import debug
 
 
 def Set(label, *values):
-	annos = scope.Anonymous('annos')
-	return scope.With((
-			(annos, types.term.Transf(build.List(values))),
-		),
+	annos = types.term.Term('annos')
+	return scope.Scope((annos,),
+		combine.Where(build.List(values) * annos.match) *
 		congruent.Annos(
 			lists.Fetch(congruent.ApplCons(match.Str(label), build.Var(annos))) +
 			build.Cons(build.ApplCons(build.Str(label), build.Var(annos)), base.ident)

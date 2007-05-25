@@ -30,5 +30,3 @@ G{packagetree transf}
 G{importgraph}
 
 '''
-
-__docformat__ = 'epytext'

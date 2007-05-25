@@ -2,6 +2,7 @@
 
 
 from transf import parse
+from refactoring import selection
 import ir.match
 
 
@@ -23,7 +24,7 @@ annotate = path.Annotate(
 #######################################################################
 # Selection
 
-projectSelection = path.Project(!selection)
+projectSelection = global selection in path.Project(!selection) end
 
 MatchSelectionTo(s) = projectSelection ; s
 
@@ -31,7 +32,7 @@ MatchSelectionTo(s) = projectSelection ; s
 #######################################################################
 # Selection context
 
-getSelection = !selection
+getSelection = global selection in !selection end
 
 isSelected =
 	Where(

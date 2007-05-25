@@ -3,7 +3,7 @@
 
 from transf.lib.base import *
 
-from transf.lib.util import *
+from transf.util import *
 
 from transf.lib.combine import *
 

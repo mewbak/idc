@@ -1,7 +1,6 @@
 '''Symbol handling transformations.'''
 
 
-from transf import types
 from transf import parse
 import ir.match
 
@@ -10,6 +9,8 @@ parse.Transfs('''
 
 #######################################################################
 # Local variable table
+
+global localTbl[]
 
 # TODO: detect local variables from scope rules
 isReg = combine.Where(annotation.Get('Reg'))
@@ -20,17 +21,20 @@ isLocalVar =
 	(isReg + isTmp)
 
 updateLocalVar =
-	isLocalVar ;
-	types.table.Set('local')
+	global localTbl in
+		isLocalVar ;
+		localTbl.set
+	end
 
 updateLocalVars =
-	traverse.AllTD(updateLocalVar)
+	global localTbl in
+		localTbl.unset ;
+		traverse.AllTD(updateLocalVar)
+	end
 
 EnterFunction(operand) =
-	with local[] in
-		updateLocalVars ;
-		operand
-	end
+	updateLocalVars ;
+	operand
 
 EnterModule(operand) = EnterFunction(operand)
 

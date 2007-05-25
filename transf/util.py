@@ -14,18 +14,39 @@ class Adaptor(transformation.Transformation):
 		self.args = args
 		self.kargs = kargs
 
-	def apply(self, term, ctx):
-		return self.func(term, *self.args, **self.kargs)
+	def apply(self, trm, ctx):
+		return self.func(trm, *self.args, **self.kargs)
 
 
 class BoolAdaptor(Adaptor):
 	'''Transformation adapter for a boolean function.'''
 
-	def apply(self, term, ctx):
-		if self.func(term, *self.args, **self.kargs):
-			return term
+	def apply(self, trm, ctx):
+		if self.func(trm, *self.args, **self.kargs):
+			return trm
 		else:
 			raise exception.Failure
+
+
+class MethodTransformation(transformation.Transformation):
+
+	def __init__(self, method, obj):
+		self.method = method
+		self.obj = obj
+		self.__doc__ = method.__doc__
+
+	def apply(self, trm, ctx):
+		return self.method(self.obj, trm, ctx)
+
+
+class TransformationMethod(object):
+
+	def __init__(self, method):
+		self.method = method
+		self.__doc__ = method.__doc__
+
+	def __get__(self, obj, objtype=None):
+		return MethodTransformation(self.method, obj)
 
 
 class Proxy(transformation.Transformation):
@@ -39,10 +60,10 @@ class Proxy(transformation.Transformation):
 		transformation.Transformation.__init__(self)
 		self.subject = subject
 
-	def apply(self, term, ctx):
+	def apply(self, trm, ctx):
 		if self.subject is None:
 			raise exception.Fatal('subject transformation not specified')
-		return self.subject.apply(term, ctx)
+		return self.subject.apply(trm, ctx)
 
 	def __repr__(self):
 		return '<%s ...>' % (self.__class__.__name__,)

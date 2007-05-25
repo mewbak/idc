@@ -24,21 +24,26 @@ if __name__ != '__main__':
 	LogFail = lambda msg: lib.base.fail
 
 
+parse.Transfs('''
+
 name = lib.match.aStr
 
 size = lib.match.anInt
 
-lit = lib.match.anInt + lib.match.aReal + lib.match.aStr
+lit =
+	lib.match.anInt +
+	lib.match.aReal +
+	lib.match.aStr
 
-sign = parse.Transf('''
+sign =
 	?Signed +
 	?Unsigned +
-	?NoSign
-''') + LogFail('bad sign')
+	?NoSign +
+	LogFail(`'bad sign'`)
 
 type = lib.util.Proxy()
 types = lib.lists.Map(type)
-type.subject = parse.Transf('''
+type.subject =
 	?Void +
 	?Bool +
 	?Int( <size>, <sign> ) +
@@ -49,15 +54,15 @@ type.subject = parse.Transf('''
 	?Array( <type> ) +
 	?Compound( <types> ) +
 	?Union( <types> ) +
-	?Blob( <size> )
-''') + LogFail('bad type')
+	?Blob( <size> ) +
+	LogFail(`'bad type'`)
 
-unOp = parse.Transf('''
+unOp =
 	?Not( <type> ) +
-	?Neg( <type> )
-''') + LogFail('bad unary operator')
+	?Neg( <type> ) +
+	LogFail(`'bad unary operator'`)
 
-binOp = parse.Transf('''
+binOp =
 	?And( <type> ) +
 	?Or( <type> ) +
 	?Xor( <type> ) +
@@ -75,13 +80,13 @@ binOp = parse.Transf('''
 	?Lt( <type> ) +
 	?LtEq( <type> ) +
 	?Gt( <type> ) +
-	?GtEq( <type> )
-''') + LogFail('bad binary operator')
+	?GtEq( <type> ) +
+	LogFail(`'bad binary operator'`)
 
 expr = lib.util.Proxy()
 addr = expr
 exprs = lib.lists.Map(expr)
-expr.subject = parse.Transf('''
+expr.subject =
 	?Lit( <type> , <lit> ) +
 	?Sym( <name> ) +
 	?Cast( <type> , <expr> ) +
@@ -90,21 +95,20 @@ expr.subject = parse.Transf('''
 	?Cond( <expr> , <expr> , <expr> ) +
 	?Call( <addr> , <exprs> ) +
 	?Addr( <expr> ) +
-	?Ref( <addr> )
-''') + LogFail('bad expression')
+	?Ref( <addr> ) +
+	LogFail(`'bad expression'`)
 
-optExpr = parse.Transf('''
+optExpr =
 	?NoExpr +
 	expr
-''')
 
-arg = parse.Transf('''
-	?Arg( <type> , <name> )
-''') + LogFail('bad argument')
+arg =
+	?Arg( <type> , <name> ) +
+	LogFail(`'bad argument'`)
 
 stmt = lib.util.Proxy()
 stmts = lib.lists.Map(stmt)
-stmt.subject = parse.Transf('''
+stmt.subject =
 	?Var( <type> , <name> , <optExpr> ) +
 	?Function( <type> , <name> , <Map(arg)>, <stmts> ) +
 	?Assign( <type> , <optExpr> , <expr> ) +
@@ -118,13 +122,13 @@ stmt.subject = parse.Transf('''
 	?GoTo( <addr> ) +
 	?Break +
 	?Continue +
-	?NoStmt
-''') + LogFail('bad statement')
+	?NoStmt +
+	LogFail(`'bad statement'`)
 
-module = parse.Transf('''
-	?Module( <stmts> )
-''') + LogFail('bad module')
-
+module =
+	?Module( <stmts> ) +
+	LogFail(`'bad module'`)
+''')
 
 if __name__ == '__main__':
 	import aterm.factory

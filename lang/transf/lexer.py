@@ -100,6 +100,8 @@ _tokenizer = antlrre.Tokenizer(
 		"rec": parser.REC,
 		"switch": parser.SWITCH,
 		"case": parser.CASE,
+		"local": parser.LOCAL,
+		"global": parser.GLOBAL,
 	}
 )
 

@@ -8,9 +8,10 @@ import aterm.lists
 
 from transf import exception
 from transf import transformation
+from transf import types
+from transf import operate
 from transf.lib import base
 from transf.lib import util
-from transf import operate
 from transf.lib import combine
 from transf.lib import project
 from transf.lib import match
@@ -131,8 +132,8 @@ def AtSuffixR(operand):
 # TODO: is there any way to avoid so much code duplication in the Split* transfs?
 
 def Split(operand):
-	tail = scope.Anonymous('tail')
-	return scope.Local((tail,),
+	tail = types.term.Term('tail')
+	return scope.Scope((tail,),
 		build.List((
 			AtSuffix(
 				match.Cons(operand, match.Var(tail)) *
@@ -144,8 +145,8 @@ def Split(operand):
 
 
 def SplitBefore(operand):
-	tail = scope.Anonymous('tail')
-	return scope.Local((tail,),
+	tail = types.term.Term('tail')
+	return scope.Scope((tail,),
 		build.List((
 			AtSuffix(
 				congruent.Cons(operand, base.ident) *
@@ -157,8 +158,8 @@ def SplitBefore(operand):
 
 
 def SplitAfter(operand):
-	tail = scope.Anonymous('tail')
-	return scope.Local((tail,),
+	tail = types.term.Term('tail')
+	return scope.Scope((tail,),
 		build.List((
 			AtSuffix(
 				congruent.Cons(operand, match.Var(tail) * build.nil)
@@ -169,9 +170,9 @@ def SplitAfter(operand):
 
 
 def SplitKeep(operand):
-	elem = scope.Anonymous('elem')
-	tail = scope.Anonymous('tail')
-	return scope.Local((elem, tail),
+	elem = types.term.Term('elem')
+	tail = types.term.Term('tail')
+	return scope.Scope((elem, tail),
 		build.List((
 			AtSuffix(
 				match.Cons(operand * match.Var(elem), match.Var(tail)) *

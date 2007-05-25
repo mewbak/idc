@@ -111,7 +111,9 @@ aStmt = lib.match.ApplNames(stmtNames)
 
 # list a statement's sub-statements
 
-reduceStmts = parse.Transf('''
+parse.Transfs('''
+
+reduceStmts =
 (
 	Block(stmts) -> stmts |
 	If(_, true, false) -> [true, false] |
@@ -120,9 +122,8 @@ reduceStmts = parse.Transf('''
 	Function(_, _, _, stmts) -> stmts |
 	Module(stmts) -> stmts
 ) + ![]
-''')
 
-reduceStmts = parse.Transf('''
+reduceStmts =
 switch Try(project.name)
 case "Block":
 	project.args ; project.first
@@ -139,9 +140,11 @@ case "Module":
 else
 	![]
 end
-''')
 
-stopStmts = -(aModule + aCompoundStmt + lib.match.aList)
+stopStmts =
+	Not(aModule + aCompoundStmt + lib.match.aList)
+
+''')
 
 
 

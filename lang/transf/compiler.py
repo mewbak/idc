@@ -4,7 +4,6 @@ respective transformation objects."""
 
 # pylint: disable-msg=R0201
 
-
 from aterm import walker
 
 
@@ -14,38 +13,81 @@ class SemanticException(Exception):
 
 
 MATCH, BUILD, TRAVERSE = range(3)
+ARG, LOCAL, GLOBAL = range(3)
 
 
 class Compiler(walker.Walker):
 
 	def __init__(self):
-		pass
+		self.stmts = []
+		self.indent = 0
+		self.vars = {}
 
-	compile = walker.Dispatch('compile')
+	def stmt(self, s):
+		self.stmts.append('\t' * self.indent + s)
+
+	def compile(self, t):
+		self.define(t)
+		return "\n".join(self.stmts)
 
 	transf_defs = compile
 
-	def compileDefs(self, tdefs):
-		stmts = []
+	define = walker.Dispatch('define')
+
+	def defineDefs(self, tdefs):
 		for tdef in tdefs:
-			stmts.append(self.compile(tdef) + "\n")
-		return "".join(stmts)
+			self.vars = {}
+			self.define(tdef)
 
-	def compileTransfDef(self, n, t):
+	def defineVarDef(self, n, t):
 		n = self.id(n)
-		t = self.transf(t)
-		return "%s = transf.lib.scope.Scope(%s)" % (n, t)
+		t = self.type(t)
+		self.stmt("%s = %s(%r)" % (n, t, n))
 
-	def compileTransfFacDef(self, n, a, t):
+	def type(self, t):
+		t = self.id(t)
+		if t == "Term":
+			return "transf.types.term.Term"
+		if t == "Table":
+			return "transf.types.table.Table"
+		raise SemanticException
+
+	def defineTransfDef(self, n, t):
 		n = self.id(n)
-		a = ",".join(map(self.id, a))
-		t = self.transf(t)
+		t = self.doTransf(t)
+		self.stmt("%s = %s" % (n, t))
+
+	def defineTransfFacDef(self, n, a, t):
+		n = self.id(n)
+		a = self.id_list(a)
+		for a_ in a:
+			self.vars[a_] = ARG
+		a = ",".join(a)
 		try:
 			n.index(".")
 		except ValueError:
-			return "def %s(%s):\n\treturn %s" % (n, a, t)
+			self.stmt("def %s(%s):" % (n, a))
+			self.indent += 1
+			t = self.doTransf(t)
+			self.stmt("return %s" % t)
+			self.indent -= 1
 		else:
-			return "%s = lambda %s: %s" % (n, a, t)
+			# XXX: hack for proxy to work
+			self.stmt("def _tmp(%s):" % a)
+			self.indent += 1
+			t = self.doTransf(t)
+			self.stmt("return %s" % t)
+			self.indent -= 1
+			self.stmt("%s = _tmp" % n)
+
+	def doTransf(self, t):
+		t = self.transf(t)
+		vs = []
+		for vn, vt in self.vars.iteritems():
+			if vt == LOCAL:
+				vs.append(vn)
+		vs = "[" + ",".join(["_" + v for v in vs]) + "]"
+		return "transf.lib.scope.Scope(%s, %s)" % (vs, t)
 
 	transf = walker.Dispatch('transf')
 
@@ -65,12 +107,12 @@ class Compiler(walker.Walker):
 		return self.traverse(t)
 
 	def transfSet(self, v):
-		v = self.id(v)
-		return "transf.types.variable.Set(%r)" % v
+		v = self.var(v)
+		return "%s.set" % v
 
 	def transfUnset(self, v):
-		v = self.id(v)
-		return "transf.types.variable.Unset(%r)" % v
+		v = self.var(v)
+		return "%s.unset" % v
 
 	def transfComposition(self, l, r):
 		l = self.transf(l)
@@ -78,7 +120,8 @@ class Compiler(walker.Walker):
 		return "transf.lib.combine.Composition(%s, %s)" % (l, r)
 
 	def transfChoice(self, o):
-		o = "[" + ",".join(["transf.lib.scope.Scope(%s)" % self.transf(_o) for _o in o]) + "]"
+		# FIXME: insert a variable scope here
+		o = "[" + ",".join(["%s" % self.transf(_o) for _o in o]) + "]"
 		return "transf.lib.combine.UndeterministicChoice(%s)" % o
 
 	def transfLeftChoice(self, l, r):
@@ -112,15 +155,6 @@ class Compiler(walker.Walker):
 		w = self.transf(w)
 		return "transf.lib.combine.Composition(%s, transf.lib.combine.Composition(lib.transf.combine.Where(%s), %s))" % (m, w, b)
 
-	def transfAnon(self, r):
-		vars = []
-		self.collect(r, vars)
-		r = self.transf(r)
-		if vars:
-			vars = "[" + ",".join([repr(var) for var in vars]) + "]"
-			r = "transf.lib.scope.Local(%s, %s)" % (vars, r)
-		return r
-
 	def transfApplyMatch(self, t, m):
 		t = self.transf(t)
 		m = self.match(m)
@@ -129,7 +163,7 @@ class Compiler(walker.Walker):
 	def transfApplyStore(self, t, v):
 		t = self.transf(t)
 		v = self.id(v)
-		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, transf.types.variable.Set(%r)))" % (t, v)
+		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (t, v)
 
 	def transfBuildApply(self, t, b):
 		t = self.transf(t)
@@ -174,23 +208,33 @@ class Compiler(walker.Walker):
 
 	def transfRec(self, i, t):
 		i = self.id(i)
+		# FIXME: add i to the var list as ARG
 		t = self.transf(t)
 		return "transf.lib.iterate.Rec(lambda %s: %s)" % (i, t)
 
-	# #( VARMETHOD v=id m=id a=arg_list )
-	#	{ ret = transf.types.variable.Wrap(v, m, *a) }
+	def transfGlobal(self, vs, t):
+		oldvars = {}
+		vs = self.id_list(vs)
+		for v in vs:
+			if v in self.vars:
+				oldvars[v] = self.vars[v]
+			self.vars[v] = GLOBAL
+		t = self.transf(t)
+		self.vars.update(oldvars)
+		return t
 
 	def transfWith(self, vs, t):
-		vs = "[" + ",".join(map(self.doWithDef, vs)) + "]"
+		vs = map(self.transf, vs)
+		vs.reverse()
 		t = self.transf(t)
-		return "transf.lib.scope.With(%s, %s)" % (vs, t)
+		for v in vs:
+			t = "transf.lib.combine.Composition(%s, %s)" % (v, t)
+		return t
 
-	def doWithDef(self, t):
-		v, c = t.rmatch("WithDef(_,_)")
-		v = self.id(v)
-		c = self.constructor(c)
-		return "(%r, %s)" % (v, c)
-
+	def transfWithDef(self, v, t):
+		v = self.var(v)
+		t = self.transf(t)
+		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (t, v)
 
 	arg = walker.Dispatch('arg')
 
@@ -348,13 +392,13 @@ class Compiler(walker.Walker):
 		return "transf.lib.base.ident"
 
 	def termTransfVar(self, v, mode):
-		v = self._str(v)
+		v = self.var(v)
 		if mode == MATCH:
-			return "transf.lib.match.Var(%r)" % v
+			return "transf.lib.match.Var(%s)" % v
 		elif mode == BUILD:
-			return "transf.lib.build.Var(%r)" % v
+			return "transf.lib.build.Var(%s)" % v
 		elif mode == TRAVERSE:
-			return "transf.lib.congruent.Var(%r)" % v
+			return "transf.lib.congruent.Var(%s)" % v
 
 	def termTransfAs(self, v, t, mode):
 		v = self.termTransf(v, mode)
@@ -384,45 +428,61 @@ class Compiler(walker.Walker):
 
 	collect = walker.Dispatch('collect')
 
-	def collectRule(self, m, b, vars):
-		self.collect(m, vars)
+	def collectVar(self, name, vars):
+		name = self.id(name)
+		vars.add(name)
 
-	def collectWhereRule(self, m, b, w, vars):
-		self.collect(m, vars)
+	collectSet = collectVar
+	collectUnset = collectVar
 
-	def collectCons(self, h, t, vars):
-		self.collect(h, vars)
-		self.collect(t, vars)
+	def collectWithDef(self, name, t, vars):
+		name = self.id(name)
+		vars.add(name)
 
-	def collectAppl(self, name, args, vars):
+	def collectGlobal(self, names, operand, vars):
+		names = self.id_list(names)
+		for name in names:
+			vars.discard(name)
+		self.collect(operand)
+
+	def collect_List(self, elms, vars):
+		for elm in elms:
+			self.collect(elm, vars)
+
+	def collect_Appl(self, name, args, vars):
 		for arg in args:
 			self.collect(arg, vars)
-
-	def collectApplCons(self, n, a, vars):
-		self.collect(n, vars)
-		self.collect(a, vars)
-
-	def collectVar(self, v, vars):
-		v = self._str(v)
-		if v not in vars:
-			vars.append(v)
-
-	def collectAs(self, v, t, vars):
-		self.collect(v, vars)
-		self.collect(t, vars)
-
-	def collectAnnos(self, t, a, vars):
-		self.collect(t, vars)
-		self.collect(a, vars)
 
 	def collect_Term(self, t, vars):
 		# ignore everything else
 		pass
 
 
+	def var(self, v):
+		v = self._str(v)
+		if not v in self.vars:
+			self.stmt('_%s = transf.types.term.Term(%r)' %(v, v))
+			self.vars[v] = LOCAL
+			return self.local(v)
+		else:
+			if self.vars[v] == LOCAL:
+				return self.local(v)
+			else:
+				return v
+
+	def local(self, v):
+		return "_" + v
+
+
 	def id_list(self, l):
 		return map(self.id, l)
 
 	def id(self, i):
-		return self._str(i)
-
+		s = self._str(i)
+		parts = s.split('.')
+		head = parts[0]
+		tail = parts[1:]
+		if head in self.vars and self.vars[head] == LOCAL:
+			return ".".join([self.local(s)] + tail)
+		else:
+			return s
