@@ -293,9 +293,13 @@ class Compiler(walker.Walker):
 		return "aterm.factory.factory.makeNil()"
 
 	def staticAppl(self, n, a):
-		n = self.static(n)
+		n = self._str(n)
 		a = self.static(a)
-		return "aterm.factory.factory.makeAppl(%s.value, %s)" % (n, a)
+		return "aterm.factory.factory.makeAppl(%r, %s)" % (n, a)
+
+	def staticApplName(self, n):
+		n = self._str(n)
+		return "aterm.factory.factory.makeAppl(%r)" % (n)
 
 	def staticWildcard(self):
 		raise SemanticException(None, "wildcard in static term")

@@ -2,6 +2,7 @@
 
 
 import sys
+import traceback
 
 from transf import transformation
 from transf import parse
@@ -14,6 +15,7 @@ from machine.pentium.binary import *
 from machine.pentium.logical import *
 from machine.pentium.shift import *
 from machine.pentium.control import *
+from machine.pentium.flag import *
 from machine.pentium.misc import *
 from machine.pentium.simplify import simplify
 
@@ -38,7 +40,12 @@ class OpcodeDispatch(transf.transformation.Transformation):
 			sys.stderr.write("warning: don't now how to translate opcode '%s'\n" % opcode)
 			raise transf.exception.Failure
 
-		return trf.apply(operands, ctx)
+		try:
+			return trf.apply(operands, ctx)
+		except transf.exception.Failure:
+			sys.stderr.write("warning: failed to translate opcode '%s'\n" % opcode)
+			traceback.print_exc()
+			raise
 
 
 parse.Transfs('''

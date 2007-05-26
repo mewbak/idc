@@ -17,7 +17,7 @@ class Temp(transf.transformation.Transformation):
 
 	def apply(self, trm, ctx):
 		self.tmp_no += 1
-		name = "temp%d" % self.tmp_no
+		name = "tmp%d" % self.tmp_no
 		return trm.factory.make("Sym(_){Tmp}", name)
 
 temp =  Temp()
