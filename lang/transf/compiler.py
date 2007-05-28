@@ -12,7 +12,7 @@ class SemanticException(Exception):
 	pass
 
 
-MATCH, BUILD, TRAVERSE = range(3)
+MATCH, BUILD, CONGRUENT = range(3)
 ARG, LOCAL, GLOBAL = range(3)
 
 
@@ -103,12 +103,13 @@ class Compiler(walker.Walker):
 	def transfBuild(self, t):
 		return self.build(t)
 
-	def transfTraverse(self, t):
-		return self.traverse(t)
+	def transfCongruent(self, t):
+		return self.congruent(t)
 
-	def transfSet(self, v):
+	def transfAssign(self, v, t):
 		v = self.var(v)
-		return "%s.set" % v
+		t = self.transf(t)
+		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (t, v)
 
 	def transfUnset(self, v):
 		v = self.var(v)
@@ -322,8 +323,8 @@ class Compiler(walker.Walker):
 	def build(self, t):
 		return self.termTransf(t, mode = BUILD)
 
-	def traverse(self, t):
-		return self.termTransf(t, mode = TRAVERSE)
+	def congruent(self, t):
+		return self.termTransf(t, mode = CONGRUENT)
 
 
 	termTransf = walker.Dispatch('termTransf')
@@ -362,7 +363,7 @@ class Compiler(walker.Walker):
 			return "transf.lib.match.Cons(%s, %s)" % (h, t)
 		elif mode == BUILD:
 			return "transf.lib.build.Cons(%s, %s)" % (h, t)
-		elif mode == TRAVERSE:
+		elif mode == CONGRUENT:
 			return "transf.lib.congruent.Cons(%s, %s)" % (h, t)
 
 	def termTransfAppl(self, name, args, mode):
@@ -372,7 +373,7 @@ class Compiler(walker.Walker):
 			return "transf.lib.match.Appl(%r, %s)" % (name, args)
 		elif mode == BUILD:
 			return "transf.lib.build.Appl(%r, %s)" % (name, args)
-		elif mode == TRAVERSE:
+		elif mode == CONGRUENT:
 			return "transf.lib.congruent.Appl(%r, %s)" % (name, args)
 
 	def termTransfApplName(self, name, mode):
@@ -389,7 +390,7 @@ class Compiler(walker.Walker):
 			return "transf.lib.match.ApplCons(%s, %s)" % (n, a)
 		elif mode == BUILD:
 			return "transf.lib.build.ApplCons(%s, %s)" % (n, a)
-		elif mode == TRAVERSE:
+		elif mode == CONGRUENT:
 			return "transf.lib.congruent.ApplCons(%s, %s)" % (n, a)
 
 	def termTransfWildcard(self, mode):
@@ -401,7 +402,7 @@ class Compiler(walker.Walker):
 			return "transf.lib.match.Var(%s)" % v
 		elif mode == BUILD:
 			return "transf.lib.build.Var(%s)" % v
-		elif mode == TRAVERSE:
+		elif mode == CONGRUENT:
 			return "transf.lib.congruent.Var(%s)" % v
 
 	def termTransfAs(self, v, t, mode):
@@ -420,8 +421,8 @@ class Compiler(walker.Walker):
 			r = "transf.lib.match.Annos(%s)" % a
 		elif mode == BUILD:
 			r = "transf.lib.build.Annos(%s)" % a
-		elif mode == TRAVERSE:
-			r = "transf.lib.traverse.Annos(%s)" % a
+		elif mode == CONGRUENT:
+			r = "transf.lib.congruent.Annos(%s)" % a
 		return "transf.lib.combine.Composition(%s, %s)" % (t, r)
 
 	def termTransf_Term(self, t, mode):
@@ -435,9 +436,6 @@ class Compiler(walker.Walker):
 	def collectVar(self, name, vars):
 		name = self.id(name)
 		vars.add(name)
-
-	collectSet = collectVar
-	collectUnset = collectVar
 
 	def collectWithDef(self, name, t, vars):
 		name = self.id(name)

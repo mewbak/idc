@@ -50,7 +50,6 @@ _tokenizer = antlrre.Tokenizer(
 
 		(parser.RARROW, r'->', False),
 		(parser.RDARROW, r'=>', False),
-		(parser.RDDARROW, r'==>', False),
 
 		(parser.OBJ, pyobj, False),
 	],
@@ -77,8 +76,6 @@ _tokenizer = antlrre.Tokenizer(
 		'?': parser.QUEST,
 		'!': parser.BANG,
 		'+': parser.PLUS,
-		#'-': parser.MINUS,
-		'^': parser.CARET,
 		'&': parser.AMP,
 		'|': parser.VERT,
 		'~': parser.TILDE,

@@ -71,6 +71,6 @@ asmSARB = AsmSxR(!8, !Signed)
 asmSARW = AsmSxR(!16, !Signed)
 asmSARL = AsmSxR(!32, !Signed)
 
-''', verbose=True)
+''')
 
 
