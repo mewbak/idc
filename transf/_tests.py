@@ -155,7 +155,7 @@ class TestCombine(TestMixin, unittest.TestCase):
 		func = lambda x, y, z: (x and y and max(x, y) or 0) or (not x and z)
 		self._testCombination(combine._GuardedChoice, 3, func)
 		self._testCombination(combine.GuardedChoice, 3, func)
-		self._testCombination(lambda x, y, z: Transf('x < y + z'), 3, func)
+		self._testCombination(lambda x, y, z: Transf('x & y + z'), 3, func)
 
 	def testIf(self):
 		func = lambda x, y: (x and y) or (not x)
@@ -459,95 +459,84 @@ class TestArith(TestMixin, unittest.TestCase):
 		)
 
 
-TestStub = base.Ident
-
-
 class TestParse(TestMixin, unittest.TestCase):
 
 	parseTestCases = [
-		'id',
-		'fail',
-		'id ; fail',
-		'id + fail',
-		'id + fail ; id',
-		'(id + fail) ; id',
-		'?1',
-		'?0.1',
-		'?"s"',
-		'?[]',
-		'?[1,2]',
-		'?C',
-		'?C(1,2)',
-		'?_',
-		'?_(_,_)',
-		'?x',
-		'?f(x,y)',
-		'!1',
-		'!0.1',
-		'!"s"',
-		'![]',
-		'![1,2]',
-		'!C',
-		'!C(1,2)',
-		'!_',
-		'!_(_,_)',
-		'!x',
-		'!f(x,y)',
-		'?C(<id>,<fail>)',
-		'!C(<id>,<fail>)',
-		'?C(v@<id>,<fail>)',
-		'base.ident',
-		'TestStub()',
-		'base.Ident()',
-		'( C(x,y) -> D(y,x) )',
-		'{ C(x,y) -> D(y,x) }',
-		'<id> 123',
-		'id; ?123',
-		'id => a',
-		'<id> 1 ; ?123',
-		'!"," => sep',
-		'Where(!"," => sep)',
-		'Where( !"," => sep ); id',
-		'~C(1, <id>)',
-		'!1{A,B,C}',
-		'if ?c then !x end',
-		'if ?c then !x else !y end',
-		'?1 < !2 + !3',
-		'?1 < !2 + !3 + !4',
-		'?1 + !2 + !3 + !4',
-		'switch !x case 1: !A case 2: !B else !C end',
-		'!1 / a \\ !2',
-		'!1 / a \\ \\ b / !2',
-		'=a',
-		'with a=!1, b=!2 in id end',
-		'global a, b in id end',
+		('id', 'Ident'),
+		('fail', 'Fail'),
+		('id ; fail', 'Composition(Ident,Fail)'),
+		('id + fail', 'LeftChoice(Ident,Fail)'),
+		('id + fail ; id', 'LeftChoice(Ident,Composition(Fail,Ident))'),
+		('(id + fail) ; id', 'Composition(LeftChoice(Ident,Fail),Ident)'),
+		('?1', 'Match(Int(1))'),
+		('?0.1', 'Match(Real(0.1))'),
+		('?"s"', 'Match(Str("s"))'),
+		('?[]', 'Match(Nil)'),
+		('?[1,2]', 'Match(Cons(Int(1),Cons(Int(2),Nil)))'),
+		('?C', 'Match(ApplName("C"))'),
+		('?C(1,2)', 'Match(Appl("C",[Int(1),Int(2)]))'),
+		('?_', 'Match(Wildcard)'),
+		('?_(_,_)', 'Match(ApplCons(Wildcard,Cons(Wildcard,Cons(Wildcard,Nil))))'),
+		('?x', 'Match(Var("x"))'),
+		('?f(x,y)', 'Match(ApplCons(Var("f"),Cons(Var("x"),Cons(Var("y"),Nil))))'),
+		('!1', 'Build(Int(1))'),
+		('!0.1', 'Build(Real(0.1))'),
+		('!"s"', 'Build(Str("s"))'),
+		('![]', 'Build(Nil)'),
+		('![1,2]', 'Build(Cons(Int(1),Cons(Int(2),Nil)))'),
+		('!C', 'Build(ApplName("C"))'),
+		('!C(1,2)', 'Build(Appl("C",[Int(1),Int(2)]))'),
+		('!_', 'Build(Wildcard)'),
+		('!_(_,_)', 'Build(ApplCons(Wildcard,Cons(Wildcard,Cons(Wildcard,Nil))))'),
+		('!x', 'Build(Var("x"))'),
+		('!f(x,y)', 'Build(ApplCons(Var("f"),Cons(Var("x"),Cons(Var("y"),Nil))))'),
+		('?C(<id>,<fail>)', 'Match(Appl("C",[Transf(Ident),Transf(Fail)]))'),
+		('!C(<id>,<fail>)', 'Build(Appl("C",[Transf(Ident),Transf(Fail)]))'),
+		('?C(v@<id>,<fail>)', 'Match(Appl("C",[As(Var("v"),Transf(Ident)),Transf(Fail)]))'),
+		('base.ident', 'Transf("base.ident")'),
+		('base.Ident()', 'Macro("base.Ident",[])'),
+		('C(x,y) -> D(y,x)', 'Rule(Appl("C",[Var("x"),Var("y")]),Appl("D",[Var("y"),Var("x")]))'),
+		('{ C(x,y) -> D(y,x) }', 'Rule(Appl("C",[Var("x"),Var("y")]),Appl("D",[Var("y"),Var("x")]))'),
+		('id 123', 'BuildApply(Ident,Int(123))'),
+		('id [1,2]', 'BuildApply(Ident,Cons(Int(1),Cons(Int(2),Nil)))'),
+		('id; ?123', 'Composition(Ident,Match(Int(123)))'),
+		('id => a', 'ApplyMatch(Ident,Var("a"))'),
+		('id 1 ; ?123', 'Composition(BuildApply(Ident,Int(1)),Match(Int(123)))'),
+		('!"," => sep', 'ApplyMatch(Build(Str(",")),Var("sep"))'),
+		('Where(!"," => sep)', 'Macro("Where",[ApplyMatch(Build(Str(",")),Var("sep"))])'),
+		('Where(!"," => sep); id', 'Composition(Macro("Where",[ApplyMatch(Build(Str(",")),Var("sep"))]),Ident)'),
+		('~C(1, <id>)', 'Traverse(Appl("C",[Int(1),Transf(Ident)]))'),
+		('!1{A,B,C}', 'Build(Annos(Int(1),Cons(ApplName("A"),Cons(ApplName("B"),Cons(ApplName("C"),Nil)))))'),
+		('if ?c then !x end', 'If([IfClause(Match(Var("c")),Build(Var("x")))],Ident)'),
+		('if ?c then !x else !y end', 'If([IfClause(Match(Var("c")),Build(Var("x")))],Build(Var("y")))'),
+		('?1 & !2 + !3', 'GuardedChoice(Match(Int(1)),Build(Int(2)),Build(Int(3)))'),
+		('?1 & !2 + !3 + !4', 'GuardedChoice(Match(Int(1)),Build(Int(2)),LeftChoice(Build(Int(3)),Build(Int(4))))'),
+		('?1 + !2 + !3 + !4', 'LeftChoice(Match(Int(1)),LeftChoice(Build(Int(2)),LeftChoice(Build(Int(3)),Build(Int(4)))))'),
+		('switch !x case 1: !A case 2,3: !B else !C end', 'Switch(Build(Var("x")),[SwitchCase([Int(1)],Build(ApplName("A"))),SwitchCase([Int(2),Int(3)],Build(ApplName("B")))],Build(ApplName("C")))'),
+		('!1 / a \\ !2', 'Join(Build(Int(1)),Build(Int(2)),["a"],[])'),
+		('!1 / a \\ \\ b / !2', 'Join(Build(Int(1)),Build(Int(2)),["a"],["b"])'),
+		('=a', 'Set("a")'),
+		('with a=!1, b=!2 in id end', 'With([WithDef("a",Build(Int(1))),WithDef("b",Build(Int(2)))],Ident)'),
+		('global a, b in id end', 'Global(["a","b"],Ident)'),
 	]
 
 	def testParse(self):
-		for input in self.parseTestCases:
+		if False:
+			print
+			for input, expectedResult in self.parseTestCases:
+				result = parse._parse(input, production="transf")
+				print "\t\t(%r, %r)," % (input, str(result))
+			print
+		for input, expectedResult in self.parseTestCases:
+			expectedResult = self.factory.parse(expectedResult)
 			try:
-				parser = parse._parser(input)
-				parser.transf()
+				result = parse._parse(input, production="transf")
 			except:
 				print input
 				raise
-			ast = parser.getAST()
-
-			#print "INPUT:", input
-			#print "AST:", ast.toStringTree()
-			#import antlraterm
-			#term = antlraterm.Walker().aterm(ast)
-			#print "ATERM:", term
-
-			try:
-				output = repr(Transf(input))
-			except:
-				print input
-				if ast is not None:
-					print ast.toStringTree()
-				raise
-			#print "OUTPUT:", output
-			#print
+			self.failUnless(expectedResult.isEqual(result),
+				msg = "%r -> %s (!= %s)" %(input, result, expectedResult)
+			)
 
 
 class TestPath(TestMixin, unittest.TestCase):

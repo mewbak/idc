@@ -30,7 +30,7 @@ class Compiler(walker.Walker):
 		self.define(t)
 		return "\n".join(self.stmts)
 
-	transf_defs = compile
+	definitions = compile
 
 	define = walker.Dispatch('define')
 
@@ -57,7 +57,7 @@ class Compiler(walker.Walker):
 		t = self.doTransf(t)
 		self.stmt("%s = %s" % (n, t))
 
-	def defineTransfFacDef(self, n, a, t):
+	def defineMacroDef(self, n, a, t):
 		n = self.id(n)
 		a = self.id_list(a)
 		for a_ in a:
@@ -139,7 +139,7 @@ class Compiler(walker.Walker):
 		n = self.id(n)
 		return n
 
-	def transfTransfFac(self, i, a):
+	def transfMacro(self, i, a):
 		n = self.id(i)
 		a = ",".join(map(self.arg, a))
 		return "%s(%s)" % (n, a)

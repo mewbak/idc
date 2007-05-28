@@ -59,43 +59,43 @@ parse.Transfs('''
 # Types
 
 ppSign =
-	Signed -> H([ <<kw> "signed">, " " ])
-|	Unsigned -> H([ <<kw> "unsigned"> , " " ])
+	Signed -> H([ <kw "signed">, " " ])
+|	Unsigned -> H([ <kw "unsigned"> , " " ])
 |	NoSign -> ""
 
 ppSize =
 	switch id
 	case 8:
-		!<<kw> "char">
+		!<kw "char">
 	case 16:
-		!H([ <<kw> "short">, " ", <<kw> "int"> ])
+		!H([ <kw "short">, " ", <kw "int"> ])
 	case 32:
-		!<<kw> "int">
+		!<kw "int">
 	case 64:
-		!H([ <<kw> "long">, " ", <<kw> "int"> ])
+		!H([ <kw "long">, " ", <kw "int"> ])
 	else
 		!H([ "int", <strings.tostr> ])
 	end
 
 ppType = rec ppType : {
 	Void
-		-> <<kw> "void">
+		-> <kw "void">
 |	Bool
-		-> <<kw> "bool">
+		-> <kw "bool">
 |	Int(size, sign)
-		-> H([ <<ppSign> sign>, <<ppSize> size> ])
+		-> H([ <ppSign sign>, <ppSize size> ])
 |	Float(32)
-		-> <<kw> "float">
+		-> <kw "float">
 |	Float(64)
-		-> <<kw> "double">
+		-> <kw "double">
 |	Char(size)
-		-> <<kw> "char">
+		-> <kw "char">
 |	Pointer(size, type)
-		-> H([ <<ppType> type>, " ", <<ppOp> "*"> ])
+		-> H([ <ppType type>, " ", <ppOp "*"> ])
 |	Array(type)
-		-> H([ <<ppType> type>, "[", "]" ])
+		-> H([ <ppType type>, "[", "]" ])
 |	Blob(size)
-		-> H([ "blob", <<strings.tostr> size> ])
+		-> H([ "blob", <strings.tostr size> ])
 |	_ -> "???"
 }
 
@@ -135,8 +135,8 @@ precExpr =
 |	Cast(_, _) -> 1
 |	Addr(_) -> 1
 |	Ref(_) -> 1
-|	Unary(op, _) -> <<precUnaryOp>op>
-|	Binary(op, _, _) -> <<precBinaryOp>op>
+|	Unary(op, _) -> <precUnaryOp op>
+|	Binary(op, _, _) -> <precBinaryOp op>
 |	Cond(_, _, _) -> 13
 |	Call(_, _) -> 0
 
@@ -174,12 +174,12 @@ exprKern = util.Proxy()
 SubExpr(Cmp) =
 	?[pprec, rest] ;
 	with
-		prec = <precExpr>rest
+		prec = precExpr rest
 	in
 		if Cmp(!prec, !pprec) then
-			!H([ "(", <<exprKern>[prec,rest]>, ")" ])
+			!H([ "(", <exprKern [prec,rest]>, ")" ])
 		else
-			<exprKern>[prec,rest]
+			exprKern [prec,rest]
 		end
 	end
 
@@ -190,29 +190,29 @@ exprKern.subject =
 	[prec,rest] -> rest ;
 	Path({
 	Lit(Int(_,_), value)
-		-> <<intlit> value>
+		-> <intlit value>
 |	Lit(type, value)
-		-> <<lit> value>
+		-> <lit value>
 |	Sym(name)
-		-> <<sym> name>
+		-> <sym name>
 |	Cast(type, expr)
-		-> H([ "(", <<ppType>type>, ")", " ", <<subExpr>[prec,expr]> ])
+		-> H([ "(", <ppType type>, ")", " ", <subExpr [prec,expr]> ])
 |	Unary(op, expr)
-		-> H([ <<ppUnaryOp>op>, <<subExpr>[prec,expr]> ])
+		-> H([ <ppUnaryOp op>, <subExpr [prec,expr]> ])
 |	Binary(op, lexpr, rexpr)
-		-> H([ <<subExpr>[prec,lexpr]>, " ", <<ppBinaryOp>op>, " ", <<subExprEq>[prec,rexpr]> ])
+		-> H([ <subExpr [prec,lexpr]>, " ", <ppBinaryOp op>, " ", <subExprEq [prec,rexpr]> ])
 |	Cond(cond, texpr, fexpr)
-		-> H([ <<subExpr>[prec,cond]>, " ", <<ppOp>"?">, " ", <<subExpr>[prec,texpr]>, " ", <<ppOp>":">, " ", <<subExpr>[prec,fexpr]> ])
+		-> H([ <subExpr [prec,cond]>, " ", <ppOp "?">, " ", <subExpr [prec,texpr]>, " ", <ppOp ":">, " ", <subExpr [prec,fexpr]> ])
 |	Call(addr, args)
-		-> H([ <<subExpr>[prec,addr]>, "(", <<Map(<subExpr>[prec,<id>]);commas> args>, ")" ])
+		-> H([ <subExpr [prec,addr]>, "(", <(Map(subExpr [prec,<id>]); commas) args>, ")" ])
 |	Addr(addr)
-		-> H([ <<ppOp>"&">, <<subExpr>[prec,addr]> ])
+		-> H([ <ppOp "&">, <subExpr [prec,addr]> ])
 |	Ref(expr)
-		-> H([ <<ppOp>"*">, <<subExpr>[prec,expr]> ])
+		-> H([ <ppOp "*">, <subExpr [prec,expr]> ])
 })
 
 ppExpr =
-	<exprKern>[<precExpr>,<id>]
+	exprKern [<precExpr>,<id>]
 
 
 #######################################################################
@@ -220,7 +220,7 @@ ppExpr =
 
 ppArg =
 	Arg(type, name)
-		-> H([ <<ppType>type>, " ", name ])
+		-> H([ <ppType type>, " ", name ])
 
 ppStmt = util.Proxy()
 
@@ -230,33 +230,33 @@ ppStmts =
 
 stmtKern =
 	Assign(Void, NoExpr, src)
-		-> H([ <<ppExpr>src> ])
+		-> H([ <ppExpr src> ])
 |	Assign(_, dst, src)
-		-> H([ <<ppExpr>dst>, " ", <<ppOp>"=">, " ", <<ppExpr>src> ])
+		-> H([ <ppExpr dst>, " ", <ppOp "=">, " ", <ppExpr src> ])
 |	If(cond, _, _)
-		-> H([ <<kw>"if">, "(", <<ppExpr>cond>, ")" ])
+		-> H([ <kw "if">, "(", <ppExpr cond>, ")" ])
 |	While(cond, _)
-		-> H([ <<kw>"while">, "(", <<ppExpr>cond>, ")" ])
+		-> H([ <kw "while">, "(", <ppExpr cond>, ")" ])
 |	DoWhile(cond, _)
-		-> H([ <<kw>"while">, "(", <<ppExpr>cond>, ")" ])
+		-> H([ <kw "while">, "(", <ppExpr cond>, ")" ])
 |	Var(type, name, NoExpr)
-		-> H([ <<ppType>type>, " ", name ])
+		-> H([ <ppType type>, " ", name ])
 |	Var(type, name, val)
-		-> H([ <<ppType>type>, " ", name, "=", <<ppExpr>val> ])
+		-> H([ <ppType type>, " ", name, "=", <ppExpr val> ])
 |	Function(type, name, args, stmts)
-		-> H([ <<ppType>type>, " ", name, "(", <<Map(ppArg);commas> args>, ")" ])
+		-> H([ <ppType type>, " ", name, "(", <(Map(ppArg);commas) args>, ")" ])
 |	Label(name)
 		-> H([ name, ":" ])
 |	GoTo(label)
-		-> H([ <<kw>"goto">, " ", <<ppExpr>label> ])
+		-> H([ <kw "goto">, " ", <ppExpr label> ])
 |	Ret(_, NoExpr)
-		-> H([ <<kw>"return"> ])
+		-> H([ <kw "return"> ])
 |	Ret(_, value)
-		-> H([ <<kw>"return">, " ", <<ppExpr>value> ])
+		-> H([ <kw "return">, " ", <ppExpr value> ])
 |	NoStmt
 		-> ""
 |	Asm(opcode, operands)
-		-> H([ <<kw>"asm">, "(", <<commas>[<<lit> opcode>, *<<Map(ppExpr)>operands>]>, ")" ])
+		-> H([ <kw "asm">, "(", <commas [<lit opcode>, *<Map(ppExpr) operands>]>, ")" ])
 
 ppLabel =
 	Label
@@ -266,7 +266,7 @@ ppBlock =
 	Block( stmts )
 		-> V([
 			D("{"),
-				<<ppStmts>stmts>,
+				<ppStmts stmts>,
 			D("}")
 		])
 
@@ -274,28 +274,28 @@ ppIf =
 	If(_, true, NoStmt)
 		-> V([
 			<stmtKern>,
-				I( <<ppStmt>true> )
+				I( <ppStmt true> )
 		])
 |	If(_, true, false)
 		-> V([
 			<stmtKern>,
-				I( <<ppStmt>true> ),
-			H([ <<kw>"else"> ]),
-				I( <<ppStmt>false> )
+				I( <ppStmt true> ),
+			H([ <kw "else"> ]),
+				I( <ppStmt false> )
 		])
 
 ppWhile =
 	While(_, body)
 		-> V([
 			<stmtKern>,
-				I( <<ppStmt>body> )
+				I( <ppStmt body> )
 		])
 
 ppDoWhile =
 	DoWhile(_, body)
 		-> V([
-			H([ <<kw>"do"> ]),
-				I( <<ppStmt>body> ),
+			H([ <kw "do"> ]),
+				I( <ppStmt body> ),
 			!H([ <stmtKern>, ";" ])
 		])
 
@@ -304,7 +304,7 @@ ppFunction =
 		-> D(V([
 			<stmtKern>,
 			"{",
-				I(V([ <<ppStmts>stmts> ])),
+				I(V([ <ppStmts stmts> ])),
 			"}"
 		]))
 
@@ -326,7 +326,7 @@ ppStmt.subject = Path(
 module = Path({
 	Module(stmts)
 		-> V([
-			I( <<ppStmts>stmts> )
+			I( <ppStmts stmts> )
 		])
 })
 

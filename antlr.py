@@ -1866,7 +1866,7 @@ class Parser(object):
     def matchNot(self,t):
         if self.LA(1) == t:
             raise MismatchedTokenException(
-               tokenNames, self.LT(1), t, True, self.getFilename())
+               self.tokenNames, self.LT(1), t, True, self.getFilename())
         else:
             self.consume()
 
@@ -2553,7 +2553,7 @@ class CommonASTWithHiddenTokens(CommonAST):
         CommonAST.initialize(self,*args)
         if args and isinstance(args[0],Token):
             assert isinstance(args[0],CommonHiddenStreamToken)
-            self.hideenBefore = args[0].getHiddenBefore()
+            self.hiddenBefore = args[0].getHiddenBefore()
             self.hiddenAfter  = args[0].getHiddenAfter()
 
 ###xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx###

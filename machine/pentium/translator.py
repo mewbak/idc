@@ -51,7 +51,7 @@ class OpcodeDispatch(transf.transformation.Transformation):
 parse.Transfs('''
 
 doStmt =
-	?Asm(opcode, _) < (
+	?Asm(opcode, _) & (
 		OpcodeDispatch() +
 		![<id>]
 	) ;

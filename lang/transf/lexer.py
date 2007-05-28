@@ -79,6 +79,7 @@ _tokenizer = antlrre.Tokenizer(
 		'+': parser.PLUS,
 		#'-': parser.MINUS,
 		'^': parser.CARET,
+		'&': parser.AMP,
 		'|': parser.VERT,
 		'~': parser.TILDE,
 		"'": parser.PRIME,

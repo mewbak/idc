@@ -47,16 +47,16 @@ options {
 	importVocab = antlraterm;
 }
 
-transf_defs
-	: ( transf_def )* EOF!
+definitions
+	: ( definition )* EOF!
 		{ ## = #(#[ATAPPL,"Defs"],#(#[ATLIST], ##)) }
 	;
 
-transf_def
+definition
 	: id EQUAL! transf
 		{ ## = #(#[ATAPPL,"TransfDef"], ##) }
 	| id LPAREN! id_list RPAREN! EQUAL! transf
-		{ ## = #(#[ATAPPL,"TransfFacDef"], ##) }
+		{ ## = #(#[ATAPPL,"MacroDef"], ##) }
 	| GLOBAL! id type
 		{ ## = #(#[ATAPPL,"VarDef"], ##) }
 	;
@@ -72,7 +72,7 @@ transf
 	: transf_expr
 	;
 
-transf_atom
+common
 	: QUEST! term
 		{ ## = #(#[ATAPPL,"Match"], ##) }
 	| BANG! term
@@ -85,24 +85,16 @@ transf_atom
 		{ ## = #(#[ATAPPL,"Unset"], ##) }
 	;
 
-transf_construct
-	: (term RARROW!) => term RARROW! term
-		{ ## = #(#[ATAPPL,"Rule"], ##) }
+transf_atom
+	: common
 	| IDENT!
 		{ ## = #(#[ATAPPL,"Ident"], ##) }
 	| FAIL!
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
-	| transf_atom
-	| id
-		(
-			{ ## = #(#[ATAPPL,"Transf"], ##) }
-		| LPAREN! args RPAREN!
-			{ ## = #(#[ATAPPL,"TransfFac"], ##) }
-		)
-	| LCURLY! rule_set RCURLY!
+	| LCURLY! transf RCURLY!
 	| LPAREN! transf RPAREN!
-	| LANGLE! transf RANGLE! term
-		{ ## = #(#[ATAPPL,"BuildApply"], ##) }
+	//| LANGLE! transf RANGLE! term
+	//	{ ## = #(#[ATAPPL,"BuildApply"], ##) }
 	| IF! if_clauses if_else END!
 		{ ## = #(#[ATAPPL,"If"], ##) }
 	| SWITCH! transf switch_cases switch_else END!
@@ -113,8 +105,14 @@ transf_construct
 		{ ## = #(#[ATAPPL,"Local"], ##) }
 	| GLOBAL! id_list IN! transf END!
 		{ ## = #(#[ATAPPL,"Global"], ##) }
-	| REC! id COLON! transf_construct
+	| REC! id COLON! transf_atom
 		{ ## = #(#[ATAPPL,"Rec"], ##) }
+	| id
+		(
+			{ ## = #(#[ATAPPL,"Transf"], ##) }
+		| LPAREN! args RPAREN!
+			{ ## = #(#[ATAPPL,"Macro"], ##) }
+		)
 	;
 
 args
@@ -177,9 +175,17 @@ var_def
 		{ ## = #(#[ATAPPL,"WithDef"], ##) }
 	;
 
+transf_rule
+	: (term RARROW!) => term RARROW! term
+		{ ## = #(#[ATAPPL,"Rule"], ##) }
+	| transf_atom
+	;
+
 transf_application
-	: transf_construct
-		( RDARROW! term
+	: transf_rule
+		( (term ~EQUAL) => term
+			{ ## = #(#[ATAPPL,"BuildApply"], ##) }
+		| RDARROW! term
 			{ ## = #(#[ATAPPL,"ApplyMatch"], ##) }
 		| RDDARROW! id
 			{ ## = #(#[ATAPPL,"ApplyStore"], ##) }
@@ -200,7 +206,6 @@ transf_merge
 merge_names
 	: merge_union_names merge_opt_isect_names
 	|! i:merge_isect_names u:merge_opt_union_names
-
 		{ ## = #i }
 		{ ##.setNextSibling(#u) }
 	;
@@ -232,9 +237,15 @@ transf_composition
 		)?
 	;
 
+transf_rule_where
+	: (term RARROW! term IF!) => term RARROW! term WHERE! transf_composition
+		{ ## = #(#[ATAPPL,"RuleWhere"], ##) }
+	| transf_composition
+	;
+
 transf_choice
-	: transf_composition
-		( LANGLE! transf_composition PLUS! transf_choice
+	: transf_rule_where
+		( AMP! transf_rule_where PLUS! transf_choice
 			{ ## = #(#[ATAPPL,"GuardedChoice"], ##) }
 		| PLUS! transf_choice
 			{ ## = #(#[ATAPPL,"LeftChoice"], ##) }
@@ -252,33 +263,13 @@ transf_expr
 	: transf_undeterministic_choice
 	;
 
-rule
-	: term RARROW! term
-		( IF! transf_choice
-			{ ## = #(#[ATAPPL,"RuleWhere"], ##) }
-		|
-			{ ## = #(#[ATAPPL,"Rule"], ##) }
-		)
-	;
-
-anon_rule
-	: rule
-	;
-
-rule_set
-	: anon_rule
-		( ( VERT! anon_rule )+
-		{ ## = #(#[ATAPPL,"Choice"], #(#[ATLIST],##)) }
-		)?
-	;
-
 term
 	: term_atom
 		( options { warnWhenFollowAmbig=false; }
 		: term_anno
 			{ ## = #(#[ATAPPL,"Annos"], ##) }
 		)?
-	| transf_atom
+	| common
 	;
 
 term_atom
@@ -291,7 +282,7 @@ term_atom
 	| LSQUARE! term_list RSQUARE!
 	| term_name
 		{ ## = #(#[ATAPPL,"ApplName"], ##) }
-	| term_tuple
+	//| term_tuple
 	| term_appl
 	| term_appl_cons
 	| term_var
