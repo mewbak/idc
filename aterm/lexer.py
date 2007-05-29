@@ -1,7 +1,6 @@
 """Term textual representation tokenization."""
 
 
-import antlr
 import antlrre
 
 from aterm import parser
@@ -12,26 +11,26 @@ _tokenizer = antlrre.Tokenizer(
 	tokens = [
 		# whitespace
 		(parser.SKIP, r'[ \t\f\r\n]+', False),
-		
+
 		# REAL
 		(parser.REAL, r'-?(?:'
 			r'(?:[0-9]+\.[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?|'
 			r'[0-9]+[eE][-+]?[0-9]+'
-		r')', False), 
-		
+		r')', False),
+
 		# INT
 		(parser.INT, r'-?[0-9]+', False),
-	
+
 		# STR
-		(parser.STR, r'"[^"\\]*(?:\\.[^"\\]*)*"', False), 
-		
+		(parser.STR, r'"[^"\\]*(?:\\.[^"\\]*)*"', False),
+
 		# CONS
-		(parser.CONS, r'[A-Z][a-zA-Z0-9_]*', False), 
-		
+		(parser.CONS, r'[A-Z][a-zA-Z0-9_]*', False),
+
 		# VAR
 		(parser.VAR, r'[a-z][a-zA-Z0-9_]*', False),
 	],
-	
+
 	# symbols table
 	symbols = {
 		'_': parser.WILDCARD,
@@ -49,9 +48,10 @@ _tokenizer = antlrre.Tokenizer(
 
 
 class Lexer(antlrre.TokenStream):
+	'''Lexer for scanning terms.'''
 
 	tokenizer = _tokenizer
-	
+
 	def filterToken(self, type, text, pos, endpos):
 		if type == parser.SKIP:
 			self.countLines(pos, endpos)

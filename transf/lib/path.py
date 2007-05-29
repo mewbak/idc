@@ -7,8 +7,8 @@ from the leaves to the root.
 
 
 import aterm.factory
-import aterm.visitor
 import aterm.convert
+import aterm.lists
 import aterm.project
 import aterm.path
 
@@ -68,10 +68,8 @@ class Project(transformation.Transformation):
 			self.path = path
 
 	def apply(self, term, ctx):
-		path = self.path.apply(term, ctx)
-		return aterm.path.project(term, path)
-
-fetch = aterm.path.project
+		path = aterm.path.Path.fromTerm(self.path.apply(term, ctx))
+		return path.project(term)
 
 
 class SubTerm(transformation.Transformation):
@@ -86,12 +84,9 @@ class SubTerm(transformation.Transformation):
 			self.path = path
 
 	def apply(self, term, ctx):
-		path = self.path.apply(term, ctx)
+		path = aterm.path.Path.fromTerm(self.path.apply(term, ctx))
 		func = lambda term: self.operand.apply(term, ctx)
-		return aterm.path.transform(term, path, func)
-
-
-split = aterm.path.split
+		return path.transform(term, func)
 
 
 class Range(transformation.Transformation):
@@ -109,8 +104,8 @@ class Range(transformation.Transformation):
 		self.end = end
 
 	def apply(self, term, ctx):
-		head, rest = aterm.path.split(term, self.start)
-		old_body, tail = aterm.path.split(rest, self.end - self.start)
+		head, rest = aterm.lists.split(term, self.start)
+		old_body, tail = aterm.lists.split(rest, self.end - self.start)
 
 		new_body = self.operand.apply(old_body, ctx)
 		if new_body is not old_body:
@@ -149,7 +144,9 @@ class Equals(operate.Unary):
 
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		if aterm.path.equals(term, ref):
+		pTerm = aterm.path.Path(term)
+		pRef = aterm.path.Path(ref)
+		if pTerm.equals(pRef):
 			return term
 		else:
 			raise exception.Failure
@@ -159,7 +156,9 @@ class Contains(operate.Unary):
 
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		if aterm.path.contains(term, ref):
+		pTerm = aterm.path.Path(term)
+		pRef = aterm.path.Path(ref)
+		if pTerm.contains(pRef):
 			return term
 		else:
 			raise exception.Failure
@@ -169,7 +168,9 @@ class Contained(operate.Unary):
 
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		if aterm.path.contained(term, ref):
+		pTerm = aterm.path.Path(term)
+		pRef = aterm.path.Path(ref)
+		if pTerm.contained(pRef):
 			return term
 		else:
 			raise exception.Failure

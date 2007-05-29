@@ -5,9 +5,12 @@ from aterm import types
 from aterm import visitor
 
 
-class Comparator(visitor.Visitor):
+class _Comparator(visitor.Visitor):
 	'''Base class for term comparators.'''
-	
+
+	def visitTerm(self, term):
+		assert False
+
 	def visitLit(self, term, other):
 		return \
 			term.type == other.type and \
@@ -34,37 +37,40 @@ class Comparator(visitor.Visitor):
 			if not self.visit(term_arg, other_arg):
 				return False
 		return True
-	
 
-class Equivalent(Comparator):
-	'''Comparator for determining term equivalence (which does not 
-	contemplate annotations).
-	'''
+
+class _EquivalenceComparator(_Comparator):
+	'''Comparator for determining term equivalence, which does not
+	consider annotations.'''
 
 	def visit(self, term, other):
-		return (
-			term is other or
-			Comparator.visit(self, term, other)
-		)
+		return \
+			term is other or \
+			_Comparator.visit(self, term, other)
 
-isEquivalent = Equivalent().visit
+def isEquivalent(term, other):
+	'''Determines if two terms are equivalent, i.e., equal except for the
+	annotations.'''
+	comparator = _EquivalenceComparator()
+	return comparator.visit(term, other)
 
 
-class Equal(Equivalent):
-	'''Comparator for determining term equality (which contemplates 
-	annotations).
+class _EqualityComparator(_EquivalenceComparator):
+	'''Comparator for determining term equality, which considers annotations.
 	'''
 
 	def compareAnnos(self, terms, others):
 		if terms is None:
 			return others is None
 		else:
-			return others is not None and \
-				isEquivalent(terms, others)
-		
+			return others is not None and isEquivalent(terms, others)
+
 	def visit(self, term, other):
 		return \
-			Equivalent.visit(self, term, other) and \
+			_EquivalenceComparator.visit(self, term, other) and \
 			self.compareAnnos(term.annotations, other.annotations)
 
-isEqual = Equal().visit
+def isEqual(term, other):
+	'''Determines if two terms are equal (including annotations).'''
+	comparator = _EqualityComparator()
+	return comparator.visit(term, other)

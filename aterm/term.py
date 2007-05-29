@@ -15,56 +15,56 @@ from aterm import lists
 
 class Term(object):
 	'''Base class for all terms.
-	
+
 	Terms are non-modifiable. Changes are carried out by returning another term
 	instance.
 	'''
 
 	# NOTE: most methods defer the execution to visitors
-	
+
 	__slots__ = ['factory', 'annotations']
-	
+
 	def __init__(self, factory, annotations = None):
 		self.factory = factory
 		if annotations:
 			self.annotations = annotations
-		else:			
+		else:
 			self.annotations = None
-	
+
 	# XXX: this has a large inpact in performance
 	if __debug__ and False:
 		def __setattr__(self, name, value):
 			'''Prevent modification of term attributes.'''
-			
+
 			# TODO: implement this with a metaclass
-			
+
 			try:
 				object.__getattribute__(self, name)
 			except AttributeError:
 				object.__setattr__(self, name, value)
 			else:
-				raise AttributeError("attempt to modify read-only term attribute '%s'" % name)		
+				raise AttributeError("attempt to modify read-only term attribute '%s'" % name)
 
 	def __delattr__(self, name):
 		'''Prevent deletion of term attributes.'''
-		raise AttributeError("attempt to delete read-only term attribute '%s'" % name)		
+		raise AttributeError("attempt to delete read-only term attribute '%s'" % name)
 
 	def getType(self):
 		'''Gets the type of this term.'''
 		return self.type
-	
+
 	def getHash(self):
 		'''Generate a hash value for this term.'''
-		return hash.Hash.hash(self)
+		return hash.fullHash(self)
 
 	def getStructuralHash(self):
-		'''Generate a hash value for this term. 
+		'''Generate a hash value for this term.
 		Annotations are not taken into account.
 		'''
-		return hash.StructuralHash.hash(self)
+		return hash.structuralHash(self)
 
 	__hash__ = getStructuralHash
-		
+
 	def isEquivalent(self, other):
 		'''Checks for structural equivalence of this term agains another term.'''
 		return compare.isEquivalent(self, other)
@@ -74,12 +74,10 @@ class Term(object):
 		terms to be equal, any annotations they might have must be equal as
 		well.'''
 		return compare.isEqual(self, other)
-	
+
 	def __eq__(self, other):
-		if isinstance(other, Term):
-			return compare.isEquivalent(self, other)
-		else:
-			return False
+		assert isinstance(other, Term)
+		return compare.isEquivalent(self, other)
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
@@ -94,26 +92,26 @@ class Term(object):
 
 	def getAnnotations(self):
 		'''Returns the annotation list.'''
-		return annotation.getall(self)
+		return annotation.getAll(self)
 
 	def setAnnotations(self, annos):
 		'''Modify the annotation list.'''
-		return annotation.setall(self, annos)
+		return annotation.setAll(self, annos)
 
 	def getAnnotation(self, label):
 		'''Gets an annotation associated'''
 		return annotation.get(self, label)
-	
+
 	def setAnnotation(self, label, anno):
-		'''Returns a new version of this term with the 
+		'''Returns a new version of this term with the
 		annotation associated with this label added or updated.'''
 		return annotation.set(self, label, anno)
-				
+
 	def removeAnnotation(self, label):
-		'''Returns a new version of this term with the 
+		'''Returns a new version of this term with the
 		annotation associated with this label removed.'''
 		return annotation.remove(self, label)
-		
+
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
 		writer = write.TextWriter(fp)
@@ -128,7 +126,7 @@ class Term(object):
 		fp = StringIO()
 		self.writeToTextFile(fp)
 		return fp.getvalue()
-	
+
 	def __repr__(self):
 		try:
 			from cStringIO import StringIO
@@ -147,7 +145,7 @@ class Lit(Term):
 	'''Base class for literal terms.'''
 
 	__slots__ = ['value']
-	
+
 	def __init__(self, factory, value, annotations = None):
 		Term.__init__(self, factory, annotations)
 		self.value = value
@@ -155,12 +153,12 @@ class Lit(Term):
 	def getValue(self):
 		return self.value
 
-		
+
 class Integer(Lit):
 	'''Integer literal term.'''
 
 	__slots__ = []
-	
+
 	type = types.INT
 
 	def __init__(self, factory, value, annotations = None):
@@ -170,18 +168,18 @@ class Integer(Lit):
 
 	def __int__(self):
 		return int(self.value)
-	
+
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitInt(self, *args, **kargs)
 
 
 class Real(Lit):
 	'''Real literal term.'''
-	
+
 	__slots__ = []
-	
+
 	type = types.REAL
-	
+
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, float):
 			raise TypeError('value is not a float', value)
@@ -189,18 +187,18 @@ class Real(Lit):
 
 	def __float__(self):
 		return float(self.value)
-	
+
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitReal(self, *args, **kargs)
 
 
 class Str(Lit):
 	'''String literal term.'''
-	
+
 	__slots__ = []
-	
+
 	type = types.STR
-	
+
 	def __init__(self, factory, value, annotations = None):
 		if not isinstance(value, str):
 			raise TypeError('value is not a string', value)
@@ -214,9 +212,9 @@ class List(Term):
 	'''Base class for list terms.'''
 
 	__slots__ = []
-	
+
 	# Python's list compatability methods
-	
+
 	def __nonzero__(self):
 		return not lists.empty(self)
 
@@ -231,27 +229,27 @@ class List(Term):
 
 	def insert(self, index, element):
 		return lists.insert(self, index, element)
-	
+
 	def append(self, element):
 		return lists.append(self, element)
-		
+
 	def extend(self, other):
 		return lists.extend(self, other)
-	
+
 	def reverse(self):
 		return lists.reverse(self)
-	
+
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitList(self, *args, **kargs)
 
 
 class Nil(List):
 	'''Empty list term.'''
-	
+
 	__slots__ = []
 
 	type = types.NIL
-	
+
 	def __init__(self, factory, annotations = None):
 		List.__init__(self, factory, annotations)
 
@@ -261,11 +259,11 @@ class Nil(List):
 
 class Cons(List):
 	'''Concatenated list term.'''
-	
+
 	__slots__ = ['head', 'tail']
-	
+
 	type = types.CONS
-	
+
 	def __init__(self, factory, head, tail = None, annotations = None):
 		List.__init__(self, factory, annotations)
 		if not isinstance(head, Term):
@@ -277,7 +275,7 @@ class Cons(List):
 			if not isinstance(tail, List):
 				raise TypeError("tail is not a list term", tail)
 			self.tail = tail
-	
+
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitCons(self, *args, **kargs)
 
@@ -286,9 +284,9 @@ class Appl(Term):
 	'''Application term.'''
 
 	__slots__ = ['name', 'args']
-	
+
 	type = types.APPL
-	
+
 	def __init__(self, factory, name, args = None, annotations = None):
 		Term.__init__(self, factory, annotations)
 		if not isinstance(name, basestring):
@@ -300,8 +298,8 @@ class Appl(Term):
 			self.args = tuple(args)
 		for arg in self.args:
 			if not isinstance(arg, Term):
-				raise TypeError("arg is not a term", arg)			
-	
+				raise TypeError("arg is not a term", arg)
+
 	def getArity(self):
 		return len(self.args)
 

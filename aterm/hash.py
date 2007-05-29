@@ -4,14 +4,12 @@
 from aterm import visitor
 
 
-class StructuralHash(visitor.Visitor):
-	'''Perform hashing without considering annotations.'''
-	
-	@classmethod
-	def hash(cls, term):
-		return cls().visit(term)
+class _StructuralHash(visitor.Visitor):
 
 	# TODO: use a more efficient hash function
+
+	def visitTerm(self, term):
+		assert False
 
 	def visitLit(self, term):
 		return hash((
@@ -38,14 +36,23 @@ class StructuralHash(visitor.Visitor):
 			term.args,
 		))
 
+def structuralHash(term):
+	'''Perform hashing without considering annotations.'''
+	visitor = _StructuralHash()
+	return visitor.visit(term)
 
-class Hash(StructuralHash):
-	'''Perform hashing.'''
-	
+
+class _FullHash(_StructuralHash):
+
 	def visit(self, term):
-		term_hash = StructuralHash.visit(self, term)
+		term_hash = _StructuralHash.visit(self, term)
 		if term.annotations:
-			annos_hash = StructuralHash.hash(term.annotations)
+			annos_hash = structuralHash(term.annotations)
 			return hash(term_hash, annos_hash)
 		else:
 			return term_hash
+
+def fullHash(term):
+	'''Full hash.'''
+	visitor = _FullHash()
+	return visitor.visit(term)

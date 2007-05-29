@@ -4,14 +4,14 @@
 from aterm import visitor
 
 
-class Operation(visitor.Visitor):
+class _Operation(visitor.Visitor):
 	'''Base visitor class for list operations.'''
 
 	def visitTerm(self, term, *args, **kargs):
 		return TypeError('not a list term', term)
 
 
-class Empty(Operation):
+class _Empty(_Operation):
 
 	def visitNil(self, term):
 		return True
@@ -19,10 +19,12 @@ class Empty(Operation):
 	def visitCons(self, term):
 		return False
 
-empty = Empty().visit
+def empty(term):
+	'''Whether a list term is empty or not.'''
+	return _Empty().visit(term)
 
 
-class Length(Operation):
+class _Length(_Operation):
 
 	def visitNil(self, term):
 		return 0
@@ -30,10 +32,12 @@ class Length(Operation):
 	def visitCons(self, term):
 		return self.visit(term.tail) + 1
 
-length = Length().visit
+def length(term):
+	'''_Length of a list term.'''
+	return _Length().visit(term)
 
 
-class Item(Operation):
+class Item(_Operation):
 
 	def visitNil(self, term, index):
 		raise IndexError('index out of bounds')
@@ -44,14 +48,16 @@ class Item(Operation):
 		else:
 			return self.visit(term.tail, index - 1)
 
-item = Item().visit
+def item(term, index):
+	'''Get item at given index of a list term.'''
+	return Item().visit(term, index)
 
 
-class Iter(Operation):
+class Iter(_Operation):
 	'''List term iterator.'''
 
 	def __init__(self, term):
-		Operation.__init__(self)
+		_Operation.__init__(self)
 		self.term = term
 
 	def next(self):
@@ -66,7 +72,7 @@ class Iter(Operation):
 		return head
 
 
-class Extend(Operation):
+class _Extend(_Operation):
 
 	def visitNil(self, term, other):
 		return other
@@ -78,14 +84,17 @@ class Extend(Operation):
 			term.annotations
 		)
 
-extend = Extend().visit
+def extend(term, other):
+	'''Return the concatenation of two list terms.'''
+	return _Extend().visit(term, other)
 
 
 def append(term, other):
+	'''Append an element to a list.'''
 	return extend(term, term.factory.makeCons(other, term.factory.makeNil()))
 
 
-class Insert(Operation):
+class _Insert(_Operation):
 
 	def visitNil(self, term, index, other):
 		if index == 0:
@@ -103,11 +112,12 @@ class Insert(Operation):
 				term.annotations,
 			)
 
-insert = Insert().visit
+def insert(term, index, other):
+	'''_Insert an element into the list.'''
+	return _Insert().visit(index, other)
 
 
-class Reverse(Operation):
-	'''Reverse a list term.'''
+class _Reverse(_Operation):
 
 	def __call__(self, term):
 		return self.visit(term, term.factory.makeNil())
@@ -121,4 +131,41 @@ class Reverse(Operation):
 			term.factory.makeCons(term.head, accum),
 		)
 
-reverse = Reverse()
+def reverse(term):
+	'''_Reverse a list term.'''
+	return _Reverse().visit(term, term.factory.makeNil())
+
+
+
+class _Splitter(visitor.Visitor):
+
+	def __init__(self, index):
+		visitor.Visitor.__init__(self)
+		self.index = index
+
+	def visitTerm(self, term, index):
+		raise TypeError('not a term list', term)
+
+	def visitNil(self, term, index):
+		if index == self.index:
+			return term.factory.makeNil(), term
+		else:
+			raise IndexError('index out of range')
+
+	def visitCons(self, term, index):
+		if index == self.index:
+			return term.factory.makeNil(), term
+		else:
+			head, tail = self.visit(term.tail, index + 1)
+			return term.factory.makeCons(
+				term.head,
+				head,
+				term.annotations
+			), tail
+
+def split(term, index):
+	'''Splits a list term in two lists.
+	The argument is the index of the first element of the second list.
+	'''
+	splitter = _Splitter(index)
+	return splitter.visit(term, 0)

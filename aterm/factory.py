@@ -1,4 +1,4 @@
-'''Facilities for building terms.'''
+'''Term creation.'''
 
 
 import antlr
@@ -10,14 +10,14 @@ from aterm import parser
 
 
 class _Singleton(type):
-	'''Metaclass for the Singleton design pattern. Based on 
+	'''Metaclass for the Singleton design pattern. Based on
 	http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/102187
 	'''
-	
+
 	def __init__(mcs, name, bases, dic):
 		super(_Singleton, mcs).__init__(name, bases, dic)
 		mcs.__instance = None
-		
+
 	def __call__(mcs, *args, **kargs):
 		if mcs.__instance is None:
 			mcs.__instance = super(_Singleton, mcs).__call__(*args, **kargs)
@@ -25,17 +25,17 @@ class _Singleton(type):
 
 
 class Factory(object):
-	'''This class is responsible for make new terms, either by parsing 
+	'''This class is responsible for make new terms, either by parsing
 	from strings or streams, or via one the of the "make" methods.'''
 
 	__metaclass__ = _Singleton
-	
+
 	# TODO: implement maximal sharing
 
 	MAX_PARSE_CACHE_LEN = 512
 
 	# TODO: cache match and build patterns too
-	
+
 	def __init__(self):
 		self.parseCache = {}
 		self.__nil = term.Nil(self)
@@ -43,7 +43,7 @@ class Factory(object):
 	def makeInt(self, value, annotations = None):
 		'''Creates a new integer literal term'''
 		return term.Integer(self, value, annotations)
-	
+
 	def makeReal(self, value, annotations = None):
 		'''Creates a new real literal term'''
 		return term.Real(self, value, annotations)
@@ -71,17 +71,17 @@ class Factory(object):
 		if annotations is not None:
 			accum = accum.setAnnotations(annotations)
 		return accum
-	
+
 	# TODO: add a makeTuple method
-	
+
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new appplication term'''
 		return term.Appl(self, name, args, annotations)
 
 	def coerce(self, value, name = None):
-		'''Coerce an object to a term. Value must be an int, a float, a string, 
+		'''Coerce an object to a term. Value must be an int, a float, a string,
 		a sequence of terms, or a term.'''
-		
+
 		if isinstance(value, term.Term):
 			return value
 		elif isinstance(value, (int, long)):
@@ -104,13 +104,13 @@ class Factory(object):
 
 	def _parse(self, lexer):
 		'''Creates a new term by parsing a string.'''
-		
+
 		p = Parser(lexer)
 		try:
 			return p.term()
 		except antlr.ANTLRException, exc:
 			raise exception.ParseError(str(exc))
-	
+
 	def readFromTextFile(self, fp):
 		'''Creates a new term by parsing from a text stream.'''
 
@@ -118,23 +118,23 @@ class Factory(object):
 
 	def parse(self, buf):
 		'''Creates a new term by parsing a string.'''
-		
+
 		try:
 			return self.parseCache[buf]
 		except KeyError:
 			pass
-		
+
 		result = self._parse(lexer.Lexer(buf))
-		
+
 		if len(self.parseCache) > self.MAX_PARSE_CACHE_LEN:
 			# TODO: use a LRU cache policy
 			self.parseCache.clear()
 		self.parseCache[buf] = result
-			
+
 		return result
 
 	def match(self, pattern, term):
-		'''Matches the term to a string pattern and a list of arguments. 
+		'''Matches the term to a string pattern and a list of arguments.
 		'''
 		assert isinstance(pattern, basestring)
 		from aterm.match import Parser, Match
@@ -150,10 +150,10 @@ class Factory(object):
 			return None
 
 	def make(self, pattern, *args, **kargs):
-		'''Creates a new term from a string pattern and a list of arguments. 
-		First the string pattern is parsed, then the holes in 
+		'''Creates a new term from a string pattern and a list of arguments.
+		First the string pattern is parsed, then the holes in
 		the pattern are filled with the supplied arguments.
-		'''	
+		'''
 		assert isinstance(pattern, basestring)
 		from aterm.build import Parser
 		p = Parser(lexer.Lexer(pattern))
@@ -161,13 +161,13 @@ class Factory(object):
 			builder = p.term()
 		except antlr.ANTLRException, exc:
 			raise exception.ParseError(str(exc))
-			
+
 		i = 0
 		_args = []
 		for i in range(len(args)):
 			_args.append(self.coerce(args[i], str(i)))
 			i += 1
-		
+
 		_kargs = {}
 		for name, value in kargs.iteritems():
 			_kargs[name] = self.coerce(value, "'" + name + "'")
@@ -180,7 +180,7 @@ factory = Factory()
 
 class Parser(parser.Parser):
 	'''Parse a textual description of the term.'''
-	
+
 	def handleInt(self, value):
 		return factory.makeInt(value)
 
@@ -195,21 +195,21 @@ class Parser(parser.Parser):
 
 	def handleCons(self, head, tail):
 		return factory.makeCons(head, tail)
-	
+
 	def handleAppl(self, name, args):
 		return factory.makeAppl(name, args)
-	
+
 	def handleAnnos(self, term, annos):
 		return term.setAnnotations(annos)
-	
+
 	def handleWildcard(self):
 		raise exception.ParseError('wildcard in term')
-	
+
 	def handleVar(self, name):
 		raise exception.ParseError('variable in term')
 
 	def handleSeq(self, pre, post):
 		assert False
-		
+
 	def handleApplCons(self, name, args):
 		assert False

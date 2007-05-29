@@ -603,25 +603,6 @@ class TestPath(TestMixin, unittest.TestCase):
 			self.pathTestCases
 		)
 
-	splitTestCases = [
-		('[0,1,2,3]', 0, '[]', '[0,1,2,3]'),
-		('[0,1,2,3]', 1, '[0,]', '[1,2,3]'),
-		('[0,1,2,3]', 2, '[0,1,]', '[2,3]'),
-		('[0,1,2,3]', 3, '[0,1,2,]', '[3]'),
-		('[0,1,2,3]', 4, '[0,1,2,3]', '[]'),
-	]
-
-	def testSplit(self):
-		for inputStr, index, expectedHeadStr, expectedTailStr in self.splitTestCases:
-			input = self.factory.parse(inputStr)
-			expectedHead = self.factory.parse(expectedHeadStr)
-			expectedTail = self.factory.parse(expectedTailStr)
-
-			head, tail = path.split(input, index)
-
-			self.failUnlessEqual(head, expectedHead)
-			self.failUnlessEqual(tail, expectedTail)
-
 	rangeTestCases = [
 		('[0,1,2]', 0, 0, '[0,1,2]'),
 		('[0,1,2]', 0, 1, '[X(0),1,2]'),

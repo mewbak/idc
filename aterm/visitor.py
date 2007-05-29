@@ -3,10 +3,10 @@
 
 class Visitor(object):
 	'''Base class for term visitors.'''
-	
+
 	def __init__(self):
 		pass
-	
+
 	def visit(self, term, *args, **kargs):
 		'''Visit the given term.'''
 		return term.accept(self, *args, **kargs)
@@ -16,7 +16,7 @@ class Visitor(object):
 
 	def visitLit(self, term, *args, **kargs):
 		return self.visitTerm(term, *args, **kargs)
-		
+
 	def visitInt(self, term, *args, **kargs):
 		return self.visitLit(term, *args, **kargs)
 
@@ -25,7 +25,7 @@ class Visitor(object):
 
 	def visitStr(self, term, *args, **kargs):
 		return self.visitLit(term, *args, **kargs)
-	
+
 	def visitList(self, term, *args, **kargs):
 		return self.visitTerm(term, *args, **kargs)
 
@@ -41,7 +41,7 @@ class Visitor(object):
 
 class IncrementalVisitor(Visitor):
 	'''Base class for visitors which incrementally build-up a modified term.'''
-	
+
 	def visitHead(self, term, *args, **kargs):
 		return self.visitTerm(term, *args, **kargs)
 
@@ -61,14 +61,14 @@ class IncrementalVisitor(Visitor):
 	def visitAppl(self, term, *args, **kargs):
 		name = term.name
 		old_args = term.args
-			
+
 		new_args = []
 		modified = False
 		for old_arg in old_args:
 			new_arg = self.visit(old_arg, *args, **kargs)
 			new_args.append(new_arg)
 			modified = modified or new_arg is not old_arg
-		
+
 		if modified:
 			return term.factory.makeAppl(
 				name,

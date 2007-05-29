@@ -1,6 +1,11 @@
 // Term parsing
 
 
+header {
+    __all__ = ["Parser"]
+}
+
+
 options {
 	language = "Python";
 }
@@ -15,7 +20,7 @@ options {
 {
     def handleInt(self, value):
         raise NotImplementedError
-    
+
     def handleReal(self, value):
         raise NotImplementedError
 
@@ -30,19 +35,19 @@ options {
 
     def handleAppl(self, name, args):
         raise NotImplementedError
-       
+
     def handleAnnos(self, name, args):
         raise NotImplementedError
-       
+
     def handleWildcard(self):
         raise NotImplementedError
-       
+
     def handleVar(self, name):
         raise NotImplementedError
-       
+
     def handleSeq(self, pre, post):
         raise NotImplementedError
-       
+
     def handleApplCons(self, name, args):
         raise NotImplementedError
 }
@@ -53,9 +58,9 @@ do_term returns [res]
 	;
 
 term returns [res]
-	: res=term_atom 
+	: res=term_atom
 		( options { greedy = true; }
-		: LCURLY annos=term_list RCURLY 
+		: LCURLY annos=term_list RCURLY
 			{ res = self.handleAnnos(res, annos) }
 		)?
 	;
@@ -74,11 +79,11 @@ term_atom returns [res]
 	| cname:CONS
 			{ name = cname.getText() }
 		( LPAREN args=term_args RPAREN
-		| 
-			{ args = [] } 
+		|
+			{ args = [] }
 		)
 			{ res = self.handleAppl(name, args) }
-	| WILDCARD 
+	| WILDCARD
 			{ res = self.handleWildcard() }
 		( LPAREN args=term_list RPAREN
 			{ res = self.handleApplCons(res, args) }
@@ -91,18 +96,18 @@ term_atom returns [res]
 			{ res = self.handleApplCons(res, args) }
 		)?
 	;
-	
+
 term_list returns [res]
 	:
 		{ res = self.handleNil() }
-	| head=term 
-		( COMMA tail=term_list 
-		| 
-			{ tail = self.handleNil() } 
+	| head=term
+		( COMMA tail=term_list
+		|
+			{ tail = self.handleNil() }
 		)
 			{ res = self.handleCons(head, tail) }
-	| STAR		
-		( 
+	| STAR
+		(
 			{ res = self.handleWildcard() }
 		| vname:VAR
 			{ res = self.handleVar(vname.getText()) }
@@ -110,9 +115,9 @@ term_list returns [res]
 	;
 
 term_args returns [res]
-	: 
-			{ res = [] }	
-	| arg=term 
+	:
+			{ res = [] }
+	| arg=term
 			{ res = [arg] }
 		( COMMA args=term_args
 			{ res += args }

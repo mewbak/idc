@@ -1,83 +1,44 @@
 '''Type verification.'''
 
 
-from aterm import visitor
+from aterm import types
 
 
-class _Typer(visitor.Visitor):
-	'''Base class for all type verificators.'''
-	
-	def visitTerm(self, term):
-		return False
-
-
-class _Int(_Typer):
+def anInt(term):
 	'''Integer term type verifier.'''
-	
-	def visitInt(self, term):
-		return True
-
-anInt = _Int().visit
+	return term.type == types.INT
 
 
-class _Real(_Typer):
+def aReal(term):
 	'''Real term type verifier.'''
-	
-	def visitReal(self, term):
-		return True
-
-aReal = _Real().visit
+	return term.type == types.REAL
 
 
-class _Str(_Typer):
+def aStr(term):
 	'''String term type verifier.'''
-
-	def visitStr(self, term):
-		return True
-
-aStr = _Str().visit
+	return term.type == types.STR
 
 
-class _Lit(_Typer):
+def aLit(term):
 	'''Literal term type verifier.'''
-	
-	def visitLit(self, term):
-		return True
-
-aLit = _Lit().visit
+	return term.type & types.LIT
 
 
-class _Nil(_Typer):
+def aNil(term):
 	'''Empty list term type verifier.'''
-	
-	def visitNil(self, term):
-		return True
-
-aNil = _Nil().visit
+	return term.type == types.NIL
 
 
-class _Cons(_Typer):
+def aCons(term):
 	'''List construction term type verifier.'''
-	
-	def visitCons(self, term):
-		return True
-
-aCons = _Cons().visit
+	return term.type == types.CONS
 
 
-class _List(_Typer):
+def aList(term):
 	'''List term type verifier.'''
-	
-	def visitList(self, term):
-		return True
-
-aList = _List().visit
+	return term.type & types.LIST
 
 
-class _Appl(_Typer):
+def anAppl(term):
 	'''Application term type verifier.'''
-	
-	def visitAppl(self, term):
-		return True
-
-anAppl = _Appl().visit
+	return term.type == types.APPL

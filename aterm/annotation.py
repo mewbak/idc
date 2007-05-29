@@ -4,7 +4,7 @@
 from aterm import visitor
 
 
-def getall(term):
+def getAll(term):
 	'''Get the list of all annotations of this term.'''
 	if term.annotations is None:
 		return term.factory.makeNil()
@@ -13,20 +13,23 @@ def getall(term):
 
 
 class _Setter(visitor.Visitor):
-	
+
 	def __init__(self, annos):
 		visitor.Visitor.__init__(self)
 		self.annos = annos
-		
+
+	def visitTerm(self, term):
+		assert False
+
 	def visitInt(self, term):
 		return term.factory.makeInt(term.value, self.annos)
 
 	def visitReal(self, term):
 		return term.factory.makeReal(term.value, self.annos)
-		
+
 	def visitStr(self, term):
 		return term.factory.makeStr(term.value, self.annos)
-	
+
 	def visitNil(self, term):
 		return term.factory.makeNil(self.annos)
 
@@ -36,7 +39,7 @@ class _Setter(visitor.Visitor):
 	def visitAppl(self, term):
 		return term.factory.makeAppl(term.name, term.args, self.annos)
 
-def setall(term, annos):
+def setAll(term, annos):
 	'''Return a copy of the term with the given annotations.'''
 	if not annos:
 		annos = None
@@ -52,11 +55,15 @@ class _Getter(visitor.Visitor):
 	def __init__(self, pattern):
 		visitor.Visitor.__init__(self)
 		self.pattern = pattern
-		
+
+	def visitTerm(self, term):
+		assert False
+
 	def visitNil(self, term):
 		return None
-	
+
 	def visitCons(self, term):
+		# TODO: avoid the repeated pattern parsing
 		if term.factory.match(self.pattern, term.head):
 			return term.head
 		else:
@@ -75,7 +82,7 @@ def get(term, label):
 
 
 def set(term, label, anno):
-	'''Returns a new version of this term with the 
+	'''Returns a new version of this term with the
 	annotation associated with this label added or updated.'''
 	if not isinstance(label, basestring):
 		raise TypeError("label is not a string", label)
@@ -85,7 +92,7 @@ def set(term, label, anno):
 	else:
 		annos = term.factory.makeNil()
 	annos = term.factory.makeCons(anno, annos)
-	return setall(term, annos)
+	return setAll(term, annos)
 
 
 class _Remover(visitor.Visitor):
@@ -93,10 +100,13 @@ class _Remover(visitor.Visitor):
 	def __init__(self, pattern):
 		visitor.Visitor.__init__(self)
 		self.pattern = pattern
-		
+
+	def visitTerm(self, term):
+		assert False
+
 	def visitNil(self, term):
 		return term
-	
+
 	def visitCons(self, term):
 		tail = self.visit(term.tail)
 		if term.factory.match(self.pattern, term.head):
@@ -108,19 +118,19 @@ class _Remover(visitor.Visitor):
 
 
 def remove(term, label):
-	'''Returns a new version of this term with the 
+	'''Returns a copy of this term with the
 	annotation associated with this label removed.'''
 	if not isinstance(label, basestring):
 		raise TypeError("label is not a string", label)
 	if term.annotations:
 		remover = _Remover(label)
 		annos = term.annotations.accept(remover)
-		return setall(term, annos)
+		return setAll(term, annos)
 	else:
 		return term
 
 
-def removeall(term):
-	'''Remove all annotations.'''
-	return setall(term, None)
-				
+def removeAll(term):
+	'''Returns a copy of this term with all annotations removed.'''
+	return setAll(term, None)
+
