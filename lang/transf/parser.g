@@ -1,14 +1,23 @@
 /*
- * Grammar for generating term transformations. The syntax is inspired on
- * the Stratego language.
+ * Grammar for generating term transformations.
+ *
+ * The syntax is inspired on:
+ * - the Stratego language;
+ * - Haskell language.
  */
 
 
 header {
+    __doc__ = "Transformation language parsing."
+
+    __all__ = [
+        "SemanticException",
+        "Parser",
+    ]
+
     import antlr
     import aterm.factory
     import transf
-
 
     class SemanticException(antlr.SemanticException):
 
@@ -26,12 +35,6 @@ header {
         __repr__ = __str__
 }
 
-header "translator.__init__" {
-    self.globals = kwargs.get("globals", {})
-    self.locals = kwargs.get("locals", {})
-    self.stack = []
-}
-
 
 options {
 	language = "Python";
@@ -47,28 +50,33 @@ options {
 	importVocab = antlraterm;
 }
 
+{
+    __doc__ = "Parser for transformation language."
+}
+
 definitions
 	: ( definition )* EOF!
 		{ ## = #(#[ATAPPL,"Defs"],#(#[ATLIST], ##)) }
 	;
 
 definition
-	: id EQUAL! transf
+	: SHARED! id type
+		{ ## = #(#[ATAPPL,"VarDef"], ##) }
+	| id EQUAL! transf
 		{ ## = #(#[ATAPPL,"TransfDef"], ##) }
 	| id LPAREN! id_list RPAREN! EQUAL! transf
 		{ ## = #(#[ATAPPL,"MacroDef"], ##) }
-	| GLOBAL! id type
-		{ ## = #(#[ATAPPL,"VarDef"], ##) }
 	;
 
 type
 	:
-		{ ## = #(#[ATSTR],#[ATSTR,"Term"]) }
+		{ ## = #(#[ATSTR],#[ID,"term"]) }
 	| LSQUARE! RSQUARE!
-		{ ## = #(#[ATSTR],#[ATSTR,"Table"]) }
+		{ ## = #(#[ATSTR],#[ID,"table"]) }
+	| AS! id
 	;
 
-atom
+common_atom
 	: QUEST! term
 		{ ## = #(#[ATAPPL,"Match"], ##) }
 	| BANG! term
@@ -78,35 +86,34 @@ atom
 	;
 
 transf
-	: transf_expr
+	: transf_where
 	;
 
 transf_atom
-	: atom
+	: common_atom
 	| IDENT!
 		{ ## = #(#[ATAPPL,"Ident"], ##) }
 	| FAIL!
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
-	| LCURLY! transf RCURLY!
 	| LPAREN! transf RPAREN!
 	| IF! if_clauses if_else END!
 		{ ## = #(#[ATAPPL,"If"], ##) }
 	| SWITCH! transf switch_cases switch_else END!
 		{ ## = #(#[ATAPPL,"Switch"], ##) }
-	| WITH! var_defs IN! transf END!
-		{ ## = #(#[ATAPPL,"With"], ##) }
-	| LOCAL! id_list IN! transf END!
-		{ ## = #(#[ATAPPL,"Local"], ##) }
-	| GLOBAL! id_list IN! transf END!
-		{ ## = #(#[ATAPPL,"Global"], ##) }
+	| WITH! id_list IN! transf END!
+		{ ## = #(#[ATAPPL,"Scope"], ##) }
+	| LCURLY! id_list COLON! transf RCURLY!
+		{ ## = #(#[ATAPPL,"Scope"], ##) }
 	| REC! id COLON! transf_atom
 		{ ## = #(#[ATAPPL,"Rec"], ##) }
 	| id
 		{ ## = #(#[ATAPPL,"Transf"], ##) }
 	| id LPAREN! args RPAREN!
 		{ ## = #(#[ATAPPL,"Macro"], ##) }
-	| id EQUAL! transf_atom
-		{ ## = #(#[ATAPPL,"Assign"], ##) }
+	| id LARROW! term
+		{ ## = #(#[ATAPPL,"BuildAssign"], ##) }
+	| id LDARROW! transf_atom
+		{ ## = #(#[ATAPPL,"ApplyAssign"], ##) }
 	;
 
 args
@@ -115,7 +122,7 @@ args
 	;
 
 arg
-	: ( transf ) => transf
+	: transf_choice
 	| ( INT | REAL | STR | OBJ )
 		{ ## = #(#[ATAPPL,"Obj"], #(#[ATSTR],##)) }
 	| PRIME! id ( PRIME! )?
@@ -160,7 +167,7 @@ switch_else
 	;
 
 var_defs
-	: var_def (COMMA! var_def )*
+	: var_def ( COMMA! var_def )*
 		{ ## = #(#[ATLIST], ##) }
 	;
 
@@ -171,19 +178,16 @@ var_def
 
 transf_build_apply
 	: transf_atom
-		( (term ~EQUAL) => term
+		( options { warnWhenFollowAmbig=false; }
+ 			// ambiguous case: definition follows
+ 		: ( id ( LPAREN! id_list RPAREN! )? EQUAL! ) =>
+		| term
 			{ ## = #(#[ATAPPL,"BuildApply"], ##) }
 		)?
 	;
 
-transf_rule
-	: (term RARROW!) => term RARROW! term
-		{ ## = #(#[ATAPPL,"Rule"], ##) }
-	| transf_build_apply
-	;
-
 transf_apply_match
-	: transf_rule
+	: transf_build_apply
 		( RDARROW! term
 			{ ## = #(#[ATAPPL,"ApplyMatch"], ##) }
 		)*
@@ -234,43 +238,52 @@ transf_composition
 		)?
 	;
 
-transf_rule_where
-	: (term RARROW! term WHERE!) => term RARROW! term WHERE! transf_composition
-		{ ## = #(#[ATAPPL,"RuleWhere"], ##) }
-	| transf_composition
-	;
-
 transf_choice
-	: transf_rule_where
-		( AMP! transf_rule_where PLUS! transf_choice
+	: transf_composition
+		( AMP! transf_composition PLUS! transf_choice
 			{ ## = #(#[ATAPPL,"GuardedChoice"], ##) }
 		| PLUS! transf_choice
 			{ ## = #(#[ATAPPL,"LeftChoice"], ##) }
 		)?
 	;
 
+transf_rule
+	: ( term_atom RARROW! ) => term_atom RARROW! term_atom
+		( IF! transf_choice
+			{ ## = #(#[ATAPPL,"RuleIf"], ##) }
+		|
+			{ ## = #(#[ATAPPL,"Rule"], ##) }
+		)
+	| transf_choice
+	;
+
 transf_undeterministic_choice
-	: transf_choice
-		( ( VERT! transf_choice )+
+	: transf_rule
+		( ( VERT! transf_rule )+
 			{ ## = #(#[ATAPPL,"Choice"], #(#[ATLIST],##)) }
 		)?
 	;
 
-transf_expr
+transf_where
 	: transf_undeterministic_choice
+		( WHERE! transf_rule
+			{ ## = #(#[ATAPPL,"Where"], ##) }
+		)?
 	;
 
 term
-	: atom
+	: common_atom
 	| term_atom
-		( LCURLY! term_list RCURLY!
-			{ ## = #(#[ATAPPL,"Annos"], ##) }
-		)?
-	| term_var AT! term
-		{ ## = #(#[ATAPPL,"As"], ##) }
 	;
 
 term_atom
+	: term_core
+		( LCURLY! term_list RCURLY!
+			{ ## = #(#[ATAPPL,"Annos"], ##) }
+		)?
+	;
+
+term_core
 	: INT
 		{ ## = #(#[ATAPPL,"Int"], #(#[ATINT],##)) }
 	| REAL
@@ -284,12 +297,10 @@ term_atom
 //		{ ## = #(#[ATAPPL,"Appl"], #[ATSTR,""], ##) }
 	| term_name term_args
 		{ ## = #(#[ATAPPL,"Appl"], ##) }
-	| ( term_var | term_wildcard ) LPAREN! term_list RPAREN!
-		{ ## = #(#[ATAPPL,"ApplCons"], ##) }
-	| term_var
-	| term_wildcard
-	| LANGLE! transf RANGLE!
-		{ ## = #(#[ATAPPL,"Transf"], ##) }
+	| ( term_var | term_wildcard | term_wrap )
+		( LPAREN! term_list RPAREN!
+			{ ## = #(#[ATAPPL,"ApplCons"], ##) }
+		)?
 	;
 
 term_name
@@ -316,7 +327,7 @@ term_list
 	: term_implicit_nil
 	| term ( COMMA! term_list | term_implicit_nil )
 		{ ## = #(#[ATAPPL,"Cons"], ##) }
-	| STAR! term_opt_wildcard
+	| STAR! ( term | term_implicit_wildcard )
 	;
 
 term_implicit_nil
@@ -324,14 +335,14 @@ term_implicit_nil
 		{ ## = #(#[ATAPPL,"Nil"]) }
 	;
 
-term_opt_wildcard
-	: term
-	| term_implicit_wildcard
-	;
-
 term_implicit_wildcard
 	:
 		{ ## = #(#[ATAPPL,"Wildcard"]) }
+	;
+
+term_wrap
+	: LANGLE! transf RANGLE!
+		{ ## = #(#[ATAPPL,"Wrap"], ##) }
 	;
 
 id_list

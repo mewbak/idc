@@ -7,20 +7,23 @@ import antlrre
 from lang.transf import parser
 
 
-pystr = \
+# python string reg. exp.
+_pystr = \
 	r"'''(?:\\.|.)*?'''|" \
 	r'"""(?:\\.|.)*?"""|' \
 	r'"(?:\\.|.)*?"|' \
 	r"'(?:\\.|.)*?'"
 
-pycomm = \
+# python comment reg. exp.
+_pycomm = \
 	r'#[^\r\n]*'
 
-pyobj = '`(?:' + pycomm + '|' + pystr + '|[^`]*)`'
+# python object reg. exp.
+_pyobj = '`(?:' + _pycomm + '|' + _pystr + '|[^`]*)`'
 
 
 _tokenizer = antlrre.Tokenizer(
-	# Token regular expression table
+	# token regular expression table
 	tokens = [
 		# whitespace and comments
 		(parser.SKIP,
@@ -48,13 +51,15 @@ _tokenizer = antlrre.Tokenizer(
 		(parser.UID, r'[A-Z][a-zA-Z0-9_]*', False),
 		(parser.LID, r'[a-z][a-zA-Z0-9_]*', True),
 
+		(parser.LARROW, r'<-', False),
 		(parser.RARROW, r'->', False),
+		(parser.LDARROW, r'<=', False),
 		(parser.RDARROW, r'=>', False),
 
-		(parser.OBJ, pyobj, False),
+		(parser.OBJ, _pyobj, False),
 	],
 
-	# symbols table
+	# symbol table
 	symbols = {
 		'_': parser.WILDCARD,
 		'(': parser.LPAREN,
@@ -80,11 +85,10 @@ _tokenizer = antlrre.Tokenizer(
 		'|': parser.VERT,
 		'~': parser.TILDE,
 		"'": parser.PRIME,
-		'@': parser.AT,
 		'=': parser.EQUAL,
 	},
 
-	# literals table
+	# literal table
 	literals = {
 		"id": parser.IDENT,
 		"fail": parser.FAIL,
@@ -98,8 +102,9 @@ _tokenizer = antlrre.Tokenizer(
 		"rec": parser.REC,
 		"switch": parser.SWITCH,
 		"case": parser.CASE,
-		"local": parser.LOCAL,
-		"global": parser.GLOBAL,
+		"shared": parser.SHARED,
+		"where": parser.WHERE,
+		"as": parser.AS,
 	}
 )
 

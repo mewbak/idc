@@ -32,7 +32,7 @@ class Term(variable.Variable):
 		if old is None:
 			ctx.set(self.name, trm)
 		elif old != trm:
-			raise exception.Failure('variable mismatch', trm, old)
+			raise exception.Failure('variable mismatch', self.name, trm, old)
 		return trm
 
 	@TransformationMethod
@@ -40,7 +40,7 @@ class Term(variable.Variable):
 		'''Returns this variable term, if defined.'''
 		trm = ctx.get(self.name)
 		if trm is None:
-			raise exception.Failure('undefined variable')
+			raise exception.Failure('undefined variable', self.name)
 		return trm
 
 	congruent = match

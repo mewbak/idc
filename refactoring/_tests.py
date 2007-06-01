@@ -3,6 +3,7 @@
 
 import os
 import unittest
+import traceback
 
 import aterm.factory
 import transf.transformation
@@ -33,14 +34,18 @@ def main():
 	for name in os.listdir(refactoring.__path__[0]):
 		name, ext = os.path.splitext(name)
 		if name != '__init__' and ext == '.py':
-			module = __import__('refactoring.' + name)
-			module = getattr(module, name)
-			for nam in dir(module):
-				if nam.startswith('test'):
-					obj = getattr(module, nam)
-					if isinstance(obj, transf.transformation.Transformation):
-						test = TransformationTest(obj, module.__name__ + '.' + nam)
-						suite.addTest(test)
+			try:
+				module = __import__('refactoring.' + name)
+			except:
+				traceback.print_exc()
+			else:
+				module = getattr(module, name)
+				for nam in dir(module):
+					if nam.startswith('test'):
+						obj = getattr(module, nam)
+						if isinstance(obj, transf.transformation.Transformation):
+							test = TransformationTest(obj, module.__name__ + '.' + nam)
+							suite.addTest(test)
 	unittest.TextTestRunner(verbosity=2).run(suite)
 
 

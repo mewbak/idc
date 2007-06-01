@@ -1,7 +1,11 @@
-// Term parsing
+/*
+ * Grammar for annotated terms. Based on the ATerm syntax.
+ */
 
 
 header {
+    __doc__ = "Term parsing."
+
     __all__ = ["Parser"]
 }
 
@@ -18,6 +22,8 @@ options {
 }
 
 {
+    __doc__ = "Term parser."
+
     def handleInt(self, value):
         raise NotImplementedError
 

@@ -47,32 +47,35 @@ class ModuleRefactoring(Refactoring):
 	def name(self):
 		return self.module.__doc__
 
-	def applicable(self, term, selection):
+	def applicable(self, trm, selection):
 		start, end = selection
 		selection = aterm.path.ancestor(start, end)
+		ctx = transf.context.Context()
+		trm = factory.makeList(trm, selection)
 		try:
-			self._applicable(term, selection=selection)
+			self._applicable.apply(trm, ctx)
 		except transf.exception.Failure:
 			return False
 		else:
 			return True
 
-	def input(self, term, selection):
+	def input(self, trm, _selection):
 		factory = term.factory
 		start, end = selection
 		selection = aterm.path.ancestor(start, end)
-		args = self._input(term, selection=selection)
-		args = factory.make("[_,*]", selection, args)
+		ctx = transf.context.Context()
+		trm = factory.makeList(trm, selection)
+		args = self._input.apply(trm, ctx)
 		return args
 
-	def apply(self, term, args):
-		selection = args.head
-		args = args.tail
+	def apply(self, trm, args):
+		ctx = transf.context.Context()
+		trm = factory.makeList(trm, args)
 		try:
-			return self._apply(term, selection=selection, args=args)
+			return self._apply.apply(trm, ctx)
 		except transf.exception.Failure, ex:
 			raise
-			return term
+			return trm
 
 
 class Factory:

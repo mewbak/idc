@@ -2,9 +2,11 @@
 respective transformation objects."""
 
 
-# pylint: disable-msg=R0201
-
+from sets import Set as set
 from aterm import walker
+
+
+# pylint: disable-msg=R0201
 
 
 class SemanticException(Exception):
@@ -12,7 +14,10 @@ class SemanticException(Exception):
 	pass
 
 
+# term operations
 MATCH, BUILD, CONGRUENT = range(3)
+
+# symbol types
 ARG, LOCAL, GLOBAL = range(3)
 
 
@@ -21,6 +26,11 @@ class Compiler(walker.Walker):
 	def __init__(self):
 		self.stmts = []
 		self.indent = 0
+
+		self.globals = set()
+		self.args = set()
+		self.locals = set()
+
 		self.vars = {}
 
 	def stmt(self, s):
@@ -36,32 +46,37 @@ class Compiler(walker.Walker):
 
 	def defineDefs(self, tdefs):
 		for tdef in tdefs:
-			self.vars = {}
 			self.define(tdef)
 
 	def defineVarDef(self, n, t):
 		n = self.id(n)
 		t = self.type(t)
-		self.stmt("%s = %s(%r)" % (n, t, n))
+		if t is not None:
+			self.stmt("%s = %s(%r)" % (n, t, n))
+		self.globals.add(n)
 
 	def type(self, t):
-		t = self.id(t)
-		if t == "Term":
+		t = self._str(t)
+		if t == "term":
 			return "transf.types.term.Term"
-		if t == "Table":
+		if t == "table":
 			return "transf.types.table.Table"
-		raise SemanticException
+		if t == "extern":
+			return None
+		return t
 
 	def defineTransfDef(self, n, t):
+		self.args = set()
 		n = self.id(n)
 		t = self.doTransf(t)
 		self.stmt("%s = %s" % (n, t))
+		self.args = set()
 
 	def defineMacroDef(self, n, a, t):
 		n = self.id(n)
 		a = self.id_list(a)
-		for a_ in a:
-			self.vars[a_] = ARG
+		self.args = set(a)
+
 		a = ",".join(a)
 		try:
 			n.index(".")
@@ -79,15 +94,17 @@ class Compiler(walker.Walker):
 			self.stmt("return %s" % t)
 			self.indent -= 1
 			self.stmt("%s = _tmp" % n)
+		self.args = set()
 
 	def doTransf(self, t):
+		self.locals = set()
+		# TODO: pre-collect the vars
 		t = self.transf(t)
-		vs = []
-		for vn, vt in self.vars.iteritems():
-			if vt == LOCAL:
-				vs.append(vn)
-		vs = "[" + ",".join(["_" + v for v in vs]) + "]"
-		return "transf.lib.scope.Scope(%s, %s)" % (vs, t)
+		vs = self.locals
+		if vs:
+			vs = "[" + ",".join([self.local(v) for v in vs]) + "]"
+			t =  "transf.lib.scope.Scope(%s, %s)" % (vs, t)
+		return t
 
 	transf = walker.Dispatch('transf')
 
@@ -105,15 +122,6 @@ class Compiler(walker.Walker):
 
 	def transfCongruent(self, t):
 		return self.congruent(t)
-
-	def transfAssign(self, v, t):
-		v = self.var(v)
-		t = self.transf(t)
-		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (t, v)
-
-	def transfUnset(self, v):
-		v = self.var(v)
-		return "%s.unset" % v
 
 	def transfComposition(self, l, r):
 		l = self.transf(l)
@@ -137,7 +145,7 @@ class Compiler(walker.Walker):
 		return "transf.lib.combine.GuardedChoice(%s, %s, %s)" % (l, m, r)
 
 	def transfTransf(self, n):
-		n = self.id(n)
+		n = self.idRef(n)
 		return n
 
 	def transfMacro(self, i, a):
@@ -150,26 +158,36 @@ class Compiler(walker.Walker):
 		b = self.build(b)
 		return "transf.lib.combine.Composition(%s, %s)" % (m, b)
 
-	def transfRuleWhere(self, m, b, w):
+	def transfRuleIf(self, m, b, w):
 		m = self.match(m)
 		b = self.match(b)
 		w = self.transf(w)
-		return "transf.lib.combine.Composition(%s, transf.lib.combine.Composition(lib.transf.combine.Where(%s), %s))" % (m, w, b)
+		return "transf.lib.combine.Composition(%s, transf.lib.combine.If(%s, %s))" % (m, w, b)
+
+	def transfWhere(self, t, w):
+		t = self.transf(t)
+		w = self.transf(w)
+		return "transf.lib.combine.Composition(transf.lib.combine.Where(%s), %s)" % (w, t)
 
 	def transfApplyMatch(self, t, m):
 		t = self.transf(t)
 		m = self.match(m)
 		return "transf.lib.combine.Composition(%s, %s)" % (t, m)
 
-	def transfApplyStore(self, t, v):
+	def transfApplyAssign(self, v, t):
 		t = self.transf(t)
-		v = self.id(v)
+		v = self.var(v)
 		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (t, v)
 
 	def transfBuildApply(self, t, b):
 		t = self.transf(t)
 		b = self.build(b)
 		return "transf.lib.combine.Composition(%s, %s)" % (b, t)
+
+	def transfBuildAssign(self, v, b):
+		v = self.var(v)
+		b = self.build(b)
+		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (b, v)
 
 	def transfIf(self, conds, other):
 		conds = "[" + ",".join(map(self.doIfClause, conds)) + "]"
@@ -209,27 +227,26 @@ class Compiler(walker.Walker):
 
 	def transfRec(self, i, t):
 		i = self.id(i)
-		# FIXME: add i to the var list as ARG
+		oldargs = self.args
+		self.args = self.args.union([i])
 		t = self.transf(t)
+		self.args = oldargs
 		return "transf.lib.iterate.Rec(lambda %s: %s)" % (i, t)
 
 	def transfGlobal(self, vs, t):
-		oldvars = {}
 		vs = self.id_list(vs)
-		for v in vs:
-			if v in self.vars:
-				oldvars[v] = self.vars[v]
-			self.vars[v] = GLOBAL
+		oldargs = self.args
+		self.args = self.args.union(vs)
 		t = self.transf(t)
-		self.vars.update(oldvars)
+		self.args = oldargs
 		return t
 
-	def transfWith(self, vs, t):
-		vs = map(self.transf, vs)
-		vs.reverse()
+	def transfScope(self, vs, t):
+		# TODO: collect vars
 		t = self.transf(t)
-		for v in vs:
-			t = "transf.lib.combine.Composition(%s, %s)" % (v, t)
+		if len(vs):
+			vs = "[" + ",".join([self.idRef(v) for v in vs]) + "]"
+			t = "transf.lib.scope.Scope(%s, %s)" % (vs, t)
 		return t
 
 	def transfWithDef(self, v, t):
@@ -244,28 +261,11 @@ class Compiler(walker.Walker):
 		return o
 
 	def argVar(self, v):
-		v = self._str(v)
+		v = self.var(v)
 		return repr(v)
 
 	def arg_Term(self, t):
 		return self.transf(t)
-
-
-	constructor = walker.Dispatch('constructor')
-
-	def constructorTermTransf(self, t):
-		t = self.transf(t)
-		return "transf.types.term.Transf(%s)" % t
-
-	def constructorTerm(self):
-		return "transf.types.term.new"
-
-	def constructorTableCopy(self, v):
-		v = self.id(v)
-		return "transf.types.table.Copy(%r)" % v
-
-	def constructorTable(self):
-		return "transf.types.table.new"
 
 
 	static = walker.Dispatch('static')
@@ -303,13 +303,13 @@ class Compiler(walker.Walker):
 		return "aterm.factory.factory.makeAppl(%r)" % (n)
 
 	def staticWildcard(self):
-		raise SemanticException(None, "wildcard in static term")
+		raise SemanticException("wildcard in static term")
 
 	def staticVar(self, v):
-		raise SemanticException(None, "variable in static term")
+		raise SemanticException("variable in static term", v)
 
-	def staticTransf(self, t):
-		raise SemanticException(None, "transformation in static term")
+	def staticWrap(self, t):
+		raise SemanticException("transformation in static term", t)
 
 	def staticAnnos(self, t, a):
 		t = self.static(t)
@@ -318,47 +318,47 @@ class Compiler(walker.Walker):
 
 
 	def match(self, t):
-		return self.termTransf(t, mode = MATCH)
+		return self.term(t, mode = MATCH)
 
 	def build(self, t):
-		return self.termTransf(t, mode = BUILD)
+		return self.term(t, mode = BUILD)
 
 	def congruent(self, t):
-		return self.termTransf(t, mode = CONGRUENT)
+		return self.term(t, mode = CONGRUENT)
 
 
-	termTransf = walker.Dispatch('termTransf')
+	term = walker.Dispatch('term')
 
-	def termTransfInt(self, i, mode):
+	def termInt(self, i, mode):
 		i = self._int(i)
 		if mode == BUILD:
 			return "transf.lib.build.Int(%r)" % i
 		else:
 			return "transf.lib.match.Int(%r)" % i
 
-	def termTransfReal(self, r, mode):
+	def termReal(self, r, mode):
 		r = self._real(r)
 		if mode == BUILD:
 			return "transf.lib.build.Real(%r)" % r
 		else:
 			return "transf.lib.match.Real(%r)" % r
 
-	def termTransfStr(self, s, mode):
+	def termStr(self, s, mode):
 		s = self._str(s)
 		if mode == BUILD:
 			return "transf.lib.build.Str(%r)" % s
 		else:
 			return "transf.lib.match.Str(%r)" % s
 
-	def termTransfNil(self, mode):
+	def termNil(self, mode):
 		if mode == BUILD:
 			return "transf.lib.build.nil"
 		else:
 			return "transf.lib.match.nil"
 
-	def termTransfCons(self, h, t, mode):
-		h = self.termTransf(h, mode)
-		t = self.termTransf(t, mode)
+	def termCons(self, h, t, mode):
+		h = self.term(h, mode)
+		t = self.term(t, mode)
 		if mode == MATCH:
 			return "transf.lib.match.Cons(%s, %s)" % (h, t)
 		elif mode == BUILD:
@@ -366,9 +366,9 @@ class Compiler(walker.Walker):
 		elif mode == CONGRUENT:
 			return "transf.lib.congruent.Cons(%s, %s)" % (h, t)
 
-	def termTransfAppl(self, name, args, mode):
+	def termAppl(self, name, args, mode):
 		name = self._str(name)
-		args = "[" + ",".join([self.termTransf(arg, mode) for arg in args]) + "]"
+		args = "[" + ",".join([self.term(arg, mode) for arg in args]) + "]"
 		if mode == MATCH:
 			return "transf.lib.match.Appl(%r, %s)" % (name, args)
 		elif mode == BUILD:
@@ -376,16 +376,16 @@ class Compiler(walker.Walker):
 		elif mode == CONGRUENT:
 			return "transf.lib.congruent.Appl(%r, %s)" % (name, args)
 
-	def termTransfApplName(self, name, mode):
+	def termApplName(self, name, mode):
 		name = self._str(name)
 		if mode == BUILD:
 			return "transf.lib.build.Appl(%r, ())" % name
 		else:
 			return "transf.lib.match.ApplName(%r)" % name
 
-	def termTransfApplCons(self, n, a, mode):
-		n = self.termTransf(n, mode)
-		a = self.termTransf(a, mode)
+	def termApplCons(self, n, a, mode):
+		n = self.term(n, mode)
+		a = self.term(a, mode)
 		if mode == MATCH:
 			return "transf.lib.match.ApplCons(%s, %s)" % (n, a)
 		elif mode == BUILD:
@@ -393,10 +393,10 @@ class Compiler(walker.Walker):
 		elif mode == CONGRUENT:
 			return "transf.lib.congruent.ApplCons(%s, %s)" % (n, a)
 
-	def termTransfWildcard(self, mode):
+	def termWildcard(self, mode):
 		return "transf.lib.base.ident"
 
-	def termTransfVar(self, v, mode):
+	def termVar(self, v, mode):
 		v = self.var(v)
 		if mode == MATCH:
 			return "transf.lib.match.Var(%s)" % v
@@ -405,18 +405,13 @@ class Compiler(walker.Walker):
 		elif mode == CONGRUENT:
 			return "transf.lib.congruent.Var(%s)" % v
 
-	def termTransfAs(self, v, t, mode):
-		v = self.termTransf(v, mode)
-		t = self.termTransf(t, mode)
-		return "transf.lib.combine.Composition(%s, %s)" % (t, v)
-
-	def termTransfTransf(self, t, mode):
+	def termWrap(self, t, mode):
 		t = self.transf(t)
 		return t
 
-	def termTransfAnnos(self, t, a, mode):
-		t = self.termTransf(t, mode)
-		a = self.termTransf(a, mode)
+	def termAnnos(self, t, a, mode):
+		t = self.term(t, mode)
+		a = self.term(a, mode)
 		if mode == MATCH:
 			r = "transf.lib.match.Annos(%s)" % a
 		elif mode == BUILD:
@@ -425,7 +420,7 @@ class Compiler(walker.Walker):
 			r = "transf.lib.congruent.Annos(%s)" % a
 		return "transf.lib.combine.Composition(%s, %s)" % (t, r)
 
-	def termTransf_Term(self, t, mode):
+	def term_Term(self, t, mode):
 		# fallback to a regular transformation
 		t = self.transf(t)
 		return t
@@ -460,31 +455,35 @@ class Compiler(walker.Walker):
 		pass
 
 
-	def var(self, v):
-		v = self._str(v)
-		if not v in self.vars:
-			self.stmt('_%s = transf.types.term.Term(%r)' %(v, v))
-			self.vars[v] = LOCAL
-			return self.local(v)
+	def id(self, i):
+		return self._str(i)
+
+	def id_list(self, l):
+		return map(self.id, l)
+
+	def idRef(self, i):
+		s = self.id(i)
+		parts = s.split('.')
+		head = parts[0]
+		tail = parts[1:]
+		if head in self.locals:
+			return ".".join([self.local(s)] + tail)
 		else:
-			if self.vars[v] == LOCAL:
-				return self.local(v)
-			else:
-				return v
+			return s
+
+	def var(self, v):
+		v = self.id(v)
+		if v in self.globals:
+			return v
+		if v in self.args:
+			return v
+		if v in self.locals:
+			return self.local(v)
+		self.stmt('%s = transf.types.term.Term(%r)' %(self.local(v), v))
+		self.locals.add(v)
+		return self.local(v)
 
 	def local(self, v):
 		return "_" + v
 
 
-	def id_list(self, l):
-		return map(self.id, l)
-
-	def id(self, i):
-		s = self._str(i)
-		parts = s.split('.')
-		head = parts[0]
-		tail = parts[1:]
-		if head in self.vars and self.vars[head] == LOCAL:
-			return ".".join([self.local(s)] + tail)
-		else:
-			return s

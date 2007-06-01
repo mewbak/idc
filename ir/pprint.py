@@ -77,7 +77,7 @@ ppSize =
 		!H([ "int", <strings.tostr> ])
 	end
 
-ppType = rec ppType : {
+ppType = rec ppType : (
 	Void
 		-> <kw "void">
 |	Bool
@@ -97,7 +97,7 @@ ppType = rec ppType : {
 |	Blob(size)
 		-> H([ "blob", <strings.tostr size> ])
 |	_ -> "???"
-}
+)
 
 
 #######################################################################
@@ -173,22 +173,20 @@ exprKern = util.Proxy()
 
 SubExpr(Cmp) =
 	?[pprec, rest] ;
-	with
-		prec = precExpr rest
-	in
-		if Cmp(!prec, !pprec) then
-			!H([ "(", <exprKern [prec,rest]>, ")" ])
-		else
-			exprKern [prec,rest]
-		end
+	prec <= precExpr rest ;
+	if Cmp(!prec, !pprec) then
+		!H([ "(", <exprKern [prec,rest]>, ")" ])
+	else
+		exprKern [prec,rest]
 	end
+
 
 subExpr = SubExpr(arith.Gt)
 subExprEq = SubExpr(arith.Geq)
 
 exprKern.subject =
-	[prec,rest] -> rest ;
-	Path({
+	( [prec,rest] -> rest ) ;
+	Path((
 	Lit(Int(_,_), value)
 		-> <intlit value>
 |	Lit(type, value)
@@ -209,7 +207,7 @@ exprKern.subject =
 		-> H([ <ppOp "&">, <subExpr [prec,addr]> ])
 |	Ref(expr)
 		-> H([ <ppOp "*">, <subExpr [prec,expr]> ])
-})
+))
 
 ppExpr =
 	exprKern [<precExpr>,<id>]
@@ -323,12 +321,12 @@ ppStmt.subject = Path(
 	end
 )
 
-module = Path({
+module = Path((
 	Module(stmts)
 		-> V([
 			I( <ppStmts stmts> )
 		])
-})
+))
 
 ''')
 

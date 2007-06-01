@@ -38,15 +38,13 @@ asmXORW = AsmXor(!16)
 asmXORL = AsmXor(!32)
 
 AsmTest(size) =
-	with
-		type = Word(size),
-		tmp = temp
-	in
-		[dst, src] -> [
-			Assign(type, tmp, Binary(And(type), dst, src)),
-			*<LogFlags(size, !tmp)>
-		]
-	end
+	[dst, src] -> [
+		Assign(type, tmp, Binary(And(type), dst, src)),
+		*<LogFlags(size, !tmp)>
+	]
+	where
+		type <= Word(size) ;
+		tmp <= temp
 
 asmTESTB = AsmTest(!8)
 asmTESTW = AsmTest(!16)

@@ -9,10 +9,10 @@ export PYTHONPATH = .
 
 # Use the native-compiled version of ANTLR if possible, as it is much faster than
 # Java byte code.
-ifneq ($(shell which cantlr),)
+ifneq ($(shell which cantlr 2>/dev/null),)
 ANTLR = cantlr
 else
-ifneq ($(shell which runantlr),)
+ifneq ($(shell which runantlr 2>/dev/null),)
 ANTLR = runantlr
 else
 JAVA = java
