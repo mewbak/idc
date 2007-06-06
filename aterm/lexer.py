@@ -52,11 +52,8 @@ class Lexer(antlrre.TokenStream):
 
 	tokenizer = _tokenizer
 
-	def filterToken(self, type, text, pos, endpos):
-		if type == parser.SKIP:
-			self.countLines(pos, endpos)
-		elif type == parser.STR:
-			self.countLines(pos, endpos)
+	def filterToken(self, type, text):
+		if type == parser.STR:
 			text = text[1:-1]
 			text = text.replace('\\r', '\r')
 			text = text.replace('\\n', '\n')

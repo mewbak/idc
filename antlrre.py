@@ -9,10 +9,10 @@ import antlr
 
 
 class Tokenizer(object):
-	
+
 	def __init__(self, tokens = (), symbols = None, literals = None):
 		self.tokens_re = re.compile(
-			'|'.join(['(' + regexp + ')' for tok, regexp, test_lit in tokens]), 
+			'|'.join(['(' + regexp + ')' for tok, regexp, test_lit in tokens]),
 			re.DOTALL
 		)
 		self.tokens_table = tokens
@@ -24,7 +24,7 @@ class Tokenizer(object):
 			self.literals_table = {}
 		else:
 			self.literals_table = literals
-	
+
 	def next(self, buf, pos):
 		if pos >= len(buf):
 			return antlr.EOF, "", pos
@@ -44,9 +44,11 @@ class Tokenizer(object):
 class TokenStream(antlr.TokenStream):
 
 	tokenizer = None
-	
+
 	newline_re = re.compile(r'\r\n?|\n')
-	
+
+	tabsize = 8
+
 	def __init__(self, buf = None, pos = 0, filename = None, fp = None):
 		if fp is not None:
 			try:
@@ -65,7 +67,7 @@ class TokenStream(antlr.TokenStream):
 					buf = mmap.mmap(fileno, length, access = mmap.ACCESS_READ)
 				else:
 					buf = ""
-			
+
 			if filename is None:
 				try:
 					filename = fp.name
@@ -74,21 +76,22 @@ class TokenStream(antlr.TokenStream):
 
 		self.buf = buf
 		self.pos = pos
-		self.lineno = 0
-		self.linepos = pos
+		self.line = 1
+		self.col = 1
 		self.filename = filename
-	
+
 	def nextToken(self):
 		while True:
 			# save state
 			pos = self.pos
-			line = self.lineno
-			col = self.pos - self.linepos
-			
+			line = self.line
+			col = self.col
+
 			type, text, endpos = self.tokenizer.next(self.buf, pos)
-			type, text = self.filterToken(type, text, pos, endpos)
+			self.consume(pos, endpos)
+			type, text = self.filterToken(type, text)
 			self.pos = endpos
-			
+
 			if type == antlr.SKIP:
 				continue
 			elif type is None:
@@ -102,16 +105,28 @@ class TokenStream(antlr.TokenStream):
 			else:
 				break
 		return antlr.CommonToken(
-			type = type, 
-			text = text, 
-			line = line, 
+			type = type,
+			text = text,
+			line = line,
 			col = col
 		)
-		
+
+	def consume(self, pos, endpos):
+		# update line number
+		for mo in self.newline_re.finditer(self.buf, pos, endpos):
+			self.line += 1
+			self.col = 1
+			pos = mo.end()
+
+		# update column number
+		while True:
+			tabpos = self.buf.find('\t', pos, endpos)
+			if tabpos == -1:
+				break
+			self.col += tabpos - pos
+			self.col = ((self.col - 1)//self.tabsize + 1)*self.tabsize + 1
+			pos = tabpos + 1
+		self.col += endpos - pos
+
 	def filterToken(self, type, text, pos, endpos):
 		return type, text
-
-	def countLines(self, pos, endpos):
-		for mo in self.newline_re.finditer(self.buf, pos, endpos):
-			self.lineno += 1
-			self.linepos = mo.endpos

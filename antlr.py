@@ -105,13 +105,20 @@ class RecognitionException(ANTLRException):
 class NoViableAltException(RecognitionException):
 
     def __init__(self, *args):
-        RecognitionException.__init__(self, *args)
         self.token = None
         self.node  = None
         if isinstance(args[0],AST):
             self.node = args[0]
+            RecognitionException.__init__(self, "NoViableAlt",
+                                          args[1],
+                                          self.node.getLine(),
+                                          self.node.getColumn())
         elif isinstance(args[0],Token):
             self.token = args[0]
+            RecognitionException.__init__(self, "NoViableAlt",
+                                          args[1],
+                                          self.token.getLine(),
+                                          self.token.getColumn())
         else:
             raise TypeError("NoViableAltException requires Token or AST argument")
 
@@ -311,7 +318,7 @@ class MismatchedTokenException(RecognitionException):
             self.upper = args[3]
             self.fileName = args[5]
 
-        elif len(args) == 4 and isinstance(args[2], int):
+        elif len(args) == 5 and isinstance(args[2], int):
             # Expected token / not token
             if args[3]:
                 self.mismatchType = MismatchedTokenException.NOT_TOKEN
@@ -319,6 +326,7 @@ class MismatchedTokenException(RecognitionException):
                 self.mismatchType = MismatchedTokenException.TOKEN
             self.tokenNames = args[0]
             self.expecting = args[2]
+            self.fileName = args[4]
 
         elif len(args) == 4 and isinstance(args[2], BitSet):
             # Expected BitSet / not BitSet
@@ -2494,7 +2502,7 @@ class CommonAST(BaseAST):
     ### Get the token type for this node
     def getType(self):
         return self.ttype
-    
+
     ### Get the line for this node
     def getLine(self):
         return self.line
@@ -2502,7 +2510,7 @@ class CommonAST(BaseAST):
     ### Get the column for this node
     def getColumn(self):
         return self.column
-    
+
     def initialize(self,*args):
         if not args:
             return

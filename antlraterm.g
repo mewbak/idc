@@ -1,5 +1,5 @@
-/* 
- * Translate 
+/*
+ * Generate an aterm from an ANTLR AST.
  */
 
 
@@ -32,7 +32,7 @@ aterm returns [ret]
 		{ name = #n.getText() }
 		{ ret = aterm.factory.factory.makeAppl(name, args) }
 	;
- 
+
 aterm_list returns [ret]
 	: h=aterm t=aterm_list
 		{ ret = aterm.factory.factory.makeCons(h, t) }
@@ -41,10 +41,9 @@ aterm_list returns [ret]
 	;
 
 aterm_args returns [ret]
-: 
+:
 		{ ret = [] }
-	( a=aterm 
+	( a=aterm
 		{ ret.append(a) }
 	)*
 ;
-	
