@@ -2,8 +2,11 @@
 
 
 import sys
+import inspect
 
+import antlr
 from antlraterm import Walker as Converter
+
 from lang.transf.lexer import Lexer
 from lang.transf.parser import Parser
 from lang.transf.compiler import Compiler
@@ -13,10 +16,29 @@ def _parse(buf, production="definitions"):
 	'''Generate a parser for a string buffer.'''
 	lexer = Lexer(buf)
 	parser = Parser(lexer)
-	ast = getattr(parser, production)()
-	ast = parser.getAST()
-	converter = Converter()
-	term = converter.aterm(ast)
+	try:
+		ast = getattr(parser, production)()
+		ast = parser.getAST()
+		converter = Converter()
+		term = converter.aterm(ast)
+	except antlr.RecognitionException, ex:
+		parser.reportError(ex)
+		if ex.line != -1:
+			lines = buf.split("\n")
+			line = lines[ex.line - 1]
+
+			frame = sys._getframe(3)
+			filename = frame.f_code.co_filename
+			lines = open(filename, "rt").read().split("\n")
+			try:
+				lineno = lines.index(line) + 1
+			except ValueError:
+				lineno = frame.f_lineno
+			sys.stderr.write("%s:%d:\n" % ( filename, lineno))
+			sys.stderr.write(line.expandtabs() + "\n")
+			if ex.column != -1:
+				sys.stderr.write(" "*(ex.column - 1) + "^\n")
+		raise Exception
 	return term
 
 
