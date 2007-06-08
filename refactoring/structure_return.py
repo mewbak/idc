@@ -10,8 +10,7 @@ import ir.path
 
 parse.Transfs('''
 
-
-goto =
+Goto(label) =
 	ir.path.inSelection ;
 	?GoTo(Sym(label))
 
@@ -31,16 +30,37 @@ doReturn =
 				)
 			)
 		) ;
-		OnceTD(goto; !Block(rest))
+		OnceTD(Goto(label); !Block(rest))
 	end
 
 
-gotoSelected = Where(ir.path.MatchSelectionTo(?GoTo(Sym(_))))
-functionSelected = Where(ir.path.MatchSelectionTo(?Function))
+gotoSelected =
+	Where(
+		ir.path.projectSelection => GoTo(Sym(_))
+	)
 
-input = ![]
+functionSelected =
+	Where(
+		ir.path.projectSelection => Function
+	)
 
-apply = doReturn; dle
-applicable = gotoSelected ; doReturn
+common = doReturn
 
+applicable =
+	ir.path.Applicable(
+		gotoSelected ;
+		common
+	)
+
+input =
+	ir.path.Input(
+		![]
+	)
+
+apply =
+	ir.path.Apply(
+		[root] -> root ;
+		common ;
+		dle
+	)
 ''')

@@ -50,6 +50,11 @@ options {
 	importVocab = antlraterm;
 }
 
+tokens {
+	// TODO: describe more tokens
+	IN="in";
+}
+
 {
     __doc__ = "Parser for transformation language."
 }
@@ -123,10 +128,8 @@ args
 
 arg
 	: transf_choice
-	| ( INT | REAL | STR | OBJ )
+	| ( /* INT | REAL | STR | */ OBJ )
 		{ ## = #(#[ATAPPL,"Obj"], #(#[ATSTR],##)) }
-	| PRIME! id ( PRIME! )?
-		{ ## = #(#[ATAPPL,"Var"], ##) }
 	;
 
 if_clauses
@@ -177,7 +180,13 @@ var_def
 	;
 
 transf_build_apply
-	: transf_atom
+	: ( term_atom RARROW! ) => term_atom RARROW! term_atom
+		( IF! transf_atom
+			{ ## = #(#[ATAPPL,"RuleIf"], ##) }
+		|
+			{ ## = #(#[ATAPPL,"Rule"], ##) }
+		)
+	| transf_atom
 		( options { warnWhenFollowAmbig=false; }
  			// ambiguous case: definition follows
  		: ( id ( LPAREN! id_list RPAREN! )? EQUAL! ) =>
@@ -248,13 +257,7 @@ transf_choice
 	;
 
 transf_rule
-	: ( term_atom RARROW! ) => term_atom RARROW! term_atom
-		( IF! transf_choice
-			{ ## = #(#[ATAPPL,"RuleIf"], ##) }
-		|
-			{ ## = #(#[ATAPPL,"Rule"], ##) }
-		)
-	| transf_choice
+	: transf_choice
 	;
 
 transf_undeterministic_choice

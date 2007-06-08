@@ -4,6 +4,7 @@
 from transf import parse
 import ir.traverse
 import ir.path
+import ir.sym
 
 
 parse.Transfs('''
@@ -12,18 +13,19 @@ parse.Transfs('''
 #######################################################################
 # Inline (var, expr) table
 
+shared inline as table
 
 SetVarInline(x, y) =
-	Where(![x, y] ==> inline) ;
+	inline <= ![x, y] ;
 	Where(
 		!inline ;
-		Filter(([z, OnceTD(?x) ] -> [z]) ==> inline)
+		Filter(inline <= ([z, OnceTD(?x) ] -> [z]))
 	)
 
 
-ClearVarInline(x) = Where(![x] ==> inline)
+ClearVarInline(x) = inline <- [x]
 
-clearAllInline = Where(![] ==> inline)
+clearAllInline = inline <- []
 
 inlineVars = AllTD(?Sym; ~inline)
 
@@ -31,13 +33,14 @@ inlineVars = AllTD(?Sym; ~inline)
 #######################################################################
 # Labels' state
 
+shared label_inline as table
 
 setLabelInline =
 Where(
 	with label in
-		?GoTo(Sym(label)) <
+		?GoTo(Sym(label)) &
 		!inline ;
-		Map(![label,<id>,~inline]; ![_,_] ==> label_inline) +
+		Map(![label,<id>,~inline]; label_inline <= ![_,_]) +
 		id # FIXME
 	end
 )
@@ -48,7 +51,7 @@ Where(
 		?Label(label) ;
 		!label_inline ;
 		Filter( ([label,x,y] -> [x,y]) ) ;
-		Map(id /inline\ ([x,y] -> <SetVarInline(!x, !y)>) )
+		Map(id /inline\ ([x,y] -> <SetVarInline(x, y)>) )
 	end
 )
 
@@ -64,12 +67,12 @@ propStmts =
 
 propAssign =
 	with x, y in
-		~Assign(_, x, y@<inlineVars>) ;
+		~Assign(_, x, <inlineVars => y>) ;
 		if ir.path.isSelected then
-			SetVarInline(!x, !y) ;
+			SetVarInline(x, y) ;
 			!NoStmt
 		else
-			Try(ClearVarInline(!x))
+			Try(ClearVarInline(x))
 		end
 	end
 
@@ -106,9 +109,9 @@ propDoWhile =
 
 propFunction =
 	ir.sym.EnterFunction(
-		with label_inline[] in
+		with label_inline in
 			~Function(_, _, _, <
-				\label_inline/* with inline[] in propStmts end
+				\label_inline/* with inline in propStmts end
 			>)
 		end
 	)
@@ -137,7 +140,7 @@ propModule =
 	)
 
 prop =
-	with inline[], label_inline[] in
+	with inline, label_inline in
 		propModule
 	end
 
@@ -146,15 +149,22 @@ prop =
 # Refactoring
 
 applicable =
-	ir.path.projectSelection ;
-	?Assign(_, Sym(_), _)
-	#OnceTD(?Assign(_, Sym(_), _))
+	ir.path.Applicable(
+		ir.path.projectSelection ;
+		?Assign(_, Sym(_), _)
+		#OnceTD(?Assign(_, Sym(_), _))
+	)
 
 input =
-	![]
+	ir.path.Input(
+		![]
+	)
 
 apply =
-	prop
+	ir.path.Apply(
+		[root] -> root ;
+		prop
+	)
 
 
 #######################################################################
@@ -166,7 +176,7 @@ testApply =
 		Assign(Int(32,Signed),Sym("ebx"),Sym("eax"))
 	]) ;
 	ir.path.annotate ;
-	with selection = ![0,0] in apply end ;
+	apply [_, [[0,0]]] ;
 	?Module([
 		Assign(Int(32,Signed),Sym("ebx"),Lit(Int(32,Signed),1))
 	])

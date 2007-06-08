@@ -11,14 +11,14 @@ import ir.path
 parse.Transfs('''
 
 
-goto =
+Goto(label) =
 	ir.path.inSelection ;
 	?GoTo(Sym(label))
 
 liftDoWhile =
 		with label, cond, rest in
 			~[Label(label), *<AtSuffix(
-				?[If(_,<goto>,NoStmt), *] ;
+				?[If(_,<Goto(label)>,NoStmt), *] ;
 				?[If(cond,_,_), *rest] ;
 				![]
 			) ;
@@ -26,14 +26,36 @@ liftDoWhile =
 			>]
 		end
 
-gotoSelected = Where(ir.path.MatchSelectionTo(?GoTo(Sym(_))))
-functionSelected = Where(ir.path.MatchSelectionTo(?Function))
+gotoSelected =
+	Where(
+		ir.path.projectSelection => GoTo(Sym(_))
+	)
 
-input = ![]
+functionSelected =
+	Where(
+		ir.path.projectSelection => Function
+	)
 
-apply = OnceTD(AtSuffix(liftDoWhile))
-applicable = gotoSelected ; apply
-apply = apply; dle
+common = OnceTD(AtSuffix(liftDoWhile))
+
+applicable =
+	ir.path.Applicable(
+		gotoSelected ;
+		common
+	)
+
+input =
+	ir.path.Input(
+		![]
+	)
+
+apply =
+	ir.path.Apply(
+		[root] -> root ;
+		common ;
+		dle
+	)
+
 
 testApply =
 	!Module([
@@ -42,7 +64,7 @@ testApply =
 		If(Sym("a"),GoTo(Sym("next")),NoStmt)
 	]) ;
 	ir.path.annotate ;
-	with selection = ![1,2,0] in apply end ;
+	apply [_, [[1,2,0]]] ;
 	?Module([
 		DoWhile(Sym("a"),
 			Assign(Int(32,Signed), Sym("a"), Sym("b"))

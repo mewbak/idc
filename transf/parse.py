@@ -29,12 +29,13 @@ def _parse(buf, production="definitions"):
 
 			frame = sys._getframe(3)
 			filename = frame.f_code.co_filename
+			name = frame.f_code.co_name
 			lines = open(filename, "rt").read().split("\n")
 			try:
 				lineno = lines.index(line) + 1
 			except ValueError:
 				lineno = frame.f_lineno
-			sys.stderr.write("%s:%d:\n" % ( filename, lineno))
+			sys.stderr.write('  File "%s", line %d, in %s\n' % (filename, lineno, name))
 			sys.stderr.write(line.expandtabs() + "\n")
 			if ex.column != -1:
 				sys.stderr.write(" "*(ex.column - 1) + "^\n")

@@ -522,8 +522,8 @@ class TestParse(TestMixin, unittest.TestCase):
 		('C(x,y) -> D(y,x)', 'Rule(Appl("C",[Var("x"),Var("y")]),Appl("D",[Var("y"),Var("x")]))'),
 		('C(x,y) -> D(y,x)', 'Rule(Appl("C",[Var("x"),Var("y")]),Appl("D",[Var("y"),Var("x")]))'),
 		('1 -> 2 if a', 'RuleIf(Int(1),Int(2),Transf("a"))'),
-		('1 -> 2 if a ; b | c', 'Choice([RuleIf(Int(1),Int(2),Composition(Transf("a"), Transf("b"))),Transf("c")])'),
-		('1 -> 2 if a + b | c', 'Choice([RuleIf(Int(1),Int(2),LeftChoice(Transf("a"), Transf("b"))),Transf("c")])'),
+		('1 -> 2 if a ; b | c', 'Choice([Composition(RuleIf(Int(1),Int(2),Transf("a")), Transf("b")),Transf("c")])'),
+		('1 -> 2 if a + b | c', 'Choice([LeftChoice(RuleIf(Int(1),Int(2),Transf("a")), Transf("b")),Transf("c")])'),
 
 		# scoping
 		('with a, b in id end', 'Scope(["a","b"],Ident)'),

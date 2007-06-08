@@ -46,11 +46,11 @@ class Table(variable.Variable):
 				except KeyError:
 					raise exception.Failure("term not in table", key)
 		else:
-			self.unset()
+			self.clear()
 		return trm
 
 	@TransformationMethod
-	def unset(self, trm, ctx):
+	def clear(self, trm, ctx):
 		'''Clears all elements of the table.'''
 		ctx.set(self.name, {})
 		return trm
@@ -59,7 +59,12 @@ class Table(variable.Variable):
 	def match(self, trm, ctx):
 		'''Lookups the key matching the term in the table.'''
 		tbl = self._table(ctx)
-		return trm
+		try:
+			tbl[trm]
+		except KeyError:
+			raise exception.Failure("term not in table", trm)
+		else:
+			return trm
 
 	@TransformationMethod
 	def build(self, trm, ctx):
@@ -68,7 +73,7 @@ class Table(variable.Variable):
 		return _factory.makeList(tbl.keys())
 
 	@TransformationMethod
-	def traverse(self, trm, ctx):
+	def congruent(self, trm, ctx):
 		'''Lookups the key matching to the term in the table and return its
 		associated value.
 		'''
@@ -78,9 +83,9 @@ class Table(variable.Variable):
 		except KeyError:
 			raise exception.Failure("term not in table", trm)
 
-#	def add(self, other):
-#		self.terms.update(other.terms)
-#
+	def Add(self, other):
+		return Add(self, other)
+
 #	def sub(self, other):
 #		for key in self.terms.iterkeys():
 #			if key not in other.terms:
@@ -96,6 +101,20 @@ class Table(variable.Variable):
 #			except KeyError:
 #				return False
 #		return True
+
+
+class Add(transformation.Transformation):
+
+	def __init__(self, var1, var2):
+		transformation.Transformation.__init__(self)
+		self.var1 = var1
+		self.var2 = var2
+
+	def apply(self, trm, ctx):
+		tbl1 = self.var1._table(ctx)
+		tbl2 = self.var2._table(cx)
+		tbl1.update(tbl2)
+		return trm
 
 
 class Join(operate.Binary):
@@ -161,20 +180,21 @@ class Iterate(operate.Unary):
 		self.inames = inames
 
 	def apply(self, term, ctx):
+		assert 0
 		# duplicate tables
 		lvars = []
 		rvars = []
 		utbls = []
 		itbls = []
 		for name in self.unames:
-			tbl = ctx.get(name)
+			tbl = name._table(ctx)
 			ltbl = tbl.copy()
 			lvars.append((name, ltbl))
 			rtbl = tbl.copy()
 			rvars.append((name, rtbl))
 			utbls.append((tbl, ltbl, rtbl))
 		for name in self.inames:
-			tbl = ctx.get(name)
+			tbl = name._table(ctx)
 			ltbl = tbl.copy()
 			lvars.append((name, ltbl))
 			rtbl = tbl.copy()

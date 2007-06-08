@@ -8,47 +8,38 @@ import ir.path
 parse.Transfs(r'''
 
 applicable =
-	ir.path.projectSelection ;
-	?Sym(_)
+	ir.path.Applicable(
+		ir.path.projectSelection => Sym(_)
+	)
 
 input =
-	with src, dst in
-		ir.path.projectSelection ; ?Sym(src) ;
-		input.Str(!"Set Function Return", !"Return Symbol?") ; ?dst ;
-		![src, dst]
-	end
+	ir.path.Input(
+		ir.path.projectSelection => Sym(src) ;
+		input.Str(!"Rename Symbol", !"Destination symbol?") => dst
+	) ;
+	![src, dst]
 
 apply =
-	with src, dst in
-		Where(!args; ?[src, dst]) ;
-		AllTD(
-			~Sym(<?src; !dst>) +
-			~Arg(_, <?src; !dst>)
-		)
-	end
+	( [root, [src, dst]] -> root ) ;
+	AllTD((
+		~Sym(< src -> dst >) |
+		~Arg(_, < src -> dst >)
+	))
 
 
 doTestApply =
-	with args = !["a", "b"] in apply end
+	apply [<id>, ["a", "b"]]
 
 testNoRename =
-	!Sym("c") ;
-	doTestApply ;
-	?Sym("c")
+	doTestApply Sym("c") => Sym("c")
 
 testRename =
-	!Sym("a") ;
-	doTestApply ;
-	?Sym("b")
+	doTestApply Sym("a") => Sym("b")
 
 testRenameInList =
-	![Sym("a"),Sym("c")] ;
-	doTestApply ;
-	?[Sym("b"),Sym("c")]
+	doTestApply [Sym("a"),Sym("c")] => [Sym("b"),Sym("c")]
 
 testRenameInAppl =
-	!C(Sym("a"),Sym("c")) ;
-	doTestApply ;
-	?C(Sym("b"),Sym("c"))
+	doTestApply C(Sym("a"),Sym("c")) => C(Sym("b"),Sym("c"))
 
 ''')

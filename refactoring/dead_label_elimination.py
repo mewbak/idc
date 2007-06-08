@@ -10,13 +10,13 @@ parse.Transfs('''
 #######################################################################
 # Labels
 
+shared needed_label as table
+
 updateNeededLabels =
-Where(
-	with label in
+	Where(
 		?GoTo(Sym(label)) ;
-		![label,label] ==> needed_label
-	end
-)
+		needed_label <= ![label,label]
+	)
 
 #######################################################################
 # Statements
@@ -30,57 +30,53 @@ dleLabel =
 		!NoStmt
 	)
 
-elimBlock = {
+elimBlock =
 	Block([]) -> NoStmt |
 	Block([stmt]) -> stmt
-}
 
 dleBlock =
 	~Block(<dleStmts>) ;
 	Try(elimBlock)
 
-elimIf = {
+elimIf =
 	If(cond,NoStmt,NoStmt) -> Assign(Void,NoExpr,cond) |
 	If(cond,NoStmt,false) -> If(Unary(Not,cond),false,NoStmt)
-}
 
 dleIf =
 	~If(_, <dleStmt>, <dleStmt>) ;
 	Try(elimIf)
 
-elimWhile = {
+elimWhile =
 	While(cond,NoStmt) -> Assign(Void,NoExpr,cond)
-}
 
 dleWhile =
 	~While(_, <dleStmt>) ;
 	Try(elimWhile)
 
-elimDoWhile = {
+elimDoWhile =
 	DoWhile(cond,NoStmt) -> Assign(Void,NoExpr,cond)
-}
 
 dleDoWhile =
 	~DoWhile(_, <dleStmt>) ;
 	Try(elimDoWhile)
 
 dleFunction =
-	with needed_label[] in
+	{needed_label:
 		AllTD(updateNeededLabels) ;
 		~Function(_, _, _, <dleStmts>)
-	end
+	}
 
 # If none of the above applies, assume all vars are needed
 dleDefault =
 	id
 
 dleStmt.subject =
-	?Label < dleLabel +
-	?Block < dleBlock +
-	?If < dleIf +
-	?While < dleWhile +
-	?DoWhile < dleDoWhile +
-	?Function < dleFunction +
+	?Label & dleLabel +
+	?Block & dleBlock +
+	?If & dleIf +
+	?While & dleWhile +
+	?DoWhile & dleDoWhile +
+	?Function & dleFunction +
 	id
 
 dleStmts.subject =
@@ -91,10 +87,10 @@ dleModule =
 	~Module(<dleStmts>)
 
 dle =
-	with needed_label[] in
+	{needed_label:
 		AllTD(updateNeededLabels) ;
 		dleModule
-	end
+	}
 
 
 testUnusedLabel =

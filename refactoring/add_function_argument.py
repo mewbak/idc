@@ -9,16 +9,13 @@ parse.Transfs('''
 
 applicable =
 	ir.path.Applicable(
-		ir.path.projectSelection ;
-		?Function(_, _, _, _)
+		ir.path.projectSelection => Function(_, _, _, _)
 	)
 
 input =
 	ir.path.Input(
-		ir.path.projectSelection ;
-		?Function(_, name, _, _) ;
-		input.Str(!"Add Function Argument", !"Argument Symbol?") ;
-		?arg ;
+		ir.path.projectSelection => Function(_, name, _, _) ;
+		input.Str(!"Add Function Argument", !"Argument Symbol?") => arg ;
 		![name, arg]
 	)
 
@@ -54,4 +51,4 @@ testApply =
 		]),
 	])
 
-''', verbose=True)
+''')

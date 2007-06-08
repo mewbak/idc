@@ -149,8 +149,8 @@ class Compiler(walker.Walker):
 		return n
 
 	def transfMacro(self, i, a):
-		n = self.id(i)
-		a = ",".join(map(self.arg, a))
+		n = self.idRef(i)
+		a = ",".join(map(self.transf, a))
 		return "%s(%s)" % (n, a)
 
 	def transfRule(self, m, b):
@@ -213,16 +213,16 @@ class Compiler(walker.Walker):
 		return "(%s, %s)" % (c, a)
 
 	def transfJoin(self, l, r, u, i):
+		u = "[" + ",".join(map(self.var, u)) + "]"
+		i = "[" + ",".join(map(self.var, i)) + "]"
 		l = self.transf(l)
 		r = self.transf(r)
-		u = self.id_list(u)
-		i = self.id_list(i)
 		return "transf.types.table.Join(%s, %s, %s, %s)" % (l, r, u, i)
 
 	def transfIterate(self, o, u, i):
+		u = "[" + ",".join(map(self.var, u)) + "]"
+		i = "[" + ",".join(map(self.var, i)) + "]"
 		o = self.transf(o)
-		u = self.id_list(u)
-		i = self.id_list(i)
 		return "transf.types.table.Iterate(%s, %s, %s)" % (o, u, i)
 
 	def transfRec(self, i, t):
@@ -243,9 +243,10 @@ class Compiler(walker.Walker):
 
 	def transfScope(self, vs, t):
 		# TODO: collect vars
+		vs = map(self.var, vs)
 		t = self.transf(t)
 		if len(vs):
-			vs = "[" + ",".join([self.idRef(v) for v in vs]) + "]"
+			vs = "[" + ",".join(vs) + "]"
 			t = "transf.lib.scope.Scope(%s, %s)" % (vs, t)
 		return t
 
@@ -254,18 +255,9 @@ class Compiler(walker.Walker):
 		t = self.transf(t)
 		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (t, v)
 
-	arg = walker.Dispatch('arg')
-
-	def argObj(self, o):
+	def transfObj(self, o):
 		o = self._str(o)
 		return o
-
-	def argVar(self, v):
-		v = self.var(v)
-		return repr(v)
-
-	def arg_Term(self, t):
-		return self.transf(t)
 
 
 	static = walker.Dispatch('static')

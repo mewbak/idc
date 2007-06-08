@@ -10,31 +10,29 @@ parse.Transfs('''
 #######################################################################
 # Local variable table
 
-global localTbl[]
+shared localTbl as table
 
 # TODO: detect local variables from scope rules
-isReg = combine.Where(annotation.Get('Reg'))
-isTmp = combine.Where(annotation.Get('Tmp'))
+isReg = combine.Where(annotation.Get(`"Reg"`))
+isTmp = combine.Where(annotation.Get(`"Tmp"`))
 
 isLocalVar =
 	ir.match.aSym ;
 	(isReg + isTmp)
 
 updateLocalVar =
-	global localTbl in
-		isLocalVar ;
-		localTbl.set
-	end
+	isLocalVar ;
+	localTbl.set [_,_]
 
 updateLocalVars =
-	global localTbl in
-		localTbl.unset ;
-		traverse.AllTD(updateLocalVar)
-	end
+	localTbl.clear ;
+	traverse.AllTD(updateLocalVar)
 
 EnterFunction(operand) =
-	updateLocalVars ;
-	operand
+	with localTbl in
+		updateLocalVars ;
+		operand
+	end
 
 EnterModule(operand) = EnterFunction(operand)
 

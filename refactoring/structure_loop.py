@@ -11,7 +11,7 @@ import ir.path
 parse.Transfs('''
 
 
-goto =
+Goto(label) =
 	ir.path.inSelection ;
 	?GoTo(Sym(label))
 
@@ -19,7 +19,7 @@ goto =
 liftLoop =
 		with label, rest in
 			~[Label(label), *<AtSuffix(
-				?[<goto>, *rest] ;
+				?[<Goto(label)>, *rest] ;
 				![]
 			) ;
 			![While(Lit(Bool,1), Block(<id>)), *rest]
@@ -27,14 +27,35 @@ liftLoop =
 		end
 
 
-gotoSelected = Where(ir.path.MatchSelectionTo(?GoTo(Sym(_))))
-functionSelected = Where(ir.path.MatchSelectionTo(?Function))
+gotoSelected =
+	Where(
+		ir.path.projectSelection => GoTo(Sym(_))
+	)
 
-input = ![]
+functionSelected =
+	Where(
+		ir.path.projectSelection => Function
+	)
 
-apply = OnceTD(AtSuffix(liftLoop))
-applicable = gotoSelected ; apply
-apply = apply; dle
+common = OnceTD(AtSuffix(liftLoop))
+
+applicable =
+	ir.path.Applicable(
+		gotoSelected ;
+		common
+	)
+
+input =
+	ir.path.Input(
+		![]
+	)
+
+apply =
+	ir.path.Apply(
+		[root] -> root ;
+		common ;
+		dle
+	)
 
 
 testApply =
@@ -44,7 +65,7 @@ testApply =
 		GoTo(Sym("next"))
 	]) ;
 	ir.path.annotate ;
-	with selection = ![2,0] in apply end ;
+	apply [<id>, [[2,0]]] ;
 	?Module([
 		While(Lit(Bool,1),
 			Assign(Int(32,Signed), Sym("a"), Sym("b"))

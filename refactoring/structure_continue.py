@@ -10,28 +10,44 @@ import ir.path
 
 parse.Transfs('''
 
-
-goto =
-	ir.path.inSelection ;
-	?GoTo(Sym(label))
-
 liftContinue =
-	with label in
-		~[Label(label), <
-			~While(_,<OnceTD(goto; !Continue)>) +
-			~DoWhile(_,<OnceTD(goto; !Continue)>)
-		>, *]
-	end
+	~[Label(label), <
+		~While(_, < OnceTD( (GoTo(Sym(label)) -> Continue if ir.path.inSelection) ) >) +
+		~DoWhile(_, < OnceTD( (GoTo(Sym(label)) -> Continue if ir.path.inSelection) ) >)
+	>, *]
 
 
-gotoSelected = Where(ir.path.MatchSelectionTo(?GoTo(Sym(_))))
-functionSelected = Where(ir.path.MatchSelectionTo(?Function))
+gotoSelected =
+	Where(
+		ir.path.projectSelection => GoTo(Sym(_))
+	)
 
-input = ![]
+functionSelected =
+	Where(
+		ir.path.projectSelection => Function
+	)
 
-apply = OnceTD(AtSuffix(liftContinue))
-applicable = gotoSelected ; apply
-apply = apply; dle
+common =
+	OnceTD(AtSuffix(liftContinue))
+
+applicable =
+	ir.path.Applicable(
+		gotoSelected ;
+		common
+	)
+
+input =
+	ir.path.Input(
+		![]
+	)
+
+
+apply =
+	ir.path.Apply(
+		[root] -> root ;
+		common ;
+		dle
+	)
 
 
 xtestApply =
@@ -44,7 +60,7 @@ xtestApply =
 	]) ;
 	ir.path.annotate ;
 	debug.Dump() ;
-	with selection = ![0,1,1,0,1] in apply end ;
+	apply [<id>, [[0,1,1,0,1]]] ;
 	debug.Dump() ;
 	?Module([
 		While(Lit(Bool,1), Block([

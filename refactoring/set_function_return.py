@@ -9,19 +9,19 @@ import ir.path
 parse.Transfs('''
 
 applicable =
-	ir.path.projectSelection ; ?Function(Void, _, _, _)
+	ir.path.Applicable(
+		ir.path.projectSelection => Function(Void, _, _, _)
+	)
 
 input =
-	with name, ret in
-		ir.path.projectSelection ; ?Function(_, name, _, _) ;
-		input.Str(!"Set Function Return", !"Return Symbol?") ; ?ret ;
-		![name, ret]
-	end
+	ir.path.Input(
+		ir.path.projectSelection => Function(_, name, _, _) ;
+		input.Str(!"Set Function Return", !"Return Symbol?") => ret
+	) ;
+	![name, ret]
 
 apply =
-	with name, type, ret in
-		Where(!args; ?[name, ret]) ;
-		Where(!Int(32,Signed); ?type) ;
+		( [root, [name, ret]] -> root ) ;
 		~Module(<
 			One(
 				~Function(!type, ?name, _, <
@@ -33,7 +33,8 @@ apply =
 			?Assign(Void, NoExpr, Call(Sym(?name), _)) ;
 			~Assign(!type, !Sym(ret), _)
 		))
-	end
+	where
+		type <- Int(32,Signed)
 
 
 testApply =
@@ -43,7 +44,7 @@ testApply =
 			Ret(Void,NoExpr)
 		]),
 	]) ;
-	with selection = ![0,0], args = !["main","eax"] in apply end ;
+	apply [<id>, ["main","eax"] ] ;
 	?Module([
 		Function(Int(32,Signed),"main",[],[
 			Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),

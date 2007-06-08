@@ -7,29 +7,29 @@ import ir.path
 
 parse.Transfs('''
 
-goto =
-	ir.path.inSelection ;
-	?GoTo(Sym(label))
-
 applicable =
-	~Module(<lists.Fetch(ir.path.isSelected ; ?Label(_) )>)
+	ir.path.Applicable(
+		~Module(<
+			lists.Fetch(ir.path.isSelected ; ?Label(_) )
+		>)
+	)
 
 input =
-	ir.path.projectSelection ;
-	( Label(label) -> [label] )
+	ir.path.Input(
+		ir.path.projectSelection => Label(label)
+	) ;
+	![label]
 
 apply =
-	with label in
-		Where(!args; ?[label]) ;
-		~Module(<AtSuffix(
-			with rest in
-				~[Label(?label), *<AtSuffix(
-					~[Ret(_,_), *<?rest ; ![]>]
-				)>] ;
-				![Function(Void, label, [], <project.tail>), *rest]
-			end
-		)>)
-	end
+	( [root, [label]] -> root ) ;
+	~Module(<AtSuffix(
+		{rest:
+			~[Label(?label), *<AtSuffix(
+				~[Ret(_,_), *<?rest ; ![]>]
+			)>] ;
+			![Function(Void, label, [], <project.tail>), *rest]
+		}
+	)>)
 
 
 testApply =
@@ -40,7 +40,7 @@ testApply =
 		Ret(Int(32,Signed),Sym("eax")),
 		Asm("post",[]),
 	]) ;
-	with selection = ![0,1], args = !["main"] in apply end ;
+	apply [<id>, ["main"]] ;
 	?Module([
 		Asm("pre",[]),
 		Function(Void,"main",[],[

@@ -144,8 +144,8 @@ class Equals(operate.Unary):
 
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		pTerm = aterm.path.Path(term)
-		pRef = aterm.path.Path(ref)
+		pTerm = aterm.path.Path.fromTerm(term)
+		pRef = aterm.path.Path.fromTerm(ref)
 		if pTerm.equals(pRef):
 			return term
 		else:
@@ -156,8 +156,8 @@ class Contains(operate.Unary):
 
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		pTerm = aterm.path.Path(term)
-		pRef = aterm.path.Path(ref)
+		pTerm = aterm.path.Path.fromTerm(term)
+		pRef = aterm.path.Path.fromTerm(ref)
 		if pTerm.contains(pRef):
 			return term
 		else:
@@ -168,8 +168,8 @@ class Contained(operate.Unary):
 
 	def apply(self, term, ctx):
 		ref = self.operand.apply(term, ctx)
-		pTerm = aterm.path.Path(term)
-		pRef = aterm.path.Path(ref)
+		pTerm = aterm.path.Path.fromTerm(term)
+		pRef = aterm.path.Path.fromTerm(ref)
 		if pTerm.contained(pRef):
 			return term
 		else:
