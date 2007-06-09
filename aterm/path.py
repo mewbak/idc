@@ -134,7 +134,6 @@ class Path(object):
 		term = func(term)
 		return term
 
-	@classmethod
 	def fromTerm(cls, trm):
 		res = []
 		tail = trm
@@ -148,6 +147,7 @@ class Path(object):
 			tail = tail.tail
 		res.reverse()
 		return cls(res)
+	fromTerm = classmethod(fromTerm)
 
 	def toTerm(self):
 		res = factory.makeNil()
@@ -155,10 +155,10 @@ class Path(object):
 			res = factory.makeCons(factory.makeInt(index), res)
 		return res
 
-	@classmethod
 	def fromStr(cls, s):
 		res = [int(x) for x in s.split('/') if x != '']
 		return cls(res)
+	fromStr = classmethod(fromStr)
 
 	def toStr(self):
 		return '/' + ''.join([str(elm) + '/' for elm in self.indices])

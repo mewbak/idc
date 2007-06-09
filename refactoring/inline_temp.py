@@ -162,7 +162,7 @@ input =
 
 apply =
 	ir.path.Apply(
-		[root] -> root ;
+		[root,[]] -> root ;
 		prop
 	)
 

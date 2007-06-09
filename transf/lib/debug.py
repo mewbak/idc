@@ -12,6 +12,7 @@ import aterm.term
 from transf import exception
 from transf import transformation
 from transf import operate
+from transf import util
 
 
 log = sys.stderr
@@ -101,10 +102,10 @@ class Dump(transformation.Transformation, DebugMixin):
 		return term
 
 
-class Trace(operate.Unary, DebugMixin):
+class Trace(util.Wrapper, DebugMixin):
 
 	def __init__(self, operand, name=None):
-		operate.Unary.__init__(self, operand)
+		util.Wrapper.__init__(self, operand)
 		self.time = False
 
 		if name is None:

@@ -29,6 +29,7 @@ input =
 
 apply =
 	ir.path.Apply(
+		[root,[]] -> root ;
 		OnceTD(
 			ir.path.isSelected ;
 			InnerMost(simplify)

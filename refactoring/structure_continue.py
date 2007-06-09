@@ -44,7 +44,7 @@ input =
 
 apply =
 	ir.path.Apply(
-		[root] -> root ;
+		[root,[]] -> root ;
 		common ;
 		dle
 	)
@@ -59,9 +59,7 @@ xtestApply =
 		]))
 	]) ;
 	ir.path.annotate ;
-	debug.Dump() ;
 	apply [<id>, [[0,1,1,0,1]]] ;
-	debug.Dump() ;
 	?Module([
 		While(Lit(Bool,1), Block([
 			Assign(Int(32,Signed), Sym("a"), Sym("b")),

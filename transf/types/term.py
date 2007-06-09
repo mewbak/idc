@@ -20,7 +20,7 @@ class Term(variable.Variable):
 		return trm
 
 	@TransformationMethod
-	def unset(self, trm, ctx):
+	def clear(self, trm, ctx):
 		ctx.set(self.name, None)
 		return trm
 

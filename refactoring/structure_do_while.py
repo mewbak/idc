@@ -51,7 +51,7 @@ input =
 
 apply =
 	ir.path.Apply(
-		[root] -> root ;
+		[root,[]] -> root ;
 		common ;
 		dle
 	)
@@ -70,4 +70,4 @@ testApply =
 			Assign(Int(32,Signed), Sym("a"), Sym("b"))
 		)
 	])
-''')
+''', debug=True)

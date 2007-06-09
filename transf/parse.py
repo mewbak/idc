@@ -12,10 +12,10 @@ from lang.transf.parser import Parser
 from lang.transf.compiler import Compiler
 
 
-def _parse(buf, production="definitions"):
+def _parse(buf, production="definitions", debug=False):
 	'''Generate a parser for a string buffer.'''
 	lexer = Lexer(buf)
-	parser = Parser(lexer)
+	parser = Parser(lexer, debug=debug)
 	try:
 		ast = getattr(parser, production)()
 		ast = parser.getAST()
@@ -43,8 +43,8 @@ def _parse(buf, production="definitions"):
 	return term
 
 
-def _compile(buf, simplify=True, verbose=False):
-	term = _parse(buf)
+def _compile(buf, simplify=True, verbose=False, debug=False):
+	term = _parse(buf, debug=debug)
 	if False:
 		# FIXME: re-enable the simplifier
 		import lang.transf.simplifier
@@ -86,18 +86,18 @@ def _exec(code, globals_, locals_):
 		raise
 
 
-def Transfs(buf, simplify=True, verbose=False):
+def Transfs(buf, simplify=True, verbose=False, debug=False):
 	'''Parse transformation definitions from a string.'''
-	code = _compile(buf, simplify=simplify, verbose=verbose)
+	code = _compile(buf, simplify=simplify, verbose=verbose, debug=debug)
 	caller = sys._getframe(1)
 	globals_ = _populate_globals(caller.f_globals)
 	locals_ = caller.f_locals
 	_exec(code, globals_, locals_)
 
 
-def Transf(buf, simplify=True, verbose=False):
+def Transf(buf, simplify=True, verbose=False, debug=False):
 	'''Parse a transformation from a string.'''
-	code = _compile("_tmp = %s" % buf, simplify=simplify, verbose=verbose)
+	code = _compile("_tmp = %s" % buf, simplify=simplify, verbose=verbose, debug=debug)
 	caller = sys._getframe(1)
 	globals_ = _populate_globals(caller.f_globals)
 	locals_ = caller.f_locals.copy()

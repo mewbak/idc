@@ -47,7 +47,7 @@ input =
 
 apply =
 	ir.path.Apply(
-		[root] -> root ;
+		[root,[]] -> root ;
 		common ;
 		dle
 	)

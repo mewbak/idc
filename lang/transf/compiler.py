@@ -17,21 +17,18 @@ class SemanticException(Exception):
 # term operations
 MATCH, BUILD, CONGRUENT = range(3)
 
-# symbol types
-ARG, LOCAL, GLOBAL = range(3)
-
 
 class Compiler(walker.Walker):
 
-	def __init__(self):
+	def __init__(self, debug=False):
+		self.debug = debug
+
 		self.stmts = []
 		self.indent = 0
 
 		self.globals = set()
 		self.args = set()
 		self.locals = set()
-
-		self.vars = {}
 
 	def stmt(self, s):
 		self.stmts.append('\t' * self.indent + s)
@@ -68,7 +65,7 @@ class Compiler(walker.Walker):
 	def defineTransfDef(self, n, t):
 		self.args = set()
 		n = self.id(n)
-		t = self.doTransf(t)
+		t = self.doTransf(n, t)
 		self.stmt("%s = %s" % (n, t))
 		self.args = set()
 
@@ -83,20 +80,20 @@ class Compiler(walker.Walker):
 		except ValueError:
 			self.stmt("def %s(%s):" % (n, a))
 			self.indent += 1
-			t = self.doTransf(t)
+			t = self.doTransf(n, t)
 			self.stmt("return %s" % t)
 			self.indent -= 1
 		else:
 			# XXX: hack for proxy to work
 			self.stmt("def _tmp(%s):" % a)
 			self.indent += 1
-			t = self.doTransf(t)
+			t = self.doTransf(n, t)
 			self.stmt("return %s" % t)
 			self.indent -= 1
 			self.stmt("%s = _tmp" % n)
 		self.args = set()
 
-	def doTransf(self, t):
+	def doTransf(self, n, t):
 		self.locals = set()
 		# TODO: pre-collect the vars
 		t = self.transf(t)
@@ -104,6 +101,8 @@ class Compiler(walker.Walker):
 		if vs:
 			vs = "[" + ",".join([self.local(v) for v in vs]) + "]"
 			t =  "transf.lib.scope.Scope(%s, %s)" % (vs, t)
+		if self.debug:
+			t = "transf.lib.debug.Trace(%s, %r)" % (t, n)
 		return t
 
 	transf = walker.Dispatch('transf')

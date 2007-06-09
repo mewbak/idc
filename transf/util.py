@@ -3,6 +3,7 @@
 
 from transf import exception
 from transf import transformation
+from transf import operate
 
 
 class Adaptor(transformation.Transformation):
@@ -67,3 +68,20 @@ class Proxy(transformation.Transformation):
 
 	def __repr__(self):
 		return '<%s ...>' % (self.__class__.__name__,)
+
+
+class Wrapper(operate.Unary):
+
+	def apply(self, trm, ctx):
+		return self.operand.apply(trm, ctx)
+
+	# XXX: hack to enable the use of Proxy
+	def _get_subject(self):
+		try:
+			return self.operand.subject
+		except AttributeError:
+			return None
+	def _set_subject(self, subject):
+		self.operand.subject = subject
+	subject = property(_get_subject, _set_subject)
+

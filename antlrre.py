@@ -2,7 +2,6 @@
 
 
 import os
-import mmap
 import re
 
 import antlr
@@ -52,8 +51,9 @@ class TokenStream(antlr.TokenStream):
 	def __init__(self, buf = None, pos = 0, filename = None, fp = None):
 		if fp is not None:
 			try:
+				import mmap
 				fileno = fp.fileno()
-			except AttributeError:
+			except AttributeError, ImportError:
 				# read whole file into memory
 				buf = fp.read()
 				pos = 0
@@ -101,7 +101,8 @@ class TokenStream(antlr.TokenStream):
 				else:
 					msg += "0x%X" % text
 				ex = antlr.RecognitionException(msg, self.filename, line, col)
-				raise antlr.TokenStreamRecognitionException(ex)
+				raise ex
+				#raise antlr.TokenStreamRecognitionException(ex)
 			else:
 				break
 		return antlr.CommonToken(

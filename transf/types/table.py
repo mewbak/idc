@@ -18,15 +18,45 @@ from transf.util import TransformationMethod
 _factory = aterm.factory.factory
 
 
+class _Table(dict):
+	'''A table is mapping of terms to terms.'''
+
+	def copy(self, other):
+		return _Table(self)
+
+	def add(self, other):
+		self.update(other)
+
+	def sub(self, other):
+		for key in self.iterkeys():
+			if key not in other:
+				del self[key]
+
+	def equals(self, other):
+		if len(self) != len(other):
+			return False
+		for key, value in self.iteritems():
+			try:
+				if value != other[key]:
+					return False
+			except KeyError:
+				return False
+		return True
+
+
 class Table(variable.Variable):
 	'''A table is mapping of terms to terms.'''
 
 	def _table(self, ctx):
 		tbl = ctx.get(self.name)
 		if tbl is None:
-			tbl = {}
+			tbl = _Table()
 			ctx.set(self.name, tbl)
 		return tbl
+
+	@TransformationMethod
+	def init(self, trm, ctx):
+		ctx.set(self.name, _Table())
 
 	@TransformationMethod
 	def set(self, trm, ctx):
@@ -52,7 +82,7 @@ class Table(variable.Variable):
 	@TransformationMethod
 	def clear(self, trm, ctx):
 		'''Clears all elements of the table.'''
-		ctx.set(self.name, {})
+		ctx.set(self.name, _Table())
 		return trm
 
 	@TransformationMethod
@@ -86,22 +116,6 @@ class Table(variable.Variable):
 	def Add(self, other):
 		return Add(self, other)
 
-#	def sub(self, other):
-#		for key in self.terms.iterkeys():
-#			if key not in other.terms:
-#				del self.terms[key]
-#
-#	def equals(self, other):
-#		if len(self.terms) != len(other.terms):
-#			return False
-#		for key, value in self.terms.iteritems():
-#			try:
-#				if value != other.terms[key]:
-#					return False
-#			except KeyError:
-#				return False
-#		return True
-
 
 class Add(transformation.Transformation):
 
@@ -127,46 +141,45 @@ class Join(operate.Binary):
 		self.unames = unames
 		self.inames = inames
 
-	def apply(self, term, ctx):
+	def apply(self, trm, ctx):
 		# duplicate tables
-		lvars = []
-		rvars = []
+		vars = [(var, None) for var in self.unames + self.inames]
+		lctx = context.Context(vars)
+		rctx = context.Context(vars)
 		utbls = []
 		itbls = []
 		for name in self.unames:
 			tbl = ctx.get(name)
 			ltbl = tbl.copy()
-			lvars.append((name, ltbl))
+			lctx.set(name, ltbl)
 			rtbl = tbl.copy()
-			rvars.append((name, rtbl))
+			rctx.set(name, rtbl)
 			utbls.append((tbl, ltbl, rtbl))
 		for name in self.inames:
 			tbl = ctx.get(name)
 			ltbl = tbl.copy()
-			lvars.append((name, ltbl))
+			lctx.set(name, ltbl)
 			rtbl = tbl.copy()
-			rvars.append((name, rtbl))
+			rctx.set(name, rtbl)
 			itbls.append((tbl, ltbl, rtbl))
-		lctx = context.Context(lvars, ctx)
-		rctx = context.Context(rvars, ctx)
 
 		# apply transformations
-		term = self.loperand.apply(term, lctx)
-		term = self.roperand.apply(term, rctx)
+		trm = self.loperand.apply(trm, lctx)
+		trm = self.roperand.apply(trm, rctx)
 
 		# join the tables
 		for tbl, ltbl, rtbl in utbls:
 			# unite
-			tbl.unset()
+			tbl.clear()
 			tbl.add(ltbl)
 			tbl.add(rtbl)
 		for tbl, ltbl, rtbl in itbls:
 			# intersect
-			tbl.unset()
+			tbl.clear()
 			tbl.add(ltbl)
 			tbl.sub(rtbl)
 
-		return term
+		return trm
 
 
 class Iterate(operate.Unary):
@@ -179,33 +192,28 @@ class Iterate(operate.Unary):
 		self.unames = unames
 		self.inames = inames
 
-	def apply(self, term, ctx):
-		assert 0
-		# duplicate tables
-		lvars = []
-		rvars = []
+	def apply(self, trm, ctx):
+		vars = [(var, None) for var in self.unames + self.inames]
+		rctx = context.Context(vars)
 		utbls = []
 		itbls = []
 		for name in self.unames:
-			tbl = name._table(ctx)
+			tbl = ctx.get(name)
 			ltbl = tbl.copy()
-			lvars.append((name, ltbl))
 			rtbl = tbl.copy()
-			rvars.append((name, rtbl))
+			rctx.set(name, rtbl)
 			utbls.append((tbl, ltbl, rtbl))
 		for name in self.inames:
-			tbl = name._table(ctx)
+			tbl = ctx.get(name)
 			ltbl = tbl.copy()
-			lvars.append((name, ltbl))
 			rtbl = tbl.copy()
-			rvars.append((name, rtbl))
+			rctx.set(name, rtbl)
 			itbls.append((tbl, ltbl, rtbl))
-		rctx = context.Context(rvars, ctx)
 
 		# iterate
 		while True:
 			# apply transformation
-			res = self.operand.apply(term, rctx)
+			res = self.operand.apply(trm, rctx)
 
 			# join the tables
 			equals = True
@@ -222,10 +230,10 @@ class Iterate(operate.Unary):
 
 		# copy final result
 		for tbl, ltbl, rtbl in utbls:
-			tbl.unset()
+			tbl.clear()
 			tbl.add(ltbl)
 		for tbl, ltbl, rtbl in itbls:
-			tbl.unset()
+			tbl.clear()
 			tbl.add(ltbl)
 
 		return res

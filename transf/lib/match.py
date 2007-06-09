@@ -94,7 +94,7 @@ class Nil(_Term):
 
 	def apply(self, term, ctx):
 		if not aterm.type.aNil(term):
-			raise exception.Failure
+			raise exception.Failure('term is not an empty list', term)
 		return term
 
 nil = Nil()

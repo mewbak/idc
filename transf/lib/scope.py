@@ -2,13 +2,13 @@
 
 
 from transf import context
-from transf import operate
+from transf import util
 
 
-class _Scope(operate.Unary):
+class _Scope(util.Wrapper):
 
 	def __init__(self, vars, operand):
-		operate.Unary.__init__(self, operand)
+		util.Wrapper.__init__(self, operand)
 		self.vars = vars
 
 	def apply(self, trm, ctx):

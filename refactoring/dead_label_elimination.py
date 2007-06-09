@@ -111,4 +111,4 @@ testUsedLabel =
     	Label("A")
     ])
 
-''')
+''', verbose=True)
