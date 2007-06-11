@@ -214,3 +214,18 @@ def annotate(term, root = None, func = None):
 	if root is None:
 		root = term.factory.makeNil()
 	return annotator.visit(term, root, 0)
+
+
+class _DeAnnotator(_Annotator):
+
+	_path = 'Path(_)'
+
+	def visit(self, term, path, index):
+		term = visitor.IncrementalVisitor.visit(self, term, path, index)
+		return term.removeAnnotation(self._path)
+
+def deannotate(term):
+	'''Recursively removes all path annotations.'''
+	annotator = _DeAnnotator()
+	root = term.factory.makeNil()
+	return annotator.visit(term, root, 0)

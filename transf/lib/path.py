@@ -57,6 +57,14 @@ class Annotate(transformation.Transformation):
 annotate = Annotate(base.ident, build.nil)
 
 
+class _DeAnnotate(transformation.Transformation):
+
+	def apply(self, term, ctx):
+		return aterm.path.deannotate(term)
+
+deannotate = _DeAnnotate()
+
+
 class Project(transformation.Transformation):
 	'''Projects a subterm along a path.'''
 
