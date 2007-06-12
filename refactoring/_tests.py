@@ -44,11 +44,12 @@ class RefactoringTestSuite(unittest.TestSuite):
 				else:
 					module = getattr(module, name)
 					for nam in dir(module):
-						if nam.startswith('test'):
-							obj = getattr(module, nam)
-							if isinstance(obj, transf.transformation.Transformation):
-								test = TransformationTest(obj, module.__name__ + '.' + nam)
-								self.addTest(test)
+						obj = getattr(module, nam)
+						if nam.startswith('test') and isinstance(obj, transf.transformation.Transformation):
+							test = TransformationTest(obj, module.__name__ + '.' + nam)
+							self.addTest(test)
+						if isinstance(obj, unittest.TestCase):
+							self.addTest(obj)
 
 if __name__ == '__main__':
 	unittest.main(defaultTest='RefactoringTestSuite')

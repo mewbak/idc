@@ -1,4 +1,4 @@
-"""Structure While"""
+"""Structure Do-While"""
 
 
 import refactoring
@@ -70,4 +70,4 @@ testApply =
 			Assign(Int(32,Signed), Sym("a"), Sym("b"))
 		)
 	])
-''', debug=True)
+''')

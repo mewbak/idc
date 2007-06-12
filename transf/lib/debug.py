@@ -6,11 +6,13 @@ import traceback
 import inspect
 import os.path
 import time
+import unittest
 
 import aterm.term
 
 from transf import exception
 from transf import transformation
+from transf import context
 from transf import operate
 from transf import util
 
@@ -102,23 +104,12 @@ class Dump(transformation.Transformation, DebugMixin):
 		return term
 
 
-class Trace(util.Wrapper, DebugMixin):
+class _Trace(util.Wrapper, DebugMixin):
 
 	def __init__(self, operand, name=None):
 		util.Wrapper.__init__(self, operand)
 		self.time = False
-
-		if name is None:
-			try:
-				caller = inspect.currentframe().f_back
-				filename = os.path.basename(caller.f_code.co_filename)
-				lineno = caller.f_lineno
-			finally:
-				del caller
-			self.name = '%s:%d' % (filename, lineno)
-		else:
-			self.name = name
-
+		self.name = name
 
 	def apply(self, term, ctx):
 		log.write('=> %20s: %r\n' % (self.name, term))
@@ -139,6 +130,21 @@ class Trace(util.Wrapper, DebugMixin):
 			delta = end - start
 			#log.write('<= %20s (%.03fs): %s\n' % (self.name, delta, result))
 			log.write('<= %20s: %s\n' % (self.name, result))
+
+def Trace(operand, name=None):
+	if name is None:
+		try:
+			caller = inspect.currentframe().f_back
+			filename = os.path.basename(caller.f_code.co_filename)
+			lineno = caller.f_lineno
+		finally:
+			del caller
+		name = '%s:%d' % (filename, lineno)
+	if isinstance(operand, TestCase):
+		operand._transfName = name
+	else:
+		operand = _Trace(operand, name)
+	return operand
 
 
 class Traceback(operate.Unary, DebugMixin):
@@ -166,3 +172,31 @@ class Traceback(operate.Unary, DebugMixin):
 				except:
 					pass
 			raise
+
+
+class TestCase(unittest.TestCase):
+	'''A test case based on a transformation.'''
+
+	def __init__(self, input, transf, expectedOutput, transfName = None):
+		unittest.TestCase.__init__(self)
+		self._input = input
+		self._transf = transf
+		self._expectedOutput = expectedOutput
+		self._transfName = transfName
+
+	def runTest(self):
+		trm = aterm.factory.factory.makeStr("Ignored")
+		ctx = context.Context()
+		input = self._input.apply(trm, ctx)
+		expectedOutput = self._expectedOutput.apply(trm, ctx)
+		output = self._transf.apply(input, ctx)
+		if not expectedOutput.isEqual(output):
+			# TODO: use diff lib
+			sys.stderr.write("%s\n" % expectedOutput)
+			sys.stderr.write("%s\n" % output)
+			self.fail(msg = "%s -> %s (!= %s)" %(input, output, expectedOutput))
+
+	def shortDescription(self):
+		return self._transfName
+
+

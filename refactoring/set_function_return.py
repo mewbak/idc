@@ -14,11 +14,11 @@ applicable =
 	)
 
 input =
-	ir.path.Input(
+	ir.path.Input2(
 		ir.path.projectSelection => Function(_, name, _, _) ;
-		input.Str(!"Set Function Return", !"Return Symbol?") => ret
-	) ;
-	![name, ret]
+		ui.Str(!"Set Function Return", !"Return Symbol?") => ret ;
+		![name, ret]
+	)
 
 apply =
 		( [root, [name, ret]] -> root ) ;

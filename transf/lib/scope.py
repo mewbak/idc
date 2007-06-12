@@ -9,11 +9,10 @@ class _Scope(util.Wrapper):
 
 	def __init__(self, vars, operand):
 		util.Wrapper.__init__(self, operand)
-		self.vars = vars
+		self.vars = [(var.name, None) for var in vars]
 
 	def apply(self, trm, ctx):
-		vars = [(var.name, None) for var in self.vars]
-		ctx = context.Context(vars, ctx)
+		ctx = context.Context(self.vars, ctx)
 		return self.operand.apply(trm, ctx)
 
 	# XXX: hack to enable the use of Proxy

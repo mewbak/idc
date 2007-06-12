@@ -2,7 +2,7 @@
 
 
 from transf import parse
-import ir.traverse
+
 import ir.path
 import ir.sym
 
@@ -15,19 +15,22 @@ parse.Transfs('''
 
 shared inline as table
 
-SetVarInline(x, y) =
-	inline <= ![x, y] ;
-	Where(
-		!inline ;
-		Filter(inline <= ([z, OnceTD(?x) ] -> [z]))
-	)
+assignInlineVar =
+	?[var, expr] ;
+	# clobber all expressions containing this variable from the table
+	inline.Filter(?[_, <Not(OnceTD(?var))>]) ;
+	# update the table
+	inline.set [var, expr]
 
+clearInlineVar =
+	Try(inline.unset)
 
-ClearVarInline(x) = inline <- [x]
+clearAllInlineVars =
+	inline.clear
 
-clearAllInline = inline <- []
-
-inlineVars = AllTD(?Sym; ~inline)
+inlineVars =
+	# expand inline all variables in the table
+	AllTD(?Sym; ~inline)
 
 
 #######################################################################
@@ -36,24 +39,17 @@ inlineVars = AllTD(?Sym; ~inline)
 shared label_inline as table
 
 setLabelInline =
-Where(
-	with label in
-		?GoTo(Sym(label)) &
-		!inline ;
-		Map(![label,<id>,~inline]; label_inline <= ![_,_]) +
-		id # FIXME
-	end
-)
+	Where(
+		?GoTo(Sym(label))
+		& inline.Filter( ?[var, expr] ; Where(label_inline.set [label,var,expr]) )
+		+ id # FIXME
+	)
 
 getLabelInline =
-Where(
-	with label in
+	Where(
 		?Label(label) ;
-		!label_inline ;
-		Filter( ([label,x,y] -> [x,y]) ) ;
-		Map(id /inline\ ([x,y] -> <SetVarInline(x, y)>) )
-	end
-)
+		label_inline.Filter( Where(?[label,var,expr]; id /inline\ assignInlineVar [var,expr] ) )
+	)
 
 
 #######################################################################
@@ -66,19 +62,17 @@ propStmts =
 	Filter(Not(?NoStmt))
 
 propAssign =
-	with x, y in
-		~Assign(_, x, <inlineVars => y>) ;
-		if ir.path.isSelected then
-			SetVarInline(x, y) ;
-			!NoStmt
-		else
-			Try(ClearVarInline(x))
-		end
+	~Assign(_, x, < inlineVars ; ?y >) ;
+	if ir.path.isSelected then
+		assignInlineVar[x, y] ;
+		!NoStmt
+	else
+		Where(clearInlineVar x)
 	end
 
 propAsm =
 	?Asm ;
-	clearAllInline
+	clearAllInlineVars
 
 propLabel =
 	?Label ;
@@ -117,7 +111,7 @@ propFunction =
 	)
 
 propDefault =
-	clearAllInline
+	clearAllInlineVars
 
 propStmt.subject =
 	switch project.name
@@ -170,16 +164,16 @@ apply =
 #######################################################################
 # Tests
 
-testApply =
+testApply = debug.TestCase(
 	!Module([
 		Assign(Int(32,Signed),Sym("eax"),Lit(Int(32,Signed),1)),
 		Assign(Int(32,Signed),Sym("ebx"),Sym("eax"))
 	]) ;
-	ir.path.annotate ;
-	apply [_, [[0,0]]] ;
-	?Module([
+	ir.path.annotate ,
+	apply [_, [[0,0]]] ,
+	!Module([
 		Assign(Int(32,Signed),Sym("ebx"),Lit(Int(32,Signed),1))
 	])
-
+)
 
 ''')

@@ -176,7 +176,7 @@ class Compiler(walker.Walker):
 	def transfApplyAssign(self, v, t):
 		t = self.transf(t)
 		v = self.var(v)
-		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (t, v)
+		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.assign))" % (t, v)
 
 	def transfBuildApply(self, t, b):
 		t = self.transf(t)
@@ -186,7 +186,7 @@ class Compiler(walker.Walker):
 	def transfBuildAssign(self, v, b):
 		v = self.var(v)
 		b = self.build(b)
-		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (b, v)
+		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.assign))" % (b, v)
 
 	def transfIf(self, conds, other):
 		conds = "[" + ",".join(map(self.doIfClause, conds)) + "]"
@@ -252,7 +252,7 @@ class Compiler(walker.Walker):
 	def transfWithDef(self, v, t):
 		v = self.var(v)
 		t = self.transf(t)
-		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.set))" % (t, v)
+		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.assign))" % (t, v)
 
 	def transfObj(self, o):
 		o = self._str(o)

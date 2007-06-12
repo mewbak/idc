@@ -3,10 +3,10 @@
 
 import gtk
 
-import transf.lib.input
+import transf.lib.ui
 
 
-class Inputter(transf.lib.input.Inputter):
+class Inputter(transf.lib.ui.Inputter):
 	'''GTK-based user data inputter.'''
 
 	def inputStr(self, title, text):
@@ -40,7 +40,7 @@ class Inputter(transf.lib.input.Inputter):
 
 
 # override default text inputter
-transf.lib.input.inputter = Inputter()
+transf.lib.ui.inputter = Inputter()
 
 
 if __name__ == '__main__':

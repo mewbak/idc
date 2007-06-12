@@ -21,7 +21,7 @@ _factory = aterm.factory.factory
 class _Table(dict):
 	'''A table is mapping of terms to terms.'''
 
-	def copy(self, other):
+	def copy(self):
 		return _Table(self)
 
 	def add(self, other):
@@ -64,19 +64,20 @@ class Table(variable.Variable):
 		a [key] list will remove the key and its value from the table.'''
 		# TODO: better exception handling
 		tbl = self._table(ctx)
-		if trm:
-			key = trm.head
-			tail = trm.tail
-			if tail:
-				val = trm.head
-				tbl[key] = val
-			else:
-				try:
-					return tbl.pop(key)
-				except KeyError:
-					raise exception.Failure("term not in table", key)
-		else:
-			self.clear()
+		key, val = trm
+		tbl[key] = val
+		return trm
+
+	@TransformationMethod
+	def unset(self, trm, ctx):
+		'''Setting a [key, value] list will add the pair to the table. Setting
+		a [key] list will remove the key and its value from the table.'''
+		# TODO: better exception handling
+		tbl = self._table(ctx)
+		try:
+			return tbl.pop(trm)
+		except KeyError:
+			raise exception.Failure("term not in table", trm)
 		return trm
 
 	@TransformationMethod
@@ -116,8 +117,12 @@ class Table(variable.Variable):
 	def Add(self, other):
 		return Add(self, other)
 
+	def Filter(self, transf):
+		return Filter(self, transf)
+
 
 class Add(transformation.Transformation):
+	'''Adds too tables.'''
 
 	def __init__(self, var1, var2):
 		transformation.Transformation.__init__(self)
@@ -126,9 +131,32 @@ class Add(transformation.Transformation):
 
 	def apply(self, trm, ctx):
 		tbl1 = self.var1._table(ctx)
-		tbl2 = self.var2._table(cx)
+		tbl2 = self.var2._table(ctx)
 		tbl1.update(tbl2)
 		return trm
+
+
+class Filter(transformation.Transformation):
+
+	def __init__(self, var, transf):
+		transformation.Transformation.__init__(self)
+		self.var = var
+		self.transf = transf
+
+	def apply(self, trm, ctx):
+		tbl = self.var._table(ctx)
+		tbl2 = _Table()
+		for key, val in tbl:
+			try:
+				item = trm.factory.makeList([key, val])
+				key, val = self.transf.apply(item, ctx)
+			except exception.Failure:
+				del tbl[key]
+			else:
+				tbl2[key] = val
+		ctx.set(self.var.name, tbl2)
+		return trm
+
 
 
 class Join(operate.Binary):
@@ -136,32 +164,33 @@ class Join(operate.Binary):
 	the process.
 	'''
 
-	def __init__(self, loperand, roperand, unames, inames):
+	def __init__(self, loperand, roperand, uvars, ivars):
 		operate.Binary.__init__(self, loperand, roperand)
-		self.unames = unames
-		self.inames = inames
+		self.unames = uvars
+		self.inames = ivars
 
 	def apply(self, trm, ctx):
 		# duplicate tables
-		vars = [(var, None) for var in self.unames + self.inames]
-		lctx = context.Context(vars)
-		rctx = context.Context(vars)
 		utbls = []
 		itbls = []
-		for name in self.unames:
-			tbl = ctx.get(name)
+		lvars = []
+		rvars = []
+		for var in self.unames:
+			tbl = var._table(ctx)
 			ltbl = tbl.copy()
-			lctx.set(name, ltbl)
+			lvars.append((var.name, ltbl))
 			rtbl = tbl.copy()
-			rctx.set(name, rtbl)
+			rvars.append((var.name, rtbl))
 			utbls.append((tbl, ltbl, rtbl))
-		for name in self.inames:
-			tbl = ctx.get(name)
+		for var in self.inames:
+			tbl = var._table(ctx)
 			ltbl = tbl.copy()
-			lctx.set(name, ltbl)
+			lvars.append((var.name, ltbl))
 			rtbl = tbl.copy()
-			rctx.set(name, rtbl)
+			rvars.append((var.name, rtbl))
 			itbls.append((tbl, ltbl, rtbl))
+		lctx = context.Context(lvars, ctx)
+		rctx = context.Context(rvars, ctx)
 
 		# apply transformations
 		trm = self.loperand.apply(trm, lctx)
@@ -187,31 +216,32 @@ class Iterate(operate.Unary):
 	the process.
 	'''
 
-	def __init__(self, operand, unames, inames):
+	def __init__(self, operand, uvars, ivars):
 		operate.Unary.__init__(self, operand)
-		self.unames = unames
-		self.inames = inames
+		self.unames = [var for var in uvars]
+		self.inames = [var for var in ivars]
 
 	def apply(self, trm, ctx):
-		vars = [(var, None) for var in self.unames + self.inames]
-		rctx = context.Context(vars)
 		utbls = []
 		itbls = []
-		for name in self.unames:
-			tbl = ctx.get(name)
+		rvars = []
+		for var in self.unames:
+			tbl = var._table(ctx)
 			ltbl = tbl.copy()
 			rtbl = tbl.copy()
-			rctx.set(name, rtbl)
+			rvars.append((var.name, rtbl))
 			utbls.append((tbl, ltbl, rtbl))
-		for name in self.inames:
-			tbl = ctx.get(name)
+		for var in self.inames:
+			tbl = var._table(ctx)
 			ltbl = tbl.copy()
 			rtbl = tbl.copy()
-			rctx.set(name, rtbl)
+			rvars.append((var.name, rtbl))
 			itbls.append((tbl, ltbl, rtbl))
+		rctx = context.Context(rvars, ctx)
 
 		# iterate
-		while True:
+		maxits = 10
+		for i in range(maxits):
 			# apply transformation
 			res = self.operand.apply(trm, rctx)
 
@@ -227,6 +257,8 @@ class Iterate(operate.Unary):
 				ltbl.sub(rtbl)
 			if equals:
 				break
+		if i == maxits:
+			raise exception.Fatal('maximum number of exceptions reached')
 
 		# copy final result
 		for tbl, ltbl, rtbl in utbls:

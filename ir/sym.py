@@ -10,7 +10,7 @@ parse.Transfs('''
 #######################################################################
 # Local variable table
 
-shared localTbl as table
+shared local as table
 
 # TODO: detect local variables from scope rules
 isReg = combine.Where(annotation.Get(`"Reg"`))
@@ -22,14 +22,14 @@ isLocalVar =
 
 updateLocalVar =
 	isLocalVar ;
-	localTbl.set [_,_]
+	Where(local.set [_,_] )
 
 updateLocalVars =
-	localTbl.clear ;
+	local.clear ;
 	traverse.AllTD(updateLocalVar)
 
 EnterFunction(operand) =
-	with localTbl in
+	with local in
 		updateLocalVars ;
 		operand
 	end

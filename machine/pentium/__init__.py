@@ -20,6 +20,6 @@ class Pentium(Machine):
 		from machine.pentium import translator
 		from transf.context import Context
 
-		term = translator.module.apply(term, Context())
+		term = translator.doModule.apply(term, Context())
 		return term
 

@@ -44,13 +44,13 @@ def _parse(buf, production="definitions", debug=False):
 
 
 def _compile(buf, simplify=True, verbose=False, debug=False):
-	term = _parse(buf, debug=debug)
+	term = _parse(buf)
 	if False:
 		# FIXME: re-enable the simplifier
 		import lang.transf.simplifier
 		old = term
 		term = lang.transf.simplifier.simplify(term)
-	compiler = Compiler()
+	compiler = Compiler(debug=debug)
 	code = compiler.definitions(term)
 	if verbose:
 		sys.stderr.write("input code:\n%s\n" % buf)
@@ -72,6 +72,15 @@ def _populate_globals(glbls):
 	return glbls
 
 
+def _print_code(code):
+	sys.stderr.write("input code:\n")
+	lines = code.split("\n")
+	lineno = 0
+	for line in code.split("\n"):
+		lineno += 1
+		sys.stderr.write("%3d %s\n" % (lineno, line.expandtabs()))
+
+
 def _exec(code, globals_, locals_):
 	'''Execute the compiled code in the caller's namespace.'''
 	try:
@@ -79,10 +88,10 @@ def _exec(code, globals_, locals_):
 	except NameError:
 		sys.stderr.write("globals: %s\n" % globals_.keys())
 		sys.stderr.write("locals: %s\n" % locals_.keys())
-		sys.stderr.write("input code:\n%s\n" % code)
+		_print_code(code)
 		raise
 	except:
-		sys.stderr.write("input code:\n%s\n" % code)
+		_print_code(code)
 		raise
 
 

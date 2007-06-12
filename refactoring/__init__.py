@@ -2,9 +2,10 @@
 
 
 import os
+import sys
 import unittest
 
-import aterm.factory
+import aterm.path
 import transf.exception
 
 
@@ -47,11 +48,18 @@ class ModuleRefactoring(Refactoring):
 	def name(self):
 		return self.module.__doc__
 
-	def applicable(self, trm, selection):
+	def _selection(self, selection):
 		start, end = selection
-		selection = aterm.path.ancestor(start, end)
+		start = aterm.path.Path.fromTerm(start)
+		end = aterm.path.Path.fromTerm(end)
+		selection = start.ancestor(end)
+		return selection.toTerm()
+
+	def applicable(self, trm, selection):
+		factory = trm.factory
+		selection = self._selection(selection)
 		ctx = transf.context.Context()
-		trm = factory.makeList(trm, selection)
+		trm = factory.makeList([trm, selection])
 		try:
 			self._applicable.apply(trm, ctx)
 		except transf.exception.Failure:
@@ -59,18 +67,18 @@ class ModuleRefactoring(Refactoring):
 		else:
 			return True
 
-	def input(self, trm, _selection):
-		factory = term.factory
-		start, end = selection
-		selection = aterm.path.ancestor(start, end)
+	def input(self, trm, selection):
+		factory = trm.factory
+		selection = self._selection(selection)
 		ctx = transf.context.Context()
-		trm = factory.makeList(trm, selection)
+		trm = factory.makeList([trm, selection])
 		args = self._input.apply(trm, ctx)
 		return args
 
 	def apply(self, trm, args):
+		factory = trm.factory
 		ctx = transf.context.Context()
-		trm = factory.makeList(trm, args)
+		trm = factory.makeList([trm, args])
 		try:
 			return self._apply.apply(trm, ctx)
 		except transf.exception.Failure, ex:
@@ -85,13 +93,20 @@ class Factory:
 		"""Initialize the factory, populating with the list of known
 		refactorings.
 		"""
+		self.load()
+
+	def load(self):
 		self.refactorings = {}
 		for path in __path__:
 			for name in os.listdir(path):
 				name, ext = os.path.splitext(name)
 				if name != '__init__' and ext == '.py':
-					module = __import__(__name__ + '.' + name)
+					fullname = __name__ + '.' + name
+					loaded = fullname in sys.modules
+					module = __import__(fullname)
 					module = getattr(module, name)
+					if loaded:
+						reload(module)
 					try:
 						refactoring = ModuleRefactoring(module)
 					except ValueError:

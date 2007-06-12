@@ -8,39 +8,51 @@ from lang import box
 from transf import lib
 from transf import parse
 
-import ir.traverse
 import ir.pprint
 import lang.dot
 
-
-#######################################################################
-# Graph Generation
 
 renderBox = (
 	lib.util.Adaptor(lambda term: term.factory.makeStr(box.stringify(term))) +
 	lib.build.Str("???")
 )
 
-parse.Transfs(r"""
+parse.Transfs(r'''
+
+#######################################################################
+# Graph Generation
+
+shared stmtid
+
+shared this
+shared next
+shared retn
+shared brek
+shared cont
+
+shared nodes
+
 
 getNodeId =
-	{ Label(label) -> label } < box.escape +
-	Count('stmtid')
+	Label(label) -> label & box.escape +
+	Count()
 
-makeNodeLabel = {
-	If(cond,_,_)
-		-> <<ir.pprint.expr>cond>
-|	While(cond,_)
-		-> <<ir.pprint.expr>cond>
-|	DoWhile(cond,_)
-		-> <<ir.pprint.expr>cond>
-|	_
+makeNodeLabel =
+	( If(cond,_,_)
+		-> <ir.pprint.ppExpr cond>
+	| While(cond,_)
+		-> <ir.pprint.ppExpr cond>
+	| DoWhile(cond,_)
+		-> <ir.pprint.ppExpr cond>
+	| _
 		-> <ir.pprint.stmtKern>
-|	n(*)
+	| n(*)
 		-> n
-} ; renderBox ; box.escape
+	) ;
+	renderBox ;
+	box.escape
 
-makeNodeShape = {
+makeNodeShape =
 	If
 		-> "diamond"
 |	While
@@ -55,10 +67,10 @@ makeNodeShape = {
 		-> "point"
 |	_
 		-> "box"
-}
+
 
 makeNodeUrl =
-	(path.get < box.reprz + build.empty ) ;
+	(path.get & box.reprz + !"" ) ;
 	box.escape
 
 makeNodeAttrs =
@@ -80,7 +92,7 @@ AddNode(nodeid, attrs, edges) =
 			<attrs>,
 			<edges>
 		) ;
-		![_,*nodes] ==> nodes
+		nodes <= ![_,*nodes]
 	)
 
 GetTerminalNodeId(nodeid) =
@@ -100,13 +112,10 @@ addTerminalNode =
 		],
 		![]
 	)
-""")
 
 
 #######################################################################
 # Flow Traversal
-
-parse.Transfs('''
 
 doStmt =
 	Proxy()
@@ -119,19 +128,20 @@ MakeNode(edges) =
 
 doDefault =
 	MakeNode(![<MakeEdge(!next)>]) ;
-	!this ==> next
+	next <= !this
 
 doIf =
-	with true, false in
+	with true, false, oldnext in
+		oldnext <= !next ;
 		?If(_,
-			<with next=!next in doStmt; !next ==> true end>,
-			<with next=!next in doStmt; !next ==> false end>
+			<with next in next <= !oldnext; doStmt; true <= !next end>,
+			<with next in next <= !oldnext; doStmt; false <= !next end>
 		) ;
 		MakeNode(![
 			<MakeLabelledEdge(!true, !"True")>,
 			<MakeLabelledEdge(!false, !"False")>,
 		]) ;
-		! this ==> next
+		next <= !this
 	end
 
 doNoStmt =
@@ -139,19 +149,19 @@ doNoStmt =
 
 doWhile =
 	with true in
-		?While(_, <with next=!this in doStmt; !next ==> true end> );
+		?While(_, <with next in next <= !this; doStmt; true <= !next end> );
 		MakeNode(![
 			<MakeLabelledEdge(!true, !"True")>,
 			<MakeLabelledEdge(!next, !"False")>,
 		]) ;
-		! this ==> next
+		next <= !this
 	end
 
 
 doDoWhile =
 	with false in
-		! next ==> false ;
-		! this ==> next ;
+		false <= !next ;
+		next <= !this ;
 		?DoWhile(_, <doStmt> );
 		MakeNode(![
 			<MakeLabelledEdge(!next, !"True")>,
@@ -161,57 +171,54 @@ doDoWhile =
 
 doBreak =
 	MakeNode(![<MakeEdge(!brek)>]) ;
-	!this ==> next
+	next <= !this
 
 doContinue =
 	MakeNode(![<MakeEdge(!cont)>]) ;
-	!this ==> next
+	next <= !this
 
 doRet =
 	MakeNode(![<MakeEdge(!retn)>]) ;
-	!this ==> next
+	next <= !this
 
 doGoTo =
 	with
 		label
 	in
-		?GoTo(Sym(label)) <
+		?GoTo(Sym(label)) &
 		MakeNode(![<MakeEdge(!label ; box.escape)>]) +
 		MakeNode(![])
 	end ;
-	!this ==> next
+	next <= !this
 
 doBlock =
 	?Block(<doStmts>)
 
 doFunction =
-	with
-		next = !next,
-		retn = GetTerminalNodeId(!this),
-		brek = !0,
-		cont = !0
-	in
+	oldnext <= !next ;
+	with next, retn, brek, cont in
+		next <= !oldnext ;
+		retn <= GetTerminalNodeId(!this) ;
+		brek <= !0 ;
+		cont <= !0 ;
 		?Function(_, _, _, <doStmts>) ;
 		MakeNode(![<MakeEdge(!next)>]) ;
 		addTerminalNode
 	end
 
 doModule =
-	with
-		next = !0,
-		retn = !0,
-		brek = !0,
-		cont = !0
-	in
+	with next, retn, brek, cont in
+		next <= !0 ;
+		retn <= !0 ;
+		brek <= !0 ;
+		cont <= !0 ;
 		?Module(<doStmts>) ;
 		addTerminalNode
 	end
 
 doStmt.subject =
-	debug.Dump() ;
-	with
-		this = getNodeId
-	in
+	with this in
+		this <= getNodeId ;
 		switch project.name
 		case "If": doIf
 		case "While": doWhile
@@ -229,30 +236,27 @@ doStmt.subject =
 	end
 
 makeGraph =
-	with
-		nodes = ![],
-		stmtid = !0
-	in
+	with nodes, stmtid in
+		nodes <= ![] ;
+		stmtid <= !0 ;
 		doModule ;
 		AddNode(!"edge",![Attr("fontname","Arial")],![]) ;
 		AddNode(!"node",![Attr("fontname","Arial")],![]) ;
 		!Graph(nodes)
 	end
 
-''')
-
 
 #######################################################################
 # Graph Simplification
 
-parse.Transfs('''
+shared point as table
 
 matchPointShapeAttr =
 	?Attr("shape", "point")
 
-findPointNode = {
-	Node(src, <One(matchPointShapeAttr)>, [Edge(dst, _)]) -> [src, dst]
-} ==> point
+findPointNode =
+	?Node(src, <One(matchPointShapeAttr)>, [Edge(dst, _)]) ;
+	point.set [src, dst]
 
 findPointNodes =
 	Map(Try(findPointNode))
@@ -267,17 +271,20 @@ removePointNodes =
 	Filter(removePointNode)
 
 simplifyPoints =
-	with point[] in
+	with point in
 		~Graph(<findPointNodes; removePointNodes>)
 	end
 
 simplifyGraph = simplifyPoints
-''')
 
 
 #######################################################################
 
-render = makeGraph * simplifyGraph
+render = makeGraph ; simplifyGraph
+
+
+''')
+
 
 #######################################################################
 # Example
@@ -310,7 +317,6 @@ def main():
 		print dotcode
 
 		#return
-
 		import gtk
 		import ui.dotview
 		win = ui.dotview.DotWindow()

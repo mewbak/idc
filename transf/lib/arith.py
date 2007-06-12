@@ -108,7 +108,7 @@ class Count(transformation.Transformation):
 
 	def apply(self, trm, ctx):
 		self.value += 1
-		trm = term.factory.makeInt(self.value)
+		trm = trm.factory.makeInt(self.value)
 		return trm
 
 

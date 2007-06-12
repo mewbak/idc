@@ -19,6 +19,8 @@ annotate = path.Annotate(
 	`)
 )
 
+deannotate = path.deannotate
+
 
 #######################################################################
 # Selection
@@ -36,15 +38,25 @@ Input(t) =
 	with selection in
 		?[root, selection] ;
 		!root ;
+		# annotate ;
 		t ;
 		![selection, *<id>]
+	end
+
+Input2(t) =
+	with selection in
+		?[root, selection] ;
+		!root ;
+		# annotate ;
+		t
 	end
 
 Apply(t) =
 	with selection in
 		?[root, [selection, *args]] ;
 		![root, args] ;
-		t
+		t ;
+		deannotate
 	end
 
 

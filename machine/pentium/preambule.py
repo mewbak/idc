@@ -32,7 +32,7 @@ declFlag = !Var(Bool,<id>,NoExpr)
 
 stmtsPreambule =
 	Concat(
-		reg32Names ; Map(declReg32) ; debug.Dump(),
+		reg32Names ; Map(declReg32) ,
 		flagNames ; Map(declFlag)
 	)
 

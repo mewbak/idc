@@ -39,3 +39,6 @@ class Variable(object):
 		else:
 			self.name = Name(name)
 
+	def __repr__(self):
+		name = self.__class__.__module__ + '.' + self.__class__.__name__
+		return '<%s name=%s>' % (name, self.name)

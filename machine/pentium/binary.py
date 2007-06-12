@@ -160,7 +160,7 @@ AsmIMUL1(size,src) =
 		tmp <= temp
 
 AsmIMUL23(size,dst,src1,src2) =
-		debug.Dump() ; ![
+		![
 			Assign(type2, tmp, Binary(Mult(type2),Cast(type2,<src1>),Cast(type2,<src2>))),
 			Assign(type, <dst>, Binary(Mult(type),<src1>,<src2>)),
 			Assign(Bool, <cf>, Binary(NotEq(type2),tmp,Cast(type2,<dst>))),

@@ -7,9 +7,6 @@ import traceback
 from transf import transformation
 from transf import parse
 
-import ir.traverse
-import ir.check
-
 from machine.pentium.data import *
 from machine.pentium.binary import *
 from machine.pentium.logical import *
@@ -59,10 +56,8 @@ doStmt =
 +	![<id>]
 
 
-''', verbose=False)
-
-module = ir.traverse.Module(
-	stmts = transf.lib.lists.MapConcat(doStmt),
-) #* ir.check.module
+doModule =
+	~Module(<lists.MapConcat(doStmt)>)
 
 
+''')

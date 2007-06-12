@@ -13,11 +13,11 @@ applicable =
 	)
 
 input =
-	ir.path.Input(
+	ir.path.Input2(
 		ir.path.projectSelection => Sym(src) ;
-		input.Str(!"Rename Symbol", !"Destination symbol?") => dst
-	) ;
-	![src, dst]
+		ui.Str(!"Rename Symbol", !"Destination symbol?") => dst ;
+		![src, dst]
+	)
 
 apply =
 	( [root, [src, dst]] -> root ) ;

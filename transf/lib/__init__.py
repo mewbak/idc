@@ -24,6 +24,6 @@ from transf.lib import strings
 from transf.lib import annotation
 from transf.lib import path
 
-from transf.lib import input
+from transf.lib import ui
 
 from transf.lib import debug

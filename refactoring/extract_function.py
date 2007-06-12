@@ -15,13 +15,13 @@ applicable =
 	)
 
 input =
-	ir.path.Input(
-		ir.path.projectSelection => Label(label)
-	) ;
-	![label]
+	ir.path.Input2(
+		ir.path.projectSelection => Label(label) ;
+		![label]
+	)
 
 apply =
-	( [root, [label]] -> root ) ;
+	[root, [label]] -> root ;
 	~Module(<AtSuffix(
 		{rest:
 			~[Label(?label), *<AtSuffix(

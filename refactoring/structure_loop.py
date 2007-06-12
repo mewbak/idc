@@ -1,4 +1,4 @@
-"""Refactoring Loop."""
+"""Structure Loop."""
 
 
 import refactoring

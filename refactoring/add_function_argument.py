@@ -2,7 +2,6 @@
 
 
 from transf import parse
-import ir.traverse
 import ir.path
 
 parse.Transfs('''
@@ -13,25 +12,23 @@ applicable =
 	)
 
 input =
-	ir.path.Input(
+	ir.path.Input2(
 		ir.path.projectSelection => Function(_, name, _, _) ;
-		input.Str(!"Add Function Argument", !"Argument Symbol?") => arg ;
+		ui.Str(!"Add Function Argument", !"Argument Symbol?") => arg ;
 		![name, arg]
 	)
 
 apply =
-	ir.path.Apply(
-		( [root, [name, arg]] -> root ) ;
-		type <= !Int(32,Signed) ;
-		~Module(<
-			One(
-				~Function(_, ?name, <Concat(id,![Arg(type,arg)])>, _)
-			)
-		>) ;
-		BottomUp(Try(
-			~Call(Sym(?name), <Concat(id,![Sym(arg)])>)
-		))
-	)
+	[root, [name, arg]] -> root ;
+	type <= !Int(32,Signed) ;
+	~Module(<
+		One(
+			~Function(_, ?name, <Concat(id,![Arg(type,arg)])>, _)
+		)
+	>) ;
+	BottomUp(Try(
+		~Call(Sym(?name), <Concat(id,![Sym(arg)])>)
+	))
 
 testApply =
 	![
@@ -41,7 +38,7 @@ testApply =
 				Ret(Void,NoExpr)
 			]),
 		]),
-		[[0,0], "main", "eax"]
+		["main", "eax"]
 	] ;
 	apply ;
 	?Module([

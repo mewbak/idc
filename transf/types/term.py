@@ -15,7 +15,7 @@ class Term(variable.Variable):
 		return trm
 
 	@TransformationMethod
-	def set(self, trm, ctx):
+	def assign(self, trm, ctx):
 		ctx.set(self.name, trm)
 		return trm
 

@@ -1,4 +1,4 @@
-"""Structure If-Then."""
+"""Structure If"""
 
 
 from refactoring.dead_label_elimination import dle

@@ -15,7 +15,7 @@ shared needed_label as table
 updateNeededLabels =
 	Where(
 		?GoTo(Sym(label)) ;
-		needed_label <= ![label,label]
+		needed_label.set [label,label]
 	)
 
 #######################################################################
@@ -111,4 +111,4 @@ testUsedLabel =
     	Label("A")
     ])
 
-''', verbose=True)
+''')
