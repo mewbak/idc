@@ -31,14 +31,6 @@ all:
 .PHONY: default all
 
 
-# SSL compilation
-
-all: lang/ssl/spec/pentium.py
-
-%.py: %.ssl util/sslc.py lang/ssl/lexer.py lang/ssl/parser.py lang/ssl/preprocessor.py lang/ssl/compiler.py
-	$(PYTHON) util/sslc.py -o $@ $<
-
-
 # Unit, component, and integration testing
 
 TESTOPTS = -v

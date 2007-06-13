@@ -44,6 +44,7 @@ class Compiler(walker.Walker):
 	def defineDefs(self, tdefs):
 		for tdef in tdefs:
 			self.define(tdef)
+			self.stmt('')
 
 	def defineVarDef(self, n, t):
 		n = self.id(n)
@@ -67,6 +68,8 @@ class Compiler(walker.Walker):
 		n = self.id(n)
 		t = self.doTransf(n, t)
 		self.stmt("%s = %s" % (n, t))
+		if self.locals:
+			self.stmt("del %s" % ",".join([self.local(var) for var in self.locals]))
 		self.args = set()
 
 	def defineMacroDef(self, n, a, t):

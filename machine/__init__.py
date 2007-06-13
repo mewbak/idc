@@ -14,6 +14,6 @@ class Machine:
 		raise NotImplementedError
 
 	def translate(self, term):
-		'''Translate the "Asm" terms into the higher-level IR equivalent 
-		constructs by means of the SSL.'''
+		'''Translate the "Asm" terms into the higher-level IR equivalent
+		constructs.'''
 		raise NotImplementedError
