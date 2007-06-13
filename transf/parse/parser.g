@@ -116,8 +116,6 @@ transf_atom
 		{ ## = #(#[ATAPPL,"Transf"], ##) }
 	| id LPAREN! args RPAREN!
 		{ ## = #(#[ATAPPL,"Macro"], ##) }
-	| id LDARROW! transf_atom
-		{ ## = #(#[ATAPPL,"ApplyAssign"], ##) }
 	;
 
 args
@@ -179,11 +177,15 @@ var_def
 	;
 
 transf_build_apply
-	: ( term_atom RARROW! ) => term_atom RARROW! term_atom
-		( IF! transf_atom
-			{ ## = #(#[ATAPPL,"RuleIf"], ##) }
-		|
-			{ ## = #(#[ATAPPL,"Rule"], ##) }
+	: ( term_atom ( RARROW! | LDARROW! | EQUAL! ) ) => term_atom
+		( RARROW! term_atom
+			( IF! transf_atom
+				{ ## = #(#[ATAPPL,"RuleIf"], ##) }
+			|
+				{ ## = #(#[ATAPPL,"Rule"], ##) }
+			)
+		| ( LDARROW! | EQUAL! ) transf_build_apply
+			{ ## = #(#[ATAPPL,"ApplyAssign"], ##) }
 		)
 	| transf_atom
 		( options { warnWhenFollowAmbig=false; }

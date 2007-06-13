@@ -15,7 +15,7 @@ class SemanticException(Exception):
 
 
 # term operations
-MATCH, BUILD, CONGRUENT = range(3)
+ASSIGN, MATCH, BUILD, CONGRUENT = range(4)
 
 
 class Compiler(walker.Walker):
@@ -176,10 +176,10 @@ class Compiler(walker.Walker):
 		m = self.match(m)
 		return "transf.lib.combine.Composition(%s, %s)" % (t, m)
 
-	def transfApplyAssign(self, v, t):
-		t = self.transf(t)
-		v = self.var(v)
-		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.assign))" % (t, v)
+	def transfApplyAssign(self, l, r):
+		l = self.term(l, mode = ASSIGN)
+		r = self.transf(r)
+		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s))" % (r, l)
 
 	def transfBuildApply(self, t, b):
 		t = self.transf(t)
@@ -348,17 +348,19 @@ class Compiler(walker.Walker):
 	def termCons(self, h, t, mode):
 		h = self.term(h, mode)
 		t = self.term(t, mode)
-		if mode == MATCH:
+		if mode in (ASSIGN, MATCH):
 			return "transf.lib.match.Cons(%s, %s)" % (h, t)
 		elif mode == BUILD:
 			return "transf.lib.build.Cons(%s, %s)" % (h, t)
 		elif mode == CONGRUENT:
 			return "transf.lib.congruent.Cons(%s, %s)" % (h, t)
+		else:
+			assert False
 
 	def termAppl(self, name, args, mode):
 		name = self._str(name)
 		args = "[" + ",".join([self.term(arg, mode) for arg in args]) + "]"
-		if mode == MATCH:
+		if mode in (ASSIGN, MATCH):
 			return "transf.lib.match.Appl(%r, %s)" % (name, args)
 		elif mode == BUILD:
 			return "transf.lib.build.Appl(%r, %s)" % (name, args)
@@ -375,7 +377,7 @@ class Compiler(walker.Walker):
 	def termApplCons(self, n, a, mode):
 		n = self.term(n, mode)
 		a = self.term(a, mode)
-		if mode == MATCH:
+		if mode in (ASSIGN, MATCH):
 			return "transf.lib.match.ApplCons(%s, %s)" % (n, a)
 		elif mode == BUILD:
 			return "transf.lib.build.ApplCons(%s, %s)" % (n, a)
@@ -387,7 +389,9 @@ class Compiler(walker.Walker):
 
 	def termVar(self, v, mode):
 		v = self.var(v)
-		if mode == MATCH:
+		if mode == ASSIGN:
+			return "%s.assign" % v
+		elif mode == MATCH:
 			return "transf.lib.match.Var(%s)" % v
 		elif mode == BUILD:
 			return "transf.lib.build.Var(%s)" % v
@@ -401,7 +405,7 @@ class Compiler(walker.Walker):
 	def termAnnos(self, t, a, mode):
 		t = self.term(t, mode)
 		a = self.term(a, mode)
-		if mode == MATCH:
+		if mode in (ASSIGN, MATCH):
 			r = "transf.lib.match.Annos(%s)" % a
 		elif mode == BUILD:
 			r = "transf.lib.build.Annos(%s)" % a
