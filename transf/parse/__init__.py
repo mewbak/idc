@@ -7,9 +7,9 @@ import inspect
 import antlr
 from antlraterm import Walker as Converter
 
-from lang.transf.lexer import Lexer
-from lang.transf.parser import Parser
-from lang.transf.compiler import Compiler
+from transf.parse.lexer import Lexer
+from transf.parse.parser import Parser
+from transf.parse.compiler import Compiler
 
 
 def _parse(buf, production="definitions", debug=False):
@@ -47,9 +47,9 @@ def _compile(buf, simplify=True, verbose=False, debug=False):
 	term = _parse(buf)
 	if False:
 		# FIXME: re-enable the simplifier
-		import lang.transf.simplifier
+		import transf.parse.simplifier
 		old = term
-		term = lang.transf.simplifier.simplify(term)
+		term = transf.parse.simplifier.simplify(term)
 	compiler = Compiler(debug=debug)
 	code = compiler.definitions(term)
 	if verbose:
@@ -66,7 +66,7 @@ def _populate_globals(glbls):
 	from transf import lib
 	for n, v in lib.__dict__.iteritems():
 		glbls.setdefault(n, v)
-	from lang.transf import builtins
+	from transf.parse import builtins
 	for n, v in builtins.__dict__.iteritems():
 		glbls.setdefault(n, v)
 	return glbls

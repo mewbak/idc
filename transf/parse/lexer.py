@@ -4,7 +4,7 @@
 import antlr
 import antlrre
 
-from lang.transf import parser
+from transf.parse import parser
 
 
 # python string reg. exp.

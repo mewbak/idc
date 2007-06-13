@@ -139,6 +139,9 @@ clean:
 .PHONY: clean
 
 
-# Include generated dependencies makefile
+# Dependencies
+
+transf/parse/antlratermTokenTypes.txt: antlratermTokenTypes.txt 
+	cp -f $< $@
 
 include .deps.mak
