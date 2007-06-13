@@ -1,7 +1,8 @@
 /*
  * Generate an aterm from an ANTLR AST.
+ *
+ * TODO: Implement thi as a baseclass instead of a TreeParse
  */
-
 
 header {
 import antlr
@@ -11,7 +12,6 @@ import aterm.factory
 options {
 	language = "Python";
 }
-
 
 class antlraterm extends TreeParser;
 

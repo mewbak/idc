@@ -100,6 +100,7 @@ transf_atom
 		{ ## = #(#[ATAPPL,"Ident"], ##) }
 	| FAIL!
 		{ ## = #(#[ATAPPL,"Fail"], ##) }
+	// TODO: Add an assert statement
 	| LPAREN! transf RPAREN!
 	| IF! if_clauses if_else END!
 		{ ## = #(#[ATAPPL,"If"], ##) }
@@ -115,8 +116,6 @@ transf_atom
 		{ ## = #(#[ATAPPL,"Transf"], ##) }
 	| id LPAREN! args RPAREN!
 		{ ## = #(#[ATAPPL,"Macro"], ##) }
-	| id LARROW! term
-		{ ## = #(#[ATAPPL,"BuildAssign"], ##) }
 	| id LDARROW! transf_atom
 		{ ## = #(#[ATAPPL,"ApplyAssign"], ##) }
 	;

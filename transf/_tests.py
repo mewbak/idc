@@ -533,7 +533,6 @@ class TestParse(TestMixin, unittest.TestCase):
 		('id 123', 'BuildApply(Ident,Int(123))'),
 		('id[1,2]', 'BuildApply(Ident,Cons(Int(1),Cons(Int(2),Nil)))'),
 		('id => a', 'ApplyMatch(Ident,Var("a"))'),
-		('a <- 1', 'BuildAssign("a",Int(1))'),
 		('a <= !1', 'ApplyAssign("a",Build(Int(1)))'),
 
 		# join operators

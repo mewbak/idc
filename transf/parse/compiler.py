@@ -186,11 +186,6 @@ class Compiler(walker.Walker):
 		b = self.build(b)
 		return "transf.lib.combine.Composition(%s, %s)" % (b, t)
 
-	def transfBuildAssign(self, v, b):
-		v = self.var(v)
-		b = self.build(b)
-		return "transf.lib.combine.Where(transf.lib.combine.Composition(%s, %s.assign))" % (b, v)
-
 	def transfIf(self, conds, other):
 		conds = "[" + ",".join(map(self.doIfClause, conds)) + "]"
 		other = self.transf(other)
