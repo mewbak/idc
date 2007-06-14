@@ -43,8 +43,8 @@ AsmTest(size) =
 		*<LogFlags(size, !tmp)>
 	]
 	where
-		type <= Word(size) ;
-		tmp <= temp
+		type := Word(size) ;
+		tmp := temp
 
 asmTESTB = AsmTest(!8)
 asmTESTW = AsmTest(!16)

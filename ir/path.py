@@ -61,7 +61,7 @@ Apply(t) =
 
 
 
-WithSelection(s, x) = with selection in x where selection <= s end
+WithSelection(s, x) = with selection in x where selection := s end
 
 
 

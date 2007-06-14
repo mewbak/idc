@@ -20,7 +20,7 @@ input =
 
 apply =
 	[root, [name, arg]] -> root ;
-	type <= !Int(32,Signed) ;
+	type := !Int(32,Signed) ;
 	~Module(<
 		One(
 			~Function(_, ?name, <Concat(id,![Arg(type,arg)])>, _)

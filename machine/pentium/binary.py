@@ -69,8 +69,8 @@ AsmAdd(size) =
 			*<AddFlags(size, !tmp, !src, !dst)>
 		]
 	where
-		type <= Word(size) ;
-		tmp <= temp
+		type := Word(size) ;
+		tmp := temp
 
 
 asmADDB = AsmAdd(!8)
@@ -84,8 +84,8 @@ AsmSub(size) =
 			*<SubFlags(size, !tmp, !src, !dst)>
 		]
 	where
-		type <= Word(size) ;
-		tmp <= temp
+		type := Word(size) ;
+		tmp := temp
 
 asmSUBB = AsmSub(!8)
 asmSUBW = AsmSub(!16)
@@ -98,8 +98,8 @@ AsmInc(size) =
 			*<AddFlags(size, !tmp, !Lit(type,1), !dst)>
 		]
 	where
-		type <= Word(size) ;
-		tmp <= temp
+		type := Word(size) ;
+		tmp := temp
 
 asmINCB = AsmInc(!8)
 asmINCW = AsmInc(!16)
@@ -112,8 +112,8 @@ AsmDec(size) =
 			*<SubFlags(size, !tmp, !Lit(type,1), !dst)>
 		]
 	where
-		type <= Word(size) ;
-		tmp <= temp
+		type := Word(size) ;
+		tmp := temp
 
 asmDECB = AsmDec(!8)
 asmDECW = AsmDec(!16)
@@ -137,9 +137,9 @@ AsmMUL(size) =
 			Assign(Bool, <of>, Binary(And(Bool),NotEq(type),high,Lit(type2,0)))
 		]>
 	where
-		type <= Word(size) ;
-		type2 <= Word(arith.MulInt(size,!2)) ;
-		tmp <= temp
+		type := Word(size) ;
+		type2 := Word(arith.MulInt(size,!2)) ;
+		tmp := temp
 
 asmMULB = AsmMUL(!8)
 asmMULW = AsmMUL(!16)
@@ -155,9 +155,9 @@ AsmIMUL1(size,src) =
 			Assign(Bool, <of>, Binary(And(Bool),Binary(NotEq(type),high,Lit(type2,0)),Binary(NotEq(type),high,Lit(type2,-1))))
 		]
 	where
-		type <= SWord(size) ;
-		type2 <= SWord(arith.MulInt(size,!2)) ;
-		tmp <= temp
+		type := SWord(size) ;
+		type2 := SWord(arith.MulInt(size,!2)) ;
+		tmp := temp
 
 AsmIMUL23(size,dst,src1,src2) =
 		![
@@ -167,9 +167,9 @@ AsmIMUL23(size,dst,src1,src2) =
 			Assign(Bool, <of>, Binary(NotEq(type2),tmp,Cast(type2,<dst>)))
 		]
 	where
-		type <= SWord(size) ;
-		type2 <= SWord(arith.MulInt(size,!2)) ;
-		tmp <= temp
+		type := SWord(size) ;
+		type2 := SWord(arith.MulInt(size,!2)) ;
+		tmp := temp
 
 AsmIMUL(size) =
 	[op1] -> <AsmIMUL1(size,!op1)> |
@@ -198,10 +198,10 @@ AsmDIV(size) =
 			# FIXME: undefine flags
 		]>
 	where
-		type <= Word(size) ;
-		type2 <= Word(arith.MulInt(size,!2)) ;
-		tmp1 <= temp ;
-		tmp2 <= temp
+		type := Word(size) ;
+		type2 := Word(arith.MulInt(size,!2)) ;
+		tmp1 := temp ;
+		tmp2 := temp
 
 asmDIVB = AsmDIV(!8)
 asmDIVW = AsmDIV(!16)
@@ -223,10 +223,10 @@ AsmIDIV(size) =
 			# FIXME: undefine flags
 		]>
 	where
-		type <= SWord(size) ;
-		type2 <= SWord(arith.MulInt(size,!2)) ;
-		tmp1 <= temp ;
-		tmp2 <= temp
+		type := SWord(size) ;
+		type2 := SWord(arith.MulInt(size,!2)) ;
+		tmp1 := temp ;
+		tmp2 := temp
 
 asmIDIVB = AsmIDIV(!8)
 asmIDIVW = AsmIDIV(!16)
@@ -238,8 +238,8 @@ AsmCmp(size) =
 			*<SubFlags(size, !dst, !src, !tmp)>
 		]
 	where
-		type <= Word(size) ;
-		tmp <= temp
+		type := Word(size) ;
+		tmp := temp
 
 asmCMPB = AsmCmp(!8)
 asmCMPW = AsmCmp(!16)

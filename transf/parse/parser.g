@@ -177,14 +177,14 @@ var_def
 	;
 
 transf_build_apply
-	: ( term_atom ( RARROW! | LDARROW! | EQUAL! ) ) => term_atom
+	: ( term_atom ( RARROW! | ASSIGN! ) ) => term_atom
 		( RARROW! term_atom
 			( IF! transf_atom
 				{ ## = #(#[ATAPPL,"RuleIf"], ##) }
 			|
 				{ ## = #(#[ATAPPL,"Rule"], ##) }
 			)
-		| ( LDARROW! | EQUAL! ) transf_build_apply
+		| ASSIGN! transf_build_apply
 			{ ## = #(#[ATAPPL,"ApplyAssign"], ##) }
 		)
 	| transf_atom

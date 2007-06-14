@@ -21,8 +21,8 @@ _AsmSxL(size, sign, dst, src) =
 		Assign(Bool, <of>, LNotEq(<HsbOne(size,dst)>,<cf>))
 	]
 	where
-		type <= !Int(<size>,<sign>) ;
-		tmp <= temp
+		type := !Int(<size>,<sign>) ;
+		tmp := temp
 
 AsmSxL(size, sign) =
 	[dst] -> <_AsmSxL(size, sign, !dst, !Lit(Int(<size>,<sign>),1))> |
@@ -53,8 +53,8 @@ _AsmSxR(size, sign, dst, src) =
 		)
 	]
 	where
-		type <= !Int(<size>,<sign>) ;
-		tmp <= temp
+		type := !Int(<size>,<sign>) ;
+		tmp := temp
 
 
 AsmSxR(size, sign) =

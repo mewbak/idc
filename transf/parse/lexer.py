@@ -51,8 +51,8 @@ _tokenizer = antlrre.Tokenizer(
 		(parser.UID, r'[A-Z][a-zA-Z0-9_]*', False),
 		(parser.LID, r'[a-z][a-zA-Z0-9_]*', True),
 
+		(parser.ASSIGN, r':=', False),
 		(parser.RARROW, r'->', False),
-		(parser.LDARROW, r'<=', False),
 		(parser.RDARROW, r'=>', False),
 
 		(parser.OBJ, _pyobj, False),

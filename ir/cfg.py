@@ -92,7 +92,7 @@ AddNode(nodeid, attrs, edges) =
 			<attrs>,
 			<edges>
 		) ;
-		nodes <= ![_,*nodes]
+		nodes := ![_,*nodes]
 	)
 
 GetTerminalNodeId(nodeid) =
@@ -128,20 +128,20 @@ MakeNode(edges) =
 
 doDefault =
 	MakeNode(![<MakeEdge(!next)>]) ;
-	next <= !this
+	next := !this
 
 doIf =
 	with true, false, oldnext in
-		oldnext <= !next ;
+		oldnext := !next ;
 		?If(_,
-			<with next in next <= !oldnext; doStmt; true <= !next end>,
-			<with next in next <= !oldnext; doStmt; false <= !next end>
+			<with next in next := !oldnext; doStmt; true := !next end>,
+			<with next in next := !oldnext; doStmt; false := !next end>
 		) ;
 		MakeNode(![
 			<MakeLabelledEdge(!true, !"True")>,
 			<MakeLabelledEdge(!false, !"False")>,
 		]) ;
-		next <= !this
+		next := !this
 	end
 
 doNoStmt =
@@ -149,19 +149,19 @@ doNoStmt =
 
 doWhile =
 	with true in
-		?While(_, <with next in next <= !this; doStmt; true <= !next end> );
+		?While(_, <with next in next := !this; doStmt; true := !next end> );
 		MakeNode(![
 			<MakeLabelledEdge(!true, !"True")>,
 			<MakeLabelledEdge(!next, !"False")>,
 		]) ;
-		next <= !this
+		next := !this
 	end
 
 
 doDoWhile =
 	with false in
-		false <= !next ;
-		next <= !this ;
+		false := !next ;
+		next := !this ;
 		?DoWhile(_, <doStmt> );
 		MakeNode(![
 			<MakeLabelledEdge(!next, !"True")>,
@@ -171,15 +171,15 @@ doDoWhile =
 
 doBreak =
 	MakeNode(![<MakeEdge(!brek)>]) ;
-	next <= !this
+	next := !this
 
 doContinue =
 	MakeNode(![<MakeEdge(!cont)>]) ;
-	next <= !this
+	next := !this
 
 doRet =
 	MakeNode(![<MakeEdge(!retn)>]) ;
-	next <= !this
+	next := !this
 
 doGoTo =
 	with
@@ -189,18 +189,18 @@ doGoTo =
 		MakeNode(![<MakeEdge(!label ; box.escape)>]) +
 		MakeNode(![])
 	end ;
-	next <= !this
+	next := !this
 
 doBlock =
 	?Block(<doStmts>)
 
 doFunction =
-	oldnext <= !next ;
+	oldnext := !next ;
 	with next, retn, brek, cont in
-		next <= !oldnext ;
-		retn <= GetTerminalNodeId(!this) ;
-		brek <= !0 ;
-		cont <= !0 ;
+		next := !oldnext ;
+		retn := GetTerminalNodeId(!this) ;
+		brek := !0 ;
+		cont := !0 ;
 		?Function(_, _, _, <doStmts>) ;
 		MakeNode(![<MakeEdge(!next)>]) ;
 		addTerminalNode
@@ -208,17 +208,17 @@ doFunction =
 
 doModule =
 	with next, retn, brek, cont in
-		next <= !0 ;
-		retn <= !0 ;
-		brek <= !0 ;
-		cont <= !0 ;
+		next := !0 ;
+		retn := !0 ;
+		brek := !0 ;
+		cont := !0 ;
 		?Module(<doStmts>) ;
 		addTerminalNode
 	end
 
 doStmt.subject =
 	with this in
-		this <= getNodeId ;
+		this := getNodeId ;
 		switch project.name
 		case "If": doIf
 		case "While": doWhile
@@ -237,8 +237,8 @@ doStmt.subject =
 
 makeGraph =
 	with nodes, stmtid in
-		nodes <= ![] ;
-		stmtid <= !0 ;
+		nodes := ![] ;
+		stmtid := !0 ;
 		doModule ;
 		AddNode(!"edge",![Attr("fontname","Arial")],![]) ;
 		AddNode(!"node",![Attr("fontname","Arial")],![]) ;

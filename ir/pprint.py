@@ -173,7 +173,7 @@ exprKern = util.Proxy()
 
 SubExpr(Cmp) =
 	?[pprec, rest] ;
-	prec <= precExpr rest ;
+	prec := precExpr rest ;
 	if Cmp(!prec, !pprec) then
 		!H([ "(", <exprKern [prec,rest]>, ")" ])
 	else

@@ -34,7 +34,7 @@ apply =
 			~Assign(!type, !Sym(ret), _)
 		))
 	where
-		type <= !Int(32,Signed)
+		type := !Int(32,Signed)
 
 
 testApply =

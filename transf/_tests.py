@@ -512,7 +512,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		# wrap
 		('?C(<id>,<fail>)', 'Match(Appl("C",[Wrap(Ident),Wrap(Fail)]))'),
 		('!C(<id>,<fail>)', 'Build(Appl("C",[Wrap(Ident),Wrap(Fail)]))'),
-		('?C(<v <= id>,<fail>)', 'Match(Appl("C",[Wrap(ApplyAssign(Var("v"),Ident)),Wrap(Fail)]))'),
+		('?C(<v := id>,<fail>)', 'Match(Appl("C",[Wrap(ApplyAssign(Var("v"),Ident)),Wrap(Fail)]))'),
 
 		# reference
 		('base.ident', 'Transf("base.ident")'),
@@ -535,10 +535,9 @@ class TestParse(TestMixin, unittest.TestCase):
 
 		# assignment
 		('id => a', 'ApplyMatch(Ident,Var("a"))'),
-		('a <= !1', 'ApplyAssign(Var("a"),Build(Int(1)))'),
-		('a = !1', 'ApplyAssign(Var("a"),Build(Int(1)))'),
-		('[a,b] = ![1,2]', 'ApplyAssign(Cons(Var("a"),Cons(Var("b"),Nil)),Build(Cons(Int(1),Cons(Int(2),Nil))))'),
-		('a = id 123', 'ApplyAssign(Var("a"),BuildApply(Ident,Int(123)))'),
+		('a := !1', 'ApplyAssign(Var("a"),Build(Int(1)))'),
+		('[a,b] := ![1,2]', 'ApplyAssign(Cons(Var("a"),Cons(Var("b"),Nil)),Build(Cons(Int(1),Cons(Int(2),Nil))))'),
+		('a := id 123', 'ApplyAssign(Var("a"),BuildApply(Ident,Int(123)))'),
 
 		# join operators
 		('!1 / a \\ !2', 'Join(Build(Int(1)),Build(Int(2)),["a"],[])'),
