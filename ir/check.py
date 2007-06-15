@@ -41,9 +41,8 @@ sign =
 	?NoSign +
 	LogFail(`'bad sign'`)
 
-type = lib.util.Proxy()
 types = lib.lists.Map(type)
-type.subject =
+type =
 	?Void +
 	?Bool +
 	?Int( <size>, <sign> ) +
@@ -83,10 +82,9 @@ binOp =
 	?GtEq( <type> ) +
 	LogFail(`'bad binary operator'`)
 
-expr = lib.util.Proxy()
 addr = expr
 exprs = lib.lists.Map(expr)
-expr.subject =
+expr =
 	?Lit( <type> , <lit> ) +
 	?Sym( <name> ) +
 	?Cast( <type> , <expr> ) +
@@ -106,9 +104,8 @@ arg =
 	?Arg( <type> , <name> ) +
 	LogFail(`'bad argument'`)
 
-stmt = lib.util.Proxy()
 stmts = lib.lists.Map(stmt)
-stmt.subject =
+stmt =
 	?Var( <type> , <name> , <optExpr> ) +
 	?Function( <type> , <name> , <Map(arg)>, <stmts> ) +
 	?Assign( <type> , <optExpr> , <expr> ) +

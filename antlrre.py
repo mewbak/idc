@@ -121,8 +121,10 @@ class TokenStream(antlr.TokenStream):
 
 		# update column number
 		while True:
-			tabpos = self.buf.find('\t', pos, endpos)
-			if tabpos == -1:
+			# NOTE: this does not work with mmap
+			#tabpos = self.buf.find('\t', pos, endpos)
+			tabpos = self.buf.find('\t', pos)
+			if tabpos == -1 or tabpos >= endpos:
 				break
 			self.col += tabpos - pos
 			self.col = ((self.col - 1)//self.tabsize + 1)*self.tabsize + 1

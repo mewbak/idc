@@ -55,8 +55,6 @@ getLabelInline =
 #######################################################################
 # Statements
 
-propStmt = Proxy()
-
 propStmts =
 	Map(propStmt) ;
 	Filter(Not(?NoStmt))
@@ -113,7 +111,7 @@ propFunction =
 propDefault =
 	clearAllInlineVars
 
-propStmt.subject =
+propStmt =
 	switch project.name
 		case "Assign": propAssign
 		case "Asm": propAsm

@@ -2,28 +2,18 @@
 
 
 from transf import context
-from transf import util
+from transf import operate
 
 
-class _Scope(util.Wrapper):
+class _Scope(operate.Unary):
 
 	def __init__(self, vars, operand):
-		util.Wrapper.__init__(self, operand)
+		operate.Unary.__init__(self, operand)
 		self.vars = [(var.name, None) for var in vars]
 
 	def apply(self, trm, ctx):
 		ctx = context.Context(self.vars, ctx)
 		return self.operand.apply(trm, ctx)
-
-	# XXX: hack to enable the use of Proxy
-	def _get_subject(self):
-		try:
-			return self.operand.subject
-		except AttributeError:
-			return None
-	def _set_subject(self, subject):
-		self.operand.subject = subject
-	subject = property(_get_subject, _set_subject)
 
 
 def Scope(vars, operand):

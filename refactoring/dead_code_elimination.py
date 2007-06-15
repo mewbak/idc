@@ -58,9 +58,6 @@ setLabelNeeded =
 #######################################################################
 # Statements
 
-dceStmt = Proxy()
-dceStmts = Proxy()
-
 dceAssign =
 	with x in
 		?Assign(_, x, _) ;
@@ -141,7 +138,7 @@ dceFunction =
 dceDefault =
 	setAllNeededVars
 
-dceStmt.subject =
+dceStmt =
 	?Assign & dceAssign +
 	?Asm & dceAsm +
 	?Label & dceLabel +
@@ -155,7 +152,7 @@ dceStmt.subject =
 	?Var & id +
 	?NoStmt
 
-dceStmts.subject =
+dceStmts =
 	MapR(dceStmt) ;
 	Filter(Not(?NoStmt))
 

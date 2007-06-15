@@ -21,9 +21,6 @@ updateNeededLabels =
 #######################################################################
 # Statements
 
-dleStmt = Proxy()
-dleStmts = Proxy()
-
 dleLabel =
 	Try(
 		?Label(<Not(~needed_label)>) ;
@@ -70,7 +67,7 @@ dleFunction =
 dleDefault =
 	id
 
-dleStmt.subject =
+dleStmt =
 	?Label & dleLabel +
 	?Block & dleBlock +
 	?If & dleIf +
@@ -79,7 +76,7 @@ dleStmt.subject =
 	?Function & dleFunction +
 	id
 
-dleStmts.subject =
+dleStmts =
 	MapR(dleStmt) ;
 	Filter(Not(?NoStmt))
 

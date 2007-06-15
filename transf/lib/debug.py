@@ -104,10 +104,10 @@ class Dump(transformation.Transformation, DebugMixin):
 		return term
 
 
-class _Trace(util.Wrapper, DebugMixin):
+class _Trace(util.Proxy, DebugMixin):
 
-	def __init__(self, operand, name=None):
-		util.Wrapper.__init__(self, operand)
+	def __init__(self, operand=None, name=None):
+		util.Proxy.__init__(self, operand)
 		self.time = False
 		self.name = name
 
@@ -131,7 +131,7 @@ class _Trace(util.Wrapper, DebugMixin):
 			#log.write('<= %20s (%.03fs): %s\n' % (self.name, delta, result))
 			log.write('<= %20s: %s\n' % (self.name, result))
 
-def Trace(operand, name=None):
+def Trace(operand=None, name=None):
 	if name is None:
 		try:
 			caller = inspect.currentframe().f_back
@@ -174,19 +174,16 @@ class Traceback(operate.Unary, DebugMixin):
 			raise
 
 
-class TestCase(unittest.TestCase):
+class TestCase(transformation.Transformation):
 	'''A test case based on a transformation.'''
 
-	def __init__(self, input, transf, expectedOutput, transfName = None):
-		unittest.TestCase.__init__(self)
+	def __init__(self, input, transf, expectedOutput):
+		transformation.Transformation.__init__(self)
 		self._input = input
 		self._transf = transf
 		self._expectedOutput = expectedOutput
-		self._transfName = transfName
 
-	def runTest(self):
-		trm = aterm.factory.factory.makeStr("Ignored")
-		ctx = context.Context()
+	def apply(self, trm, ctx):
 		input = self._input.apply(trm, ctx)
 		expectedOutput = self._expectedOutput.apply(trm, ctx)
 		output = self._transf.apply(input, ctx)
@@ -195,8 +192,11 @@ class TestCase(unittest.TestCase):
 			sys.stderr.write("%s\n" % expectedOutput)
 			sys.stderr.write("%s\n" % output)
 			self.fail(msg = "%s -> %s (!= %s)" %(input, output, expectedOutput))
+		return output
 
-	def shortDescription(self):
-		return self._transfName
+	def runTest(self):
+		trm = aterm.factory.factory.makeStr("Ignored")
+		ctx = context.Context()
+		self.apply(trm, ctx)
 
 

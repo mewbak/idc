@@ -33,20 +33,23 @@ class Compiler(walker.Walker):
 	def stmt(self, s):
 		self.stmts.append('\t' * self.indent + s)
 
-	def compile(self, t):
-		self.define(t)
-		return "\n".join(self.stmts)
 
-	definitions = compile
+	definitions = walker.Dispatch('definitions')
 
-	define = walker.Dispatch('define')
-
-	def defineDefs(self, tdefs):
+	def definitionsDefs(self, tdefs):
+		for tdef in tdefs:
+			self.predefine(tdef)
+		self.stmt('')
 		for tdef in tdefs:
 			self.define(tdef)
 			self.stmt('')
 
-	def defineVarDef(self, n, t):
+		return "\n".join(self.stmts)
+
+
+	predefine = walker.Dispatch('predefine')
+
+	def predefineVarDef(self, n, t):
 		n = self.id(n)
 		t = self.type(t)
 		if t is not None:
@@ -63,11 +66,37 @@ class Compiler(walker.Walker):
 			return None
 		return t
 
+	def predefineTransfDef(self, n, t):
+		n = self.id(n)
+		if self.debug:
+			self.stmt("%s = transf.lib.debug.Trace(None, name=%r)" % (n, n))
+		else:
+			self.stmt("%s = transf.util.Proxy()" % (n,))
+
+	def predefineMacroDef(self, n, a, t):
+		pass
+
+
+	define = walker.Dispatch('define')
+
+	def defineVarDef(self, n, t):
+		pass
+
+	def type(self, t):
+		t = self._str(t)
+		if t == "term":
+			return "transf.types.term.Term"
+		if t == "table":
+			return "transf.types.table.Table"
+		if t == "extern":
+			return None
+		return t
+
 	def defineTransfDef(self, n, t):
 		self.args = set()
 		n = self.id(n)
 		t = self.doTransf(n, t)
-		self.stmt("%s = %s" % (n, t))
+		self.stmt("%s.subject = %s" % (n, t))
 		if self.locals:
 			self.stmt("del %s" % ",".join([self.local(var) for var in self.locals]))
 		self.args = set()
@@ -84,6 +113,8 @@ class Compiler(walker.Walker):
 			self.stmt("def %s(%s):" % (n, a))
 			self.indent += 1
 			t = self.doTransf(n, t)
+			if self.debug:
+				t = "transf.lib.debug.Trace(%s, %r)" % (t, n)
 			self.stmt("return %s" % t)
 			self.indent -= 1
 		else:
@@ -91,6 +122,8 @@ class Compiler(walker.Walker):
 			self.stmt("def _tmp(%s):" % a)
 			self.indent += 1
 			t = self.doTransf(n, t)
+			if self.debug:
+				t = "transf.lib.debug.Trace(%s, %r)" % (t, n)
 			self.stmt("return %s" % t)
 			self.indent -= 1
 			self.stmt("%s = _tmp" % n)
@@ -104,9 +137,8 @@ class Compiler(walker.Walker):
 		if vs:
 			vs = "[" + ",".join([self.local(v) for v in vs]) + "]"
 			t =  "transf.lib.scope.Scope(%s, %s)" % (vs, t)
-		if self.debug:
-			t = "transf.lib.debug.Trace(%s, %r)" % (t, n)
 		return t
+
 
 	transf = walker.Dispatch('transf')
 

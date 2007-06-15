@@ -169,7 +169,6 @@ ppBinaryOp =
 |	Gt -> ">"
 |	GtEq -> ">="
 
-exprKern = util.Proxy()
 
 SubExpr(Cmp) =
 	?[pprec, rest] ;
@@ -184,7 +183,7 @@ SubExpr(Cmp) =
 subExpr = SubExpr(arith.Gt)
 subExprEq = SubExpr(arith.Geq)
 
-exprKern.subject =
+exprKern =
 	( [prec,rest] -> rest ) ;
 	Path((
 	Lit(Int(_,_), value)
@@ -219,8 +218,6 @@ ppExpr =
 ppArg =
 	Arg(type, name)
 		-> H([ <ppType type>, " ", name ])
-
-ppStmt = util.Proxy()
 
 ppStmts =
 	!V( <Map(ppStmt)> )
@@ -309,7 +306,7 @@ ppFunction =
 ppDefault =
 	!H([ <stmtKern>, ";" ])
 
-ppStmt.subject = Path(
+ppStmt = Path(
 	switch project.name
 		case "Label": ppLabel
 		case "Block": ppBlock

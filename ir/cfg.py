@@ -117,9 +117,6 @@ addTerminalNode =
 #######################################################################
 # Flow Traversal
 
-doStmt =
-	Proxy()
-
 doStmts =
 	MapR(doStmt)
 
@@ -216,7 +213,7 @@ doModule =
 		addTerminalNode
 	end
 
-doStmt.subject =
+doStmt =
 	with this in
 		this := getNodeId ;
 		switch project.name
@@ -318,7 +315,9 @@ def main():
 
 		#return
 		import gtk
-		import ui.dotview
+		# HACK: name collision
+		#import ui.dotview
+		ui = __import__("ui.dotview")
 		win = ui.dotview.DotWindow()
 		win.set_dotcode(dotcode)
 		win.connect('destroy', gtk.main_quit)
