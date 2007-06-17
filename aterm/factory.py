@@ -40,42 +40,37 @@ class Factory(object):
 		self.parseCache = {}
 		self.__nil = term.Nil(self)
 
-	def makeInt(self, value, annotations = None):
+	def makeInt(self, value):
 		'''Creates a new integer literal term'''
-		return term.Integer(self, value, annotations)
+		return term.Integer(self, value)
 
-	def makeReal(self, value, annotations = None):
+	def makeReal(self, value):
 		'''Creates a new real literal term'''
-		return term.Real(self, value, annotations)
+		return term.Real(self, value)
 
-	def makeStr(self, value, annotations = None):
+	def makeStr(self, value):
 		'''Creates a new string literal term'''
-		return term.Str(self, value, annotations)
+		return term.Str(self, value)
 
-	def makeNil(self, annotations = None):
+	def makeNil(self):
 		'''Creates a new empty list term'''
-		if annotations:
-			return term.Nil(self, annotations)
-		else:
-			return self.__nil
+		return self.__nil
 
-	def makeCons(self, head, tail = None, annotations = None):
+	def makeCons(self, head, tail = None):
 		'''Creates a new extended list term'''
-		return term.Cons(self, head, tail, annotations)
+		return term.Cons(self, head, tail)
 
-	def makeList(self, seq, annotations = None):
+	def makeList(self, seq):
 		'''Creates a new list from a sequence.'''
 		accum = self.makeNil()
 		for i in xrange(len(seq) - 1, -1, -1):
 			accum = self.makeCons(seq[i], accum)
-		if annotations is not None:
-			accum = accum.setAnnotations(annotations)
 		return accum
 
 	# TODO: add a makeTuple method
 
 	def makeAppl(self, name, args = None, annotations = None):
-		'''Creates a new appplication term'''
+		'''Creates a new application term'''
 		return term.Appl(self, name, args, annotations)
 
 	def coerce(self, value, name = None):

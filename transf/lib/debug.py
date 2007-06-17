@@ -187,11 +187,11 @@ class TestCase(transformation.Transformation):
 		input = self._input.apply(trm, ctx)
 		expectedOutput = self._expectedOutput.apply(trm, ctx)
 		output = self._transf.apply(input, ctx)
-		if not expectedOutput.isEqual(output):
+		if not expectedOutput.isEquivalent(output):
 			# TODO: use diff lib
 			sys.stderr.write("%s\n" % expectedOutput)
 			sys.stderr.write("%s\n" % output)
-			self.fail(msg = "%s -> %s (!= %s)" %(input, output, expectedOutput))
+			raise AssertionError("%s -> %s (!= %s)" %(input, output, expectedOutput))
 		return output
 
 	def runTest(self):

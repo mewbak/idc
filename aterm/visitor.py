@@ -54,7 +54,7 @@ class IncrementalVisitor(Visitor):
 		new_head = self.visitHead(old_head, *args, **kargs)
 		new_tail = self.visitTail(old_tail, *args, **kargs)
 		if new_head is not old_head or new_tail is not old_tail:
-			return term.factory.makeCons(new_head, new_tail, term.annotations)
+			return term.factory.makeCons(new_head, new_tail)
 		else:
 			return term
 

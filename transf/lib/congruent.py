@@ -27,11 +27,7 @@ class _ConsL(_common._Cons):
 		new_tail = self.tail.apply(old_tail, ctx)
 
 		if new_head is not old_head or new_tail is not old_tail:
-			return term.factory.makeCons(
-				new_head,
-				new_tail,
-				term.annotations
-			)
+			return term.factory.makeCons(new_head, new_tail)
 		else:
 			return term
 
@@ -52,11 +48,7 @@ class _ConsR(_common._Cons):
 		new_head = self.head.apply(old_head, ctx)
 
 		if new_head is not old_head or new_tail is not old_tail:
-			return term.factory.makeCons(
-				new_head,
-				new_tail,
-				term.annotations
-			)
+			return term.factory.makeCons(new_head, new_tail)
 		else:
 			return term
 

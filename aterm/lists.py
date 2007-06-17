@@ -80,8 +80,7 @@ class _Extend(_Operation):
 	def visitCons(self, term, other):
 		return term.factory.makeCons(
 			term.head,
-			self.visit(term.tail, other),
-			term.annotations
+			self.visit(term.tail, other)
 		)
 
 def extend(term, other):
@@ -109,7 +108,6 @@ class _Insert(_Operation):
 			return term.factory.makeCons(
 				term.head,
 				self.visit(term.tail, index - 1, other),
-				term.annotations,
 			)
 
 def insert(term, index, other):
@@ -160,7 +158,6 @@ class _Splitter(visitor.Visitor):
 			return term.factory.makeCons(
 				term.head,
 				head,
-				term.annotations
 			), tail
 
 def split(term, index):

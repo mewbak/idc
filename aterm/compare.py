@@ -63,11 +63,11 @@ class _EqualityComparator(_EquivalenceComparator):
 		if terms is None:
 			return others is None
 		else:
-			return others is not None and isEquivalent(terms, others)
+			return others is not None and self.visit(terms, others)
 
-	def visit(self, term, other):
+	def visitAppl(self, term, other):
 		return \
-			_EquivalenceComparator.visit(self, term, other) and \
+			_EquivalenceComparator.visitAppl(self, term, other) and \
 			self.compareAnnos(term.annotations, other.annotations)
 
 def isEqual(term, other):

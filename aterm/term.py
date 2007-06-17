@@ -22,14 +22,10 @@ class Term(object):
 
 	# NOTE: most methods defer the execution to visitors
 
-	__slots__ = ['factory', 'annotations']
+	__slots__ = ['factory']
 
-	def __init__(self, factory, annotations = None):
+	def __init__(self, factory):
 		self.factory = factory
-		if annotations:
-			self.annotations = annotations
-		else:
-			self.annotations = None
 
 	# XXX: this has a large inpact in performance
 	if __debug__ and False:
@@ -146,8 +142,8 @@ class Lit(Term):
 
 	__slots__ = ['value']
 
-	def __init__(self, factory, value, annotations = None):
-		Term.__init__(self, factory, annotations)
+	def __init__(self, factory, value):
+		Term.__init__(self, factory)
 		self.value = value
 
 	def getValue(self):
@@ -161,10 +157,10 @@ class Integer(Lit):
 
 	type = types.INT
 
-	def __init__(self, factory, value, annotations = None):
+	def __init__(self, factory, value):
 		if not isinstance(value, (int, long)):
 			raise TypeError('value is not an integer', value)
-		Lit.__init__(self, factory, value, annotations)
+		Lit.__init__(self, factory, value)
 
 	def __int__(self):
 		return int(self.value)
@@ -180,10 +176,10 @@ class Real(Lit):
 
 	type = types.REAL
 
-	def __init__(self, factory, value, annotations = None):
+	def __init__(self, factory, value):
 		if not isinstance(value, float):
 			raise TypeError('value is not a float', value)
-		Lit.__init__(self, factory, value, annotations)
+		Lit.__init__(self, factory, value)
 
 	def __float__(self):
 		return float(self.value)
@@ -199,10 +195,10 @@ class Str(Lit):
 
 	type = types.STR
 
-	def __init__(self, factory, value, annotations = None):
+	def __init__(self, factory, value):
 		if not isinstance(value, str):
 			raise TypeError('value is not a string', value)
-		Lit.__init__(self, factory, value, annotations)
+		Lit.__init__(self, factory, value)
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitStr(self, *args, **kargs)
@@ -250,8 +246,8 @@ class Nil(List):
 
 	type = types.NIL
 
-	def __init__(self, factory, annotations = None):
-		List.__init__(self, factory, annotations)
+	def __init__(self, factory):
+		List.__init__(self, factory)
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitNil(self, *args, **kargs)
@@ -264,8 +260,8 @@ class Cons(List):
 
 	type = types.CONS
 
-	def __init__(self, factory, head, tail = None, annotations = None):
-		List.__init__(self, factory, annotations)
+	def __init__(self, factory, head, tail = None):
+		List.__init__(self, factory)
 		if not isinstance(head, Term):
 			raise TypeError("head is not a term", head)
 		self.head = head
@@ -283,12 +279,12 @@ class Cons(List):
 class Appl(Term):
 	'''Application term.'''
 
-	__slots__ = ['name', 'args']
+	__slots__ = ['name', 'args', 'annotations']
 
 	type = types.APPL
 
 	def __init__(self, factory, name, args = None, annotations = None):
-		Term.__init__(self, factory, annotations)
+		Term.__init__(self, factory)
 		if not isinstance(name, basestring):
 			raise TypeError("name is not a string", name)
 		self.name = name
@@ -299,6 +295,10 @@ class Appl(Term):
 		for arg in self.args:
 			if not isinstance(arg, Term):
 				raise TypeError("arg is not a term", arg)
+		if annotations:
+			self.annotations = annotations
+		else:
+			self.annotations = None
 
 	def getArity(self):
 		return len(self.args)

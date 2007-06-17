@@ -177,13 +177,6 @@ class _Annotator(visitor.IncrementalVisitor):
 		else:
 			self.func = func
 
-	def visit(self, term, path, index):
-		term = visitor.IncrementalVisitor.visit(self, term, path, index)
-		if self.func(term):
-			return term.setAnnotation(self._path, term.factory.make(self._path, path))
-		else:
-			return term
-
 	def visitTerm(self, term, path, index):
 		return term
 
@@ -196,7 +189,7 @@ class _Annotator(visitor.IncrementalVisitor):
 		return visitor.IncrementalVisitor.visit(self, term, path, index + 1)
 
 	def visitAppl(self, term, path, index):
-		return term.factory.makeAppl(
+		term = term.factory.makeAppl(
 			term.name,
 			[self.visit(
 					arg,
@@ -206,6 +199,10 @@ class _Annotator(visitor.IncrementalVisitor):
 			],
 			term.annotations,
 		)
+		if self.func(term):
+			return term.setAnnotation(self._path, term.factory.make(self._path, path))
+		else:
+			return term
 
 def annotate(term, root = None, func = None):
 	'''Recursively annotates the terms and all subterms with their
@@ -220,8 +217,7 @@ class _DeAnnotator(_Annotator):
 
 	_path = 'Path(_)'
 
-	def visit(self, term, path, index):
-		term = visitor.IncrementalVisitor.visit(self, term, path, index)
+	def visitAppl(self, term, path, index):
 		return term.removeAnnotation(self._path)
 
 def deannotate(term):

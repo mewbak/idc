@@ -168,7 +168,7 @@ class TestTerm(unittest.TestCase):
 						result = term1.isEqual(term2)
 						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 
-						if expectedResult:
+						if expectedResult and term2.type == types.APPL:
 							term2 = term2.setAnnotation("A", factory.parse("1"))
 
 							result = term1.isEquivalent(term2)
@@ -369,6 +369,8 @@ class TestTerm(unittest.TestCase):
 		for terms1Str in self.identityTestCases:
 			for term1Str in terms1Str:
 				term1 = factory.parse(term1Str)
+				if term1.type != types.APPL:
+					continue
 
 				term = term1
 				self.failUnlessEqual(term.getAnnotations(), factory.parse("[]"))
@@ -426,6 +428,7 @@ class TestList(unittest.TestCase):
 		('[0,1,2]', 2, 3, '[0,1,X(2)]'),
 		('[0,1,2]', 3, 3, '[0,1,2]'),
 	]
+
 
 
 class TestPath(unittest.TestCase):
@@ -511,13 +514,13 @@ class TestPath(unittest.TestCase):
 			self.failUnlessEqual(result, expectedResult, '%s . %s == %s (!= %s)' % (termStr, pathStr, result, expectedResult))
 
 	annotateTestCases = [
-		('1', '1{Path([])}'),
-		('[1,2]', '[1{Path([0])},2{Path([1])}]{Path([])}'),
-		('C(1,2)', 'C(1{Path([0])},2{Path([1])}){Path([])}'),
-		('[[[]]]', '[[[]{Path([0,0])}]{Path([0])}]{Path([])}'),
+		('A', 'A{Path([])}'),
+		('[A,B]', '[A{Path([0])},B{Path([1])}]'),
+		('C(A,B)', 'C(A{Path([0])},B{Path([1])}){Path([])}'),
+		('[[C]]', '[[C{Path([0,0])}]]'),
 		('C(C(C))', 'C(C(C{Path([0,0])}){Path([0])}){Path([])}'),
-		('[[1],[2]]', '[[1{Path([0,0])}]{Path([0])},[2{Path([0,1])}]{Path([1])}]{Path([])}'),
-		('C(C(1),C(2))', 'C(C(1{Path([0,0])}){Path([0])},C(2{Path([0,1])}){Path([1])}){Path([])}'),
+		('[[A],[B]]', '[[A{Path([0,0])}],[B{Path([0,1])}]]'),
+		('C(C(A),C(B))', 'C(C(A{Path([0,0])}){Path([0])},C(B{Path([0,1])}){Path([1])}){Path([])}'),
 	]
 
 	def testAnnotate(self):
@@ -525,6 +528,13 @@ class TestPath(unittest.TestCase):
 			term = factory.parse(termStr)
 			expectedResult = factory.parse(expectedResultStr)
 			result = path.annotate(term)
+			self.failUnlessEqual(result, expectedResult)
+
+	def testDeAnnotate(self):
+		for expectedResultStr, termStr in self.annotateTestCases:
+			term = factory.parse(termStr)
+			expectedResult = factory.parse(expectedResultStr)
+			result = path.deannotate(term)
 			self.failUnlessEqual(result, expectedResult)
 
 

@@ -2,6 +2,7 @@
 
 
 from aterm import visitor
+from aterm import types
 
 
 def getAll(term):
@@ -21,21 +22,6 @@ class _Setter(visitor.Visitor):
 	def visitTerm(self, term):
 		assert False
 
-	def visitInt(self, term):
-		return term.factory.makeInt(term.value, self.annos)
-
-	def visitReal(self, term):
-		return term.factory.makeReal(term.value, self.annos)
-
-	def visitStr(self, term):
-		return term.factory.makeStr(term.value, self.annos)
-
-	def visitNil(self, term):
-		return term.factory.makeNil(self.annos)
-
-	def visitCons(self, term):
-		return term.factory.makeCons(term.head, term.tail, self.annos)
-
 	def visitAppl(self, term):
 		return term.factory.makeAppl(term.name, term.args, self.annos)
 
@@ -43,6 +29,8 @@ def setAll(term, annos):
 	'''Return a copy of the term with the given annotations.'''
 	if not annos:
 		annos = None
+	if term.type != types.APPL:
+		return term
 	if term.annotations is annos:
 		return term
 	else:
@@ -73,7 +61,7 @@ def get(term, label):
 	'''Gets an annotation associated with this label.'''
 	if not isinstance(label, basestring):
 		raise TypeError("label is not a string", label)
-	if term.annotations:
+	if term.type == types.APPL and term.annotations:
 		getter = _Getter(label)
 		anno = term.annotations.accept(getter)
 		if anno is not None:
@@ -86,6 +74,8 @@ def set(term, label, anno):
 	annotation associated with this label added or updated.'''
 	if not isinstance(label, basestring):
 		raise TypeError("label is not a string", label)
+	if term.type != types.APPL:
+		return term
 	if term.annotations:
 		remover = _Remover(label)
 		annos = term.annotations.accept(remover)
@@ -114,7 +104,7 @@ class _Remover(visitor.Visitor):
 		elif tail is term.tail:
 			return term
 		else:
-			return term.factory.makeCons(term.head, tail, term.annotations)
+			return term.factory.makeCons(term.head, tail)
 
 
 def remove(term, label):
@@ -122,7 +112,7 @@ def remove(term, label):
 	annotation associated with this label removed.'''
 	if not isinstance(label, basestring):
 		raise TypeError("label is not a string", label)
-	if term.annotations:
+	if term.type == types.APPL and term.annotations:
 		remover = _Remover(label)
 		annos = term.annotations.accept(remover)
 		return setAll(term, annos)

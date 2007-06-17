@@ -25,7 +25,6 @@ class TextWriter(Writer):
 
 	def visitInt(self, term):
 		self.fp.write(str(term.value))
-		self.writeAnnotations(term)
 
 	def visitReal(self, term):
 		value = term.value
@@ -33,7 +32,6 @@ class TextWriter(Writer):
 			self.fp.write('%0.1f' % value)
 		else:
 			self.fp.write('%g' % value)
-		self.writeAnnotations(term)
 
 	def visitStr(self, term):
 		s = str(term.value)
@@ -42,12 +40,10 @@ class TextWriter(Writer):
 		s = s.replace('\r', '\\r')
 		s = s.replace('\n', '\\n')
 		self.fp.write('"' + s + '"')
-		self.writeAnnotations(term)
 
 	def visitNil(self, term, inside_list = False):
 		if not inside_list:
 			self.fp.write('[]')
-			self.writeAnnotations(term)
 
 	def visitCons(self, term, inside_list = False):
 		if not inside_list:
@@ -61,7 +57,6 @@ class TextWriter(Writer):
 			self.visit(tail, inside_list = True)
 		if not inside_list:
 			self.fp.write(']')
-			self.writeAnnotations(term)
 
 	def visitAppl(self, term):
 		self.fp.write(term.name)
@@ -103,7 +98,6 @@ class AbbrevTextWriter(TextWriter):
 
 		if not inside_list:
 			self.fp.write(']')
-			self.writeAnnotations(term)
 
-
+# TODO: implement a pretty-printer
 # TODO: implement a XML writer

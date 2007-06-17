@@ -44,8 +44,8 @@ def structuralHash(term):
 
 class _FullHash(_StructuralHash):
 
-	def visit(self, term):
-		term_hash = _StructuralHash.visit(self, term)
+	def visitAppl(self, term):
+		term_hash = _StructuralHash.visitAppl(self, term)
 		if term.annotations:
 			annos_hash = structuralHash(term.annotations)
 			return hash(term_hash, annos_hash)
