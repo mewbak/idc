@@ -42,7 +42,7 @@ options {
     def handleAppl(self, name, args):
         raise NotImplementedError
 
-    def handleAnnos(self, name, args):
+    def handleAnnos(self, name, args, annos=None):
         raise NotImplementedError
 
     def handleWildcard(self):
@@ -54,7 +54,7 @@ options {
     def handleSeq(self, pre, post):
         raise NotImplementedError
 
-    def handleApplCons(self, name, args):
+    def handleApplCons(self, name, args, annos=None):
         raise NotImplementedError
 }
 
@@ -64,14 +64,6 @@ do_term returns [res]
 	;
 
 term returns [res]
-	: res=term_atom
-		( options { greedy = true; }
-		: LCURLY annos=term_list RCURLY
-			{ res = self.handleAnnos(res, annos) }
-		)?
-	;
-
-term_atom returns [res]
 	: ival:INT
 		{ res = self.handleInt(int(ival.getText())) }
 	| rval:REAL
@@ -88,18 +80,30 @@ term_atom returns [res]
 		|
 			{ args = [] }
 		)
+		( LCURLY annos=term_list RCURLY
+			{ res = self.handleAppl(name, args, annos) }
+		|
 			{ res = self.handleAppl(name, args) }
+		)
 	| WILDCARD
 			{ res = self.handleWildcard() }
 		( LPAREN args=term_list RPAREN
-			{ res = self.handleApplCons(res, args) }
+			( LCURLY annos=term_list RCURLY
+				{ res = self.handleApplCons(res, args, annos) }
+			|
+				{ res = self.handleApplCons(res, args) }
+			)
 		)?
 	| vname:VAR
 			{ res = self.handleVar(vname.getText()) }
 		( ASSIGN pattern=term
 			{ res = self.handleSeq(pattern, res) }
 		| LPAREN args=term_list RPAREN
-			{ res = self.handleApplCons(res, args) }
+			( LCURLY annos=term_list RCURLY
+				{ res = self.handleApplCons(res, args, annos) }
+			|
+				{ res = self.handleApplCons(res, args) }
+			)
 		)?
 	;
 

@@ -197,12 +197,9 @@ class Parser(parser.Parser):
 	def handleCons(self, head, tail):
 		return Cons(head, tail)
 
-	def handleAppl(self, name, args):
-		return Appl(name, args)
-
-	def handleAnnos(self, term, annos):
+	def handleAppl(self, name, args, annos=None):
 		# ignore annotations
-		return term
+		return Appl(name, args)
 
 	def handleWildcard(self):
 		return Wildcard()
@@ -213,5 +210,6 @@ class Parser(parser.Parser):
 	def handleSeq(self, pre, post):
 		return Seq(pre, post)
 
-	def handleApplCons(self, name, args):
+	def handleApplCons(self, name, args, annos=None):
+		# ignore annotations
 		return ApplCons(name, args)

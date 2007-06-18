@@ -10,10 +10,18 @@ import aterm.types
 from sets import Set as set
 
 
+###############################################################################
+# Exception hierarchy
+
+
 class MismatchException(Exception):
 	'''Description exception.'''
 
 	pass
+
+
+###############################################################################
+# Class hierarchy
 
 
 class Type:
@@ -177,6 +185,10 @@ class Description:
 
 
 
+###############################################################################
+# Parsing
+
+
 def _buildParser():
 	from pyparsing import Word, Group, Optional, Literal, delimitedList, OneOrMore, restOfLine, Suppress
 
@@ -236,6 +248,10 @@ def parse(buf):
 		resProductions.append(Production(productionName, resConstructors))
 	resDescription = Description(resProductions)
 	return resDescription
+
+
+###############################################################################
+# Unit tests
 
 
 import unittest

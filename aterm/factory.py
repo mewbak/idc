@@ -191,11 +191,8 @@ class Parser(parser.Parser):
 	def handleCons(self, head, tail):
 		return factory.makeCons(head, tail)
 
-	def handleAppl(self, name, args):
-		return factory.makeAppl(name, args)
-
-	def handleAnnos(self, term, annos):
-		return term.setAnnotations(annos)
+	def handleAppl(self, name, args, annos = None):
+		return factory.makeAppl(name, args, annos)
 
 	def handleWildcard(self):
 		raise exception.ParseError('wildcard in term')
@@ -206,5 +203,5 @@ class Parser(parser.Parser):
 	def handleSeq(self, pre, post):
 		assert False
 
-	def handleApplCons(self, name, args):
+	def handleApplCons(self, name, args, annos = None):
 		assert False

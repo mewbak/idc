@@ -343,8 +343,8 @@ if __name__ == '__main__':
 
 	exprTestCases = [
 		('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Sym("x"))', '1 + x\n'),
-		('Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])}', ''),
-		('Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}', '')
+		('Sym("eax"){Path([1,1,0])}', ''),
+		('Lit(Int(32,Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234){Path([2,1,0])}){Path([1,0]),Id,2}', '')
 	]
 
 	for inputStr, output in exprTestCases:
@@ -363,8 +363,8 @@ if __name__ == '__main__':
 		('Asm("ret",[])', 'asm("ret");\n'),
 		('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);\n'),
 		('Function(Void,"main",[],[])', 'void main()\n{\n}\n'),
-		('Assign(Void,Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
-		('Assign(Blob(32{Path([0,0,1,0])}){Path([0,1,0])},Sym("eax"{Path([0,1,1,0])}){Path([1,1,0])},Lit(Int(32{Path([0,0,2,1,0])},Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234{Path([1,2,1,0])}){Path([2,1,0])}){Path([1,0]),Id,2}',''),
+		('Assign(Void,Sym("eax"){Path([1,1,0])},Lit(Int(32,Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234){Path([2,1,0])}){Path([1,0]),Id,2}',''),
+		('Assign(Blob(32){Path([0,1,0])},Sym("eax"){Path([1,1,0])},Lit(Int(32,Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234){Path([2,1,0])}){Path([1,0]),Id,2}',''),
 		('If(Binary(Eq(Int(32,Signed)),Binary(Or(Int(32,NoSign)),Binary(Xor(Int(32,NoSign)),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),GoTo(Sym(".L4")),NoStmt)', ''),
 	]
 

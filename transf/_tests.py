@@ -571,13 +571,13 @@ class TestPath(TestMixin, unittest.TestCase):
 		self._testTransf(
 			path.annotate,
 			(
-				('1', '1{Path([])}'),
-				('[1,2]', '[1{Path([0])},2{Path([1])}]{Path([])}'),
-				('C(1,2)', 'C(1{Path([0])},2{Path([1])}){Path([])}'),
-				('[[[]]]', '[[[]{Path([0,0])}]{Path([0])}]{Path([])}'),
+				('A', 'A{Path([])}'),
+				('[A,B]', '[A{Path([0])},B{Path([1])}]'),
+				('C(A,B)', 'C(A{Path([0])},B{Path([1])}){Path([])}'),
+				('[[C]]', '[[C{Path([0,0])}]]'),
 				('C(C(C))', 'C(C(C{Path([0,0])}){Path([0])}){Path([])}'),
-				('[[1],[2]]', '[[1{Path([0,0])}]{Path([0])},[2{Path([0,1])}]{Path([1])}]{Path([])}'),
-				('C(C(1),C(2))', 'C(C(1{Path([0,0])}){Path([0])},C(2{Path([0,1])}){Path([1])}){Path([])}'),
+				('[[A],[B]]', '[[A{Path([0,0])}],[B{Path([0,1])}]]'),
+				('C(C(A),C(B))', 'C(C(A{Path([0,0])}){Path([0])},C(B{Path([0,1])}){Path([1])}){Path([])}'),
 			)
 		)
 
