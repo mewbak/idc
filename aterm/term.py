@@ -86,28 +86,6 @@ class Term(object):
 		'''Accept a visitor.'''
 		raise NotImplementedError
 
-	def getAnnotations(self):
-		'''Returns the annotation list.'''
-		return annotation.getAll(self)
-
-	def setAnnotations(self, annos):
-		'''Modify the annotation list.'''
-		return annotation.setAll(self, annos)
-
-	def getAnnotation(self, label):
-		'''Gets an annotation associated'''
-		return annotation.get(self, label)
-
-	def setAnnotation(self, label, anno):
-		'''Returns a new version of this term with the
-		annotation associated with this label added or updated.'''
-		return annotation.set(self, label, anno)
-
-	def removeAnnotation(self, label):
-		'''Returns a new version of this term with the
-		annotation associated with this label removed.'''
-		return annotation.remove(self, label)
-
 	def writeToTextFile(self, fp):
 		'''Write this term to a file object.'''
 		writer = write.TextWriter(fp)

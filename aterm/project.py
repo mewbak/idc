@@ -41,3 +41,16 @@ class _Subterm(visitor.Visitor):
 def subterm(term, index):
 	'''Project a direct subterm of a term.'''
 	return _Subterm().visit(term, index)
+
+
+class _Annotations(visitor.Visitor):
+
+	def visitTerm(self, term):
+		return term.factory.makeNil()
+
+	def visitAppl(self, term):
+		return term.annotations
+
+def annotations(term):
+	'''Project the annotations of a term.'''
+	return _Annotations().visit(term)

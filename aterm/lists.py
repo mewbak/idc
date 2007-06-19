@@ -135,6 +135,53 @@ def reverse(term):
 
 
 
+class _Filter(_Operation):
+
+	def __init__(self, function):
+		_Operation.__init__(self)
+		self.function = function
+
+	def visitNil(self, term):
+		return term
+
+	def visitCons(self, term):
+		tail = self.visit(term.tail)
+		if not self.function(term.head):
+			return tail
+		elif tail is term.tail:
+			return term
+		else:
+			return term.factory.makeCons(term.head, tail)
+
+def filter(function, term):
+	"""Return a list term with the elements for which the function returns
+	true."""
+	filter = _Filter(function)
+	return filter.visit(term)
+
+
+class _Fetcher(_Operation):
+
+	def __init__(self, function):
+		_Operation.__init__(self)
+		self.function = function
+
+	def visitNil(self, term):
+		return None
+
+	def visitCons(self, term):
+		if self.function(term.head):
+			return term.head
+		else:
+			return self.visit(term.tail)
+
+def fetch(function, term):
+	"""Return a the first term of a list term for which the function returns
+	true."""
+	fetcher = _Fetcher(function)
+	return fetcher.visit(term)
+
+
 class _Splitter(visitor.Visitor):
 
 	def __init__(self, index):

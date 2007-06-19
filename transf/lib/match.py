@@ -4,6 +4,7 @@
 import aterm.factory
 import aterm.type
 import aterm.term
+import aterm.project
 
 from transf import exception
 from transf import transformation
@@ -187,7 +188,8 @@ def Var(var):
 class Annos(_common.Annos):
 
 	def apply(self, term, ctx):
-		self.annos.apply(term.getAnnotations(), ctx)
+		annos = aterm.project.annotations(term)
+		self.annos.apply(annos, ctx)
 		return term
 
 

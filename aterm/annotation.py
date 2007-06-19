@@ -3,27 +3,14 @@
 
 from aterm import visitor
 from aterm import types
+from aterm import lists
 
 
 def getAll(term):
 	'''Get the list of all annotations of this term.'''
-	if term.annotations is None:
-		return term.factory.makeNil()
-	else:
-		return term.annotations
+	assert term.annotations is not None
+	return term.annotations
 
-
-class _Setter(visitor.Visitor):
-
-	def __init__(self, annos):
-		visitor.Visitor.__init__(self)
-		self.annos = annos
-
-	def visitTerm(self, term):
-		assert False
-
-	def visitAppl(self, term):
-		return term.factory.makeAppl(term.name, term.args, self.annos)
 
 def setAll(term, annos):
 	'''Return a copy of the term with the given annotations.'''
@@ -34,36 +21,16 @@ def setAll(term, annos):
 	if term.annotations is annos:
 		return term
 	else:
-		annotator = _Setter(annos)
-		return term.accept(annotator)
+		return term.factory.makeAppl(term.name, term.args, annos)
 
-
-class _Getter(visitor.Visitor):
-
-	def __init__(self, pattern):
-		visitor.Visitor.__init__(self)
-		self.pattern = pattern
-
-	def visitTerm(self, term):
-		assert False
-
-	def visitNil(self, term):
-		return None
-
-	def visitCons(self, term):
-		# TODO: avoid the repeated pattern parsing
-		if term.factory.match(self.pattern, term.head):
-			return term.head
-		else:
-			return self.visit(term.tail)
 
 def get(term, label):
 	'''Gets an annotation associated with this label.'''
 	if not isinstance(label, basestring):
 		raise TypeError("label is not a string", label)
 	if term.type == types.APPL and term.annotations:
-		getter = _Getter(label)
-		anno = term.annotations.accept(getter)
+		# TODO: avoid the repeated pattern parsing
+		anno = lists.fetch(lambda x: term.factory.match(label, x), term.annotations)
 		if anno is not None:
 			return anno
 	raise ValueError("undefined annotation", label)
@@ -77,34 +44,11 @@ def set(term, label, anno):
 	if term.type != types.APPL:
 		return term
 	if term.annotations:
-		remover = _Remover(label)
-		annos = term.annotations.accept(remover)
+		annos = lists.filter(lambda x: not term.factory.match(label, x), term.annotations)
 	else:
 		annos = term.factory.makeNil()
 	annos = term.factory.makeCons(anno, annos)
 	return setAll(term, annos)
-
-
-class _Remover(visitor.Visitor):
-
-	def __init__(self, pattern):
-		visitor.Visitor.__init__(self)
-		self.pattern = pattern
-
-	def visitTerm(self, term):
-		assert False
-
-	def visitNil(self, term):
-		return term
-
-	def visitCons(self, term):
-		tail = self.visit(term.tail)
-		if term.factory.match(self.pattern, term.head):
-			return tail
-		elif tail is term.tail:
-			return term
-		else:
-			return term.factory.makeCons(term.head, tail)
 
 
 def remove(term, label):
@@ -113,8 +57,7 @@ def remove(term, label):
 	if not isinstance(label, basestring):
 		raise TypeError("label is not a string", label)
 	if term.type == types.APPL and term.annotations:
-		remover = _Remover(label)
-		annos = term.annotations.accept(remover)
+		annos = lists.filter(lambda x: not term.factory.match(label, x), term.annotations)
 		return setAll(term, annos)
 	else:
 		return term
@@ -122,5 +65,5 @@ def remove(term, label):
 
 def removeAll(term):
 	'''Returns a copy of this term with all annotations removed.'''
-	return setAll(term, None)
+	return setAll(term, term.factory.makeNil())
 

@@ -7,6 +7,7 @@ import unittest
 from aterm.factory import factory
 from aterm import types
 from aterm import lists
+from aterm import annotation
 from aterm import path
 
 
@@ -169,7 +170,7 @@ class TestTerm(unittest.TestCase):
 						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 
 						if expectedResult and term2.type == types.APPL:
-							term2 = term2.setAnnotation("A", factory.parse("1"))
+							term2 = annotation.set(term2, "A", factory.parse("1"))
 
 							result = term1.isEquivalent(term2)
 							self.failUnlessEqual(result, True, msg = '%s <=> %s = %r (!= %r)' % (term1Str, term2Str, result, True))
@@ -369,21 +370,21 @@ class TestTerm(unittest.TestCase):
 					continue
 
 				term = term1
-				self.failUnlessEqual(term.getAnnotations(), factory.parse("[]"))
+				self.failUnlessEqual(term.annotations, factory.parse("[]"))
 
-				term = term.setAnnotation("A(_)", factory.parse("A(1)"))
-				self.failUnlessEqual(term.getAnnotations(), factory.parse("[A(1)]"))
+				term = annotation.set(term, "A(_)", factory.parse("A(1)"))
+				self.failUnlessEqual(term.annotations, factory.parse("[A(1)]"))
 
-				term = term.setAnnotation("B(_)", factory.parse("B(2)"))
-				self.failUnlessEqual(term.getAnnotation("A(_)"), factory.parse("A(1)"))
-				self.failUnlessEqual(term.getAnnotation("B(_)"), factory.parse("B(2)"))
+				term = annotation.set(term, "B(_)", factory.parse("B(2)"))
+				self.failUnlessEqual(annotation.get(term, "A(_)"), factory.parse("A(1)"))
+				self.failUnlessEqual(annotation.get(term, "B(_)"), factory.parse("B(2)"))
 
-				term = term.setAnnotation("A(_)", factory.parse("A(3)"))
-				self.failUnlessEqual(term.getAnnotation("A(_)"), factory.parse("A(3)"))
-				self.failUnlessEqual(term.getAnnotation("B(_)"), factory.parse("B(2)"))
+				term = annotation.set(term, "A(_)", factory.parse("A(3)"))
+				self.failUnlessEqual(annotation.get(term, "A(_)"), factory.parse("A(3)"))
+				self.failUnlessEqual(annotation.get(term, "B(_)"), factory.parse("B(2)"))
 
 				try:
-					term.getAnnotation("C(_)")
+					annotation.get(term, "C(_)")
 					self.fail()
 				except ValueError:
 					pass

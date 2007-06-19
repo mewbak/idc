@@ -91,7 +91,7 @@ subterms = Subterms()
 class Annos(transformation.Transformation):
 
 	def apply(self, term, ctx):
-		return term.getAnnotations()
+		return aterm.project.annotations(term)
 
 annos = Annos()
 

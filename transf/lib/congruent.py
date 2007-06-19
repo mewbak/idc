@@ -131,12 +131,11 @@ def Var(var):
 class Annos(_common.Annos):
 
 	def apply(self, term, ctx):
-		old_annos = term.getAnnotations()
-		new_annos = self.annos.apply(old_annos, ctx)
-		if new_annos is not old_annos:
-			return term.setAnnotations(new_annos)
-		else:
-			return term
+		if term.type is aterm.types.APPL:
+			annos = self.annos.apply(term.annotations, ctx)
+			if annos is not term.annotations:
+				return term.factory.makeAppl(term.name, term.args, annos)
+		return term
 
 
 def Anno(anno):

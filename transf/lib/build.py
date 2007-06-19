@@ -7,6 +7,7 @@ in consideration the input term.
 
 import aterm.factory
 import aterm.term
+import aterm.types
 
 from transf import exception
 from transf import transformation
@@ -118,7 +119,10 @@ def Var(var):
 class Annos(_common.Annos):
 
 	def apply(self, term, ctx):
-		return term.setAnnotations(self.annos.apply(term, ctx))
+		if term.type is aterm.types.APPL:
+			annos = self.annos.apply(term, ctx)
+			return term.factory.makeAppl(term.name, term.args, annos)
+		return term
 
 
 _ = _helper.Factory(Int, Real, Str, List, Appl, Var, Term)

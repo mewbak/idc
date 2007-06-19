@@ -5,6 +5,7 @@ from aterm.factory import factory
 from aterm import types
 from aterm import visitor
 from aterm import project
+from aterm import annotation
 
 
 PRECEDENT = -2
@@ -200,7 +201,7 @@ class _Annotator(visitor.IncrementalVisitor):
 			term.annotations,
 		)
 		if self.func(term):
-			return term.setAnnotation(self._path, term.factory.make(self._path, path))
+			return annotation.set(term, self._path, term.factory.make(self._path, path))
 		else:
 			return term
 
@@ -218,7 +219,7 @@ class _DeAnnotator(_Annotator):
 	_path = 'Path(_)'
 
 	def visitAppl(self, term, path, index):
-		return term.removeAnnotation(self._path)
+		return annotation.remove(term, self._path)
 
 def deannotate(term):
 	'''Recursively removes all path annotations.'''
