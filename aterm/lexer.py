@@ -42,7 +42,6 @@ _tokenizer = antlrre.Tokenizer(
 		'}': parser.RCURLY,
 		',': parser.COMMA,
 		'*': parser.STAR,
-		'=': parser.ASSIGN,
 	}
 )
 

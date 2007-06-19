@@ -478,7 +478,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		('?_(_,_)', 'Match(ApplCons(Wildcard,Cons(Wildcard,Cons(Wildcard,Nil))))'),
 		('?x', 'Match(Var("x"))'),
 		('?f(x,y)', 'Match(ApplCons(Var("f"),Cons(Var("x"),Cons(Var("y"),Nil))))'),
-		('?1{A,B,C}', 'Match(Annos(Int(1),Cons(ApplName("A"),Cons(ApplName("B"),Cons(ApplName("C"),Nil)))))'),
+		('?C{X,Y,Z}', 'Match(Annos(ApplName("C"),Cons(ApplName("X"),Cons(ApplName("Y"),Cons(ApplName("Z"),Nil)))))'),
 
 		# build
 		('!1', 'Build(Int(1))'),
@@ -492,7 +492,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		('!_(_,_)', 'Build(ApplCons(Wildcard,Cons(Wildcard,Cons(Wildcard,Nil))))'),
 		('!x', 'Build(Var("x"))'),
 		('!f(x,y)', 'Build(ApplCons(Var("f"),Cons(Var("x"),Cons(Var("y"),Nil))))'),
-		('!1{A,B,C}', 'Build(Annos(Int(1),Cons(ApplName("A"),Cons(ApplName("B"),Cons(ApplName("C"),Nil)))))'),
+		('!C{X,Y,Z}', 'Build(Annos(ApplName("C"),Cons(ApplName("X"),Cons(ApplName("Y"),Cons(ApplName("Z"),Nil)))))'),
 
 		# congruent
 		('~C(1, <id>)', 'Congruent(Appl("C",[Int(1),Wrap(Ident)]))'),

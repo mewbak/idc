@@ -56,7 +56,7 @@ class Factory(object):
 		'''Creates a new empty list term'''
 		return self.__nil
 
-	def makeCons(self, head, tail = None):
+	def makeCons(self, head, tail):
 		'''Creates a new extended list term'''
 		return term.Cons(self, head, tail)
 
@@ -71,6 +71,10 @@ class Factory(object):
 
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new application term'''
+		if args is None:
+			args = ()
+		if annotations is None:
+			annotations = self.makeNil()
 		return term.Appl(self, name, args, annotations)
 
 	def coerce(self, value, name = None):
@@ -199,9 +203,6 @@ class Parser(parser.Parser):
 
 	def handleVar(self, name):
 		raise exception.ParseError('variable in term')
-
-	def handleSeq(self, pre, post):
-		assert False
 
 	def handleApplCons(self, name, args, annos = None):
 		assert False

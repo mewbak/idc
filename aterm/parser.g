@@ -39,19 +39,13 @@ options {
     def handleCons(self, head, tail):
         raise NotImplementedError
 
-    def handleAppl(self, name, args):
-        raise NotImplementedError
-
-    def handleAnnos(self, name, args, annos=None):
+    def handleAppl(self, name, args, annos=None):
         raise NotImplementedError
 
     def handleWildcard(self):
         raise NotImplementedError
 
     def handleVar(self, name):
-        raise NotImplementedError
-
-    def handleSeq(self, pre, post):
         raise NotImplementedError
 
     def handleApplCons(self, name, args, annos=None):
@@ -72,33 +66,24 @@ term returns [res]
 		{ res = self.handleStr(sval.getText()) }
 	| LSQUARE elms=term_list RSQUARE
 		{ res = elms }
-	| LPAREN args=term_args RPAREN
-		{ res = self.handleAppl("", args) }
-	| cname:CONS
+	|
+		( cname:CONS ( LPAREN args=term_args RPAREN | { args = [] } )
 			{ name = cname.getText() }
-		( LPAREN args=term_args RPAREN
-		|
-			{ args = [] }
+		| LPAREN args=term_args RPAREN
+			{ name = "" }
 		)
 		( LCURLY annos=term_list RCURLY
 			{ res = self.handleAppl(name, args, annos) }
 		|
 			{ res = self.handleAppl(name, args) }
 		)
-	| WILDCARD
+	|
+		( WILDCARD
 			{ res = self.handleWildcard() }
-		( LPAREN args=term_list RPAREN
-			( LCURLY annos=term_list RCURLY
-				{ res = self.handleApplCons(res, args, annos) }
-			|
-				{ res = self.handleApplCons(res, args) }
-			)
-		)?
-	| vname:VAR
+		| vname:VAR
 			{ res = self.handleVar(vname.getText()) }
-		( ASSIGN pattern=term
-			{ res = self.handleSeq(pattern, res) }
-		| LPAREN args=term_list RPAREN
+		)
+		( LPAREN args=term_list RPAREN
 			( LCURLY annos=term_list RCURLY
 				{ res = self.handleApplCons(res, args, annos) }
 			|

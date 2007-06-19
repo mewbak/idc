@@ -165,8 +165,5 @@ class Parser(parser.Parser):
 	def handleVar(self, name):
 		return Var(name)
 
-	def handleSeq(self, pre, post):
-		raise exception.ParseError('variable sub-pattern in a build pattern')
-
 	def handleApplCons(self, name, args, annos = Nil()):
 		return ApplCons(name, args, annos)

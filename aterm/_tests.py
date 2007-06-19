@@ -239,10 +239,6 @@ class TestTerm(unittest.TestCase):
 		# tuples
 		('(1,2,3)', '_(_,*)', True, ['""', '1', '[2,3]'], {}),
 		('(1,2,3)', 'f(x,*y)', True, [], {'f':'""', 'x':'1', 'y':'[2,3]'}),
-
-		# assigns
-		('C(1,2)', 't=_(_,_)', True, [], {'t':'C(1,2)'}),
-		('C(1,2)', 't=f(x,y)', True, [], {'t':'C(1,2)', 'f':'"C"', 'x':'1', 'y':'2'}),
 	]
 
 	def testMatch(self):

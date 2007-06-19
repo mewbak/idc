@@ -260,17 +260,14 @@ class Cons(List):
 
 	type = types.CONS
 
-	def __init__(self, factory, head, tail = None):
+	def __init__(self, factory, head, tail):
 		List.__init__(self, factory)
 		if not isinstance(head, Term):
 			raise TypeError("head is not a term", head)
 		self.head = head
-		if tail is None:
-			self.tail = self.factory.makeNil()
-		else:
-			if not isinstance(tail, List):
-				raise TypeError("tail is not a list term", tail)
-			self.tail = tail
+		if not isinstance(tail, List):
+			raise TypeError("tail is not a list term", tail)
+		self.tail = tail
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitCons(self, *args, **kargs)
@@ -283,22 +280,18 @@ class Appl(Term):
 
 	type = types.APPL
 
-	def __init__(self, factory, name, args = None, annotations = None):
+	def __init__(self, factory, name, args, annotations):
 		Term.__init__(self, factory)
 		if not isinstance(name, basestring):
 			raise TypeError("name is not a string", name)
 		self.name = name
-		if args is None:
-			self.args = ()
-		else:
-			self.args = tuple(args)
+		self.args = tuple(args)
 		for arg in self.args:
 			if not isinstance(arg, Term):
 				raise TypeError("arg is not a term", arg)
-		if annotations:
-			self.annotations = annotations
-		else:
-			self.annotations = None
+		if not isinstance(annotations, List):
+			raise TypeError("annotations is not a list", annotations)
+		self.annotations = annotations
 
 	def getArity(self):
 		return len(self.args)

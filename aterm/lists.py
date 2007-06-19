@@ -37,7 +37,7 @@ def length(term):
 	return _Length().visit(term)
 
 
-class Item(_Operation):
+class _Item(_Operation):
 
 	def visitNil(self, term, index):
 		raise IndexError('index out of bounds')
@@ -50,7 +50,7 @@ class Item(_Operation):
 
 def item(term, index):
 	'''Get item at given index of a list term.'''
-	return Item().visit(term, index)
+	return _Item().visit(term, index)
 
 
 class Iter(_Operation):

@@ -281,13 +281,6 @@ term
 	;
 
 term_atom
-	: term_core
-		( LCURLY! term_list RCURLY!
-			{ ## = #(#[ATAPPL,"Annos"], ##) }
-		)?
-	;
-
-term_core
 	: INT
 		{ ## = #(#[ATAPPL,"Int"], #(#[ATINT],##)) }
 	| REAL
@@ -295,7 +288,14 @@ term_core
 	| STR
 		{ ## = #(#[ATAPPL,"Str"], #(#[ATSTR],##)) }
 	| LSQUARE! term_list RSQUARE!
-	| term_name
+	| term_appl
+		( LCURLY! term_list RCURLY!
+			{ ## = #(#[ATAPPL,"Annos"], ##) }
+		)?
+	;
+
+term_appl
+	: term_name
 		{ ## = #(#[ATAPPL,"ApplName"], ##) }
 //	| term_args
 //		{ ## = #(#[ATAPPL,"Appl"], #[ATSTR,""], ##) }

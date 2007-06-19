@@ -160,25 +160,6 @@ class Var(Matcher):
 			return value == term
 
 
-class Seq(Matcher):
-	'''Matcher sequence. Used for variable sub-patterns.'''
-
-	def __init__(self, pre, post):
-		Matcher.__init__(self)
-		assert isinstance(pre, Matcher)
-		assert isinstance(post, Matcher)
-		self.pre = pre
-		self.post = post
-
-	def visitTerm(self, term, match):
-		temp = Match()
-		temp.kargs = match.kargs
-		return (
-			self.pre.visit(term, temp) and
-			self.post.visit(term, match)
-		)
-
-
 class Parser(parser.Parser):
 	'''Parse a term pattern into a tree of term matchers.'''
 
@@ -206,9 +187,6 @@ class Parser(parser.Parser):
 
 	def handleVar(self, name):
 		return Var(name)
-
-	def handleSeq(self, pre, post):
-		return Seq(pre, post)
 
 	def handleApplCons(self, name, args, annos=None):
 		# ignore annotations
