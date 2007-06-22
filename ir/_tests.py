@@ -7,7 +7,6 @@ import aterm.factory
 from lang import box
 
 import ir.check
-import ir.expr
 import ir.pprint
 
 
@@ -71,33 +70,6 @@ class TestPrettyPrint(unittest.TestCase):
 				output = box.stringify(boxes)
 
 				self.failUnlessEqual(output, expectedOutput)
-
-	exprTestCases = [
-		('Sym("x")', None, lambda x: -x, 'Unary(Neg(Int(32,NoSign)),Sym("x"))'),
-		('Sym("x")', 1, lambda x, y: x + 1, 'Binary(Plus(Int(32,NoSign)),Sym("x"),Lit(Int(32,NoSign),1))'),
-		('Sym("x")', 1, lambda x, y: 1 << x, 'Binary(LShift(Int(32,NoSign)),Lit(Int(32,NoSign),1),Sym("x"))'),
-	]
-
-	def testExpr(self):
-		for lexpr, rexpr, func, expectedResultStr in self.exprTestCases:
-			if lexpr is not None:
-				if isinstance(lexpr, basestring):
-					lexpr = self.factory.parse(lexpr)
-					lexpr = ir.expr.Expr(lexpr)
-			if rexpr is not None:
-				if isinstance(rexpr, basestring):
-					rexpr = self.factory.parse(rexpr)
-					rexpr = ir.expr.Expr(rexpr)
-			expectedResult = self.factory.parse(expectedResultStr)
-
-			if rexpr is None:
-				result = func(lexpr)
-			else:
-				result = func(lexpr, rexpr)
-			result = result.term
-
-			self.failUnlessEqual(result, expectedResult)
-
 
 
 if __name__ == '__main__':
