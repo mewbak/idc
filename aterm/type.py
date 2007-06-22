@@ -4,6 +4,9 @@
 from aterm import types
 
 
+# TODO: merge into the types module
+
+
 def anInt(term):
 	'''Integer term type verifier.'''
 	return term.type == types.INT

@@ -81,8 +81,6 @@ class Imap:
 
 class DotWindow(gtk.Window):
 
-	# TODO: add zoom/pan as in http://mirageiv.berlios.de/
-
 	ui = '''
 	<ui>
 		<toolbar name="ToolBar">
