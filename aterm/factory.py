@@ -67,7 +67,9 @@ class Factory(object):
 			accum = self.makeCons(seq[i], accum)
 		return accum
 
-	# TODO: add a makeTuple method
+	def makeTuple(self, args = None, annotations = None):
+		'''Creates a new tuple term'''
+		return self.makeAppl("", args, annotations)
 
 	def makeAppl(self, name, args = None, annotations = None):
 		'''Creates a new application term'''
