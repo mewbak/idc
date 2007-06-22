@@ -7,7 +7,6 @@
 from aterm import types
 from aterm import compare
 from aterm import hash
-from aterm import annotation
 from aterm import write
 from aterm import convert
 from aterm import lists
@@ -273,6 +272,14 @@ class Appl(Term):
 
 	def getArity(self):
 		return len(self.args)
+
+	def setAnnotations(self, annotations):
+		'''Return a copy of this term with the given annotations.'''
+		return self.factory.makeAppl(self.name, self.args, annotations)
+
+	def removeAnnotations(self):
+		'''Return a copy of this term with all annotations removed.'''
+		return self.factory.makeAppl(self.name, self.args)
 
 	def accept(self, visitor, *args, **kargs):
 		return visitor.visitAppl(self, *args, **kargs)

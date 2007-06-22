@@ -335,7 +335,7 @@ class Compiler(walker.Walker):
 	def staticAnnos(self, t, a):
 		t = self.static(t)
 		a = self.static(a)
-		return "aterm.annotation.setAll(%s, %s)" % (t, a)
+		return "%s.setAnnotations(%s)" % (t, a)
 
 
 	def match(self, t):
