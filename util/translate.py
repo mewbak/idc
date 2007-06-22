@@ -8,7 +8,7 @@ import os.path
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..')))
 
-import aterm.factory 
+import aterm.factory
 from lang import box
 import ir.path
 import ir.pprint
@@ -20,38 +20,42 @@ factory = aterm.factory.factory
 
 def pretty_print(term):
 	boxes = ir.pprint.module(term)
-	sys.stderr.write(box.stringify(boxes, box.AnsiTextFormatter))
+	if sys.stderr.isatty() and sys.platform != 'win32':
+		formatter = box.AnsiTextFormatter
+	else:
+		formatter = box.TextFormatter
+	sys.stderr.write(box.stringify(boxes, formatter))
 
 
 def translate(fpin, fpout, verbose = True):
 	if verbose:
 		sys.stderr.write('* %s *\n' % fpin.name)
 		sys.stderr.write('\n')
-	
+
 	if verbose:
-		sys.stderr.write('** Assembly **\n')	
+		sys.stderr.write('** Assembly **\n')
 		sys.stderr.write(fpin.read())
-		sys.stderr.write('\n')	
+		sys.stderr.write('\n')
 		fpin.seek(0)
-	
+
 	mach = machine.pentium.Pentium()
 	term = mach.load(factory, fpin)
-	
+
 	if verbose:
-		sys.stderr.write('** Low-level IR **\n')	
+		sys.stderr.write('** Low-level IR **\n')
 		#sys.stderr.write(str(term) + '\n')
 		pretty_print(term)
-		sys.stderr.write('\n')	
-	
+		sys.stderr.write('\n')
+
 	term = mach.translate(term)
 
 	if verbose:
 		sys.stderr.write('** Translated IR **\n')
 		#sys.stderr.write(str(term) + '\n')
 		pretty_print(term)
-		sys.stderr.write('\n')	
+		sys.stderr.write('\n')
 
-		sys.stderr.write('\n')	
+		sys.stderr.write('\n')
 
 	term = ir.path.annotate(term)
 
@@ -60,23 +64,23 @@ def translate(fpin, fpout, verbose = True):
 
 def main():
 	parser = optparse.OptionParser(
-		usage = "\n\t%prog [options] file ...", 
+		usage = "\n\t%prog [options] file ...",
 		version = "%prog 1.0")
 	parser.add_option(
-		'-o', '--output', 
-		type = "string", dest = "output", 
+		'-o', '--output',
+		type = "string", dest = "output",
 		help = "specify output file")
 	parser.add_option(
-		'-v', '--verbose', 
-		action = "store_true", dest = "verbose", default = True, 
+		'-v', '--verbose',
+		action = "store_true", dest = "verbose", default = True,
 		help = "show extra information")
 	parser.add_option(
-		'-q', '--quiet', 
-		action = "store_false", dest = "verbose", 
+		'-q', '--quiet',
+		action = "store_false", dest = "verbose",
 		help = "no extra information")
 	parser.add_option(
-		'-p', '--profile', 
-		action = "store_true", dest = "profile", default = False, 
+		'-p', '--profile',
+		action = "store_true", dest = "profile", default = False,
 		help = "collect profiling information")
 	(options, args) = parser.parse_args(sys.argv[1:])
 
