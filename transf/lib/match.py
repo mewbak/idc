@@ -2,7 +2,7 @@
 
 
 import aterm.factory
-import aterm.type
+import aterm.types
 import aterm.term
 import aterm.project
 
@@ -20,11 +20,11 @@ from transf.lib import util
 _factory = aterm.factory.factory
 
 
-anInt = util.BoolAdaptor(aterm.type.anInt)
-aStr = util.BoolAdaptor(aterm.type.aStr)
-aReal = util.BoolAdaptor(aterm.type.aReal)
-aList = util.BoolAdaptor(aterm.type.aList)
-anAppl = util.BoolAdaptor(aterm.type.anAppl)
+anInt = util.BoolAdaptor(aterm.types.isInt)
+aStr = util.BoolAdaptor(aterm.types.isStr)
+aReal = util.BoolAdaptor(aterm.types.isReal)
+aList = util.BoolAdaptor(aterm.types.isList)
+anAppl = util.BoolAdaptor(aterm.types.isAppl)
 
 
 class _Term(_common._Term):
@@ -94,7 +94,7 @@ class Nil(_Term):
 		_Term.__init__(self, _factory.makeNil())
 
 	def apply(self, term, ctx):
-		if not aterm.type.aNil(term):
+		if not aterm.types.isNil(term):
 			raise exception.Failure('term is not an empty list', term)
 		return term
 
