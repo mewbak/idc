@@ -6,6 +6,8 @@ import unittest
 import aterm.factory
 from lang import box
 
+import transf.exception
+
 import ir.check
 import ir.pprint
 
@@ -24,27 +26,40 @@ class TestPrettyPrint(unittest.TestCase):
 			res[name] = self.factory.parse(value)
 		return res
 
-	checkerTestCases = [
-		("module", "Module([])", True),
-		("module", "XXX", False),
-	]
+	checkerTestCases = {
+		'expr': [
+			('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Sym("x"))', True),
+		],
+
+		'stmt': [
+			('Label("label")', True),
+			('Asm("ret",[])', True),
+			('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1000)])', True),
+			('Function(Void,"main",[],[])', True),
+		],
+
+		'module': [
+			("Module([])", True),
+			("XXX", False),
+		],
+	}
 
 	def testChecker(self):
 		checker = ir.check
+		for methodName, subTestCases in self.checkerTestCases.iteritems():
+			for inputStr, expectedOutput in subTestCases:
+				input = self.factory.parse(inputStr)
 
-		for methodName, inputStr, expectedOutput in self.checkerTestCases:
-			input = self.factory.parse(inputStr)
+				try:
+					getattr(checker, methodName)(input)
+					output = True
+				except transf.exception.Fatal, ex:
+					output = False
 
-			try:
-				getattr(checker, methodName)(input)
-				output = True
-			except:
-				output = False
-
-			self.failUnlessEqual(
-					output, expectedOutput,
-					msg = '%s(%s) = %r (%r expected)' % (methodName, inputStr, output, expectedOutput)
-			)
+				self.failUnlessEqual(
+						output, expectedOutput,
+						msg = '%s(%s) = %r (%r expected)' % (methodName, inputStr, output, expectedOutput)
+				)
 
 	prettyPrinterTestCases = {
 		'ppExpr': [
@@ -57,18 +72,14 @@ class TestPrettyPrint(unittest.TestCase):
 			('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1000)])', 'asm("mov", ax, 1000);'),
 			('Function(Void,"main",[],[])', 'void main()\n{\n}\n'),
 		],
-
-
 	}
 
 	def testPrettyPrinter(self):
 		for methodName, subTestCases in self.prettyPrinterTestCases.iteritems():
 			for inputStr, expectedOutput in subTestCases:
 				input = self.factory.parse(inputStr)
-
 				boxes = getattr(ir.pprint, methodName)(input)
 				output = box.stringify(boxes)
-
 				self.failUnlessEqual(output, expectedOutput)
 
 

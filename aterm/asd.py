@@ -69,7 +69,7 @@ class ListType(Type):
 		self.subtype = subtype
 
 	def validate(self, spec, term):
-		if not aterm.types.isList(term.type):
+		if not aterm.types.isList(term):
 			raise MismatchException("list term expected", term)
 		for subterm in term:
 			self.subtype.validate(spec, subterm)
