@@ -170,7 +170,7 @@ class TestTerm(unittest.TestCase):
 						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 
 						if expectedResult and term2.type == types.APPL:
-							term2 = annotation.set(term2, "A", factory.parse("1"))
+							term2 = annotation.set(term2, factory.parse("A(1)"))
 
 							result = term1.isEquivalent(term2)
 							self.failUnlessEqual(result, True, msg = '%s <=> %s = %r (!= %r)' % (term1Str, term2Str, result, True))
@@ -372,16 +372,19 @@ class TestTerm(unittest.TestCase):
 				term = term1
 				self.failUnlessEqual(term.annotations, factory.parse("[]"))
 
-				term = annotation.set(term, "A(_)", factory.parse("A(1)"))
+				term = annotation.set(term, factory.parse("A(1)"))
 				self.failUnlessEqual(term.annotations, factory.parse("[A(1)]"))
 
-				term = annotation.set(term, "B(_)", factory.parse("B(2)"))
-				self.failUnlessEqual(annotation.get(term, "A(_)"), factory.parse("A(1)"))
-				self.failUnlessEqual(annotation.get(term, "B(_)"), factory.parse("B(2)"))
+				term = annotation.set(term, factory.parse("B(2)"))
+				self.failUnlessEqual(annotation.get(term, "A"), factory.parse("A(1)"))
+				self.failUnlessEqual(annotation.get(term, "B"), factory.parse("B(2)"))
 
-				term = annotation.set(term, "A(_)", factory.parse("A(3)"))
-				self.failUnlessEqual(annotation.get(term, "A(_)"), factory.parse("A(3)"))
-				self.failUnlessEqual(annotation.get(term, "B(_)"), factory.parse("B(2)"))
+				term = annotation.set(term, factory.parse("A(3)"))
+				self.failUnlessEqual(annotation.get(term, "A"), factory.parse("A(3)"))
+				self.failUnlessEqual(annotation.get(term, "B"), factory.parse("B(2)"))
+
+				term = annotation.remove(term, "A")
+				self.failUnlessEqual(term.annotations, factory.parse("[B(2)]"))
 
 				try:
 					annotation.get(term, "C(_)")

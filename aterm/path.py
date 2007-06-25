@@ -169,8 +169,6 @@ class Path(object):
 
 class _Annotator(visitor.IncrementalVisitor):
 
-	_path = 'Path(_)'
-
 	def __init__(self, func = None):
 		visitor.IncrementalVisitor.__init__(self)
 		if func is None:
@@ -201,7 +199,7 @@ class _Annotator(visitor.IncrementalVisitor):
 			term.annotations,
 		)
 		if self.func(term):
-			return annotation.set(term, self._path, term.factory.make(self._path, path))
+			return annotation.set(term, term.factory.makeAppl('Path', [path]))
 		else:
 			return term
 
@@ -216,10 +214,8 @@ def annotate(term, root = None, func = None):
 
 class _DeAnnotator(_Annotator):
 
-	_path = 'Path(_)'
-
 	def visitAppl(self, term, path, index):
-		return annotation.remove(term, self._path)
+		return annotation.remove(term, 'Path')
 
 def deannotate(term):
 	'''Recursively removes all path annotations.'''
