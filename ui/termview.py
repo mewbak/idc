@@ -34,10 +34,9 @@ class TermTreeIter:
 
 	def _children(self):
 		term = self.head
-		type = term.type
-		if type & aterm.types.LIST:
+		if aterm.types.isList(term):
 			return term
-		elif type == aterm.types.APPL:
+		elif aterm.types.isAppl(term):
 			return term.factory.makeList(term.args)
 		else:
 			return term.factory.makeNil()
@@ -101,24 +100,24 @@ class TermTreeModel(gtk.GenericTreeModel):
 	# the implementations for TreeModel methods are prefixed with on_
 
 	def on_get_flags(self):
-		'''returns the GtkTreeModelFlags for this particular type of model'''
+		'''Returns the GtkTreeModelFlags for this particular type of model'''
 		return 0 # gtk.TREE_MODEL_ITERS_PERSIST
 
 	def on_get_n_columns(self):
-		'''returns the number of columns in the model'''
+		'''Returns the number of columns in the model'''
 		return 3
 
 	def on_get_column_type(self, index):
-		'''returns the type of a column in the model'''
+		'''Returns the type of a column in the model'''
 		return gobject.TYPE_STRING
 
 	def on_get_path(self, node):
-		'''returns the tree path(a tuple of indices at the various
+		'''Returns the tree path(a tuple of indices at the various
 		levels) for a particular node.'''
 		return node.path
 
 	def on_get_iter(self, path):
-		'''returns the node corresponding to the given path.  In our
+		'''Returns the node corresponding to the given path.  In our
 		case, the node is the path'''
 		assert path[0] == 0
 		node = self.top
@@ -127,66 +126,63 @@ class TermTreeModel(gtk.GenericTreeModel):
 		return node
 
 	def on_get_value(self, node, column):
-		'''returns the value stored in a particular column for the node'''
-
+		'''Returns the value stored in a particular column for the node.'''
 		term = node.term()
-		type = term.type
-
 		if column == 0:
-			if type == aterm.types.INT:
+			if aterm.types.isInt(term):
 				return str(term.value)
-			elif type == aterm.types.REAL:
+			elif aterm.types.isReal(term):
 				return str(term.value)
-			elif type == aterm.types.STR:
+			elif aterm.types.isStr(term):
 				return repr(term.value)
-			elif type == aterm.types.NIL:
+			elif aterm.types.isNil(term):
 				return '[]'
-			elif type == aterm.types.CONS:
+			elif aterm.types.isCons(term):
 				return '[...]'
-			elif type == aterm.types.APPL:
+			elif aterm.types.isAppl(term):
 				return term.name
 			else:
 				return '?'
 		elif column == 1:
-			if type == aterm.types.INT:
+			if  aterm.types.isInt(term):
 				return 'INT'
-			elif type == aterm.types.REAL:
+			elif aterm.types.isReal(term):
 				return 'REAL'
-			elif type == aterm.types.STR:
+			elif aterm.types.isStr(term):
 				return 'STR'
-			elif type & aterm.types.LIST:
+			elif aterm.types.isList(term):
 				return 'LIST'
-			elif type == aterm.types.APPL:
+			elif aterm.types.isAppl(term):
 				return 'APPL'
 			else:
 				return '?'
 		elif column == 2:
-			if type == aterm.types.APPL and term.annotations:
+			if aterm.types.isAppl(term) and term.annotations:
 				return ', '.join([str(anno) for anno in term.annotations])
 		else:
 			return None
 
 	def on_iter_next(self, node):
-		'''returns the next node at this level of the tree'''
+		'''Returns the next node at this level of the tree'''
 		return node.next()
 
 	def on_iter_children(self, node):
-		'''returns the first child of this node'''
+		'''Returns the first child of this node'''
 		return node.children()
 
 	def on_iter_has_child(self, node):
-		'''returns true if this node has children'''
+		'''Returns true if this node has children'''
 		return node.has_child()
 
 	def on_iter_n_children(self, node):
-		'''returns the number of children of this node'''
+		'''Returns the number of children of this node'''
 		if node is None:
 			return 1
 		else:
 			return node.n_children()
 
 	def on_iter_nth_child(self, node, n):
-		'''returns the nth child of this node'''
+		'''Returns the nth child of this node'''
 		if node is None:
 			assert n == 0
 			return self.top
@@ -194,7 +190,7 @@ class TermTreeModel(gtk.GenericTreeModel):
 			return node.nth_child(n)
 
 	def on_iter_parent(self, node):
-		'''returns the parent of this node'''
+		'''Returns the parent of this node'''
 		return node.parent()
 
 
