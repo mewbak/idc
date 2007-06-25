@@ -204,17 +204,11 @@ class TestMatch(TestMixin, unittest.TestCase):
 
 	def testList(self):
 		self._testMatchTransf(match.List([match.Int(1),match.Int(2)]), '[1,2]')
-		self._testMatchTransf(match._[()], '[]')
-		self._testMatchTransf(match._[1], '[1]')
-		self._testMatchTransf(match._[1,2], '[1,2]')
 		self._testMatchTransf(Transf('?[1,2]'), '[1,2]')
 
 	def testAppl(self):
 		self._testMatchTransf(match.Appl("C", ()), 'C')
 		self._testMatchTransf(match.ApplCons(match.Str("C"), match.nil), 'C')
-		self._testMatchTransf(match._.C(), 'C')
-		self._testMatchTransf(match._.C(1), 'C(1)')
-		self._testMatchTransf(match._.C(1,2), 'C(1,2)')
 		self._testMatchTransf(Transf('?C()'), 'C')
 		self._testMatchTransf(Transf('?C(1)'), 'C(1)')
 		self._testMatchTransf(Transf('?C(1,2)'), 'C(1,2)')

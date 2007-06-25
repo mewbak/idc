@@ -13,7 +13,6 @@ from transf.lib import base
 from transf.lib import combine
 from transf.lib import project
 from transf.lib import _common
-from transf.lib import _helper
 from transf.lib import util
 
 
@@ -196,6 +195,3 @@ class Annos(_common.Annos):
 def Anno(anno):
 	from transf.lib import traverse
 	return Annos(traverse.One(combine.Where(anno)))
-
-
-_ = _helper.Factory(Int, Real, Str, List, Appl, Var, Term)

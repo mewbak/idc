@@ -11,7 +11,6 @@ from transf.lib import base
 from transf.lib import combine
 from transf.lib import _common
 from transf.lib import match
-from transf.lib import _helper
 
 
 class _ConsL(_common._Cons):
@@ -141,9 +140,6 @@ class Annos(_common.Annos):
 def Anno(anno):
 	from transf.lib.traverse import One
 	return Annos(One(anno))
-
-
-_ = _helper.Factory(match.Int, match.Real, match.Str, List, Appl, Var, match.Term)
 
 
 class Subterms(transformation.Transformation):

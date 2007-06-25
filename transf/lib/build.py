@@ -14,7 +14,6 @@ from transf import transformation
 from transf import variable
 from transf.lib import base
 from transf.lib import _common
-from transf.lib import _helper
 
 
 _factory = aterm.factory.factory
@@ -123,6 +122,3 @@ class Annos(_common.Annos):
 			annos = self.annos.apply(term, ctx)
 			return term.factory.makeAppl(term.name, term.args, annos)
 		return term
-
-
-_ = _helper.Factory(Int, Real, Str, List, Appl, Var, Term)
