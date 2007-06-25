@@ -16,12 +16,14 @@ class Writer(visitor.Visitor):
 class TextWriter(Writer):
 	'''Writes a term to a text stream.'''
 
-	def writeAnnotations(self, term):
-		annotations = term.annotations
-		if annotations:
-			self.fp.write('{')
-			self.visit(annotations, inside_list = True)
-			self.fp.write('}')
+	def writeList(self, seq, begin, end, sep=','):
+		self.fp.write(begin)
+		cursep = ""
+		for term in seq:
+			self.fp.write(cursep)
+			self.visit(term)
+			cursep = sep
+		self.fp.write(end)
 
 	def visitInt(self, term):
 		self.fp.write(str(term.value))
@@ -41,35 +43,16 @@ class TextWriter(Writer):
 		s = s.replace('\n', '\\n')
 		self.fp.write('"' + s + '"')
 
-	def visitNil(self, term, inside_list = False):
-		if not inside_list:
-			self.fp.write('[]')
-
-	def visitCons(self, term, inside_list = False):
-		if not inside_list:
-			self.fp.write('[')
-		head = term.head
-		self.visit(head)
-		tail = term.tail
-		last = types.isNil(tail)
-		if not last:
-			self.fp.write(",")
-			self.visit(tail, inside_list = True)
-		if not inside_list:
-			self.fp.write(']')
+	def visitList(self, term):
+		self.writeList(term, '[', ']')
 
 	def visitAppl(self, term):
 		self.fp.write(term.name)
 		args = term.args
 		if term.name == '' or term.args:
-			self.fp.write('(')
-			sep = ""
-			for arg in term.args:
-				self.fp.write(sep)
-				self.visit(arg)
-				sep = ","
-			self.fp.write(')')
-		self.writeAnnotations(term)
+			self.writeList(term.args, '(', ')')
+		if term.annotations:
+			self.writeList(term.annotations, '{', '}')
 
 
 # TODO: implement a pretty-printer
@@ -82,23 +65,13 @@ class AbbrevTextWriter(TextWriter):
 		TextWriter.__init__(self, fp)
 		self.depth = depth
 
-	def visitCons(self, term, inside_list = False):
-		if not inside_list:
-			self.fp.write('[')
+	def visitList(self, term):
 		if self.depth > 1:
 			self.depth -= 1
-			head = term.head
-			self.visit(head)
+			TextWriter.visitList(self, term)
 			self.depth += 1
-			tail = term.tail
-			last = types.isNil(tail)
-			if not last:
-				self.fp.write(",")
-				self.visit(tail, inside_list = True)
 		else:
-			self.fp.write('...')
-		if not inside_list:
-			self.fp.write(']')
+			self.fp.write('[...]')
 
 
 # TODO: implement a XML writer
