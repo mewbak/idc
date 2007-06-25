@@ -181,12 +181,12 @@ class TestTerm(unittest.TestCase):
 
 	def testWrite(self):
 		for terms1Str in self.identityTestCases:
-				for term1Str in terms1Str:
-					term1 = factory.parse(term1Str)
+			for term1Str in terms1Str:
+				term1 = factory.parse(term1Str)
 
-					term2Str = str(term1)
+				term2Str = str(term1)
 
-					self.failUnlessEqual(term1Str, term2Str)
+				self.failUnlessEqual(term1Str, term2Str)
 
 	matchTestCases = [
 		# ints

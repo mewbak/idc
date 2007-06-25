@@ -8,7 +8,6 @@ from aterm import types
 from aterm import compare
 from aterm import hash
 from aterm import write
-from aterm import convert
 from aterm import lists
 
 

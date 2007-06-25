@@ -90,6 +90,10 @@ class _ToObj(visitor.Visitor):
 		tail = self.visit(term.tail)
 		return [head] + tail
 
+#	def visitAppl(self, term):
+#		# return application terms unmodified
+#		return term
+
 def toObj(term):
 	'''Recursively convert literal and list terms to the corresponding
 	Python objects.'''

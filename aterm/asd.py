@@ -1,7 +1,7 @@
 """Abstract Syntax Definition.
 
 Based on the ASDL:
-- http://www.cs.princeton.edu/~danwang/Papers/dsl97/dsl97.html
+ - http://www.cs.princeton.edu/~danwang/Papers/dsl97/dsl97.html
 """
 
 
@@ -42,7 +42,7 @@ class BuiltinType(Type):
 		self.type = type
 
 	def validate(self, spec, term):
- 		if not term.type & self.type:
+		if not term.type & self.type:
 			raise MismatchException("builtin type mismatch", self.type, term.type)
 
 	def __str__(self):

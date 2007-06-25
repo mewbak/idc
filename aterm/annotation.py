@@ -1,7 +1,6 @@
 '''High-level term annotation.'''
 
 
-from aterm import visitor
 from aterm import types
 from aterm import lists
 
