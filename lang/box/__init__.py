@@ -6,8 +6,6 @@ http://www.cs.uu.nl/wiki/Visser/GenerationOfFormattersForContext-freeLanguages
 about the Box language, upon this code is lossely based.
 '''
 
-import sys
-
 try:
 	from cStringIO import StringIO
 except ImportError:
@@ -189,6 +187,7 @@ def Path(operand):
 def reprz(term):
 	return term.factory.makeStr(str(term))
 
+@lib.util.Adaptor
 def escape(term):
 	s = str(term.value)
 	s = s.replace('\"', '\\"')
@@ -197,7 +196,6 @@ def escape(term):
 	s = s.replace('\n', '\\n')
 	s = '"' + s + '"'
 	return term.factory.makeStr(s)
-escape = lib.util.Adaptor(escape)
 
 class Lit(transformation.Transformation):
 	def apply(self, term, ctx):

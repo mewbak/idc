@@ -104,7 +104,8 @@ class Dump(transformation.Transformation, DebugMixin):
 		return term
 
 
-class _Trace(util.Proxy, DebugMixin):
+class Trace(util.Proxy, DebugMixin):
+	'''Trace the operand transformation transformation.'''
 
 	def __init__(self, operand=None, name=None):
 		util.Proxy.__init__(self, operand)
@@ -117,7 +118,7 @@ class _Trace(util.Proxy, DebugMixin):
 			try:
 				start = time.clock()
 				try:
-					term = self.operand.apply(term, ctx)
+					term = self.subject.apply(term, ctx)
 				finally:
 					end = time.clock()
 			except Exception, ex:
@@ -130,21 +131,6 @@ class _Trace(util.Proxy, DebugMixin):
 			delta = end - start
 			#log.write('<= %20s (%.03fs): %s\n' % (self.name, delta, result))
 			log.write('<= %20s: %s\n' % (self.name, result))
-
-def Trace(operand=None, name=None):
-	if name is None:
-		try:
-			caller = inspect.currentframe().f_back
-			filename = os.path.basename(caller.f_code.co_filename)
-			lineno = caller.f_lineno
-		finally:
-			del caller
-		name = '%s:%d' % (filename, lineno)
-	if isinstance(operand, TestCase):
-		operand._transfName = name
-	else:
-		operand = _Trace(operand, name)
-	return operand
 
 
 class Traceback(operate.Unary, DebugMixin):

@@ -3,27 +3,29 @@
 
 from transf import exception
 from transf import transformation
-from transf import operate
 
 
 class Adaptor(transformation.Transformation):
 	'''Transformation adapter for a regular function.'''
 
-	def __init__(self, func, *args, **kargs):
+	def __init__(self, func):
 		transformation.Transformation.__init__(self)
 		self.func = func
-		self.args = args
-		self.kargs = kargs
+		self.__doc__ = func.__doc__
 
 	def apply(self, trm, ctx):
-		return self.func(trm, *self.args, **self.kargs)
+		trm = self.func(trm)
+		if trm is None:
+			raise exception.Failure
+		else:
+			return trm
 
 
 class BoolAdaptor(Adaptor):
 	'''Transformation adapter for a boolean function.'''
 
 	def apply(self, trm, ctx):
-		if self.func(trm, *self.args, **self.kargs):
+		if self.func(trm):
 			return trm
 		else:
 			raise exception.Failure
@@ -68,20 +70,4 @@ class Proxy(transformation.Transformation):
 
 	def __repr__(self):
 		return '<%s ...>' % (self.__class__.__name__,)
-
-
-class Wrapper(operate.Unary):
-
-	def apply(self, trm, ctx):
-		return self.operand.apply(trm, ctx)
-
-	# XXX: hack to enable the use of Proxy
-	def _get_subject(self):
-		try:
-			return self.operand.subject
-		except AttributeError:
-			return None
-	def _set_subject(self, subject):
-		self.operand.subject = subject
-	subject = property(_get_subject, _set_subject)
 
