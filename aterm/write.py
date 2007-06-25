@@ -72,17 +72,19 @@ class TextWriter(Writer):
 		self.writeAnnotations(term)
 
 
+# TODO: implement a pretty-printer
+
+
 class AbbrevTextWriter(TextWriter):
 	'''Write an abbreviated term representation.'''
 
 	def __init__(self, fp, depth):
-		super(AbbrevTextWriter, self).__init__(fp)
+		TextWriter.__init__(self, fp)
 		self.depth = depth
 
 	def visitCons(self, term, inside_list = False):
 		if not inside_list:
 			self.fp.write('[')
-
 		if self.depth > 1:
 			self.depth -= 1
 			head = term.head
@@ -95,9 +97,8 @@ class AbbrevTextWriter(TextWriter):
 				self.visit(tail, inside_list = True)
 		else:
 			self.fp.write('...')
-
 		if not inside_list:
 			self.fp.write(']')
 
-# TODO: implement a pretty-printer
+
 # TODO: implement a XML writer
