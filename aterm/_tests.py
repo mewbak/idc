@@ -169,7 +169,7 @@ class TestTerm(unittest.TestCase):
 						result = term1.isEqual(term2)
 						self.failUnlessEqual(result, expectedResult, msg = '%s == %s = %r (!= %r)' % (term1Str, term2Str, result, expectedResult))
 
-						if expectedResult and term2.type == types.APPL:
+						if expectedResult and types.isAppl(term2):
 							term2 = annotation.set(term2, factory.parse("A(1)"))
 
 							result = term1.isEquivalent(term2)
@@ -366,7 +366,7 @@ class TestTerm(unittest.TestCase):
 		for terms1Str in self.identityTestCases:
 			for term1Str in terms1Str:
 				term1 = factory.parse(term1Str)
-				if term1.type != types.APPL:
+				if not types.isAppl(term1):
 					continue
 
 				term = term1

@@ -51,7 +51,7 @@ class TextWriter(Writer):
 		head = term.head
 		self.visit(head)
 		tail = term.tail
-		last = tail.type == types.NIL
+		last = types.isNil(tail)
 		if not last:
 			self.fp.write(",")
 			self.visit(tail, inside_list = True)
@@ -89,7 +89,7 @@ class AbbrevTextWriter(TextWriter):
 			self.visit(head)
 			self.depth += 1
 			tail = term.tail
-			last = tail.type == types.NIL
+			last = types.isNil(tail)
 			if not last:
 				self.fp.write(",")
 				self.visit(tail, inside_list = True)

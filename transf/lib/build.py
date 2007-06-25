@@ -119,7 +119,7 @@ def Var(var):
 class Annos(_common.Annos):
 
 	def apply(self, term, ctx):
-		if term.type is aterm.types.APPL:
+		if aterm.types.isAppl(term):
 			annos = self.annos.apply(term, ctx)
 			return term.factory.makeAppl(term.name, term.args, annos)
 		return term

@@ -138,11 +138,11 @@ class Path(object):
 	def fromTerm(cls, trm):
 		res = []
 		tail = trm
-		while tail.type != types.NIL:
-			if tail.type != types.CONS:
+		while not types.isNil(tail):
+			if not types.isCons(tail):
 				raise ValueError('bad path', trm)
 			idx = tail.head
-			if idx.type != types.INT:
+			if not types.isInt(idx):
 				raise ValueError('bad index', idx)
 			res.append(idx.value)
 			tail = tail.tail

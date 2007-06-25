@@ -201,13 +201,13 @@ escape = lib.util.Adaptor(escape)
 
 class Lit(transformation.Transformation):
 	def apply(self, term, ctx):
-		if term.type == aterm.types.INT:
+		if aterm.types.isInt(term):
 			term = term.factory.makeStr(str(term.value))
 			return const.apply(term, ctx)
-		if term.type == aterm.types.REAL:
+		if aterm.types.isReal(term):
 			term = term.factory.makeStr(str(term.value))
 			return const.apply(term, ctx)
-		if term.type == aterm.types.STR:
+		if aterm.types.isStr(term):
 			term = escape.apply(term, ctx)
 			return string.apply(term, ctx)
 		raise lib.exception.Failure

@@ -69,7 +69,7 @@ class ListType(Type):
 		self.subtype = subtype
 
 	def validate(self, spec, term):
-		if not term.type & aterm.types.LIST:
+		if not aterm.types.isList(term.type):
 			raise MismatchException("list term expected", term)
 		for subterm in term:
 			self.subtype.validate(spec, subterm)
@@ -86,7 +86,7 @@ class OptionalType(Type):
 		self.optname = optname
 
 	def validate(self, spec, term):
-		if term.type == aterm.types.APPL and term.name == self.optname and len(term.args) == 0:
+		if aterm.types.isAppl(term) and term.name == self.optname and len(term.args) == 0:
 			return
 		else:
 			self.subtype.validate(spec, term)
@@ -120,7 +120,7 @@ class Constructor:
 		self.fields = fields
 
 	def validate(self, spec, term):
-		if term.type != aterm.types.APPL:
+		if not aterm.types.isAppl(term):
 			raise MismatchException
 		if term.name != self.name:
 			raise MismatchException
@@ -146,7 +146,7 @@ class Production:
 			self.constructors[constructor.name] = constructor
 
 	def validate(self, spec, term):
-		if term.type != aterm.types.APPL:
+		if not aterm.types.isAppl(term):
 			raise MismatchException("not an application term", term)
 		try:
 			cons = self.constructors[term.name]

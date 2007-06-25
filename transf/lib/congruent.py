@@ -131,7 +131,7 @@ def Var(var):
 class Annos(_common.Annos):
 
 	def apply(self, term, ctx):
-		if term.type is aterm.types.APPL:
+		if aterm.types.isAppl(term):
 			annos = self.annos.apply(term.annotations, ctx)
 			if annos is not term.annotations:
 				return term.factory.makeAppl(term.name, term.args, annos)
@@ -160,9 +160,9 @@ class Subterms(transformation.Transformation):
 		self.appl = ApplCons(base.ident, children)
 
 	def apply(self, term, ctx):
-		if term.type == aterm.types.APPL:
+		if aterm.types.isAppl(term):
 			return self.appl.apply(term, ctx)
-		elif term.type & aterm.types.LIST:
+		elif aterm.types.isList(term):
 			return self.list.apply(term, ctx)
 		else:
 			return self.leaf.apply(term, ctx)
