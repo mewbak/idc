@@ -61,20 +61,6 @@ def _compile(buf, simplify=True, verbose=False, debug=False):
 	return code
 
 
-def _populate_globals(glbls):
-	"""Populate the global namespace."""
-	# TODO: reduce the name polution
-	import transf
-	glbls.setdefault('transf', transf)
-	from transf import lib
-	for n, v in lib.__dict__.iteritems():
-		glbls.setdefault(n, v)
-	from transf.parse import builtins
-	for n, v in builtins.__dict__.iteritems():
-		glbls.setdefault(n, v)
-	return glbls
-
-
 def _print_code(code):
 	sys.stderr.write("input code:\n")
 	lines = code.split("\n")
@@ -86,6 +72,8 @@ def _print_code(code):
 
 def _exec(code, globals_, locals_):
 	'''Execute the compiled code in the caller's namespace.'''
+	from transf.parse import _builtins
+	globals_["__builtins__"] = _builtins
 	try:
 		exec code in globals_, locals_
 	except NameError:
@@ -102,7 +90,7 @@ def Transfs(buf, simplify=True, verbose=False, debug=False):
 	'''Parse transformation definitions from a string.'''
 	code = _compile(buf, simplify=simplify, verbose=verbose, debug=debug)
 	caller = sys._getframe(1)
-	globals_ = _populate_globals(caller.f_globals)
+	globals_ = caller.f_globals
 	locals_ = caller.f_locals
 	_exec(code, globals_, locals_)
 
@@ -111,7 +99,7 @@ def Transf(buf, simplify=True, verbose=False, debug=False):
 	'''Parse a transformation from a string.'''
 	code = _compile("_tmp = %s" % buf, simplify=simplify, verbose=verbose, debug=debug)
 	caller = sys._getframe(1)
-	globals_ = _populate_globals(caller.f_globals)
+	globals_ = caller.f_globals
 	locals_ = caller.f_locals.copy()
 	_exec(code, globals_, locals_)
 	return locals_["_tmp"]

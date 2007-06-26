@@ -77,7 +77,7 @@ ppSize =
 		!H([ "int", <strings.tostr> ])
 	end
 
-ppType = rec ppType : (
+ppType =
 	Void
 		-> <kw "void">
 |	Bool
@@ -97,7 +97,6 @@ ppType = rec ppType : (
 |	Blob(size)
 		-> H([ "blob", <strings.tostr size> ])
 |	_ -> "???"
-)
 
 
 #######################################################################
