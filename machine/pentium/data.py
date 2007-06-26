@@ -4,6 +4,7 @@
 from transf import parse
 from machine.pentium.common import *
 from machine.pentium.conditions import *
+from machine.pentium.binary import *
 
 parse.Transfs('''
 
@@ -81,6 +82,63 @@ asmCMOVSL   = AsmCMOVcc(!32, ccS   )
 asmCMOVZL   = AsmCMOVcc(!32, ccZ   )
 
 
+AsmXCHG(size) =
+	[dst,src] -> [
+		Assign(type,tmp,dst),
+		Assign(type,dst,src),
+		Assign(type,src,tmp)
+	]
+	where
+		type := Word(size) ;
+		tmp := temp
+
+asmXCHGB = AsmXCHG(!8)
+asmXCHGW = AsmXCHG(!16)
+asmXCHGL = AsmXCHG(!32)
+
+
+# FIXME: BSWAP
+
+
+AsmXADD(size) =
+		[dst, src] -> [
+			Assign(type, tmp, Binary(Plus(type), dst, src)),
+			Assign(type, src, dst),
+			Assign(type, dst, tmp),
+			*<AddFlags(size, !src, !dst, !tmp)>
+		]
+	where
+		type := Word(size) ;
+		tmp := temp
+
+asmXADDB = AsmXADD(!8)
+asmXADDW = AsmXADD(!16)
+asmXADDL = AsmXADD(!32)
+
+
+AsmCMPXCHG(size,accum) =
+		[dst, src] -> <
+			lists.Concat(
+				![Assign(type, tmp, Binary(Minus(type), <accum>, dst))],
+				SubFlags(size, accum, !src, !tmp),
+				![If(Binary(Eq(type),<accum>,dst),
+					Assign(type, dst, src),
+					Assign(type, <accum>, dst)
+				)]
+			)
+		>
+	where
+		type := Word(size) ;
+		tmp := temp
+
+asmCMPXCHGB = AsmCMPXCHG(!8,   al)
+asmCMPXCHGW = AsmCMPXCHG(!16,  ax)
+asmCMPXCHGL = AsmCMPXCHG(!32, eax)
+
+
+# FIXME: CMPXCHG8B
+
+
 AsmPUSH(size) =
 	[src] -> [
 		Assign(<Word(size)>,<Reg(!"esp")>,
@@ -102,6 +160,5 @@ AsmPOP(size) =
 asmPOPW = AsmPOP(!16)
 asmPOPL = AsmPOP(!32)
 
+
 ''')
-
-
