@@ -15,12 +15,13 @@ def Foldr(tail, Cons, operand=None):
 	if operand is None:
 		operand = base.ident
 	foldr = util.Proxy()
-	foldr.subject = \
-		match.nil * tail + \
+	foldr.subject = combine.GuardedChoice(
+		match.nil, tail,
 		Cons(
 			project.head * operand,
 			project.tail * foldr
 		)
+	)
 	return foldr
 
 
