@@ -88,8 +88,8 @@ AsmPUSH(size) =
 		Assign(<Word(size)>,Ref(<Reg(!"esp")>),src)
 	]
 
-asmPUSHW = AsmPUSH(!8)
-asmPUSHL = AsmPUSH(!16)
+asmPUSHW = AsmPUSH(!16)
+asmPUSHL = AsmPUSH(!32)
 
 
 AsmPOP(size) =
@@ -99,8 +99,8 @@ AsmPOP(size) =
 			Binary(Plus(<Word(size)>),<Reg(!"esp")>,Lit(<Word(size)>,4)))
 	]
 
-asmPOPW = AsmPOP(!8)
-asmPOPL = AsmPOP(!16)
+asmPOPW = AsmPOP(!16)
+asmPOPL = AsmPOP(!32)
 
 ''')
 
