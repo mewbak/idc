@@ -21,6 +21,8 @@ from transf.lib import scope
 from transf.lib import unify
 
 
+# FIXME: write non-recursive versions
+
 length = unify.Count(base.ident)
 
 

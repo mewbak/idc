@@ -63,6 +63,7 @@ class Factory(object):
 	def makeList(self, seq):
 		'''Creates a new list from a sequence.'''
 		accum = self.makeNil()
+		seq = list(seq)
 		for i in xrange(len(seq) - 1, -1, -1):
 			accum = self.makeCons(seq[i], accum)
 		return accum

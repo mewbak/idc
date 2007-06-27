@@ -1,6 +1,8 @@
 '''Term paths.'''
 
 
+import itertools
+
 from aterm.factory import factory
 from aterm import types
 from aterm import visitor
@@ -167,35 +169,29 @@ class Path(object):
 	__str__ = toStr
 
 
-class _Annotator(visitor.IncrementalVisitor):
+class _Annotator(visitor.Visitor):
 
 	def __init__(self, func = None):
-		visitor.IncrementalVisitor.__init__(self)
+		visitor.Visitor.__init__(self)
 		if func is None:
 			self.func = lambda term: True
 		else:
 			self.func = func
 
-	def visitTerm(self, term, path, index):
+	def visitTerm(self, term, path):
 		return term
 
-	def visitHead(self, term, path, index):
-		path = term.factory.makeCons(term.factory.makeInt(index), path)
-		return self.visit(term, path, 0)
+	def visitCons(self, term, path):
+		return term.factory.makeList(
+			[self.visit(elm, term.factory.makeCons(term.factory.makeInt(index), path))
+				for index, elm in itertools.izip(itertools.count(), term)]
+		)
 
-	def visitTail(self, term, path, index):
-		# no need to annotate tails
-		return visitor.IncrementalVisitor.visit(self, term, path, index + 1)
-
-	def visitAppl(self, term, path, index):
+	def visitAppl(self, term, path):
 		term = term.factory.makeAppl(
 			term.name,
-			[self.visit(
-					arg,
-					term.factory.makeCons(term.factory.makeInt(index), path),
-					0
-				) for index, arg in zip(range(len(term.args)), term.args)
-			],
+			[self.visit(arg, term.factory.makeCons(term.factory.makeInt(index), path))
+				for index, arg in itertools.izip(itertools.count(), term.args)],
 			term.annotations,
 		)
 		if self.func(term):
@@ -209,16 +205,16 @@ def annotate(term, root = None, func = None):
 	annotator = _Annotator(func)
 	if root is None:
 		root = term.factory.makeNil()
-	return annotator.visit(term, root, 0)
+	return annotator.visit(term, root)
 
 
 class _DeAnnotator(_Annotator):
 
-	def visitAppl(self, term, path, index):
+	def visitAppl(self, term, path):
 		return annotation.remove(term, 'Path')
 
 def deannotate(term):
 	'''Recursively removes all path annotations.'''
 	annotator = _DeAnnotator()
 	root = term.factory.makeNil()
-	return annotator.visit(term, root, 0)
+	return annotator.visit(term, root)

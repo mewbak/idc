@@ -1,56 +1,48 @@
 '''List term operations.'''
 
 
+from aterm import types
 from aterm import visitor
+
+
+# FIXME: write non-recursive versions
 
 
 class _Operation(visitor.Visitor):
 	'''Base visitor class for list operations.'''
 
 	def visitTerm(self, term, *args, **kargs):
-		return TypeError('not a list term', term)
+		raise TypeError('not a list term', term)
 
-
-class _Empty(_Operation):
-
-	def visitNil(self, term):
-		return True
-
-	def visitCons(self, term):
-		return False
 
 def empty(term):
 	'''Whether a list term is empty or not.'''
-	return _Empty().visit(term)
+	return types.isNil(term)
 
-
-class _Length(_Operation):
-
-	def visitNil(self, term):
-		return 0
-
-	def visitCons(self, term):
-		return self.visit(term.tail) + 1
 
 def length(term):
-	'''_Length of a list term.'''
-	return _Length().visit(term)
+	'''Length of a list term.'''
+	length = 0
+	while not types.isNil(term):
+		assert types.isCons(term)
+		length += 1
+		term = term.tail
+	return length
 
-
-class _Item(_Operation):
-
-	def visitNil(self, term, index):
-		raise IndexError('index out of bounds')
-
-	def visitCons(self, term, index):
-		if index == 0:
-			return term.head
-		else:
-			return self.visit(term.tail, index - 1)
 
 def item(term, index):
 	'''Get item at given index of a list term.'''
-	return _Item().visit(term, index)
+	if index < 0:
+		raise IndexError('index out of bounds')
+	while True:
+		if types.isNil(term):
+			raise IndexError('index out of bounds')
+		if not types.isCons(term):
+			raise TypeError('not a list term', term)
+		if index == 0:
+			return term.head
+		index -= 1
+		term = term.tail
 
 
 class Iter(_Operation):
