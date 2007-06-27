@@ -37,6 +37,17 @@ asmXORB = AsmXor(!8)
 asmXORW = AsmXor(!16)
 asmXORL = AsmXor(!32)
 
+
+AsmNOT(size) =
+	[dst] -> [Assign(type,dst,Unary(Not(type),dst))]
+	where
+		type := Word(size)
+
+asmNOTB = AsmNOT(!8)
+asmNOTW = AsmNOT(!16)
+asmNOTL = AsmNOT(!32)
+
+
 AsmTest(size) =
 	[dst, src] -> [
 		Assign(type, tmp, Binary(And(type), dst, src)),
