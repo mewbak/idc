@@ -7,6 +7,8 @@ import traceback
 from transf import transformation
 from transf import parse
 
+import ir.check
+
 from machine.pentium.data import *
 from machine.pentium.binary import *
 from machine.pentium.logical import *
@@ -45,7 +47,7 @@ parse.Transfs('''
 
 doStmt =
 	?Asm(opcode, _) & (
-		OpcodeDispatch() +
+		OpcodeDispatch() & Map(ir.check.stmt) +
 		![<id>]
 	) ;
 	Try(simplify)
@@ -56,4 +58,4 @@ doModule =
 	~Module(<lists.MapConcat(doStmt)>)
 
 
-''')
+''', debug=False)
