@@ -17,7 +17,24 @@ from sets import Set as set
 class MismatchException(Exception):
 	'''Description exception.'''
 
-	pass
+	def __init__(self, msg, trm, expected=None, pname=None, cname=None, fname=None):
+		Exception.__init__(self)
+		self.msg = msg
+		self.args = [trm,expected]
+		self.pname = pname
+		self.cname = cname
+		self.fname = fname
+
+	def __str__(self):
+		s = ''
+		if self.pname is not None:
+			s += self.pname + ':'
+		if self.cname is not None:
+			s += self.cname + ':'
+		if self.fname is not None:
+			s += self.fname + ':'
+		s += ' ' + self.msg + ': ' + " ".join(map(repr, self.args))
+		return s
 
 
 ###############################################################################
@@ -27,7 +44,7 @@ class MismatchException(Exception):
 class Type:
 	'''Abstract base class for field type description classes.'''
 
-	def validate(self, spec, term):
+	def validate(self, spec, term, pname=None, cname=None, fname=None):
 		raise NotImplementedError
 
 	def __str__(self):
@@ -41,9 +58,13 @@ class BuiltinType(Type):
 		self.name = name
 		self.type = type
 
-	def validate(self, spec, term):
+	def validate(self, spec, term, pname=None, cname=None, fname=None):
 		if not term.type & self.type:
-			raise MismatchException("builtin type mismatch", self.type, term.type)
+			raise MismatchException(
+				"builtin type mismatch",
+				self.type, term.type,
+				pname=pname, cname=cname, fname=fname
+			)
 
 	def __str__(self):
 		return self.name
@@ -55,7 +76,7 @@ class UserType(Type):
 	def __init__(self, name):
 		self.name = name
 
-	def validate(self, spec, term):
+	def validate(self, spec, term, pname=None, cname=None, fname=None):
 		spec.validate(self.name, term)
 
 	def __str__(self):
@@ -68,11 +89,15 @@ class ListType(Type):
 	def __init__(self, subtype):
 		self.subtype = subtype
 
-	def validate(self, spec, term):
+	def validate(self, spec, term, pname=None, cname=None, fname=None):
 		if not aterm.types.isList(term):
-			raise MismatchException("list term expected", term)
+			raise MismatchException(
+				"list term expected",
+				term,
+				pname=pname, cname=cname, fname=fname
+			)
 		for subterm in term:
-			self.subtype.validate(spec, subterm)
+			self.subtype.validate(spec, subterm, pname=pname, cname=cname, fname=fname)
 
 	def __str__(self):
 		return "%s*" % (str(self.subtype),)
@@ -85,11 +110,11 @@ class OptionalType(Type):
 		self.subtype = subtype
 		self.optname = optname
 
-	def validate(self, spec, term):
+	def validate(self, spec, term, pname=None, cname=None, fname=None):
 		if aterm.types.isAppl(term) and term.name == self.optname and len(term.args) == 0:
 			return
 		else:
-			self.subtype.validate(spec, term)
+			self.subtype.validate(spec, term, pname=pname, cname=cname, fname=fname)
 
 	def __str__(self):
 		return "%s?" % (str(self.subtype),)
@@ -98,12 +123,12 @@ class OptionalType(Type):
 class Field:
 	'''Constructor field description.'''
 
-	def __init__(self, type, name = None):
+	def __init__(self, type, name=None):
 		self.type = type
 		self.name = name
 
-	def validate(self, spec, term):
-		self.type.validate(spec, term)
+	def validate(self, spec, term, pname=None, cname=None):
+		self.type.validate(spec, term, pname=pname, cname=cname, fname=self.name)
 
 	def __str__(self):
 		if self.name:
@@ -119,15 +144,19 @@ class Constructor:
 		self.name = name
 		self.fields = fields
 
-	def validate(self, spec, term):
+	def validate(self, spec, term, pname=None):
 		if not aterm.types.isAppl(term):
-			raise MismatchException
+			raise MismatchException(
+				"not an application term",
+				term,
+				pname=pname, cname=self.name
+			)
 		if term.name != self.name:
 			raise MismatchException
 		if len(term.args) != len(self.fields):
 			raise MismatchException("wrong number of arguments", term)
 		for field, arg in zip(self.fields, term.args):
-			field.validate(spec, arg)
+			field.validate(spec, arg, pname=pname, cname=self.name)
 
 	def __str__(self):
 		if self.fields:
@@ -147,18 +176,25 @@ class Production:
 
 	def validate(self, spec, term):
 		if not aterm.types.isAppl(term):
-			raise MismatchException("not an application term", term)
+			raise MismatchException(
+				"not an application term",
+				term,
+				pname=self.name
+			)
 		try:
 			cons = self.constructors[term.name]
 		except KeyError:
-			raise MismatchException("unexpected term in %s" % self.name, term)
-		cons.validate(spec, term)
+			raise MismatchException(
+				"unexpected term",
+				term,
+				pname=self.name
+			)
+		cons.validate(spec, term, pname=self.name)
 
 	def subproductions(self, spec, skip):
 		s = set()
 		for constructor in self.constructors.itervalues():
 			s.append(constructor.name)
-
 
 	def __str__(self):
 		cons = '\n\t| '.join([str(constructor) for constructor in self.constructors.itervalues()])
