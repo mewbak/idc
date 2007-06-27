@@ -176,7 +176,7 @@ asmPOPAD =
 
 
 AsmIN(size, builtin) =
-	[dst, src] -> [Assign(<Word(size)>,dst,Call(<builtin>,[src]){Builtin})]
+	[dst, src] -> [Assign(<Word(size)>,dst,Call(Sym(<builtin>){Builtin},[src]))]
 
 asmINB = AsmIN(!8, !"_inp")
 asmINW = AsmIN(!8, !"_inpw")
@@ -184,11 +184,17 @@ asmINL = AsmIN(!8, !"_inpd")
 
 
 AsmOUT(size, builtin) =
-	[dst, src] -> [Assign(Void,NoExpr,Call(<builtin>,[dst,src]){Builtin})]
+	[dst, src] -> [Assign(Void,NoExpr,Call(Sym(<builtin>){Builtin},[dst,src]))]
 
 asmOUTB = AsmOUT(!8, !"_outp")
 asmOUTW = AsmOUT(!8, !"_outpw")
 asmOUTL = AsmOUT(!8, !"_outpd")
+
+
+# FIXME: CWD/CDQ
+# FIXME: CBW/CWDE
+# FIXME: MOVSX
+# FIXME: MOVZX
 
 
 ''')
