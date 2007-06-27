@@ -66,18 +66,19 @@ class Iter(_Operation):
 
 class _Extend(_Operation):
 
-	def visitNil(self, term, other):
-		return other
+	def __init__(self, other):
+		_Operation.__init__(self)
+		self.other = other
 
-	def visitCons(self, term, other):
-		return term.factory.makeCons(
-			term.head,
-			self.visit(term.tail, other)
-		)
+	def visitNil(self, term):
+		return self.other
+
+	def visitCons(self, term):
+		return term.factory.makeCons(term.head, self.visit(term.tail))
 
 def extend(term, other):
 	'''Return the concatenation of two list terms.'''
-	return _Extend().visit(term, other)
+	return _Extend(other).visit(term)
 
 
 def append(term, other):
