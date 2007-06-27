@@ -139,10 +139,10 @@ asmCMPXCHGL = AsmCMPXCHG(!32, eax)
 
 AsmPUSH(size) =
 	[src] -> [
-		Assign(<Word(size)>,<Reg(!"esp")>,
-			Binary(Minus(<Word(size)>),<Reg(!"esp")>,Lit(<Word(size)>,4))),
-		Assign(<Word(size)>,Ref(<Reg(!"esp")>),src)
-	]
+		Assign(type, <esp>, Binary(Minus(type), <esp>, Lit(type,4))),
+		Assign(type, Ref(<esp>), src)
+	] where
+		type := Word(size)
 
 asmPUSHW = AsmPUSH(!16)
 asmPUSHL = AsmPUSH(!32)
@@ -150,11 +150,9 @@ asmPUSHL = AsmPUSH(!32)
 
 AsmPOP(size) =
 	[dst] -> [
-		Assign(type,dst,Ref(<esp>)),
-		Assign(type,<esp>,
-			Binary(Plus(type),<Reg(!"esp")>,Lit(<Word(size)>,4)))
-	]
-	where
+		Assign(type, dst, Ref(<esp>)),
+		Assign(type, <esp>, Binary(Plus(type), <esp>, Lit(type,4)))
+	] where
 		type := Word(size)
 
 asmPOPW = AsmPOP(!16)

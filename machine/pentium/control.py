@@ -4,6 +4,7 @@
 from transf import parse
 from machine.pentium.common import *
 from machine.pentium.conditions import *
+from machine.pentium.data import *
 
 
 parse.Transfs('''
@@ -49,6 +50,36 @@ asmJS    = AsmJcc(ccS   )
 asmJZ    = AsmJcc(ccZ   )
 
 
+AsmLOOP(size, counter) =
+	[Ref(addr)] -> [
+		Assign(type, <counter>, Binary(Minus(type),<counter>, Lit(type,1))),
+		If(Binary(Eq(type),<counter>,Lit(type,0)), GoTo(addr), NoStmt)
+	] where type := UWord(size)
+
+asmLOOPW = AsmLOOP(!16, cx)
+asmLOOPL = AsmLOOP(!16, ecx)
+
+
+AsmLOOPcc(size, counter, cc) =
+	[Ref(addr)] -> [
+		Assign(type, <counter>, Binary(Minus(type),<counter>, Lit(type,1))),
+		If(Binary(And(Bool), Binary(Eq(type),<counter>,Lit(type,0)), <cc>),
+			GoTo(addr),
+			NoStmt
+		)
+	] where type := UWord(size)
+
+asmLOOPEW  = AsmLOOPcc(!16, cx, ccE )
+asmLOOPZW  = AsmLOOPcc(!16, cx, ccZ )
+asmLOOPNEW = AsmLOOPcc(!16, cx, ccNE)
+asmLOOPNZW = AsmLOOPcc(!16, cx, ccNZ)
+
+asmLOOPEL  = AsmLOOPcc(!32, ecx, ccE )
+asmLOOPZL  = AsmLOOPcc(!32, ecx, ccZ )
+asmLOOPNEL = AsmLOOPcc(!32, ecx, ccNE)
+asmLOOPNZL = AsmLOOPcc(!32, ecx, ccNZ)
+
+
 asmCALL =
 	[Ref(addr)] -> [Assign(Void, NoExpr, Call(addr,[]))]
 
@@ -57,7 +88,31 @@ asmRET =
 	[] -> [Ret(Void, NoExpr)]
 
 
-''')
+# FIXME: INT
+# FIXME: IRET
+# FIXME: INT
+# FIXME: INTO
+
+# FIXME: BOUND
+
+
+# FIXME: deal with level
+asmENTER =
+	[size, level] -> [
+		*<AsmPUSH(!32) [<ebp>]>,
+		Assign(type, <ebp>, <esp>),
+		Assign(type, <esp>, Binary(Minus(type), <esp>, size))
+	] where type := UWord(!32)
+
+
+asmLEAVE =
+	[] -> [
+		Assign(type, <esp>, <ebp>),
+		*<AsmPOP(!32) [<ebp>]>
+	] where type := UWord(!32)
+
+
+''', debug=True)
 
 
 
