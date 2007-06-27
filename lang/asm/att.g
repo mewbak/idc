@@ -5,11 +5,11 @@ import sys
 header "att_parser.__main__" {
     from att_lexer import Lexer
     from aterm.factory import factory
-    
+
     lexer = Lexer()
     parser = Parser(lexer, factory = factory)
     term = parser.start()
-    
+
     print "** ANTLR AST **"
     ast = parser.getAST()
     print ast.toStringList()
@@ -71,8 +71,8 @@ RPAR: ')';
 
 
 MINUS: '-';
-
 PLUS: '+';
+STAR: '*';
 
 CHAR
 	:	'\'' (ESC|~'\'') '\''
@@ -144,7 +144,7 @@ SL_COMMENT
 // multiple-line comments
 //ML_COMMENT
 // 	:	"/*"
-// 		(	
+// 		(
 // 			{ LA(2)!='/' }? '*'
 // 		|	'\r' '\n'		{newline();}
 // 		|	'\r'			{newline();}
@@ -159,14 +159,15 @@ class att_parser extends Parser;
 options {
 	buildAST=true; // TODO: remove -- only used for debugging
 	k = 3;
+	defaultErrorHandler = false;
 }
 
 start returns [res]
 		{ insns = [] }
 	:
 		( s=statement
-			{ insns.extend(s) } 
-		)* EOF 
+			{ insns.extend(s) }
+		)* EOF
 		{ res = self.factory.make("Module(insns)", insns = insns) }
 	;
 
@@ -217,9 +218,9 @@ instruction returns [res]
             res = self.factory.make("Asm(_, _)", #opcode.getText().lower(), operands)
 		}
 	;
- 
+
 operand returns [res]
-	: o=register
+	: ( register ~COLON ) => o=register
 		{ res = o }
 	| o=immediate
 		{ res = o }
@@ -242,7 +243,11 @@ memory returns [ret]
             disp = None
             base = None
 		}
-	: ( disp=constant ( base=memory_base )? | base=memory_base )
+	:
+		( STAR! )?
+		( section=register COLON! )?
+            // XXX: section is ignored
+		( disp=constant ( base=memory_base )? | base=memory_base )
 		{
             if base is None:
                 addr = disp
@@ -274,7 +279,7 @@ memory_base returns [ret]
 		}
 	;
 
-constant returns [ret] 
+constant returns [ret]
 	: sym=symbol
 		{ ret = self.factory.make("Sym(_)", sym) }
 	| value=integer
@@ -282,8 +287,8 @@ constant returns [ret]
 	;
 
 symbol returns [name]
-	: 
-		( d:DIRECTIVE 
+	:
+		( d:DIRECTIVE
 			{ name = #d.getText() }
 		| i:INSTRUCTION
 			{ name = #i.getText() }
@@ -294,7 +299,7 @@ integer returns [value]
 	:
 		( b:BINARY
 			{ value = int(#b.getText()[2:], 2) }
-		| o:OCTAL 
+		| o:OCTAL
 			{ value = int(#o.getText(), 8) }
 		| d:DECIMAL
 			{ value = int(#d.getText()) }
@@ -302,5 +307,5 @@ integer returns [value]
 			{ value = int(#h.getText()[2:], 16) }
 		| MINUS^ i=integer
 			{ value = -i }
-		) 
+		)
 	;
