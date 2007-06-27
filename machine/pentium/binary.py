@@ -77,6 +77,10 @@ asmADDB = AsmAdd(!8)
 asmADDW = AsmAdd(!16)
 asmADDL = AsmAdd(!32)
 
+
+# FIXME: ADC
+
+
 AsmSub(size) =
 		[dst, src] -> [
 			Assign(type, tmp, dst),
@@ -90,6 +94,10 @@ AsmSub(size) =
 asmSUBB = AsmSub(!8)
 asmSUBW = AsmSub(!16)
 asmSUBL = AsmSub(!32)
+
+
+# FIXME: SBB
+
 
 AsmInc(size) =
 		[dst] -> [
@@ -119,6 +127,7 @@ asmDECB = AsmDec(!8)
 asmDECW = AsmDec(!16)
 asmDECL = AsmDec(!32)
 
+
 HighLow(size) =
 	switch size
 		case 8: ![<ah>,<al>]
@@ -144,6 +153,7 @@ AsmMUL(size) =
 asmMULB = AsmMUL(!8)
 asmMULW = AsmMUL(!16)
 asmMULL = AsmMUL(!32)
+
 
 AsmIMUL1(size,src) =
 		HighLow(size); ?[high,low] ;
@@ -180,7 +190,8 @@ asmIMULB = AsmIMUL(!8)
 asmIMULW = AsmIMUL(!16)
 asmIMULL = AsmIMUL(!32)
 
-#FIXME: handle 8 bit specially
+# FIXME: handle 8 bit specially
+
 
 AsmDIV(size) =
 		[src] -> <
@@ -207,6 +218,7 @@ asmDIVB = AsmDIV(!8)
 asmDIVW = AsmDIV(!16)
 asmDIVL = AsmDIV(!32)
 
+
 AsmIDIV(size) =
 		[src] -> <
 		HighLow(size); ?[high,low] ;
@@ -231,6 +243,22 @@ AsmIDIV(size) =
 asmIDIVB = AsmIDIV(!8)
 asmIDIVW = AsmIDIV(!16)
 asmIDIVL = AsmIDIV(!32)
+
+
+AsmNEG(size) =
+		[dst] -> [
+			Assign(type, tmp, dst),
+			Assign(type, dst, Unary(Neg(type), dst)),
+			*<SubFlags(size, !Lit(type,0), !tmp, !dst)>
+		]
+	where
+		type := Word(size) ;
+		tmp := temp
+
+asmNEGB = AsmNEG(!8)
+asmNEGW = AsmNEG(!16)
+asmNEGL = AsmNEG(!32)
+
 
 AsmCmp(size) =
 		[dst, src] -> [
