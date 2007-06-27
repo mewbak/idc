@@ -1,6 +1,8 @@
 '''List term operations.'''
 
 
+import __builtin__ as builtins
+
 from aterm import types
 from aterm import visitor
 
@@ -100,53 +102,28 @@ class _Insert(_Operation):
 			)
 
 def insert(term, index, other):
-	'''_Insert an element into the list.'''
+	'''Insert an element into the list.'''
 	return _Insert().visit(index, other)
 
 
-class _Reverse(_Operation):
-
-	def __call__(self, term):
-		return self.visit(term, term.factory.makeNil())
-
-	def visitNil(self, term, accum):
-		return accum
-
-	def visitCons(self, term, accum):
-		return self.visit(
-			term.tail,
-			term.factory.makeCons(term.head, accum),
-		)
-
 def reverse(term):
-	'''_Reverse a list term.'''
-	return _Reverse().visit(term, term.factory.makeNil())
+	'''Reverse a list term.'''
+	factory = term.factory
+	accum = factory.makeNil()
+	for elm in term:
+		accum = factory.makeCons(elm, accum)
+	return accum
 
 
+def map(function, term):
+	"""Return a list term with the elements for transformed by the function."""
+	return term.factory.makeList(builtins.map(function, term))
 
-class _Filter(_Operation):
-
-	def __init__(self, function):
-		_Operation.__init__(self)
-		self.function = function
-
-	def visitNil(self, term):
-		return term
-
-	def visitCons(self, term):
-		tail = self.visit(term.tail)
-		if not self.function(term.head):
-			return tail
-		elif tail is term.tail:
-			return term
-		else:
-			return term.factory.makeCons(term.head, tail)
 
 def filter(function, term):
 	"""Return a list term with the elements for which the function returns
 	true."""
-	filter = _Filter(function)
-	return filter.visit(term)
+	return term.factory.makeList(builtins.filter(function, term))
 
 
 class _Fetcher(_Operation):
@@ -167,8 +144,10 @@ class _Fetcher(_Operation):
 def fetch(function, term):
 	"""Return a the first term of a list term for which the function returns
 	true."""
-	fetcher = _Fetcher(function)
-	return fetcher.visit(term)
+	for elm in term:
+		if function(elm):
+			return elm
+	return None
 
 
 class _Splitter(visitor.Visitor):

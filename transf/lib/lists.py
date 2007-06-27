@@ -34,18 +34,24 @@ class Reverse(transformation.Transformation):
 reverse = Reverse()
 
 
-def Map(operand, Cons = congruent.Cons):
+class Map(operate.Unary):
+
+	def apply(self, trm, ctx):
+		return aterm.lists.map(lambda trm: self.operand.apply(trm, ctx), trm)
+
+
+def _Map(operand, Cons = congruent.Cons):
 	map = util.Proxy()
 	map.subject = match.nil + Cons(operand, map)
 	return map
 
 
 def MapR(operand):
-	return Map(operand, congruent.ConsR)
+	return _Map(operand, congruent.ConsR)
 
 
-def MapTest(operand):
-	return Map(operand, match.Cons)
+def ForEach(operand):
+	return _Map(operand, match.Cons)
 
 
 def Filter(operand):
