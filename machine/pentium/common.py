@@ -7,13 +7,10 @@ from transf import parse
 from machine.pentium.registers import *
 
 
-class Temp(transf.transformation.Transformation):
+class Temp(transformation.Transformation):
 	"""Transformation which generates an unique temporary variable name."""
 
 	tmp_no = 0
-
-	def __init__(self):
-		transf.transformation.Transformation.__init__(self)
 
 	def apply(self, trm, ctx):
 		self.tmp_no += 1
@@ -23,7 +20,7 @@ class Temp(transf.transformation.Transformation):
 temp =  Temp()
 
 
-transf.parse.Transfs('''
+parse.Transfs('''
 
 Word(size) =
 	!Int(<size>,NoSign)

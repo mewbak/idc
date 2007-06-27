@@ -17,16 +17,13 @@ from machine.pentium.misc import *
 from machine.pentium.simplify import simplify
 
 
-class OpcodeDispatch(transf.transformation.Transformation):
+class OpcodeDispatch(transformation.Transformation):
 	"""Transformation to quickly dispatch the transformation to the appropriate
 	transformation."""
 
-	def __init__(self):
-		transf.transformation.Transformation.__init__(self)
-
 	def apply(self, trm, ctx):
 		if not trm.rmatch('Asm(_, [*])'):
-			raise transf.exception.Failure
+			raise exception.Failure
 
 		opcode, operands = trm.args
 
@@ -39,11 +36,10 @@ class OpcodeDispatch(transf.transformation.Transformation):
 
 		try:
 			return trf.apply(operands, ctx)
-		except transf.exception.Failure:
+		except exception.Failure:
 			sys.stderr.write("warning: failed to translate opcode '%s'\n" % opcode)
 			traceback.print_exc()
 			raise
-
 
 parse.Transfs('''
 
