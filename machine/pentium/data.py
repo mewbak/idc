@@ -191,10 +191,44 @@ asmOUTW = AsmOUT(!8, !"_outpw")
 asmOUTL = AsmOUT(!8, !"_outpd")
 
 
-# FIXME: CWD/CDQ
-# FIXME: CBW/CWDE
-# FIXME: MOVSX
-# FIXME: MOVZX
+asmCWTD =
+	[] -> [
+		If(Binary(Lt(type),<ax>,Lit(type,0)),
+			Assign(type,<dx>,Lit(type,-1)),
+			Assign(type,<dx>,Lit(type,0))
+		)
+	] where
+		type := SWord(!16)
+
+
+asmCLTD =
+	[] -> [
+		If(Binary(Lt(type),<eax>,Lit(type,0)),
+			Assign(type,<edx>,Lit(type,-1)),
+			Assign(type,<edx>,Lit(type,0))
+		)
+	] where
+		type := SWord(!32)
+
+
+AsmMOVSX(size, dst, src) =
+	![Assign(Int(<size>,Signed), <dst>, Cast(Int(<size>,Signed),<src>))]
+
+asmCBTW = [] -> <AsmMOVSX(!16,ax,al)>
+
+asmCBDE = [] -> <AsmMOVSX(!16,eax,ax)>
+
+asmMOVSBW = [dst, src] -> <AsmMOVSX(!16, !dst, !src)>
+asmMOVSBL = [dst, src] -> <AsmMOVSX(!32, !dst, !src)>
+asmMOVSWL = [dst, src] -> <AsmMOVSX(!32, !dst, !src)>
+
+
+AsmMOVZX(size) =
+	[dst, src] -> [Assign(Int(<size>,Unsigned), <dst>, Cast(Int(<size>,Unsigned),<src>))]
+
+asmMOVZBW = AsmMOVZX(!16)
+asmMOVZBL = AsmMOVZX(!32)
+asmMOVZWL = AsmMOVZX(!32)
 
 
 ''')
