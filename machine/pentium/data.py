@@ -224,7 +224,7 @@ asmMOVSWL = [dst, src] -> <AsmMOVSX(!32, !dst, !src)>
 
 
 AsmMOVZX(size) =
-	[dst, src] -> [Assign(Int(<size>,Unsigned), <dst>, Cast(Int(<size>,Unsigned),<src>))]
+	[dst, src] -> [Assign(Int(<size>,Unsigned), dst, Cast(Int(<size>,Unsigned),src))]
 
 asmMOVZBW = AsmMOVZX(!16)
 asmMOVZBL = AsmMOVZX(!32)
