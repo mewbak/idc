@@ -64,26 +64,22 @@ class Iter(_Operation):
 		return head
 
 
-class _Extend(_Operation):
-
-	def __init__(self, other):
-		_Operation.__init__(self)
-		self.other = other
-
-	def visitNil(self, term):
-		return self.other
-
-	def visitCons(self, term):
-		return term.factory.makeCons(term.head, self.visit(term.tail))
-
-def extend(term, other):
+def extend(head, tail):
 	'''Return the concatenation of two list terms.'''
-	return _Extend(other).visit(term)
+	if types.isNil(head):
+		return tail
+	if types.isNil(tail):
+		return head
+	factory = tail.factory
+	for elm in reversed(head):
+		tail = factory.makeCons(elm, tail)
+	return tail
 
 
-def append(term, other):
+def append(head, tail):
 	'''Append an element to a list.'''
-	return extend(term, term.factory.makeCons(other, term.factory.makeNil()))
+	factory = tail.factory
+	return extend(head, factory.makeCons(other, factory.makeNil()))
 
 
 class _Insert(_Operation):

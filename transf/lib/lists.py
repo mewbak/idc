@@ -93,10 +93,7 @@ class _Concat2(operate.Binary):
 	def apply(self, term, ctx):
 		head = self.loperand.apply(term, ctx)
 		tail = self.roperand.apply(term, ctx)
-		try:
-			return aterm.lists.extend(head, tail)
-		except TypeError:
-			raise exception.Failure('not term lists')
+		return aterm.lists.extend(head, tail)
 
 
 def Concat2(loperand, roperand):
