@@ -216,7 +216,7 @@ AsmMOVSX(size, dst, src) =
 
 asmCBTW = [] -> <AsmMOVSX(!16,ax,al)>
 
-asmCBDE = [] -> <AsmMOVSX(!16,eax,ax)>
+asmCWTL = [] -> <AsmMOVSX(!16,eax,ax)>
 
 asmMOVSBW = [dst, src] -> <AsmMOVSX(!16, !dst, !src)>
 asmMOVSBL = [dst, src] -> <AsmMOVSX(!32, !dst, !src)>
