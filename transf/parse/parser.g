@@ -332,6 +332,9 @@ term_list
 	| term ( COMMA! term_list | term_implicit_nil )
 		{ ## = #(#[ATAPPL,"Cons"], ##) }
 	| STAR! ( term | term_implicit_wildcard )
+		( COMMA! term_list
+		{ ## = #(#[ATAPPL,"Cat"], ##) }
+		)?
 	;
 
 term_implicit_nil

@@ -311,6 +311,11 @@ class Compiler(walker.Walker):
 		t = self.static(t)
 		return "aterm.factory.factory.makeCons(%s, %s)" % (h, t)
 
+	def staticCat(self, h, t):
+		h = self.static(h)
+		t = self.static(t)
+		return "aterm.lists.concat(%s, %s)" % (h, t)
+
 	def staticUndef(self):
 		return "aterm.factory.factory.makeNil()"
 
@@ -388,6 +393,13 @@ class Compiler(walker.Walker):
 			return "transf.lib.congruent.Cons(%s, %s)" % (h, t)
 		else:
 			assert False
+
+	def termCat(self, h, t, mode):
+		if mode != BUILD:
+			raise SemanticException("list concatenation only supported when building terms")
+		h = self.term(h, mode)
+		t = self.term(t, mode)
+		return "transf.lib.lists.Concat(%s, %s)" % (h, t)
 
 	def termAppl(self, name, args, mode):
 		name = self._str(name)

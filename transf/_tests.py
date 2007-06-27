@@ -466,6 +466,7 @@ class TestParse(TestMixin, unittest.TestCase):
 		('?"s"', 'Match(Str("s"))'),
 		('?[]', 'Match(Nil)'),
 		('?[1,2]', 'Match(Cons(Int(1),Cons(Int(2),Nil)))'),
+		('?[1,*[2]]', 'Match(Cons(Int(1),Cons(Int(2),Nil)))'),
 		('?C', 'Match(ApplName("C"))'),
 		('?C(1,2)', 'Match(Appl("C",[Int(1),Int(2)]))'),
 		('?_', 'Match(Wildcard)'),
@@ -480,6 +481,8 @@ class TestParse(TestMixin, unittest.TestCase):
 		('!"s"', 'Build(Str("s"))'),
 		('![]', 'Build(Nil)'),
 		('![1,2]', 'Build(Cons(Int(1),Cons(Int(2),Nil)))'),
+		('![1,*[2]]', 'Build(Cons(Int(1),Cons(Int(2),Nil)))'),
+		('![*[1],*[2]]', 'Build(Cat(Cons(Int(1),Nil),Cons(Int(2),Nil)))'),
 		('!C', 'Build(ApplName("C"))'),
 		('!C(1,2)', 'Build(Appl("C",[Int(1),Int(2)]))'),
 		('!_', 'Build(Wildcard)'),
@@ -775,12 +778,5 @@ class TestLists(TestMixin, unittest.TestCase):
 
 
 if __name__ == '__main__':
-	if __debug__:
-		unittest.main()
-	else:
-		import hotshot
-		filename = "prof"
-		prof = hotshot.Profile(filename, lineevents=0)
-		prof.runcall(unittest.main)
-		prof.close()
+	unittest.main()
 
