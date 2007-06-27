@@ -117,16 +117,14 @@ asmXADDL = AsmXADD(!32)
 
 
 AsmCMPXCHG(size,accum) =
-		[dst, src] -> <
-			lists.Concat(
-				![Assign(type, tmp, Binary(Minus(type), <accum>, dst))],
-				SubFlags(size, accum, !src, !tmp),
-				![If(Binary(Eq(type),<accum>,dst),
-					Assign(type, dst, src),
-					Assign(type, <accum>, dst)
-				)]
+		[dst, src] -> [
+			Assign(type, tmp, Binary(Minus(type), <accum>, dst)),
+			*<SubFlags(size, accum, !src, !tmp)>,
+			If(Binary(Eq(type),<accum>,dst),
+				Assign(type, dst, src),
+				Assign(type, <accum>, dst)
 			)
-		>
+		]
 	where
 		type := Word(size) ;
 		tmp := temp
@@ -152,13 +150,45 @@ asmPUSHL = AsmPUSH(!32)
 
 AsmPOP(size) =
 	[dst] -> [
-		Assign(<Word(size)>,dst,Ref(<Reg(!"esp")>)),
-		Assign(<Word(size)>,<Reg(!"esp")>,
-			Binary(Plus(<Word(size)>),<Reg(!"esp")>,Lit(<Word(size)>,4)))
+		Assign(type,dst,Ref(<esp>)),
+		Assign(type,<esp>,
+			Binary(Plus(type),<Reg(!"esp")>,Lit(<Word(size)>,4)))
 	]
+	where
+		type := Word(size)
 
 asmPOPW = AsmPOP(!16)
 asmPOPL = AsmPOP(!32)
+
+
+asmPUSHAD =
+	[] -> [
+		Assign(<Word(!32)>, tmp, <esp>),
+		*<lists.MapConcat(asmPUSHL [_]) [<eax>, <ecx>, <edx>, <ebx>, tmp , <esi>, <edi>]>
+	] where
+		tmp := temp
+
+asmPOPAD =
+	[] -> [
+		*<lists.MapConcat(asmPOPL [_]) [<eax>, <ecx>, <edx>, <ebx>, tmp , <esi>, <edi>]>
+	] where
+		tmp := temp
+
+
+AsmIN(size, builtin) =
+	[dst, src] -> [Assign(<Word(size)>,dst,Call(<builtin>,[src]){Builtin})]
+
+asmINB = AsmIN(!8, !"_inp")
+asmINW = AsmIN(!8, !"_inpw")
+asmINL = AsmIN(!8, !"_inpd")
+
+
+AsmOUT(size, builtin) =
+	[dst, src] -> [Assign(Void,NoExpr,Call(<builtin>,[dst,src]){Builtin})]
+
+asmOUTB = AsmOUT(!8, !"_outp")
+asmOUTW = AsmOUT(!8, !"_outpw")
+asmOUTL = AsmOUT(!8, !"_outpd")
 
 
 ''')
