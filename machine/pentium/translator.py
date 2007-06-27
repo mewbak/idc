@@ -13,6 +13,7 @@ from machine.pentium.data import *
 from machine.pentium.binary import *
 from machine.pentium.logical import *
 from machine.pentium.shift import *
+from machine.pentium.bitbyte import *
 from machine.pentium.control import *
 from machine.pentium.flag import *
 from machine.pentium.misc import *

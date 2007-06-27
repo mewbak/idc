@@ -48,19 +48,5 @@ asmNOTW = AsmNOT(!16)
 asmNOTL = AsmNOT(!32)
 
 
-AsmTest(size) =
-	[dst, src] -> [
-		Assign(type, tmp, Binary(And(type), dst, src)),
-		*<LogFlags(size, !tmp)>
-	]
-	where
-		type := Word(size) ;
-		tmp := temp
-
-asmTESTB = AsmTest(!8)
-asmTESTW = AsmTest(!16)
-asmTESTL = AsmTest(!32)
-
-
 ''')
 
