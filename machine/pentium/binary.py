@@ -78,13 +78,32 @@ asmADDW = AsmAdd(!16)
 asmADDL = AsmAdd(!32)
 
 
-# FIXME: ADC
+AsmADC(size) =
+		[dst, src] -> [
+			Assign(type, tmp, dst),
+			Assign(type, dst,
+				Binary(Plus(type),dst,
+					Binary(Plus(type),src,
+						Cond(<cf>,Lit(type,1),Lit(type,0))))),
+			*<AddFlags(size, !tmp, !src, !dst)>
+		]
+	where
+		type := Word(size) ;
+		tmp := temp
+
+
+asmADCB = AsmADC(!8)
+asmADCW = AsmADC(!16)
+asmADCL = AsmADC(!32)
 
 
 AsmSub(size) =
 		[dst, src] -> [
 			Assign(type, tmp, dst),
-			Assign(type, dst, Binary(Minus(type), dst, src)),
+			Assign(type, dst,
+				Binary(Minus(type),dst,
+					Binary(Plus(type),src,
+						Cond(<cf>,Lit(type,1),Lit(type,0))))),
 			*<SubFlags(size, !tmp, !src, !dst)>
 		]
 	where
@@ -96,7 +115,19 @@ asmSUBW = AsmSub(!16)
 asmSUBL = AsmSub(!32)
 
 
-# FIXME: SBB
+AsmSBB(size) =
+		[dst, src] -> [
+			Assign(type, tmp, dst),
+			Assign(type, dst, Binary(Minus(type), dst, src)),
+			*<SubFlags(size, !tmp, !src, !dst)>
+		]
+	where
+		type := Word(size) ;
+		tmp := temp
+
+asmSBBB = AsmSBB(!8)
+asmSBBW = AsmSBB(!16)
+asmSBBL = AsmSBB(!32)
 
 
 AsmInc(size) =
