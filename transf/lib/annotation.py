@@ -1,53 +1,29 @@
 '''High-level annotation transformations.'''
 
 
-from transf import exception
-from transf import types
-from transf.lib import base
-from transf.lib import scope
+import aterm.annotation
+
+from transf import operate
 from transf.lib import combine
-from transf.lib import match
-from transf.lib import build
 from transf.lib import congruent
 from transf.lib import project
 from transf.lib import lists
-from transf.lib import debug
 
 
-def Set(label, *values):
-	annos = types.term.Term('annos')
-	return scope.Scope((annos,),
-		combine.Where(build.List(values) * annos.match) *
-		congruent.Annos(
-			lists.Fetch(congruent.ApplCons(match.Str(label), build.Var(annos))) +
-			build.Cons(build.ApplCons(build.Str(label), build.Var(annos)), base.ident)
-		),
-	)
+class Set(operate.Unary):
 
-
-def Update(label, *values):
-	return congruent.Annos(
-		lists.Fetch(congruent.Appl(label, values))
-	)
+	def apply(self, trm, ctx):
+		anno = self.operand.apply(trm, ctx)
+		return aterm.annotation.set(trm, anno)
 
 
 def Get(label):
-	return (
-		project.annos *
-		project.Fetch(match.ApplName(label)) *
-		project.args *
-		combine.If(
-			match.Cons(base.ident, match.nil),
-			project.head
-		)
-	)
+	return combine.Composition(project.annos, project.Fetch(label))
+
+
+def Has(label):
+	return combine.Where(Get(label))
 
 
 def Del(label):
-	return congruent.Annos(
-		+(
-			lists.Filter(
-				-match.ApplName(label)
-			)
-		)
-	)
+	return congruent.Annos(lists.Filter(combine.Not(label)))

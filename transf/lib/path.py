@@ -16,14 +16,20 @@ from transf import exception
 from transf import transformation
 from transf import operate
 from transf.lib import base
+from transf.lib import combine
+from transf.lib import match
 from transf.lib import build
+from transf.lib import project
 from transf.lib import annotation
 
 
 _factory = aterm.factory.factory
 
 
-get = annotation.Get('Path')
+get = combine.Composition(
+	annotation.Get(match.ApplName('Path')),
+	combine.Composition(project.args, project.first)
+)
 
 
 class Annotate(transformation.Transformation):

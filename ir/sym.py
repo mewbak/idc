@@ -13,8 +13,8 @@ parse.Transfs('''
 shared local as table
 
 # TODO: detect local variables from scope rules
-isReg = combine.Where(annotation.Get(`"Reg"`))
-isTmp = combine.Where(annotation.Get(`"Tmp"`))
+isReg = annotation.Has(?Reg)
+isTmp = annotation.Has(?Tmp)
 
 isLocalVar =
 	ir.match.aSym ;

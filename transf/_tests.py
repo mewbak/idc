@@ -392,48 +392,53 @@ class TestUnify(TestMixin, unittest.TestCase):
 class TestAnno(TestMixin, unittest.TestCase):
 
 	def _testAnnoTransf(self, Transf, testCases):
-		for input, label, values, output in testCases:
-			transf = Transf(label, *map(build.Term, values))
-			self._testTransf(transf, [(input, output)])
+		for input, label, output in testCases:
+			trf = Transf(parse.Transf(label))
+			self._testTransf(trf, [(input, output)])
 
 	setTestCases = (
-		('X', "A", ['1'], 'X{A(1)}'),
-		('X{B(2)}', "A", ['1'], 'X{A(1),B(2)}'),
-		('X{A(1)}', "A", ['2'], 'X{A(2)}'),
-		('X{A(1),B(2)}', "A", ['2'], 'X{A(2),B(2)}'),
-		('X{B(1),A(2)}', "A", ['1'], 'X{B(1),A(1)}'),
+		('X', '!A(1)', 'X{A(1)}'),
+		('X{B(2)}', '!A(1)', 'X{A(1),B(2)}'),
+		('X{A(1)}', '!A(2)', 'X{A(2)}'),
+		('X{A(1),B(2)}', '!A(2)', 'X{A(2),B(2)}'),
+		('X{B(1),A(2)}', '!A(1)', 'X{A(1),B(1)}'),
+		('1', '!A', '1'),
 	)
 
 	def testSet(self):
 		self._testAnnoTransf(annotation.Set, self.setTestCases)
 
-	updateTestCases = (
-		('X', "A", ['1'], 'FAILURE'),
-		('X{B(2)}', "A", ['1'], 'FAILURE'),
-		('X{A(1)}', "A", ['2'], 'X{A(2)}'),
-		('X{A(1),B(2)}', "A", ['2'], 'X{A(2),B(2)}'),
-		('X{B(1),A(2)}', "A", ['1'], 'X{B(1),A(1)}'),
-	)
-
-	def testUpdate(self):
-		self._testAnnoTransf(annotation.Update, self.updateTestCases)
-
 	getTestCases = (
-		('X{A(1)}', "A", [], '1'),
-		('X{A(1),B(2)}', "A", [], '1'),
-		('X{B(1),A(2)}', "A", [], '2'),
-		('X', "A", [], 'FAILURE'),
+		('X{A(1)}', '?A', 'A(1)'),
+		('X{A(1),B(2)}', '?A', 'A(1)'),
+		('X{B(1),A(2)}', '?A', 'A(2)'),
+		('X{B(1)}', '?A', 'FAILURE'),
+		('X', '?A', 'FAILURE'),
+		('1', '?A', 'FAILURE'),
 	)
 
 	def testGet(self):
 		self._testAnnoTransf(annotation.Get, self.getTestCases)
 
+	hasTestCases = (
+		('X{A(1)}', '?A', 'X{A(1)}'),
+		('X{A(1),B(2)}', '?A', 'X{A(1),B(2)}'),
+		('X{B(1),A(2)}', '?A', 'X{B(1),A(2)}'),
+		('X{B(1)}', '?A', 'FAILURE'),
+		('X', '?A', 'FAILURE'),
+		('1', '?A', 'FAILURE'),
+	)
+
+	def testGet(self):
+		self._testAnnoTransf(annotation.Has, self.hasTestCases)
+
 	delTestCases = (
-		('X', "A", [], 'X'),
-		('X{B(2)}', "A", [], 'X{B(2)}'),
-		('X{A(1)}', "A", [], 'X'),
-		('X{A(1),B(2)}', "A", [], 'X{B(2)}'),
-		('X{B(1),A(2)}', "A", [], 'X{B(1)}'),
+		('X', '?A', 'X'),
+		('X{B(2)}', '?A', 'X{B(2)}'),
+		('X{A(1)}', '?A', 'X'),
+		('X{A(1),B(2)}', '?A', 'X{B(2)}'),
+		('X{B(1),A(2)}', '?A', 'X{B(1)}'),
+		('1', '?A', '1'),
 	)
 
 	def testDel(self):
