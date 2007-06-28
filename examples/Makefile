@@ -38,7 +38,7 @@ CFLAGS += -mregparm=3
 CFLAGS += -fargument-noalias
 
 # don'te generate jump tables
-CFLAGS += -fno-jump-tables
+#CFLAGS += -fno-jump-tables
 
 # specify some clobbered/saved registers
 CFLAGS += -fcall-used-eax -fcall-used-ebx -fcall-used-ecx -fcall-used-edx
