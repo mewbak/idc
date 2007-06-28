@@ -100,10 +100,7 @@ asmADCL = AsmADC(!32)
 AsmSub(size) =
 		[dst, src] -> [
 			Assign(type, tmp, dst),
-			Assign(type, dst,
-				Binary(Minus(type),dst,
-					Binary(Plus(type),src,
-						Cond(<cf>,Lit(type,1),Lit(type,0))))),
+			Assign(type, dst, Binary(Minus(type), dst, src)),
 			*<SubFlags(size, !tmp, !src, !dst)>
 		]
 	where
@@ -118,7 +115,10 @@ asmSUBL = AsmSub(!32)
 AsmSBB(size) =
 		[dst, src] -> [
 			Assign(type, tmp, dst),
-			Assign(type, dst, Binary(Minus(type), dst, src)),
+			Assign(type, dst,
+				Binary(Minus(type),dst,
+					Binary(Plus(type),src,
+						Cond(<cf>,Lit(type,1),Lit(type,0))))),
 			*<SubFlags(size, !tmp, !src, !dst)>
 		]
 	where
