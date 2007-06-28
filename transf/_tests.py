@@ -336,20 +336,6 @@ class TestProject(TestMixin, unittest.TestCase):
 	def testSubterms(self):
 		self._testTransf(project.subterms, self.subtermsTestCases)
 
-	fetchTestCases = (
-		[ident, fail, Rule('X -> Y')],
-		{
-			'[]': ['FAILURE', 'FAILURE', 'FAILURE'],
-			'[X]': ['X', 'FAILURE', 'Y'],
-			'[X,A]': ['X', 'FAILURE', 'Y'],
-			'[A,X]': ['A', 'FAILURE', 'Y'],
-			'[X{1},X{2}]': ['X{1}', 'FAILURE', 'Y'],
-		}
-	)
-
-	def testFetch(self):
-		self._testMetaTransf(project.Fetch, self.fetchTestCases)
-
 
 class TestUnify(TestMixin, unittest.TestCase):
 
@@ -682,7 +668,21 @@ class TestLists(TestMixin, unittest.TestCase):
 		self._testMetaTransf(lists.Filter, self.filterTestCases)
 		self._testMetaTransf(lists.FilterR, self.filterTestCases)
 
-	# TODO: testFetch
+	fetchTestCases = (
+		[ident, fail, Rule('X -> Y')],
+		{
+			'[]': ['FAILURE', 'FAILURE', 'FAILURE'],
+			'[X]': ['X', 'FAILURE', 'Y'],
+			'[X,A]': ['X', 'FAILURE', 'Y'],
+			'[A,X]': ['A', 'FAILURE', 'Y'],
+			'[X{1},X{2}]': ['X{1}', 'FAILURE', 'Y'],
+		}
+	)
+
+	def testFetch(self):
+		self._testMetaTransf(lists.Fetch, self.fetchTestCases)
+
+	# TODO: testOne
 
 	def testSplit(self):
 		self._testTransf(

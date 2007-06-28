@@ -21,15 +21,20 @@ from transf.lib import scope
 from transf.lib import unify
 
 
-# FIXME: write non-recursive versions
+class Length(transformation.Transformation):
 
-length = unify.Count(base.ident)
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		return len(trm)
+
+length = Length()
 
 
 class Reverse(transformation.Transformation):
 
-	def apply(self, term, ctx):
-		return aterm.lists.reverse(term)
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		return aterm.lists.reverse(trm)
 
 reverse = Reverse()
 
@@ -37,68 +42,94 @@ reverse = Reverse()
 class Map(operate.Unary):
 
 	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
 		return aterm.lists.map(lambda trm: self.operand.apply(trm, ctx), trm)
 
 
-def _Map(operand, Cons = congruent.Cons):
-	map = util.Proxy()
-	map.subject = match.nil + Cons(operand, map)
-	return map
+class MapR(operate.Unary):
+
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		return aterm.lists.rmap(lambda trm: self.operand.apply(trm, ctx), trm)
 
 
-def MapR(operand):
-	return _Map(operand, congruent.ConsR)
+class ForEach(operate.Unary):
+
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		for elm in trm:
+			self.operand.apply(trm, ctx)
+		return trm
 
 
-def ForEach(operand):
-	return _Map(operand, match.Cons)
+class Filter(operate.Unary):
+
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		res = []
+		for elm in trm:
+			try:
+				elm = self.operand.apply(elm, ctx)
+			except exception.Failure:
+				pass
+			else:
+				res.append(elm)
+		return trm.factory.makeList(res)
 
 
-def Filter(operand):
-	filter = util.Proxy()
-	filter.subject = (
-		match.nil +
-		combine.GuardedChoice(
-			congruent.Cons(operand, base.ident),
-			congruent.Cons(base.ident, filter),
-			project.tail * filter
-		)
-	)
-	return filter
+class FilterR(operate.Unary):
 
-def FilterR(operand):
-	filter = util.Proxy()
-	filter.subject = (
-		match.nil +
-		congruent.Cons(base.ident, filter) *
-		(congruent.Cons(operand, base.ident) + project.tail)
-	)
-	return filter
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		accum = trm.factory.makeNil()
+		for elm in reverse(trm):
+			try:
+				elm = self.operand.apply(elm, ctx)
+			except exception.Failure:
+				pass
+			else:
+				accum = trm.factory.makeCons(elm, accum)
+		return accum
 
 
-def Fetch(operand):
-	fetch = util.Proxy()
-	fetch.subject = (
-		congruent.Cons(operand, base.ident) +
-		congruent.Cons(base.ident, fetch)
-	)
-	return fetch
+class Fetch(operate.Unary):
+
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		for elm in trm:
+			try:
+				return self.operand.apply(elm, ctx)
+			except exception.Failure:
+				pass
+		raise exception.Failure
 
 
-def FetchElem(operand):
-	fetch = util.Proxy()
-	fetch.subject = (
-		project.head * operand +
-		project.tail * fetch
-	)
-	return fetch
+class One(operate.Unary):
+
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		head = []
+		tail = trm
+		while tail:
+			elm = tail.head
+			tail = tail.tail
+			try:
+				elm = self.operand.apply(elm, ctx)
+			except exception.Failure:
+				pass
+			else:
+				tail = trm.factory.makeCons(elm, tail)
+				for elm in reversed(head):
+					tail = trm.factory.makeCons(elm, tail)
+				return tail
+		raise exception.Failure
 
 
 class _Concat2(operate.Binary):
 
-	def apply(self, term, ctx):
-		head = self.loperand.apply(term, ctx)
-		tail = self.roperand.apply(term, ctx)
+	def apply(self, trm, ctx):
+		head = self.loperand.apply(trm, ctx)
+		tail = self.roperand.apply(trm, ctx)
 		return aterm.lists.extend(head, tail)
 
 
@@ -116,6 +147,9 @@ def Concat(*operands):
 	return operate.Nary(operands, Concat2, build.nil)
 
 concat = unify.Foldr(build.nil, Concat2)
+
+
+# FIXME: write non-recursive versions
 
 
 def MapConcat(operand):
@@ -229,23 +263,3 @@ def SplitAllKeep(operand, ):
 		)
 	)
 	return splitall
-
-
-class Lookup(transformation.Transformation):
-
-	def __init__(self, key, table):
-		transformation.Transformation.__init__(self)
-		self.key = key
-		self.table = table
-
-	def apply(self, term, ctx):
-		key = self.key.apply(term, ctx)
-		table = self.table.apply(term, ctx)
-
-		for name, value in table:
-			if key.isEquivalent(name):
-				return value
-		raise exception.Failure('key not found in table', key, table)
-
-
-

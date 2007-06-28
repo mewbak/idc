@@ -89,7 +89,7 @@ def AllStmtsBU(up):
 
 def OneStmt(pre, post = trf.base.ident):
 	stmt = util.Proxy()
-	stmts = trf.lists.Fetch(stmt)
+	stmts = trf.lists.One(stmt)
 	stmt.subject = pre ** post ** Stmt(stmt, stmts, trf.base.fail)
 	return stmt
 
@@ -101,7 +101,7 @@ def AllGlobalStmts(operand):
 
 def OneGlobalStmt(operand):
 	return Module(
-		trf.lists.Fetch(operand)
+		trf.lists.One(operand)
 	)
 
 def OneFunction(operand, type = trf.base.ident, name = trf.base.ident, args = trf.base.ident, stmts = trf.base.ident):

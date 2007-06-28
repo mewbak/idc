@@ -18,7 +18,7 @@ class Set(operate.Unary):
 
 
 def Get(label):
-	return combine.Composition(project.annos, project.Fetch(label))
+	return combine.Composition(project.annos, lists.Fetch(label))
 
 
 def Has(label):

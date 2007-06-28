@@ -48,12 +48,6 @@ def Nth(n):
 		n = head
 
 
-def Fetch(operand):
-	fetch = util.Proxy()
-	fetch.subject = head * operand + tail * fetch
-	return fetch
-
-
 class Name(transformation.Transformation):
 
 	def apply(self, trm, ctx):

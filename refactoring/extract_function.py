@@ -10,7 +10,7 @@ parse.Transfs('''
 applicable =
 	ir.path.Applicable(
 		~Module(<
-			lists.Fetch(ir.path.isSelected ; ?Label(_) )
+			lists.One(ir.path.isSelected ; ?Label(_) )
 		>)
 	)
 
