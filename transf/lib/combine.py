@@ -24,7 +24,7 @@ def Not(operand):
 		return base.fail
 	if operand is base.fail:
 		return base.ident
-	if isinstance(operand, _Not):
+	if type(operand) is _Not:
 		return operand.operand
 	return _Not(operand)
 

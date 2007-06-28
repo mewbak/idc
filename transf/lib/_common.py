@@ -57,7 +57,7 @@ def Cons(head, tail, _Cons, _Term):
 		head = base.ident
 	if tail is None:
 		tail = base.ident
-	if isinstance(head, _Term) and isinstance(tail, _Term):
+	if type(head) is _Term and type(tail) is _Term:
 		return _Term(_factory.makeCons(head.term, tail.term))
 	return _Cons(head, tail)
 
