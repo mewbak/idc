@@ -85,7 +85,8 @@ asmCALL =
 
 
 asmRET =
-	[] -> [Ret(Void, NoExpr)]
+	[] -> [Ret(Void, NoExpr)] |
+	[size] -> [Ret(Void, NoExpr)]
 
 
 # FIXME: INT
@@ -112,7 +113,7 @@ asmLEAVE =
 	] where type := UWord(!32)
 
 
-''', debug=True)
+''')
 
 
 
