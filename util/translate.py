@@ -43,7 +43,8 @@ def translate(fpin, fpout, verbose = True):
 
 	if verbose:
 		sys.stderr.write('** Low-level IR **\n')
-		#sys.stderr.write(str(term) + '\n')
+		if verbose > 1:
+			sys.stderr.write(str(term) + '\n')
 		pretty_print(term)
 		sys.stderr.write('\n')
 
@@ -51,7 +52,8 @@ def translate(fpin, fpout, verbose = True):
 
 	if verbose:
 		sys.stderr.write('** Translated IR **\n')
-		#sys.stderr.write(str(term) + '\n')
+		if verbose > 1:
+			sys.stderr.write(str(term) + '\n')
 		pretty_print(term)
 		sys.stderr.write('\n')
 
@@ -72,11 +74,11 @@ def main():
 		help = "specify output file")
 	parser.add_option(
 		'-v', '--verbose',
-		action = "store_true", dest = "verbose", default = True,
+		action = "count", dest = "verbose", default = 1,
 		help = "show extra information")
 	parser.add_option(
 		'-q', '--quiet',
-		action = "store_false", dest = "verbose",
+		action = "store_const", dest = "verbose", const = 0,
 		help = "no extra information")
 	parser.add_option(
 		'-p', '--profile',
