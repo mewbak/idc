@@ -1,20 +1,8 @@
 '''List term operations.'''
 
 
-import __builtin__ as builtins
-
 from aterm import types
 from aterm import visitor
-
-
-# FIXME: write non-recursive versions
-
-
-class _Operation(visitor.Visitor):
-	'''Base visitor class for list operations.'''
-
-	def visitTerm(self, term, *args, **kargs):
-		raise TypeError('not a list term', term)
 
 
 def empty(term):
@@ -47,15 +35,18 @@ def item(term, index):
 		term = term.tail
 
 
-class Iter(_Operation):
+class Iter(visitor.Visitor):
 	'''List term iterator.'''
 
 	def __init__(self, term):
-		_Operation.__init__(self)
+		visitor.Visitor.__init__(self)
 		self.term = term
 
 	def next(self):
 		return self.visit(self.term)
+
+	def visitTerm(self, term):
+		raise TypeError('not a list term', term)
 
 	def visitNil(self, term):
 		raise StopIteration
@@ -84,26 +75,17 @@ def append(head, tail):
 	return extend(head, factory.makeCons(other, factory.makeNil()))
 
 
-class _Insert(_Operation):
-
-	def visitNil(self, term, index, other):
-		if index == 0:
-			return term.factory.makeCons(other, term)
-		else:
-			raise IndexError('index out of bounds')
-
-	def visitCons(self, term, index, other):
-		if index == 0:
-			return term.factory.makeCons(other, term)
-		else:
-			return term.factory.makeCons(
-				term.head,
-				self.visit(term.tail, index - 1, other),
-			)
-
 def insert(term, index, other):
 	'''Insert an element into the list.'''
-	return _Insert().visit(index, other)
+	factory = term.factory
+	accum = []
+	for i in range(index):
+		accum.append(term.head)
+		term = term.tail
+	term = factory.makeCons(other, term)
+	for elem in reversed(accum):
+		term = factory.makeCons(elem, term)
+	return term
 
 
 def reverse(term):
@@ -117,29 +99,23 @@ def reverse(term):
 
 def map(function, term):
 	"""Return a list term with the elements for transformed by the function."""
-	return term.factory.makeList(builtins.map(function, term))
+	return term.factory.makeList([function(elem) for elem in term])
+
+
+def rmap(function, term):
+	"""Return a list term with the elements for transformed by the function."""
+	factory = term.factory
+	accum = factory.makeNil()
+	for elem in reversed(list(term)):
+		accum = factory.makeCons(function(elem), accum)
+	return accum
 
 
 def filter(function, term):
 	"""Return a list term with the elements for which the function returns
 	true."""
-	return term.factory.makeList(builtins.filter(function, term))
+	return term.factory.makeList([elem for elem in term if function(elem)])
 
-
-class _Fetcher(_Operation):
-
-	def __init__(self, function):
-		_Operation.__init__(self)
-		self.function = function
-
-	def visitNil(self, term):
-		return None
-
-	def visitCons(self, term):
-		if self.function(term.head):
-			return term.head
-		else:
-			return self.visit(term.tail)
 
 def fetch(function, term):
 	"""Return a the first term of a list term for which the function returns
@@ -150,34 +126,13 @@ def fetch(function, term):
 	return None
 
 
-class _Splitter(visitor.Visitor):
-
-	def __init__(self, index):
-		visitor.Visitor.__init__(self)
-		self.index = index
-
-	def visitTerm(self, term, index):
-		raise TypeError('not a term list', term)
-
-	def visitNil(self, term, index):
-		if index == self.index:
-			return term.factory.makeNil(), term
-		else:
-			raise IndexError('index out of range')
-
-	def visitCons(self, term, index):
-		if index == self.index:
-			return term.factory.makeNil(), term
-		else:
-			head, tail = self.visit(term.tail, index + 1)
-			return term.factory.makeCons(
-				term.head,
-				head,
-			), tail
-
 def split(term, index):
 	'''Splits a list term in two lists.
 	The argument is the index of the first element of the second list.
 	'''
-	splitter = _Splitter(index)
-	return splitter.visit(term, 0)
+	factory = term.factory
+	head = []
+	for i in range(index):
+		head.append(term.head)
+		term = term.tail
+	return factory.makeList(head), term
