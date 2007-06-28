@@ -40,11 +40,11 @@ _tokenizer = antlrre.Tokenizer(
 			r'[0-9]+[eE][-+]?[0-9]+'
 		r')', False),
 
+		# HEX
+		(_HEX, r'-?0[xX][0-9a-fA-F]+', False),
+
 		# INT
 		(parser.INT, r'-?[0-9]+', False),
-
-		# HEX
-		(_HEX, r'-0x?[0-9a-fA-F]+', False),
 
 		# STR
 		(parser.STR, r'"[^"\\]*(?:\\.[^"\\]*)*"', False),
