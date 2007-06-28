@@ -13,7 +13,7 @@ from transf.lib import base
 from transf.lib import combine
 from transf.lib import project
 from transf.lib import _common
-from transf.lib import util
+from transf import util
 
 
 _factory = aterm.factory.factory

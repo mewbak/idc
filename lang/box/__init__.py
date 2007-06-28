@@ -15,6 +15,7 @@ import aterm.types
 import aterm.walker
 
 from transf import transformation
+from transf import util
 from transf import lib
 
 
@@ -183,11 +184,11 @@ sym = Tag('type', 'symbol')
 def Path(operand):
 	return Tag('path', lib.path.get, operand ) + operand
 
-@lib.util.Adaptor
+@util.Adaptor
 def reprz(term):
 	return term.factory.makeStr(str(term))
 
-@lib.util.Adaptor
+@util.Adaptor
 def escape(term):
 	s = str(term.value)
 	s = s.replace('\"', '\\"')

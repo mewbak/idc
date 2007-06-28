@@ -5,27 +5,27 @@ import aterm.project
 
 from transf import exception
 from transf import transformation
-from transf.lib import util
+from transf import util
 
 
 class Head(transformation.Transformation):
 
-	def apply(self, term, ctx):
+	def apply(self, trm, ctx):
 		try:
-			return term.head
+			return trm.head
 		except AttributeError:
-			raise exception.Failure("not a list construction term", term)
+			raise exception.Failure("not a list construction term", trm)
 
 head = Head()
 
 
 class Tail(transformation.Transformation):
 
-	def apply(self, term, ctx):
+	def apply(self, trm, ctx):
 		try:
-			return term.tail
+			return trm.tail
 		except AttributeError:
-			raise exception.Failure("not a list construction term", term)
+			raise exception.Failure("not a list construction term", trm)
 
 tail = Tail()
 
@@ -56,42 +56,39 @@ def Fetch(operand):
 
 class Name(transformation.Transformation):
 
-	def apply(self, term, ctx):
+	def apply(self, trm, ctx):
 		try:
-			name = term.name
+			name = trm.name
 		except AttributeError:
-			raise exception.Failure("not an application term", term)
+			raise exception.Failure("not an application term", trm)
 		else:
-			return term.factory.makeStr(name)
+			return trm.factory.makeStr(name)
 
 name = Name()
 
 
 class Args(transformation.Transformation):
 
-	def apply(self, term, ctx):
-		try:
-			args = term.args
-		except AttributeError:
-			raise exception.Failure("not an application term", term)
-		else:
-			return term.factory.makeList(args)
+	def apply(self, trm, ctx):
+		if not aterm.types.isAppl(trm):
+			raise exception.Failure("not an application term", trm)
+		return trm.factory.makeList(trm.args)
 
 args = Args()
 
 
 class Subterms(transformation.Transformation):
 
-	def apply(self, term, ctx):
-		return aterm.project.subterms(term)
+	def apply(self, trm, ctx):
+		return aterm.project.subterms(trm)
 
 subterms = Subterms()
 
 
 class Annos(transformation.Transformation):
 
-	def apply(self, term, ctx):
-		return aterm.project.annotations(term)
+	def apply(self, trm, ctx):
+		return aterm.project.annotations(trm)
 
 annos = Annos()
 

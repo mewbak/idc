@@ -1,15 +1,20 @@
 '''Transformations for iterating terms.'''
 
 
-from transf.lib import util
-from transf.lib import combine
+from transf import exception
+from transf import operate
+from transf import util
 
 
-def Repeat(operand):
+class Repeat(operate.Unary):
 	'''Applies a transformation until it fails.'''
-	repeat = util.Proxy()
-	repeat.subject = +(operand * repeat)
-	return repeat
+
+	def apply(self, trm, ctx):
+		try:
+			while True:
+				trm = self.operand(trm, ctx)
+		except exception.Failure:
+			return trm
 
 
 def Rec(Def):

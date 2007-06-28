@@ -1,6 +1,7 @@
 '''Common transformations.'''
 
 
+from transf import util
 from transf import lib as trf
 import ir.match
 
@@ -76,7 +77,7 @@ def Stmt(stmt, stmts, default, **kargs):
 	)
 
 def AllStmts(**kargs):
-	stmt = trf.util.Proxy()
+	stmt = util.Proxy()
 	stmts = trf.lists.Map(stmt)
 	stmt.subject = Stmt(stmt, stmts, trf.base.ident, **kargs)
 	return stmt
@@ -87,7 +88,7 @@ def AllStmtsBU(up):
 
 
 def OneStmt(pre, post = trf.base.ident):
-	stmt = trf.util.Proxy()
+	stmt = util.Proxy()
 	stmts = trf.lists.Fetch(stmt)
 	stmt.subject = pre ** post ** Stmt(stmt, stmts, trf.base.fail)
 	return stmt

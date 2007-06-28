@@ -11,7 +11,7 @@ from transf import transformation
 from transf import types
 from transf import operate
 from transf.lib import base
-from transf.lib import util
+from transf import util
 from transf.lib import combine
 from transf.lib import project
 from transf.lib import match

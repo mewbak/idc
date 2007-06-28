@@ -5,6 +5,7 @@ import aterm
 import transf
 from lang import box
 
+from transf import util
 from transf import lib
 from transf import parse
 
@@ -13,7 +14,7 @@ import lang.dot
 
 
 renderBox = (
-	lib.util.Adaptor(lambda term: term.factory.makeStr(box.stringify(term))) +
+	util.Adaptor(lambda term: term.factory.makeStr(box.stringify(term))) +
 	lib.build.Str("???")
 )
 

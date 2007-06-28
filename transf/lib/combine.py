@@ -6,6 +6,7 @@ from transf import transformation
 from transf import operate
 from transf.lib import base
 
+
 class _Not(operate.Unary):
 
 	__slots__ = []

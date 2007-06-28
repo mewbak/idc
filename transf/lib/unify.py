@@ -3,7 +3,7 @@
 
 from transf import transformation
 from transf.lib import base
-from transf.lib import util
+from transf import util
 from transf.lib import combine
 from transf.lib import match
 from transf.lib import build
