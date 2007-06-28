@@ -22,6 +22,9 @@ _pycomm = \
 _pyobj = '`(?:' + _pycomm + '|' + _pystr + '|[^`]*)`'
 
 
+_HEX = 1001
+
+
 _tokenizer = antlrre.Tokenizer(
 	# token regular expression table
 	tokens = [
@@ -39,6 +42,9 @@ _tokenizer = antlrre.Tokenizer(
 
 		# INT
 		(parser.INT, r'-?[0-9]+', False),
+
+		# HEX
+		(_HEX, r'-0x?[0-9a-fA-F]+', False),
 
 		# STR
 		(parser.STR, r'"[^"\\]*(?:\\.[^"\\]*)*"', False),
@@ -120,4 +126,7 @@ class Lexer(antlrre.TokenStream):
 			text = text.replace('\\', '')
 		elif type == parser.OBJ:
 			text = text[1:-1]
+		elif type == _HEX:
+			type = parser.INT
+			text = str(int(text, 16))
 		return type, text
