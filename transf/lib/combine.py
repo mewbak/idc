@@ -63,6 +63,10 @@ def Where(operand):
 		return base.ident
 	if operand is base.fail:
 		return base.ident
+	if type(operand) is _Where:
+		return operand
+	if type(operand) is _Try:
+		return base.ident
 	return _Where(operand)
 
 
@@ -84,7 +88,7 @@ def Composition(loperand, roperand):
 		return loperand
 	if loperand is base.fail:
 		return base.fail
-	while loperand.__class__ is _Composition:
+	while type(loperand) is _Composition:
 		roperand = _Composition(loperand.roperand, roperand)
 		loperand = loperand.loperand
 	return _Composition(loperand, roperand)
@@ -112,7 +116,7 @@ def Choice(loperand, roperand):
 		return Try(loperand)
 	if roperand is base.fail:
 		return loperand
-	while loperand.__class__ is _Choice:
+	while type(loperand) is _Choice:
 		roperand = _Choice(loperand.roperand, roperand)
 		loperand = loperand.loperand
 	return _Choice(loperand, roperand)
