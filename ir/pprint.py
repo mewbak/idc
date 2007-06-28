@@ -88,9 +88,11 @@ ppType =
 		-> <kw "float">
 |	Float(64)
 		-> <kw "double">
-|	Char(size)
+|	Char(8)
 		-> <kw "char">
-|	Pointer(size, type)
+|	Char(16)
+		-> <kw "wchar_t">
+|	Pointer(type)
 		-> H([ <ppType type>, " ", <ppOp "*"> ])
 |	Array(type)
 		-> H([ <ppType type>, "[", "]" ])
@@ -236,7 +238,7 @@ stmtKern =
 |	Var(type, name, NoExpr)
 		-> H([ <ppType type>, " ", name ])
 |	Var(type, name, val)
-		-> H([ <ppType type>, " ", name, "=", <ppExpr val> ])
+		-> H([ <ppType type>, " ", name, " = ", <ppExpr val> ])
 |	Function(type, name, args, stmts)
 		-> H([ <ppType type>, " ", name, "(", <(Map(ppArg);commas) args>, ")" ])
 |	Label(name)

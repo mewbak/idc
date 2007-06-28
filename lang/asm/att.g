@@ -33,6 +33,7 @@ header "att_parser.__main__" {
 
 header "att_parser.__init__" {
     self.factory = kwargs["factory"]
+    self.counter = 0
 }
 
 options {
@@ -44,9 +45,9 @@ options {
 	k = 2;
 }
 
-DIRECTIVE: '.' ('a'..'z'|'A'..'Z'|'_'|'.'|'$'|'0'..'9')*;
+DOTSYMBOL: '.' ('a'..'z'|'A'..'Z'|'_'|'.'|'$'|'0'..'9')*;
 
-INSTRUCTION: ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'.'|'$'|'0'..'9')*;
+SYMBOL: ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'.'|'$'|'0'..'9')*;
 
 
 
@@ -63,6 +64,7 @@ PERCENTAGE: '%';
 DOLLAR: '$';
 COMMA: ',';
 COLON: ':';
+protected
 SEMI: ';';
 AT: '@';
 
@@ -79,39 +81,36 @@ CHAR
 	;
 
 STRING
-	:	'"' (ESC|~'"')* '"'
+	:	'"'! (ESC|~'"')* '"'!
 	;
 
 protected
-ESC	:	'\\'
-		(	'n'
-		|	'r'
-		|	't'
-		|	'b'
-		|	'f'
-		|	'"'
-		|	'\''
-		|	'\\'
-		|	'0'..'3'
-			(
-				options {
-					warnWhenFollowAmbig = false;
-				}
-			:	'0'..'9'
-				(
-					options {
-						warnWhenFollowAmbig = false;
-					}
+ESC	: '\\'!
+		( 'n' { $setText("\n") }
+		| 'r' { $setText("\r") }
+		| 't' { $setText("\t") }
+		| 'b' { $setText("\b") }
+		| 'f' { $setText("\f") }
+		| '"' { $setText("\"") }
+		| '\'' { $setText("'") }
+		| '\\' { $setText("\\") }
+		|
+			( '0'..'3'
+				( options { warnWhenFollowAmbig = false; }
+				:	'0'..'9'
+					( options { warnWhenFollowAmbig = false; }
+					:	'0'..'9'
+					)?
+				)?
+			| '4'..'7'
+				( options { warnWhenFollowAmbig = false; }
 				:	'0'..'9'
 				)?
-			)?
-		|	'4'..'7'
-			(
-				options {
-					warnWhenFollowAmbig = false;
-				}
-			:	'0'..'9'
-			)?
+			)
+			{
+                n = $getText
+                $setText(chr(int(n, 8)))
+            }
 		)
 	;
 
@@ -132,6 +131,7 @@ EOL
         |   '\n'    // Unix
         )
         { $newline; }
+    | SEMI
     ;
 
 // Single-line comments
@@ -162,6 +162,14 @@ options {
 	defaultErrorHandler = false;
 }
 
+{
+    def data_constant(self, type, prefix, value):
+        self.counter += 1
+        type = self.factory.make(type)
+        name = prefix + str(self.counter)
+        return self.factory.make("Var(type,name,Lit(type,value))", type=type, name=name, value=value)
+}
+
 start returns [res]
 		{ insns = [] }
 	:
@@ -172,12 +180,8 @@ start returns [res]
 	;
 
 statement returns [res]
-	: lbls=labels isns=tail ( EOL | SEMI )
-		{
-            res = []
-            res.extend(lbls)
-            res.extend(isns)
-		}
+	: lbls=labels isns=tail EOL
+		{ res = lbls + isns }
  	;
 
 labels returns [res]
@@ -191,26 +195,48 @@ labels returns [res]
 	;
 
 tail returns [res]
-	: /* empty statement */
+	: res=directive
+	| res=prefixed_instruction
+	| /* empty statement */
 		{ res = [] }
-	| DIRECTIVE^ (~EOL)*
-		// FIXME: Do not ignore directives
-		{ res = [] }
-	| insn=prefixed_instruction
-		{ res = [insn] }
+	;
+
+directive returns [res]
+	: d:DOTSYMBOL^
+		{ directive = #d.getText() }
+		( { directive == ".byte" }? res=integer_constant[8]
+		| { directive == ".word" }? res=integer_constant[16]
+		| { directive == ".long" }? res=integer_constant[32]
+		| { directive == ".int" }? res=integer_constant[32]
+		| { directive == ".quad" }? res=integer_constant[64]
+		| { directive == ".ascii" }? res=ascii_constant
+		| ( ~EOL )*
+			// FIXME: Do not ignore directives
+			{ res = [] }
+		)
+	;
+
+integer_constant[size] returns [res]
+	: i=integer
+		{ res = [self.data_constant("Int(%d,NoSign)" % size, "i_", i)] }
+	;
+
+ascii_constant returns [res]
+	: s:STRING
+		{ res = [self.data_constant("Pointer(Char(8))", "s_", #s.getText())] }
 	;
 
 prefixed_instruction returns [res]
 	: ( instruction ) => insn=instruction
-		{ res = insn }
-	| INSTRUCTION insn=instruction
+		{ res = [insn] }
+	| SYMBOL insn=instruction
 		// FIXME: Do not ignore instruction prefixes
-		{ res = insn }
+		{ res = [insn] }
 	;
 
 instruction returns [res]
 		{ operands = [] }
-	: opcode:INSTRUCTION^ ( o=operand { operands.append(o) } ( COMMA! o=operand { operands.append(o) } )* )?
+	: opcode:SYMBOL^ ( o=operand { operands.append(o) } ( COMMA! o=operand { operands.append(o) } )* )?
 		{
             // reverse operands to intel syntax
             if len(operands) == 2:
@@ -288,9 +314,9 @@ constant returns [ret]
 
 symbol returns [name]
 	:
-		( d:DIRECTIVE
+		( d:DOTSYMBOL
 			{ name = #d.getText() }
-		| i:INSTRUCTION
+		| i:SYMBOL
 			{ name = #i.getText() }
 		)
 	;
