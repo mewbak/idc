@@ -68,6 +68,16 @@ asmSARB = AsmSxR(!8, !Signed)
 asmSARW = AsmSxR(!16, !Signed)
 asmSARL = AsmSxR(!32, !Signed)
 
+
+# FIXME: SHRD
+# FIXME: SHLD
+
+# FIXME: ROR
+# FIXME: ROL
+# FIXME: RCR
+# FIXME: RCL
+
+
 ''')
 
 
