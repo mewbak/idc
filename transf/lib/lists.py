@@ -152,8 +152,19 @@ concat = unify.Foldr(build.nil, Concat2)
 # FIXME: write non-recursive versions
 
 
-def MapConcat(operand):
-	return unify.Foldr(build.nil, Concat2, operand)
+class MapConcat(operate.Unary):
+
+	def apply(self, trm, ctx):
+		assert aterm.types.isList(trm)
+		lsts = []
+		for elm in trm:
+			lst = self.operand.apply(elm, ctx)
+			assert aterm.types.isList(lst)
+			lsts.append(lst)
+		res = trm.factory.makeNil()
+		for lst in reversed(lsts):
+			res = aterm.lists.extend(lst, res)
+		return res
 
 
 def AtSuffix(operand):
