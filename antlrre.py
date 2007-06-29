@@ -2,6 +2,7 @@
 
 
 import os
+import os.path
 import re
 
 import antlr
@@ -51,22 +52,22 @@ class TokenStream(antlr.TokenStream):
 	def __init__(self, buf = None, pos = 0, filename = None, fp = None):
 		if fp is not None:
 			try:
-				import mmap
 				fileno = fp.fileno()
-			except AttributeError, ImportError:
+				length = os.path.getsize(fp.name)
+				import mmap
+			except:
 				# read whole file into memory
 				buf = fp.read()
 				pos = 0
 			else:
 				# map the whole file into memory
-				curpos = os.lseek(fileno, 0, 0)
-				length = os.lseek(fileno, 0, 2)
-				os.lseek(fileno, curpos, 0)
-				# length must not be zero
 				if length:
+					# length must not be zero
 					buf = mmap.mmap(fileno, length, access = mmap.ACCESS_READ)
+					pos = os.lseek(fileno, 0, os.SEEK_CUR)
 				else:
 					buf = ""
+					pos = 0
 
 			if filename is None:
 				try:
@@ -99,7 +100,7 @@ class TokenStream(antlr.TokenStream):
 				if text >= ' ' and text <= '~':
 					msg += "'%s'" % text
 				else:
-					msg += "0x%X" % text
+					msg += "0x%X" % ord(text)
 				ex = antlr.RecognitionException(msg, self.filename, line, col)
 				raise ex
 				#raise antlr.TokenStreamRecognitionException(ex)
