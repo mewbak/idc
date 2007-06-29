@@ -64,7 +64,7 @@ class TokenStream(antlr.TokenStream):
 				if length:
 					# length must not be zero
 					buf = mmap.mmap(fileno, length, access = mmap.ACCESS_READ)
-					pos = os.lseek(fileno, 0, os.SEEK_CUR)
+					pos = os.lseek(fileno, 0, 1)
 				else:
 					buf = ""
 					pos = 0
