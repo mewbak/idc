@@ -24,7 +24,7 @@ class Context(object):
 		self.parent = parent
 
 	def set(self, name, value):
-		'''Lookup the variable with this name.'''
+		'''Set the variable with this name.'''
 		if name in self.vars:
 			self.vars[name] = value
 		else:
