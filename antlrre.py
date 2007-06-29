@@ -89,7 +89,7 @@ class TokenStream(antlr.TokenStream):
 			col = self.col
 
 			type, text, endpos = self.tokenizer.next(self.buf, pos)
-			self.consume(pos, endpos)
+			self.consume(text)
 			type, text = self.filterToken(type, text)
 			self.pos = endpos
 
@@ -113,24 +113,23 @@ class TokenStream(antlr.TokenStream):
 			col = col
 		)
 
-	def consume(self, pos, endpos):
+	def consume(self, text):
 		# update line number
-		for mo in self.newline_re.finditer(self.buf, pos, endpos):
+		pos = 0
+		for mo in self.newline_re.finditer(text, pos):
 			self.line += 1
 			self.col = 1
 			pos = mo.end()
 
 		# update column number
 		while True:
-			# NOTE: this does not work with mmap
-			#tabpos = self.buf.find('\t', pos, endpos)
-			tabpos = self.buf.find('\t', pos)
-			if tabpos == -1 or tabpos >= endpos:
+			tabpos = text.find('\t', pos)
+			if tabpos == -1:
 				break
 			self.col += tabpos - pos
 			self.col = ((self.col - 1)//self.tabsize + 1)*self.tabsize + 1
 			pos = tabpos + 1
-		self.col += endpos - pos
+		self.col += len(text) - pos
 
 	def filterToken(self, type, text, pos, endpos):
 		return type, text
