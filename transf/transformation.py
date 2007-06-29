@@ -1,15 +1,10 @@
 '''Base transformation classes.'''
 
 
-import sys
-
 import aterm.factory
 import aterm.term
 
 from transf import context
-
-
-sys.setrecursionlimit(10000)
 
 
 class Transformation(object):
