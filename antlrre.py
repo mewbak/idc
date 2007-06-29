@@ -131,5 +131,5 @@ class TokenStream(antlr.TokenStream):
 			pos = tabpos + 1
 		self.col += len(text) - pos
 
-	def filterToken(self, type, text, pos, endpos):
+	def filterToken(self, type, text):
 		return type, text
