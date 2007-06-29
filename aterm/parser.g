@@ -18,6 +18,7 @@ options {
 class parser extends Parser;
 
 options {
+	k = 2;
 	defaultErrorHandler = false;
 }
 
@@ -92,20 +93,29 @@ term returns [res]
 		)?
 	;
 
-term_list returns [res]
-	:
-		{ res = self.handleNil() }
-	| head=term
-		( COMMA tail=term_list
-		|
+term_list returns [tail]
+	: tail=term_list_tail
+	|
+		 head=term
+			{ heads = [head] }
+		( COMMA head=term
+			{ heads.append(head) }
+		)*
+		(
 			{ tail = self.handleNil() }
+		| COMMA tail=term_list_tail
 		)
-			{ res = self.handleCons(head, tail) }
+			{ for head in reversed(heads): tail = self.handleCons(head, tail) }
+	;
+
+term_list_tail returns [tail]
+	:
+		{ tail = self.handleNil() }
 	| STAR
 		(
-			{ res = self.handleWildcard() }
+			{ tail = self.handleWildcard() }
 		| vname:VAR
-			{ res = self.handleVar(vname.getText()) }
+			{ tail = self.handleVar(vname.getText()) }
 		)
 	;
 
@@ -114,7 +124,7 @@ term_args returns [res]
 			{ res = [] }
 	| arg=term
 			{ res = [arg] }
-		( COMMA args=term_args
-			{ res += args }
-		)?
+		( COMMA arg=term
+			{ res.append(arg) }
+		)*
 	;
