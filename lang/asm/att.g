@@ -246,12 +246,15 @@ instruction returns [res]
 	;
 
 operand returns [res]
-	: ( register ~COLON ) => o=register
-		{ res = o }
-	| o=immediate
-		{ res = o }
-	| o=memory
-		{ res = o }
+	:
+		( STAR! )?
+		( ( register ~COLON ) => o=register
+			{ res = o }
+		| o=immediate
+			{ res = o }
+		| o=memory
+			{ res = o }
+		)
 	;
 
 immediate returns [ret]
@@ -270,7 +273,6 @@ memory returns [ret]
             base = None
 		}
 	:
-		( STAR! )?
 		( section=register COLON! )?
             // XXX: section is ignored
 		( disp=constant ( base=memory_base )? | base=memory_base )
