@@ -35,28 +35,30 @@ class OpcodeDispatch(transformation.Transformation):
 			trf = eval("asm" + opcode.upper())
 		except NameError:
 			sys.stderr.write("warning: don't now how to translate opcode '%s'\n" % opcode)
-			raise transf.exception.Failure
+			raise exception.Failure
 
 		try:
-			return trf.apply(operands, ctx)
-		except exception.Failure:
+			trm = trf.apply(operands, ctx)
+			for stmt in trm:
+				ir.check.stmt(stmt)
+			return trm
+		except KeyboardInterrupt, SystemExit:
+			raise
+		except:
 			sys.stderr.write("warning: failed to translate opcode '%s'\n" % opcode)
 			traceback.print_exc()
-			raise
+			raise exception.Failure
+
 
 parse.Transfs('''
 
 doStmt =
-	?Asm(opcode, _) & (
-		OpcodeDispatch() & Map(ir.check.stmt) +
-		![<id>]
-	) ;
-	Try(simplify)
-+	![<id>]
+	OpcodeDispatch() ; Try(simplify)
+	+ ![<id>]
 
 
 doModule =
 	~Module(<lists.MapConcat(doStmt)>)
 
 
-''', debug=False)
+''')
