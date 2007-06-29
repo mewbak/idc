@@ -173,8 +173,8 @@ AsmMUL(size) =
 			Assign(type2, tmp, Binary(Mult(type2),Cast(type2,low),Cast(type2,src))),
 			Assign(type, low, Cast(type,tmp)),
 			Assign(type, high, Cast(type,Binary(RShift(type),tmp,Lit(type2,<size>)))),
-			Assign(Bool, <cf>, Binary(And(Bool),NotEq(type),high,Lit(type2,0))),
-			Assign(Bool, <of>, Binary(And(Bool),NotEq(type),high,Lit(type2,0)))
+			Assign(Bool, <cf>, Binary(NotEq(type),high,Lit(type2,0))),
+			Assign(Bool, <of>, Binary(NotEq(type),high,Lit(type2,0)))
 		]>
 	where
 		type := Word(size) ;
@@ -231,7 +231,7 @@ AsmDIV(size) =
 			Assign(type2, tmp1,
 				Binary(And(type2),
 					Cast(type2,low),
-					LShift(type2,Cast(type2,high),Lit(type2,<size>))
+					Binary(LShift(type2),Cast(type2,high),Lit(type2,<size>))
 				)
 			),
 			Assign(type, tmp2, src),

@@ -9,8 +9,10 @@ from machine.pentium.data import *
 
 parse.Transfs('''
 
-asmJMP =
+asmJMPL =
 	[Ref(addr)] -> [GoTo(addr)]
+
+asmJMP = asmJMPL
 
 
 AsmJcc(cond) =
@@ -80,13 +82,17 @@ asmLOOPNEL = AsmLOOPcc(!32, ecx, ccNE)
 asmLOOPNZL = AsmLOOPcc(!32, ecx, ccNZ)
 
 
-asmCALL =
+asmCALLL =
 	[Ref(addr)] -> [Assign(Void, NoExpr, Call(addr,[]))]
 
+asmCALL = asmCALLL
 
-asmRET =
+
+asmRETL =
 	[] -> [Ret(Void, NoExpr)] |
 	[size] -> [Ret(Void, NoExpr)]
+
+asmRET = asmRETL
 
 
 # FIXME: INT
@@ -98,20 +104,23 @@ asmRET =
 
 
 # FIXME: deal with level
-asmENTER =
+asmENTERL =
 	[size, level] -> [
 		*<AsmPUSH(!32) [<ebp>]>,
 		Assign(type, <ebp>, <esp>),
 		Assign(type, <esp>, Binary(Minus(type), <esp>, size))
 	] where type := UWord(!32)
 
+asmENTER = asmENTERL
 
-asmLEAVE =
+
+asmLEAVEL =
 	[] -> [
 		Assign(type, <esp>, <ebp>),
 		*<AsmPOP(!32) [<ebp>]>
 	] where type := UWord(!32)
 
+asmLEAVE = asmLEAVEL
 
 ''')
 

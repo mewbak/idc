@@ -18,7 +18,7 @@ _AsmSxL(size, sign, dst, src) =
 			Binary(LShift(type),Lit(type,1),
 				Binary(Minus(type),Lit(type,<size>), <src>))
 		)),
-		Assign(Bool, <of>, LNotEq(<HsbOne(size,dst)>,<cf>))
+		Assign(Bool, <of>, <LNotEq(HsbOne(size,dst),cf)>)
 	]
 	where
 		type := !Int(<size>,<sign>) ;
