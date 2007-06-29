@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '.
 import aterm.factory
 from lang import box
 import ir.path
+import ir.check
 import ir.pprint
 import machine.pentium
 
@@ -40,6 +41,7 @@ def translate(fpin, fpout, verbose = True):
 
 	mach = machine.pentium.Pentium()
 	term = mach.load(factory, fpin)
+	ir.check.module(term)
 
 	if verbose:
 		sys.stderr.write('** Low-level IR **\n')
@@ -49,6 +51,7 @@ def translate(fpin, fpout, verbose = True):
 		sys.stderr.write('\n')
 
 	term = mach.translate(term)
+	ir.check.module(term)
 
 	if verbose:
 		sys.stderr.write('** Translated IR **\n')
