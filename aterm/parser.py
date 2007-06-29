@@ -40,13 +40,20 @@ class Parser:
 		return self.lexer.filename
 
 	def consume(self):
-		self.lt = self.lexer.nextToken()
-		self.la = self.lt.getType()
+		self.type, self.text, self.line, self.col = self.lexer.nextToken()
+		self.lt = self.text
+		self.la = self.type
 
 	def match(self, t):
 		if self.la != t:
+			lt = antlr.CommonToken(
+				type = self.type,
+				text = self.text,
+				line = self.line,
+				col = self.col
+			)
 			raise antlr.MismatchedTokenException(
-			   self.tokenNames, self.lt, t, False, self.getFilename())
+			   self.tokenNames, lt, t, False, self.getFilename())
 		else:
 			self.consume()
 
@@ -55,15 +62,15 @@ class Parser:
 		if la1 == INT:
 			ival = self.lt
 			self.consume()
-			return self.handleInt(int(ival.getText()))
+			return self.handleInt(int(ival))
 		elif la1 == REAL:
 			rval = self.lt
 			self.consume()
-			return self.handleReal(float(rval.getText()))
+			return self.handleReal(float(rval))
 		elif la1 == STR:
 			sval = self.lt
 			self.consume()
-			return self.handleStr(sval.getText())
+			return self.handleStr(sval)
 		elif la1 == LSQUARE:
 			self.consume()
 			elms = self.term_list()
@@ -80,7 +87,7 @@ class Parser:
 					self.match(RPAREN)
 				else:
 					args = []
-				name = cname.getText()
+				name = cname
 			elif la1 == LPAREN:
 				self.consume()
 				args=self.term_args()
@@ -105,7 +112,7 @@ class Parser:
 			elif la1 == VAR:
 				vname = self.lt
 				self.consume()
-				res = self.handleVar(vname.getText())
+				res = self.handleVar(vname)
 			else:
 				assert False
 
@@ -170,7 +177,7 @@ class Parser:
 			if  self.la == VAR:
 				vname = self.lt
 				self.consume()
-				return self.handleVar(vname.getText())
+				return self.handleVar(vname)
 			else:
 				return self.handleWildcard()
 		else:
