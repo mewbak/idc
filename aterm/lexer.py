@@ -11,9 +11,9 @@ from aterm import parser
 
 class Tokenizer(object):
 
-	def __init__(self, tokens = (), symbols = None, literals = None):
+	def __init__(self, tokens = (), symbols = None):
 		self.tokens_re = re.compile(
-			'|'.join(['(' + regexp + ')' for tok, regexp, test_lit in tokens]),
+			'|'.join(['(' + regexp + ')' for tok, regexp in tokens]),
 			re.DOTALL
 		)
 		self.tokens_table = tokens
@@ -21,10 +21,6 @@ class Tokenizer(object):
 			self.symbols_table = {}
 		else:
 			self.symbols_table = symbols
-		if literals is None:
-			self.literals_table = {}
-		else:
-			self.literals_table = literals
 
 	def next(self, buf, pos):
 		if pos >= len(buf):
@@ -32,10 +28,8 @@ class Tokenizer(object):
 		mo = self.tokens_re.match(buf, pos)
 		if mo:
 			text = mo.group()
-			type, _, test_lit = self.tokens_table[mo.lastindex - 1]
+			type, _ = self.tokens_table[mo.lastindex - 1]
 			pos = mo.end()
-			if test_lit:
-				type = self.literals_table.get(text, type)
 			return type, text, pos
 		else:
 			c = buf[pos]
@@ -137,25 +131,25 @@ _tokenizer = Tokenizer(
 	# Token regular expression table
 	tokens = [
 		# whitespace
-		(parser.SKIP, r'[ \t\f\r\n]+', False),
+		(parser.SKIP, r'[ \t\f\r\n]+'),
 
 		# REAL
 		(parser.REAL, r'-?(?:'
 			r'(?:[0-9]+\.[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?|'
 			r'[0-9]+[eE][-+]?[0-9]+'
-		r')', False),
+		r')'),
 
 		# INT
-		(parser.INT, r'-?[0-9]+', False),
+		(parser.INT, r'-?[0-9]+'),
 
 		# STR
-		(parser.STR, r'"[^"\\]*(?:\\.[^"\\]*)*"', False),
+		(parser.STR, r'"[^"\\]*(?:\\.[^"\\]*)*"'),
 
 		# CONS
-		(parser.CONS, r'[A-Z][a-zA-Z0-9_]*', False),
+		(parser.CONS, r'[A-Z][a-zA-Z0-9_]*'),
 
 		# VAR
-		(parser.VAR, r'[a-z][a-zA-Z0-9_]*', False),
+		(parser.VAR, r'[a-z][a-zA-Z0-9_]*'),
 	],
 
 	# symbols table
