@@ -58,7 +58,7 @@ class ForEach(operate.Unary):
 	def apply(self, trm, ctx):
 		assert aterm.types.isList(trm)
 		for elm in trm:
-			self.operand.apply(trm, ctx)
+			self.operand.apply(elm, ctx)
 		return trm
 
 
