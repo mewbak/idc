@@ -128,30 +128,15 @@ class Range(transformation.Transformation):
 			return term
 
 
-def PathRange(transformation, start, end):
+def PathRange(operand, start, end):
 	'''Apply a transformation on a path range. The tails of the start and end
 	aterm.path should be equal.'''
-	result = transformation
+	result = operand
 	result = Range(result, start[0], end[0])
 	if start[1:] != end[1]:
 		raise ValueError('start and end path tails differ: %r, %r' % start, end)
 	result = SubTerm(result, start)
 	return result
-
-
-class Index(transformation.Transformation):
-
-	def __init__(self, index):
-		transformation.Transformation.__init__(self)
-		self.index = index
-
-	def apply(self, term, ctx):
-		index = self.index.apply(term, ctx)
-		index = aterm.convert.toInt(index)
-		try:
-			return aterm.project.subterm(term, index)
-		except IndexError:
-			raise exception.Failure('index out of bounds', term, index)
 
 
 class Equals(operate.Unary):
