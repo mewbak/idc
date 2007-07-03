@@ -293,36 +293,26 @@ def main():
 	import sys
 	factory = aterm.factory.factory
 	for arg in sys.argv[1:]:
-		print "* Reading aterm"
+		sys.stderr.write("* Reading aterm\n")
 		term = factory.readFromTextFile(file(arg, 'rt'))
 		#print ( ir.pprint.module * renderBox )(term)
 		#print term
 		#print
 
-		print "* Making Graph"
+		sys.stderr.write("* Making Graph\n")
 		term = makeGraph(term)
 		#print term
 		#print
 
-		print "* Simplifying Graph"
+		sys.stderr.write("* Simplifying Graph\n")
 		term = simplifyGraph (term)
 		#print term
 		#print
 
-		print "* Generating DOT"
+		sys.stderr.write("* Generating DOT\n")
 		term = simplifyGraph (term)
 		dotcode = lang.dot.stringify(term)
-		print dotcode
-
-		#return
-		import gtk
-		# HACK: name collision
-		#import ui.dotview
-		ui = __import__("ui.dotview")
-		win = ui.dotview.DotWindow()
-		win.set_dotcode(dotcode)
-		win.connect('destroy', gtk.main_quit)
-		gtk.main()
+		sys.stdout.write(dotcode)
 
 
 if __name__ == '__main__':
