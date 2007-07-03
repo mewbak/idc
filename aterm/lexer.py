@@ -78,6 +78,7 @@ class TokenStream(antlr.TokenStream):
 
 		self.buf = buf
 		self.pos = pos
+		self.lastpos = pos
 		self.line = 1
 		self.col = 1
 		self.filename = filename
@@ -86,11 +87,8 @@ class TokenStream(antlr.TokenStream):
 		while True:
 			# save state
 			pos = self.pos
-			line = self.line
-			col = self.col
 
 			type, text, endpos = self.tokenizer.next(self.buf, pos)
-			self.consume(text)
 			type, text = self.filterToken(type, text)
 			self.pos = endpos
 
@@ -102,30 +100,34 @@ class TokenStream(antlr.TokenStream):
 					msg += "'%s'" % text
 				else:
 					msg += "0x%X" % ord(text)
-				ex = antlr.RecognitionException(msg, self.filename, line, col)
+				ex = antlr.RecognitionException(msg, *self.getpos())
 				raise ex
 				#raise antlr.TokenStreamRecognitionException(ex)
 			else:
 				break
-		return (type, text, line, col)
+		return (type, text)
 
-	def consume(self, text):
+	def getpos(self):
 		# update line number
-		pos = 0
-		for mo in self.newline_re.finditer(text, pos):
+		pos = self.lastpos
+		for mo in self.newline_re.finditer(self.buf, pos, self.pos):
 			self.line += 1
 			self.col = 1
 			pos = mo.end()
 
 		# update column number
 		while True:
-			tabpos = text.find('\t', pos)
+			tabpos = self.buf.find('\t', pos, self.pos)
 			if tabpos == -1:
 				break
 			self.col += tabpos - pos
 			self.col = ((self.col - 1)//self.tabsize + 1)*self.tabsize + 1
 			pos = tabpos + 1
-		self.col += len(text) - pos
+		self.col += self.pos - pos
+
+		self.lastpos = self.pos
+
+		return self.filename, self.line, self.col
 
 	def filterToken(self, type, text):
 		return type, text

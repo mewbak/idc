@@ -40,20 +40,21 @@ class Parser:
 		return self.lexer.filename
 
 	def consume(self):
-		self.type, self.text, self.line, self.col = self.lexer.nextToken()
+		self.type, self.text = self.lexer.nextToken()
 		self.lt = self.text
 		self.la = self.type
 
 	def match(self, t):
 		if self.la != t:
+			filename, line, col = self.lexer.getpos()
 			lt = antlr.CommonToken(
 				type = self.type,
 				text = self.text,
-				line = self.line,
-				col = self.col
+				line = line,
+				col = col
 			)
 			raise antlr.MismatchedTokenException(
-			   self.tokenNames, lt, t, False, self.getFilename())
+			   self.tokenNames, lt, t, False, filename)
 		else:
 			self.consume()
 
