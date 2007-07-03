@@ -71,7 +71,6 @@ class Ternary(transformation.Transformation, TernaryMixin):
 
 
 def _NaryIter(loperands_iter, Binary, roperand):
-	'''Build a N-ary by the right-association of binary operators.'''
 	try:
 		loperand = loperands_iter.next()
 	except StopIteration:
