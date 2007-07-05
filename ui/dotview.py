@@ -6,9 +6,11 @@ import os
 import re
 import tempfile
 import subprocess
+import math
 
 import gtk
 import gtk.gdk
+import pydot
 
 import ir.cfg
 import lang.dot
@@ -16,67 +18,229 @@ from ui import view
 
 
 DOT = 'dot'
-FORMAT = 'png'
 
 
-class Area:
+class Shape:
 
-	def __init__(self, url):
-		self.url = url
+	def __init__(self):
+		pass
 
-	def hit(self, x, y):
+	def draw(self, cr):
 		raise NotImplementedError
 
 
-class RectArea(Area):
-
-	def __init__(self, url, points):
-		Area.__init__(self, url)
-		(self.x1, self.y1), (self.x2, self.y2) = points
-
-	def hit(self, x, y):
-		return self.x1 <= x <= self.x2 and self.y1 <= y <= self.y2
+LEFT, CENTER, RIGHT = -1, 0, 1
 
 
-class Imap:
-	"""Imagemap parsing and click detection.
+class TextShape(Shape):
 
-	See http://hoohoo.ncsa.uiuc.edu/docs/tutorials/imagemapping.html and
-	http://hoohoo.ncsa.uiuc.edu/docs/tutorials/imagemap.txt for implementation
-	details.
-	"""
 
-	types = {
-		'rect': RectArea,
-	}
+	def __init__(self, x, y, j, w, t):
+		Shape.__init__(self)
+		self.x = x
+		self.y = y
+		self.j = j
+		self.w = w
+		self.t = t
 
-	def __init__(self):
-		self.default_url = None
-		self.areas = []
+	def draw(self, cr):
+		if self.j == LEFT:
+			x = self.x
+		else:
+			x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(self.t)
+			if self.j == CENTER:
+				x = self.x - (0.5*width + x_bearing)
+			elif self.j == RIGHT:
+				x = self.x - (width + x_bearing)
+			else:
+				assert 0
+		cr.move_to(x, self.y)
+		cr.show_text(self.t)
 
-	def read(self, fp):
-		for line in fp:
-			if line.startswith('#'):
-				continue
-			try:
-				parts = line.split()
-				type, url = parts[:2]
-				points = [tuple(map(int, point.split(','))) for point in parts[2:]]
-				if type == 'default':
-					self.default_url = url
-				else:
-					cls = self.types[type]
-					self.areas.append(cls(url, points))
-			except KeyError:
-				pass
-			except:
-				raise
 
-	def hit(self, x, y):
-		for area in self.areas:
-			if area.hit(x, y):
-				return area.url
-		return self.default_url
+class EclipseShape(Shape):
+
+	def __init__(self, x0, y0, w, h):
+		Shape.__init__(self)
+		self.x0 = x0
+		self.y0 = y0
+		self.w = w
+		self.h = h
+
+	def draw(self, cr):
+		cr.save()
+		cr.translate(self.x0, self.y0)
+		cr.scale(0.5*self.w, 0.5*self.h)
+		cr.arc(0.0, 0.0, 1.0, 0, 2.0*math.pi)
+		cr.restore()
+		cr.stroke()
+
+
+class PolygonShape(Shape):
+
+	def __init__(self, p):
+		Shape.__init__(self)
+		self.p = p
+
+	def draw(self, cr):
+		x0, y0 = self.p[-1]
+		cr.move_to(x0, y0)
+		for x, y in self.p:
+			cr.line_to(x, y)
+		cr.stroke()
+
+
+class BezierShape(Shape):
+
+	def __init__(self, p):
+		Shape.__init__(self)
+		self.p = p
+
+	def draw(self, cr):
+		x0, y0 = self.p[0]
+		cr.move_to(x0, y0)
+		for i in xrange(1, len(self.p), 3):
+			x1, y1 = self.p[i]
+			x2, y2 = self.p[i + 1]
+			x3, y3 = self.p[i + 2]
+			cr.curve_to(x1, y1, x2, y2, x3, y3)
+		cr.stroke()
+
+
+class XDotAttrParser:
+	# see http://www.graphviz.org/doc/info/output.html#d:xdot
+
+	def __init__(self, parser, buf):
+		self.parser = parser
+		self.buf = buf
+		self.pos = 0
+
+	def __nonzero__(self):
+		return self.pos < len(self.buf)
+
+	def read_code(self):
+		pos = self.buf.find(" ", self.pos)
+		res = self.buf[self.pos:pos]
+		self.pos = pos + 1
+		while self.pos < len(self.buf) and self.buf[self.pos].isspace():
+			self.pos += 1
+		return res
+
+	def read_number(self):
+		return int(self.read_code())
+
+	def read_float(self):
+		return float(self.read_code())
+
+	def read_point(self):
+		x = self.read_number()
+		y = self.read_number()
+		return self.transform(x, y)
+
+	def read_text(self):
+		num = self.read_number()
+		pos = self.buf.find("-", self.pos) + 1
+		self.pos = pos + num
+		res = self.buf[pos:self.pos]
+		while self.pos < len(self.buf) and self.buf[self.pos].isspace():
+			self.pos += 1
+		return res
+
+	def read_polygon(self):
+		n = self.read_number()
+		p = []
+		for i in range(n):
+			x, y = self.read_point()
+			p.append((x, y))
+		return p
+
+	def parse(self):
+		shapes = []
+		s = self
+
+		while s:
+			op = s.read_code()
+			if op == "c":
+				s.read_text()
+			elif op == "C":
+				s.read_text()
+			elif op == "S":
+				s.read_text()
+			elif op == "F":
+				s.read_float()
+				s.read_text()
+			elif op == "T":
+				x, y = s.read_point()
+				j = s.read_number()
+				w = s.read_number()
+				t = s.read_text()
+				shapes.append(TextShape(x, y, j, w, t))
+			elif op == "E":
+				x0, y0 = s.read_point()
+				w = s.read_number()
+				h = s.read_number()
+				shapes.append(EclipseShape(x0, y0, w, h))
+			elif op == "e":
+				x0, y0 = s.read_point()
+				w = s.read_number()
+				h = s.read_number()
+				shapes.append(EclipseShape(x0, y0, w, h))
+			elif op == "B":
+				p = self.read_polygon()
+				shapes.append(BezierShape(p))
+			elif op == "p":
+				p = self.read_polygon()
+				shapes.append(PolygonShape(p))
+			elif op == "P":
+				p = self.read_polygon()
+				shapes.append(PolygonShape(p))
+			else:
+				print "unknown opcode '%s'" % op
+				break
+		return shapes
+
+	def transform(self, x, y):
+		return self.parser.transform(x, y)
+
+
+class XDotParser:
+
+	def __init__(self, xdotcode):
+		self.xdot = pydot.graph_from_dot_data(xdotcode)
+		self.width = 1
+		self.height = 1
+		self.shapes = []
+
+	def parse(self):
+		bb = self.xdot.get_bb()
+		if bb is None:
+			return
+
+		xmin, ymin, xmax, ymax = map(int, bb.split(","))
+
+		self.xoffset = -xmin
+		self.yoffset = -ymax
+		self.xscale = 1.0
+		self.yscale = -1.0
+		self.width = xmax - xmin
+		self.height = ymax - ymin
+
+		for node in self.xdot.get_node_list():
+			for attr in ("_draw_", "_ldraw_"):
+				if hasattr(node, attr):
+					p = XDotAttrParser(self, getattr(node, attr))
+					self.shapes.extend(p.parse())
+		for edge in self.xdot.get_edge_list():
+			for attr in ("_draw_", "_ldraw_", "_hdraw_", "_tdraw_", "_hldraw_", "_tldraw_"):
+				if hasattr(edge, attr):
+					p = XDotAttrParser(self, getattr(edge, attr))
+					self.shapes.extend(p.parse())
+
+	def transform(self, x, y):
+		x = (x + self.xoffset)*self.xscale
+		y = (y + self.yoffset)*self.yscale
+		return x, y
+
 
 
 class DotWindow(gtk.Window):
@@ -138,85 +302,81 @@ class DotWindow(gtk.Window):
 		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		vbox.pack_start(scrolled_window)
 
-		eventbox = gtk.EventBox()
-		bgcolor = gtk.gdk.color_parse("white")
-		eventbox.modify_bg(gtk.STATE_NORMAL, bgcolor)
-		scrolled_window.add_with_viewport(eventbox)
+		#self.widget = gtk.DrawingArea()
+		self.widget = gtk.Layout()
+		self.widget.connect("expose_event", self.on_expose)
+		self.width = 1.0
+		self.height = 1.0
+		self.shapes = []
+		#vbox.pack_start(self.widget)
+		scrolled_window.add(self.widget)
 
-		self.image = gtk.Image()
-		eventbox.add(self.image)
-
-		self.imap = None
-
-		eventbox.set_above_child(True)
-		eventbox.add_events(gtk.gdk.BUTTON_RELEASE_MASK)
-		#eventbox.connect("button-press-event", self.on_eventbox_button_press)
-		eventbox.connect("event-after", self.on_eventbox_button_press)
-		eventbox.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
-		eventbox.connect("motion-notify-event", self.on_eventbox_motion_notify)
+		#self..set_above_child(True)
+		self.widget.add_events(gtk.gdk.BUTTON_RELEASE_MASK)
+		#self.widget.connect("button-press-event", self.on_eventbox_button_press)
+		self.widget.connect("event-after", self.on_eventbox_button_press)
+		self.widget.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
+		self.widget.connect("motion-notify-event", self.on_eventbox_motion_notify)
 
 		self.zoom_ratio = 1.0
 		self.pixbuf = None
 
 		self.show_all()
 
-	def write_dotcode(self, writer_cb, *args):
-		# TODO: return the dotin stream
+	def write_dotcode(self, dotcode):
+		p = subprocess.Popen(
+			[DOT, '-Txdot'],
+			stdin=subprocess.PIPE,
+			stdout=subprocess.PIPE,
+			shell=False
+		)
+		data = p.communicate(dotcode)[0]
 
-		# See images.py in pygtk demos
-		pixbuf_loader = gtk.gdk.PixbufLoader(FORMAT)
-		pixbuf_loader.connect('area_prepared', self.on_pixbuf_loader_area_prepared)
-		pixbuf_loader.connect('area_updated', self.on_pixbuf_loader_area_updated)
-
-		mapfd, mapname = tempfile.mkstemp('.map')
-		os.close(mapfd)
-
-		command_line = [
-			DOT,
-			'-Timap', '-o' + mapname,
-			'-T' + FORMAT
-		]
-		p = subprocess.Popen(command_line, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=False)
-		dotin, dotout = p.stdin, p.stdout
-
-		writer_cb(dotin, *args)
-		dotin.close()
-
-		while True:
-			buf = dotout.read(8192)
-			if not buf:
-				break
-			pixbuf_loader.write(buf)
-		dotout.close()
-
-		self.imap = Imap()
-		self.imap.read(file(mapname, 'rt'))
-		os.unlink(mapname)
-
-		pixbuf_loader.close()
+		parser = XDotParser(data)
+		parser.parse()
+		self.width = parser.width
+		self.height = parser.height
+		self.shapes = parser.shapes
+		self.zoom_image()
 
 	def set_dotcode(self, dotcode):
-		self.write_dotcode(lambda fp: fp.write(dotcode))
+		self.write_dotcode(dotcode)
 
 	def set_graph(self, graph):
-		self.write_dotcode(lambda fp: lang.dot.write(graph, fp))
+		dotcode = lang.dot.stringify(graph)
+		self.write_dotcode(dotcode)
 
-	def on_pixbuf_loader_area_prepared(self, pixbuf_loader):
-		self.pixbuf = pixbuf_loader.get_pixbuf()
+	def on_expose(self, widget, event):
+		# http://www.graphviz.org/pub/scm/graphviz-cairo/plugin/cairo/gvrender_cairo.c
 
-	def on_pixbuf_loader_area_updated(self, pixbuf_loader, x, y, width, height):
-		self.zoom_image()
-		self.image.queue_draw()
+
+		cr = widget.bin_window.cairo_create()
+
+		# set a clip region for the expose event
+		cr.rectangle(
+			event.area.x, event.area.y,
+			event.area.width, event.area.height
+		)
+		cr.clip()
+
+		#rect = widget.get_allocation()
+		#xscale = float(rect.width)/self.width
+		#yscale = float(rect.height)/self.height
+		#scale = min(xscale, yscale)*2
+
+		cr.translate(0, 0)
+		cr.scale(self.zoom_ratio, self.zoom_ratio)
+
+		for shape in self.shapes:
+			shape.draw(cr)
+
+		return False
 
 	def zoom_image(self):
-		if self.pixbuf:
-			if self.zoom_ratio == 1.0:
-				self.image.set_from_pixbuf(self.pixbuf)
-			else:
-				w = int(self.pixbuf.get_width() * self.zoom_ratio)
-				h = int(self.pixbuf.get_height() * self.zoom_ratio)
-				scaled_pixbuf = self.pixbuf.scale_simple(w, h, gtk.gdk.INTERP_BILINEAR)
-				self.image.set_from_pixbuf(scaled_pixbuf)
+		width = int(self.width*self.zoom_ratio)
+		height = int(self.height*self.zoom_ratio)
+		self.widget.set_size(width, height)
+		self.widget.queue_draw()
 
 	def on_zoom_in(self, action):
 		self.zoom_ratio *= 1.25
@@ -227,12 +387,10 @@ class DotWindow(gtk.Window):
 		self.zoom_image()
 
 	def on_zoom_fit(self, action):
-		imgwidth, imgheight = self.scrolled_window.window.get_size()
-		pixwidth = self.pixbuf.get_width()
-		pixheight = self.pixbuf.get_height()
+		rect = self.widget.get_allocation()
 		self.zoom_ratio = min(
-			float(imgwidth)/float(pixwidth),
-			float(imgheight)/float(pixheight)
+			float(rect.width)/float(self.width),
+			float(rect.height)/float(self.height)
 		)
 		self.zoom_image()
 
@@ -241,8 +399,8 @@ class DotWindow(gtk.Window):
 		self.zoom_image()
 
 	def on_eventbox_button_press(self, eventbox, event):
-		if not self.pixbuf:
-			return False
+		#if not self.pixbuf:
+		#	return False
 		if event.type not in (gtk.gdk.BUTTON_PRESS, gtk.gdk.BUTTON_RELEASE):
 			return False
 		x, y = int(event.x), int(event.y)
@@ -252,8 +410,8 @@ class DotWindow(gtk.Window):
 		return False
 
 	def on_eventbox_motion_notify(self, eventbox, event):
-		if not self.pixbuf:
-			return False
+		#if not self.pixbuf:
+		#	return False
 		x, y = int(event.x), int(event.y)
 		if self.get_url(x, y) is not None:
 			eventbox.window.set_cursor(self.hand_cursor)
@@ -262,6 +420,7 @@ class DotWindow(gtk.Window):
 		return False
 
 	def get_url(self, x, y):
+		return None
 		imgwidth, imgheight = self.image.window.get_size()
 		pixbuf = self.image.get_pixbuf()
 		pixwidth = pixbuf.get_width()
@@ -347,12 +506,13 @@ class CfgViewFactory(view.ViewFactory):
 		return CfgView(model)
 
 
-if __name__ == '__ma in__':
+if __name__ == '__main__':
 	win = DotWindow()
-	win.set_dotcode(sys.stdin.read())
+	#win.set_dotcode(sys.stdin.read())
+	win.set_dotcode(file(sys.argv[1],"rt").read())
 	win.connect('destroy', gtk.main_quit)
 	gtk.main()
 
 
-if __name__ == '__main__':
+if __name__ == '__main__' and False:
 	view.main(CfgView)
