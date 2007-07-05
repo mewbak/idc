@@ -13,40 +13,56 @@ def dasm(infile, outfp, verbose = True):
 		'--disassemble',
 		'--disassemble-zeroes',
 		'--disassembler-options=att,suffix',
-		'--prefix-addresses',
+		#'--prefix-addresses',
 		'--no-show-raw-insn',
 		'--wide',
 		infile
 	]
 	p = subprocess.Popen(command_line, stdout=subprocess.PIPE, shell=False)
+	#print p.communicate()[0]; return
 	infp = p.stdout
 
-	for line in infp:
+	it = iter(infp)
+	for line in it:
+		# TODO: handle other sections too
 		if line == "Disassembly of section .text:\n":
 			break
 
 	insns = []
-	addrs = set()
-	for line in infp:
-		line = line[:-1]
+	addrs = {}
+	for line in it:
 		if not line:
 			break
-		addr, insn = line.split(" ", 1)
-		if insn.strip() == "(bad)":
+		line = line[:-1]
+		if not line:
 			continue
+		if line.startswith("Disassembly of section "):
+			break
+
+		line = re.sub(r"([0-9A-Fa-f]+) <([._@A-Za-z][_@A-Za-z]*)>", r"\2", line)
+		line = re.sub(r"([0-9A-Fa-f]+) <([^>]*)>", r"0x\1", line)
+
+		addr, insn = [part.strip() for part in line.split(":", 1)]
+		if insn == "(bad)":
+			continue
+		try:
+			intaddr = int(addr, 16)
+		except ValueError:
+			pass
+		else:
+			addr = "loc" + addr
+			addrs[intaddr] = addr
 		insns.append((addr, insn))
-		addrs.add(addr)
 
 	def repl(mo):
 		addr = mo.group()
-		if addr in addrs:
-			return "loc" + addr[2:]
-		else:
+		try:
+			return addrs[int(addr,16)]
+		except KeyError:
 			return addr
 
 	for addr, insn in insns:
-		insn = re.sub(r'\b0x[0-9a-fA-F]+\b', repl, insn)
-		addr = "loc" + addr[2:]
+		insn = re.sub(r'\b0[xX]([0-9a-fA-F]+)\b', repl, insn)
 		outfp.write("%s: %s\n" % (addr, insn))
 
 
