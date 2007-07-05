@@ -106,7 +106,11 @@ class Factory:
 					module = __import__(fullname)
 					module = getattr(module, name)
 					if loaded:
-						reload(module)
+						try:
+							reload(module)
+						except ImportError:
+							# XXX: misterous error on Python 2.4
+							pass
 					try:
 						refactoring = ModuleRefactoring(module)
 					except ValueError:
