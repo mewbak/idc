@@ -2,21 +2,23 @@ INSTALLATION INSTRUCTIONS
 =========================
 
 
-Dependencies
+Requirements
 ~~~~~~~~~~~~
 
- * Python 2.4
+ * Python 2.4 ( http://www.python.org/ )
 
- * antlr <http://www.antlr.org>
+ * antlr 2 ( http://www.antlr2.org/ )
 
  * GNU make
- 
- * pygtk for gui
- 
- * graphviz
+
+ * pyparsing ( http://pyparsing.wikispaces.com/ )
+
+ * pygtk ( http://www.pygtk.org/ )
+
+ * graphviz ( http://graphviz.org/ )
 
 
-Building 
+Building
 ~~~~~~~~
 
 1. Make the necessary modifications to the configuration variables on the top
@@ -41,5 +43,3 @@ Running
  * To play around with the GUI do:
 
      python idc.py
-
-   You will need pygtk for that.
