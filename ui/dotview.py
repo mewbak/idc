@@ -58,7 +58,7 @@ class TextShape(Shape):
 		cr.show_text(self.t)
 
 
-class EclipseShape(Shape):
+class EllipseShape(Shape):
 
 	def __init__(self, x0, y0, w, h):
 		Shape.__init__(self)
@@ -70,7 +70,7 @@ class EclipseShape(Shape):
 	def draw(self, cr):
 		cr.save()
 		cr.translate(self.x0, self.y0)
-		cr.scale(0.5*self.w, 0.5*self.h)
+		cr.scale(self.w, self.h)
 		cr.arc(0.0, 0.0, 1.0, 0, 2.0*math.pi)
 		cr.restore()
 		cr.stroke()
@@ -179,12 +179,12 @@ class XDotAttrParser:
 				x0, y0 = s.read_point()
 				w = s.read_number()
 				h = s.read_number()
-				shapes.append(EclipseShape(x0, y0, w, h))
+				shapes.append(EllipseShape(x0, y0, w, h))
 			elif op == "e":
 				x0, y0 = s.read_point()
 				w = s.read_number()
 				h = s.read_number()
-				shapes.append(EclipseShape(x0, y0, w, h))
+				shapes.append(EllipseShape(x0, y0, w, h))
 			elif op == "B":
 				p = self.read_polygon()
 				shapes.append(BezierShape(p))
@@ -203,44 +203,17 @@ class XDotAttrParser:
 		return self.parser.transform(x, y)
 
 
-class XDotParser:
+class Hyperlink:
 
-	def __init__(self, xdotcode):
-		self.xdot = pydot.graph_from_dot_data(xdotcode)
-		self.width = 1
-		self.height = 1
-		self.shapes = []
+	def __init__(self, url, x, y, w, h):
+		self.url = url
+		self.x1 = x - w/2
+		self.y1 = y - h/2
+		self.x2 = x + w/2
+		self.y2 = y + h/2
 
-	def parse(self):
-		bb = self.xdot.get_bb()
-		if bb is None:
-			return
-
-		xmin, ymin, xmax, ymax = map(int, bb.split(","))
-
-		self.xoffset = -xmin
-		self.yoffset = -ymax
-		self.xscale = 1.0
-		self.yscale = -1.0
-		self.width = xmax - xmin
-		self.height = ymax - ymin
-
-		for node in self.xdot.get_node_list():
-			for attr in ("_draw_", "_ldraw_"):
-				if hasattr(node, attr):
-					p = XDotAttrParser(self, getattr(node, attr))
-					self.shapes.extend(p.parse())
-		for edge in self.xdot.get_edge_list():
-			for attr in ("_draw_", "_ldraw_", "_hdraw_", "_tdraw_", "_hldraw_", "_tldraw_"):
-				if hasattr(edge, attr):
-					p = XDotAttrParser(self, getattr(edge, attr))
-					self.shapes.extend(p.parse())
-
-	def transform(self, x, y):
-		x = (x + self.xoffset)*self.xscale
-		y = (y + self.yoffset)*self.yscale
-		return x, y
-
+	def hit(self, x, y):
+		return self.x1 <= x and x <= self.x2 and self.y1 <= y and y <= self.y2
 
 
 class DotWindow(gtk.Window):
@@ -261,6 +234,12 @@ class DotWindow(gtk.Window):
 
 	def __init__(self):
 		gtk.Window.__init__(self)
+
+		self.graph = None
+		self.width = 1
+		self.height = 1
+		self.shapes = []
+		self.hyperlinks = []
 
 		window = self
 
@@ -302,55 +281,81 @@ class DotWindow(gtk.Window):
 		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		vbox.pack_start(scrolled_window)
 
-		#self.widget = gtk.DrawingArea()
-		self.widget = gtk.Layout()
-		self.widget.connect("expose_event", self.on_expose)
-		self.width = 1.0
-		self.height = 1.0
-		self.shapes = []
-		#vbox.pack_start(self.widget)
-		scrolled_window.add(self.widget)
+		self.area = gtk.Layout()
+		self.area.connect("expose_event", self.on_expose)
+		scrolled_window.add(self.area)
 
-		#self..set_above_child(True)
-		self.widget.add_events(gtk.gdk.BUTTON_RELEASE_MASK)
-		#self.widget.connect("button-press-event", self.on_eventbox_button_press)
-		self.widget.connect("event-after", self.on_eventbox_button_press)
-		self.widget.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
-		self.widget.connect("motion-notify-event", self.on_eventbox_motion_notify)
+		self.area.add_events(gtk.gdk.BUTTON_PRESS_MASK)
+		self.area.add_events(gtk.gdk.BUTTON_RELEASE_MASK)
+		self.area.connect("button-press-event", self.on_area_button_press)
+		self.area.add_events(gtk.gdk.POINTER_MOTION_MASK)
+		self.area.connect("motion-notify-event", self.on_area_motion_notify)
 
 		self.zoom_ratio = 1.0
 		self.pixbuf = None
 
 		self.show_all()
 
-	def write_dotcode(self, dotcode):
+	def set_dotcode(self, dotcode):
 		p = subprocess.Popen(
 			[DOT, '-Txdot'],
 			stdin=subprocess.PIPE,
 			stdout=subprocess.PIPE,
 			shell=False
 		)
-		data = p.communicate(dotcode)[0]
-
-		parser = XDotParser(data)
-		parser.parse()
-		self.width = parser.width
-		self.height = parser.height
-		self.shapes = parser.shapes
+		xdotcode = p.communicate(dotcode)[0]
+		self.parse(xdotcode)
 		self.zoom_image()
 
-	def set_dotcode(self, dotcode):
-		self.write_dotcode(dotcode)
+	def parse(self, xdotcode):
+		self.graph = pydot.graph_from_dot_data(xdotcode)
+
+		bb = self.graph.get_bb()
+		if bb is None:
+			return
+
+		xmin, ymin, xmax, ymax = map(int, bb.split(","))
+
+		self.xoffset = -xmin
+		self.yoffset = -ymax
+		self.xscale = 1.0
+		self.yscale = -1.0
+		self.width = xmax - xmin
+		self.height = ymax - ymin
+
+		self.shapes = []
+		self.hyperlinks = []
+
+		for node in self.graph.get_node_list():
+			for attr in ("_draw_", "_ldraw_"):
+				if hasattr(node, attr):
+					p = XDotAttrParser(self, getattr(node, attr))
+					self.shapes.extend(p.parse())
+			if node.URL is not None:
+				x, y = map(float, node.pos.split(","))
+				w = float(node.width)*72
+				h = float(node.height)*72
+				self.hyperlinks.append(Hyperlink(node.URL, x, y, w, h))
+		for edge in self.graph.get_edge_list():
+			for attr in ("_draw_", "_ldraw_", "_hdraw_", "_tdraw_", "_hldraw_", "_tldraw_"):
+				if hasattr(edge, attr):
+					p = XDotAttrParser(self, getattr(edge, attr))
+					self.shapes.extend(p.parse())
+
+	def transform(self, x, y):
+		x = (x + self.xoffset)*self.xscale
+		y = (y + self.yoffset)*self.yscale
+		return x, y
 
 	def set_graph(self, graph):
 		dotcode = lang.dot.stringify(graph)
-		self.write_dotcode(dotcode)
+		self.set_dotcode(dotcode)
 
-	def on_expose(self, widget, event):
+	def on_expose(self, area, event):
 		# http://www.graphviz.org/pub/scm/graphviz-cairo/plugin/cairo/gvrender_cairo.c
 
 
-		cr = widget.bin_window.cairo_create()
+		cr = area.bin_window.cairo_create()
 
 		# set a clip region for the expose event
 		cr.rectangle(
@@ -359,7 +364,7 @@ class DotWindow(gtk.Window):
 		)
 		cr.clip()
 
-		#rect = widget.get_allocation()
+		#rect = area.get_allocation()
 		#xscale = float(rect.width)/self.width
 		#yscale = float(rect.height)/self.height
 		#scale = min(xscale, yscale)*2
@@ -375,8 +380,8 @@ class DotWindow(gtk.Window):
 	def zoom_image(self):
 		width = int(self.width*self.zoom_ratio)
 		height = int(self.height*self.zoom_ratio)
-		self.widget.set_size(width, height)
-		self.widget.queue_draw()
+		self.area.set_size(width, height)
+		self.area.queue_draw()
 
 	def on_zoom_in(self, action):
 		self.zoom_ratio *= 1.25
@@ -387,7 +392,7 @@ class DotWindow(gtk.Window):
 		self.zoom_image()
 
 	def on_zoom_fit(self, action):
-		rect = self.widget.get_allocation()
+		rect = self.area.get_allocation()
 		self.zoom_ratio = min(
 			float(rect.width)/float(self.width),
 			float(rect.height)/float(self.height)
@@ -398,9 +403,7 @@ class DotWindow(gtk.Window):
 		self.zoom_ratio = 1.0
 		self.zoom_image()
 
-	def on_eventbox_button_press(self, eventbox, event):
-		#if not self.pixbuf:
-		#	return False
+	def on_area_button_press(self, area, event):
 		if event.type not in (gtk.gdk.BUTTON_PRESS, gtk.gdk.BUTTON_RELEASE):
 			return False
 		x, y = int(event.x), int(event.y)
@@ -409,33 +412,35 @@ class DotWindow(gtk.Window):
 			return self.on_url_clicked(url, event)
 		return False
 
-	def on_eventbox_motion_notify(self, eventbox, event):
-		#if not self.pixbuf:
-		#	return False
+	def on_area_motion_notify(self, area, event):
 		x, y = int(event.x), int(event.y)
 		if self.get_url(x, y) is not None:
-			eventbox.window.set_cursor(self.hand_cursor)
+			area.window.set_cursor(self.hand_cursor)
 		else:
-			eventbox.window.set_cursor(self.regular_cursor)
+			area.window.set_cursor(self.regular_cursor)
 		return False
 
 	def get_url(self, x, y):
-		return None
-		imgwidth, imgheight = self.image.window.get_size()
-		pixbuf = self.image.get_pixbuf()
-		pixwidth = pixbuf.get_width()
-		pixheight = pixbuf.get_height()
+		#imgwidth, imgheight = self.image.window.get_size()
+		#pixbuf = self.image.get_pixbuf()
+		#pixwidth = pixbuf.get_width()
+		#pixheight = pixbuf.get_height()
 
 		# NOTE: we assume were 0.5 alignment and 0 padding
-		x -= (imgwidth - pixwidth) / 2
-		y -= (imgheight - pixheight) / 2
-		x /= self.zoom_ratio
-		y /= self.zoom_ratio
+		#x -= (imgwidth - pixwidth) / 2
+		#y -= (imgheight - pixheight) / 2
+		#x /= self.zoom_ratio
+		#y /= self.zoom_ratio
 		#assert 0 <= x <= imgwidth
 		#assert 0 <= y <= imgheight
 
-		if self.imap is not None:
-			return self.imap.hit(x, y)
+		x /= self.zoom_ratio
+		y /= self.zoom_ratio
+		y = self.height - y
+
+		for hyperlink in self.hyperlinks:
+			if hyperlink.hit(x, y):
+				return hyperlink.url
 		return None
 
 	def on_url_clicked(self, url, event):
@@ -473,7 +478,7 @@ class DotView(DotWindow, view.View):
 		return self.on_path_clicked(path, event)
 
 	def on_path_clicked(self, path, event):
-		if event.type == gtk.gdk.BUTTON_RELEASE and event.button == 1:
+		if event.type == gtk.gdk.BUTTON_PRESS and event.button == 1:
 			self.model.set_selection((path, path))
 		if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
 			self.model.set_selection((path, path))
