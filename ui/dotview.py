@@ -135,6 +135,9 @@ class XDotAttrParser:
 	# see http://www.graphviz.org/doc/info/output.html#d:xdot
 
 	def __init__(self, parser, buf):
+		buf = buf.replace('\\"', '"')
+		buf = buf.replace('\\n', '\n')
+
 		self.parser = parser
 		self.buf = buf
 		self.pos = 0
@@ -329,6 +332,7 @@ class DotWindow(gtk.Window):
 			shell=False
 		)
 		xdotcode = p.communicate(dotcode)[0]
+		print xdotcode
 		self.parse(xdotcode)
 		self.zoom_image()
 

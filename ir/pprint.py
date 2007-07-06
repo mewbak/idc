@@ -53,6 +53,30 @@ def intrepr(term):
 
 intlit = intrepr * box.const
 
+@util.Adaptor
+def strrepr(term):
+	val = term.value
+	if val[-1:] == '\0':
+		val = val[:-1]
+	res = '"'
+	for c in val:
+		if c in ('"', '\\'):
+			res += '\\' + c
+		elif ord(c) >= 32 and ord(c) < 128:
+			res += c
+		elif c == '\n':
+			res += '\\n'
+		elif c == '\t':
+			res += '\\t'
+		elif c == '\r':
+			res += '\\r'
+		else:
+			res += '\\' + oct(ord(c))
+	res += '"'
+	return term.factory.makeStr(res)
+
+strlit = strrepr * box.const
+
 
 parse.Transfs('''
 
@@ -190,6 +214,8 @@ exprKern =
 	Path((
 	Lit(Int(_,_), value)
 		-> <intlit value>
+|	Lit(Pointer(Char(8)), value)
+		-> <strlit value>
 |	Lit(type, value)
 		-> <lit value>
 |	Sym(name)
