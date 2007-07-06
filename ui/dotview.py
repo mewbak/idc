@@ -2,14 +2,12 @@
 
 
 import sys
-import os
-import re
-import tempfile
 import subprocess
 import math
 
 import gtk
 import gtk.gdk
+import cairo
 import pydot
 
 import ir.cfg
@@ -17,13 +15,25 @@ import lang.dot
 from ui import view
 
 
-DOT = 'dot'
+class Pen:
+
+	def __init__(self):
+		self.color = (0.0, 0.0, 0.0, 1.0)
+		self.fillcolor = (0.0, 0.0, 0.0, 1.0)
+		self.linewidth = 1.0
+		self.fontsize = 14.0
+		self.fontname = "Times-Roman"
+
+	def copy(self):
+		pen = Pen()
+		pen.__dict__ = self.__dict__.copy()
+		return pen
 
 
 class Shape:
 
-	def __init__(self):
-		pass
+	def __init__(self, pen):
+		self.pen = pen.copy()
 
 	def draw(self, cr):
 		raise NotImplementedError
@@ -31,12 +41,10 @@ class Shape:
 
 LEFT, CENTER, RIGHT = -1, 0, 1
 
-
 class TextShape(Shape):
 
-
-	def __init__(self, x, y, j, w, t):
-		Shape.__init__(self)
+	def __init__(self, pen, x, y, j, w, t):
+		Shape.__init__(self, pen)
 		self.x = x
 		self.y = y
 		self.j = j
@@ -44,6 +52,8 @@ class TextShape(Shape):
 		self.t = t
 
 	def draw(self, cr):
+		cr.select_font_face(self.pen.fontname)
+		cr.set_font_size(self.pen.fontsize)
 		if self.j == LEFT:
 			x = self.x
 		else:
@@ -60,49 +70,63 @@ class TextShape(Shape):
 
 class EllipseShape(Shape):
 
-	def __init__(self, x0, y0, w, h):
-		Shape.__init__(self)
+	def __init__(self, pen, x0, y0, w, h, filled=False):
+		Shape.__init__(self, pen)
 		self.x0 = x0
 		self.y0 = y0
 		self.w = w
 		self.h = h
+		self.filled = filled
 
 	def draw(self, cr):
+		cr.set_line_width(self.pen.linewidth)
 		cr.save()
 		cr.translate(self.x0, self.y0)
 		cr.scale(self.w, self.h)
 		cr.arc(0.0, 0.0, 1.0, 0, 2.0*math.pi)
 		cr.restore()
+		if self.filled:
+			cr.set_source_rgba(*self.pen.fillcolor)
+			cr.fill_preserve()
+		cr.set_source_rgba(*self.pen.color)
 		cr.stroke()
 
 
 class PolygonShape(Shape):
 
-	def __init__(self, p):
-		Shape.__init__(self)
-		self.p = p
+	def __init__(self, pen, points, filled=False):
+		Shape.__init__(self, pen)
+		self.points = points
+		self.filled = filled
 
 	def draw(self, cr):
-		x0, y0 = self.p[-1]
+		x0, y0 = self.points[-1]
+		cr.set_line_width(self.pen.linewidth)
 		cr.move_to(x0, y0)
-		for x, y in self.p:
+		for x, y in self.points:
 			cr.line_to(x, y)
+		cr.close_path()
+		if self.filled:
+			cr.set_source_rgba(*self.pen.fillcolor)
+			cr.fill_preserve()
+		cr.set_source_rgba(*self.pen.color)
 		cr.stroke()
 
 
 class BezierShape(Shape):
 
-	def __init__(self, p):
-		Shape.__init__(self)
-		self.p = p
+	def __init__(self, pen, points):
+		Shape.__init__(self, pen)
+		self.points = points
 
 	def draw(self, cr):
-		x0, y0 = self.p[0]
+		x0, y0 = self.points[0]
+		cr.set_line_width(self.pen.linewidth)
 		cr.move_to(x0, y0)
-		for i in xrange(1, len(self.p), 3):
-			x1, y1 = self.p[i]
-			x2, y2 = self.p[i + 1]
-			x3, y3 = self.p[i + 2]
+		for i in xrange(1, len(self.points), 3):
+			x1, y1 = self.points[i]
+			x2, y2 = self.points[i + 1]
+			x3, y3 = self.points[i + 2]
 			cr.curve_to(x1, y1, x2, y2, x3, y3)
 		cr.stroke()
 
@@ -156,6 +180,7 @@ class XDotAttrParser:
 
 	def parse(self):
 		shapes = []
+		pen = Pen()
 		s = self
 
 		while s:
@@ -167,33 +192,33 @@ class XDotAttrParser:
 			elif op == "S":
 				s.read_text()
 			elif op == "F":
-				s.read_float()
-				s.read_text()
+				pen.fontsize = s.read_float()
+				pen.fontname = s.read_text()
 			elif op == "T":
 				x, y = s.read_point()
 				j = s.read_number()
 				w = s.read_number()
 				t = s.read_text()
-				shapes.append(TextShape(x, y, j, w, t))
+				shapes.append(TextShape(pen, x, y, j, w, t))
 			elif op == "E":
 				x0, y0 = s.read_point()
 				w = s.read_number()
 				h = s.read_number()
-				shapes.append(EllipseShape(x0, y0, w, h))
+				shapes.append(EllipseShape(pen, x0, y0, w, h, filled=True))
 			elif op == "e":
 				x0, y0 = s.read_point()
 				w = s.read_number()
 				h = s.read_number()
-				shapes.append(EllipseShape(x0, y0, w, h))
+				shapes.append(EllipseShape(pen, x0, y0, w, h))
 			elif op == "B":
 				p = self.read_polygon()
-				shapes.append(BezierShape(p))
-			elif op == "p":
-				p = self.read_polygon()
-				shapes.append(PolygonShape(p))
+				shapes.append(BezierShape(pen, p))
 			elif op == "P":
 				p = self.read_polygon()
-				shapes.append(PolygonShape(p))
+				shapes.append(PolygonShape(pen, p, filled=True))
+			elif op == "p":
+				p = self.read_polygon()
+				shapes.append(PolygonShape(pen, p))
 			else:
 				print "unknown opcode '%s'" % op
 				break
@@ -298,7 +323,7 @@ class DotWindow(gtk.Window):
 
 	def set_dotcode(self, dotcode):
 		p = subprocess.Popen(
-			[DOT, '-Txdot'],
+			['dot', '-Txdot'],
 			stdin=subprocess.PIPE,
 			stdout=subprocess.PIPE,
 			shell=False
@@ -364,6 +389,9 @@ class DotWindow(gtk.Window):
 		)
 		cr.clip()
 
+		cr.set_source_rgba(1.0, 1.0, 1.0, 1.0)
+		cr.paint()
+
 		#rect = area.get_allocation()
 		#xscale = float(rect.width)/self.width
 		#yscale = float(rect.height)/self.height
@@ -371,6 +399,12 @@ class DotWindow(gtk.Window):
 
 		cr.translate(0, 0)
 		cr.scale(self.zoom_ratio, self.zoom_ratio)
+
+		cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
+
+		cr.set_line_cap(cairo.LINE_CAP_BUTT)
+		cr.set_line_join(cairo.LINE_JOIN_MITER)
+		cr.set_miter_limit(1.0)
 
 		for shape in self.shapes:
 			shape.draw(cr)
@@ -421,19 +455,6 @@ class DotWindow(gtk.Window):
 		return False
 
 	def get_url(self, x, y):
-		#imgwidth, imgheight = self.image.window.get_size()
-		#pixbuf = self.image.get_pixbuf()
-		#pixwidth = pixbuf.get_width()
-		#pixheight = pixbuf.get_height()
-
-		# NOTE: we assume were 0.5 alignment and 0 padding
-		#x -= (imgwidth - pixwidth) / 2
-		#y -= (imgheight - pixheight) / 2
-		#x /= self.zoom_ratio
-		#y /= self.zoom_ratio
-		#assert 0 <= x <= imgwidth
-		#assert 0 <= y <= imgheight
-
 		x /= self.zoom_ratio
 		y /= self.zoom_ratio
 		y = self.height - y
