@@ -6,7 +6,15 @@ import os.path
 
 all = []
 
-for arg in sys.argv[1:]:
+def enumerate_grammars():
+	for dirpath, dirnames, filenames in os.walk('.'):
+		for filename in filenames:
+			if filename.endswith('.g'):
+				yield os.path.join(dirpath, filename)
+		if '.hg' in dirnames:
+			dirnames.remove('.hg')
+
+for arg in enumerate_grammars():
 	arg = os.path.normpath(arg)
 	argdir = os.path.dirname(arg)
 

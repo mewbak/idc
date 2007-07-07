@@ -98,10 +98,10 @@ pylint:
 
 deps: .deps.mak
 
-.deps.mak: Makefile util/makedeps.py $(shell find -iname '*.g')
-	find -iname '*.g' | xargs $(PYTHON) util/makedeps.py > $@
+.deps.mak: Makefile util/makedeps.py
+	$(PYTHON) util/makedeps.py > $@
 
-.PHONY: deps
+.PHONY: deps .deps.mak
 
 
 # Make a tarball
@@ -129,9 +129,6 @@ zip: all
 
 
 # Clean the generated files
-
-sweep:
-	-$(RM) $(shell find -iname '*.py[oc]' -or -iname '*.prof' -or -iname '*.log')
 
 clean:
 	-$(RM) .deps.mak
