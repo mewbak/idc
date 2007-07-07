@@ -46,13 +46,13 @@ class MainApp(gtk.Window):
 		</menubar>
 	</ui>
 	'''
-	  
+
 	def __init__(self):
 		# Create the toplevel window
 		gtk.Window.__init__(self)
-		
+
 		self.model = Model()
-		
+
 		window = self
 		window.connect('destroy', self.on_window_destroy)
 		window.set_default_size(640, 480)
@@ -75,17 +75,17 @@ class MainApp(gtk.Window):
 		# Create actions
 		actiongroup.add_actions((
 			('FileMenu', None, '_File'),
-			('New', gtk.STOCK_NEW, None, None, None, self.on_new),  
-			('Open', gtk.STOCK_OPEN, None, None, None, self.on_open),  
+			('New', gtk.STOCK_NEW, None, None, None, self.on_new),
+			('Open', gtk.STOCK_OPEN, None, None, None, self.on_open),
 			('Save', gtk.STOCK_SAVE, None, None, None, self.on_save),
 			('SaveAs', gtk.STOCK_SAVE_AS, None, None, None, self.on_saveas),
-			('Quit', gtk.STOCK_QUIT, None, None, None, self.on_quit),  
+			('Quit', gtk.STOCK_QUIT, None, None, None, self.on_quit),
 			('EditMenu', None, '_Edit'),
-			('Undo', gtk.STOCK_UNDO, None, None, None, self.on_undo),  
-			('Redo', gtk.STOCK_REDO, None, None, None, self.on_redo),  
+			('Undo', gtk.STOCK_UNDO, None, None, None, self.on_undo),
+			('Redo', gtk.STOCK_REDO, None, None, None, self.on_redo),
 			('RefactorMenu', None, '_Refactor'),
 			('ViewMenu', None, '_View'),
-			('Empty', None, 'Empty'),  
+			('Empty', None, 'Empty'),
 			('HelpMenu', None, '_Help'),
 			('About', gtk.STOCK_ABOUT, None, None, None, self.on_about),
 		))
@@ -113,7 +113,7 @@ class MainApp(gtk.Window):
 		scrolled_window = gtk.ScrolledWindow()
 		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		vbox.pack_start(scrolled_window)
-		
+
 		boxview = BoxView(self.model)
 		scrolled_window.add(boxview)
 
@@ -136,23 +136,23 @@ class MainApp(gtk.Window):
 	def quit(self, *args):
 		"""Quit main loop."""
 		gtk.main_quit()
-	
+
 	def on_new(self, action):
 		self.model.new()
-	
+
 	def on_open(self, action):
 		path = self.run_open_dialog(
-				None, 
-				self, 
+				None,
+				self,
 				[
 					('Assembly Files', ['*.s', '*.asm']),
 					('Decompilation Projects', ['*.aterm']),
 					('All Files', ['*']),
-				], 
+				],
 				'./examples',
 		)
 		self.open(path)
-	
+
 	def open(self, path):
 		if path is not None:
 			if path.endswith('.s'):
@@ -161,25 +161,31 @@ class MainApp(gtk.Window):
 				self.model.open_ir(path)
 
 	def on_save(self, action):
-		# FIXME: implement this
-		self.on_saveas(action)
-	
+		if self.model.filename is None:
+			self.on_saveas(action)
+		else:
+			self.do_save(self.model.filename)
+
 	def on_saveas(self, action):
 		path = self.run_saveas_dialog(
-				None, 
-				self, 
+				None,
+				self,
 				[
 					('Decompilation Project', ['*.aterm']),
 					('C Source File', ['*.c']),
 					('History', ['*.aterms']),
 					('All Files', ['*']),
-				], 
+				],
 				'./examples',
 		)
-		
+		self.do_save(path)
+		return path
+
+	def do_save(self, path):
 		if path is not None:
 			if path.endswith('.aterm'):
 				self.model.save_ir(path)
+				self.model.filename = path
 			if path.endswith('.c'):
 				self.model.export_c(path)
 			if path.endswith('.aterms'):
@@ -193,13 +199,13 @@ class MainApp(gtk.Window):
 		menuitem.set_sensitive(self.model.can_undo())
 		menuitem = self.uimanager.get_widget('/MenuBar/EditMenu/Redo')
 		menuitem.set_sensitive(self.model.can_redo())
-	
+
 	def on_undo(self, action):
 		self.model.undo()
-		
+
 	def on_redo(self, action):
 		self.model.redo()
-		
+
 	def on_about(self, action):
 		aboutdialog = gtk.AboutDialog()
 		aboutdialog.set_name('IDC')
@@ -210,10 +216,10 @@ class MainApp(gtk.Window):
 		#aboutdialog.set_website('http://')
 		aboutdialog.run()
 		aboutdialog.destroy()
-		
+
 	def on_window_destroy(self, event):
 		self.quit()
-		
+
 	def run_open_dialog(self, title = None, parent = None, filters = None, folder = None):
 		"""Display a file open dialog."""
 
