@@ -223,7 +223,7 @@ class XDotAttrParser:
 				p = self.read_polygon()
 				shapes.append(PolygonShape(pen, p))
 			else:
-				print "unknown opcode '%s'" % op
+				sys.stderr.write("unknown xdot opcode '%s'\n" % op)
 				break
 		return shapes
 
@@ -332,7 +332,6 @@ class DotWindow(gtk.Window):
 			shell=False
 		)
 		xdotcode = p.communicate(dotcode)[0]
-		print xdotcode
 		self.parse(xdotcode)
 		self.zoom_image()
 
