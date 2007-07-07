@@ -12,7 +12,7 @@ LogFlags(size,res) =
 		<ZeroFlag(size, res)>,
 		<NegativeFlag(size, res)>,
 		Assign(Bool, <cf>, <false>),
-		Assign(Bool, <cf>, <false>)
+		Assign(Bool, <of>, <false>)
 	]
 
 AsmLog(size, op) =
