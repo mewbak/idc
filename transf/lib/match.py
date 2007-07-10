@@ -159,10 +159,10 @@ class Appl(_common.Appl):
 			return term
 
 def ApplName(name):
-	return combine.Where(project.name * Str(name))
+	return combine.Where(combine.Composition(project.name, Str(name)))
 
 def ApplNames(names):
-	return combine.Where(project.name * StrSet(names))
+	return combine.Where(combine.Composition(project.name, StrSet(names)))
 
 class ApplCons(_common.ApplCons):
 

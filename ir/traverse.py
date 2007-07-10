@@ -12,11 +12,11 @@ def Traverse(subterms, down = trf.base.ident, up = trf.base.ident, stop = trf.ba
 	if Leave is not trf.base.ident:
 		traverse = Leave(traverse)
 	if stop is not trf.base.ident:
-		traverse = stop + traverse
+		traverse = trf.combine.Choice(stop, traverse)
 	if up is not trf.base.ident:
-		traverse = traverse * up
+		traverse = trf.combine.Composition(traverse, up)
 	if down is not trf.base.ident:
-		traverse = down * traverse
+		traverse = trf.combine.Composition(down, traverse)
 	if Enter is not trf.base.ident:
 		traverse = Enter(traverse)
 	return traverse

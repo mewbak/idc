@@ -6,6 +6,7 @@ import aterm.project
 from transf import exception
 from transf import transformation
 from transf import util
+from transf.lib import combine
 
 
 class Head(transformation.Transformation):
@@ -30,10 +31,10 @@ class Tail(transformation.Transformation):
 tail = Tail()
 
 
-first = head
-second = tail * head
-third = tail * tail * head
-fourth = tail * tail * tail * head
+first  = head
+second = combine.Composition(tail, first)
+third  = combine.Composition(tail, second)
+fourth = combine.Composition(tail, third)
 
 
 def Nth(n):

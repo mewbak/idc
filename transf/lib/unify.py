@@ -18,8 +18,8 @@ def Foldr(tail, Cons, operand=None):
 	foldr.subject = combine.GuardedChoice(
 		match.nil, tail,
 		Cons(
-			project.head * operand,
-			project.tail * foldr
+			combine.Composition(project.head, operand),
+			combine.Composition(project.tail, foldr)
 		)
 	)
 	return foldr
@@ -39,7 +39,7 @@ def Count(operand):
 
 
 def Crush(tail, Cons, operand = None):
-	return project.subterms * Foldr(tail, Cons, operand)
+	return combine.Composition(project.subterms, Foldr(tail, Cons, operand))
 
 
 def CollectAll(operand, Union = None, reduce = None):
