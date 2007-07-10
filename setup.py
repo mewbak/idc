@@ -135,14 +135,18 @@ def test():
 	import unittest
 	testSuite = unittest.TestSuite()
 	testLoader = unittest.defaultTestLoader
-	for name in [
-		"aterm._tests",
-		"aterm.asd",
-		"transf._tests",
-		"lang.box._tests",
-		"ir._tests",
-		"refactoring._tests.RefactoringTestSuite",
-	]:
+	if len(sys.argv) > 1:
+		names = sys.argv[1:]
+	else:
+		names = [
+			"aterm._tests",
+			"aterm.asd",
+			"transf._tests",
+			"lang.box._tests",
+			"ir._tests",
+			"refactoring._tests.RefactoringTestSuite",
+		]
+	for name in names:
 		test = testLoader.loadTestsFromName(name)
 		testSuite.addTest(test)
 	testRunner = unittest.TextTestRunner(verbosity=2)
@@ -191,7 +195,7 @@ def pylint():
 
 def main():
 	try:
-		command = sys.argv[1]
+		command = sys.argv.pop(1)
 	except IndexError:
 		sys.stderr.write("usage:\n")
 		sys.stderr.write("  %s build\n" % sys.argv[0])
