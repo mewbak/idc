@@ -6,7 +6,7 @@ import subprocess
 import re
 
 
-def dasm(infile, outfp, verbose = True):
+def disassemble(infile, outfp, objdump='objdump', verbose = True):
 
 	command_line = [
 		'objdump',
@@ -50,26 +50,42 @@ def dasm(infile, outfp, verbose = True):
 		except ValueError:
 			pass
 		else:
-			addr = "loc" + addr
-			addrs[intaddr] = addr
+			addrs[intaddr] = "loc" + addr
 		insns.append((addr, insn))
+
+	used_addrs = set()
 
 	def repl(mo):
 		addr = mo.group()
+		intaddr = int(addr,16)
 		try:
-			return addrs[int(addr,16)]
+			addr = addrs[intaddr]
 		except KeyError:
-			return addr
+			pass
+		else:
+			used_addrs.add(intaddr)
+		return addr
 
 	for addr, insn in insns:
 		insn = re.sub(r'\b0[xX]([0-9a-fA-F]+)\b', repl, insn)
-		outfp.write("%s: %s\n" % (addr, insn))
+		try:
+			intaddr = int(addr, 16)
+		except ValueError:
+			outfp.write("%s:\n" % (addr,))
+		else:
+			if intaddr in used_addrs:
+				outfp.write("%s:\n" % (addrs[intaddr],))
+		outfp.write("\t%s\n" % (insn,))
 
 
 def main():
 	parser = optparse.OptionParser(
 		usage = "\n\t%prog [options] executable ...",
 		version = "%prog 1.0")
+	parser.add_option(
+		'--objdump',
+		type = "string", dest = "objdump", default = "objdump",
+		help = "path to objdump executable")
 	parser.add_option(
 		'-o', '--output',
 		type = "string", dest = "output",
@@ -93,7 +109,7 @@ def main():
 		else:
 			fpout = file(options.output, 'wt')
 
-		dasm(arg, fpout, options.verbose)
+		disassemble(arg, fpout, options.objdump, options.verbose)
 
 
 if __name__ == '__main__':
