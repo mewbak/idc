@@ -4,6 +4,27 @@
 from transf import exception
 
 
+class Name(str):
+	'''Variable name.
+
+	This class is a string with singleton properties, i.e., it has an unique hash,
+	and it is equal to no object other than itself. Instances of this class can be
+	used in replacement of regular string to ensure no name collisions will ocurr,
+	effectivly providing means to anonymous variables.
+	'''
+
+	__slots__ = []
+
+	def __hash__(self):
+		return id(self)
+
+	def __eq__(self, other):
+		return self is other
+
+	def __ne__(self, other):
+		return self is not other
+
+
 class Context(object):
 	'''Transformation context.
 
@@ -64,3 +85,41 @@ class Context(object):
 		return repr(self.vars)
 
 empty = Context()
+
+
+class Binding(object):
+
+	def __init__(self, name):
+		if name is None:
+			self.name = Name("<anonymous>")
+		else:
+			self.name = Name(name)
+
+	def get(self, ctx):
+		raise NotImplementedError
+
+	def set(self, ctx):
+		raise NotImplementedError
+
+
+class Local(Binding):
+
+	def get(self, ctx):
+		return ctx.get(self.name)
+
+	def set(self, ctx, val):
+		ctx.set(self.name, val)
+
+
+class Global(Binding):
+
+	def __init__(self, name):
+		Biding.__init__(self, name)
+		self.value = None
+
+	def get(self, ctx):
+		return self.value
+
+	def set(self, ctx, val):
+		self.value = val
+
