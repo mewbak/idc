@@ -31,27 +31,6 @@ class BoolAdaptor(Adaptor):
 			raise exception.Failure
 
 
-class MethodTransformation(transformation.Transformation):
-
-	def __init__(self, method, obj):
-		self.method = method
-		self.obj = obj
-		self.__doc__ = method.__doc__
-
-	def apply(self, trm, ctx):
-		return self.method(self.obj, trm, ctx)
-
-
-class TransformationMethod(object):
-
-	def __init__(self, method):
-		self.method = method
-		self.__doc__ = method.__doc__
-
-	def __get__(self, obj, objtype=None):
-		return MethodTransformation(self.method, obj)
-
-
 class Proxy(transformation.Transformation):
 	'''Defers the transformation to another transformation, which does not
 	need to be specified at initialization time.

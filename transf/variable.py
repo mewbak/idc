@@ -1,25 +1,8 @@
 '''Variable.'''
 
 
-class Name(str):
-	'''Variable name.
-
-	This class is a string with singleton properties, i.e., it has an unique hash,
-	and it is equal to no object other than itself. Instances of this class can be
-	used in replacement of regular string to ensure no name collisions will ocurr,
-	effectivly providing means to anonymous variables.
-	'''
-
-	__slots__ = []
-
-	def __hash__(self):
-		return id(self)
-
-	def __eq__(self, other):
-		return self is other
-
-	def __ne__(self, other):
-		return self is not other
+from transf import transformation
+from transf import context
 
 
 class Variable(object):
@@ -34,11 +17,54 @@ class Variable(object):
 	__slots__ = ['name']
 
 	def __init__(self, name = None):
-		if name is None:
-			self.name = Name("<anonymous>")
-		else:
-			self.name = Name(name)
+		self.binding = context.Local(name)
 
 	def __repr__(self):
 		name = self.__class__.__module__ + '.' + self.__class__.__name__
-		return '<%s name=%s>' % (name, self.name)
+		return '<%s name=%s>' % (name, self.binding)
+
+
+class _VariableTransformation(transformation.Transformation):
+
+	def __init__(self, binding, method):
+		transformation.Transformation.__init__(self)
+		self.binding = binding
+		self.method = method
+		self.__doc__ = method.__doc__
+
+	def apply(self, trm, ctx):
+		return self.method(self.binding, trm, ctx)
+
+
+def VariableTransformation(method):
+	'''Decorator to simplify the definition of transformation
+	as variable methods.'''
+	def get_transformation(self):
+		return _VariableTransformation(self.binding, method)
+	get_transformation.__name__ = "get_" + method.__name__
+	return property(get_transformation, doc=method.__doc__)
+
+
+class _VariableTransformation2(transformation.Transformation):
+
+	def __init__(self, binding, method, args, kargs):
+		transformation.Transformation.__init__(self)
+		self.binding = binding
+		self.method = method
+		self.args = args
+		self.kargs = kargs
+		self.__doc__ = method.__doc__
+
+	def apply(self, trm, ctx):
+		return self.method(self.binding, trm, ctx)
+
+
+def VariableTransformationFactory(method):
+	'''Decorator to simplify the definition of transformation
+	as variable methods.'''
+	def get_transformation(self, *args, **kargs):
+		return _VariableTransformation2(self.binding, method, args, kargs)
+	get_transformation.__name__ = method.__name__
+	get_transformation.__doc__ = method.__doc__
+	return get_transformation
+

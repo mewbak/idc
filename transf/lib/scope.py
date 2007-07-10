@@ -9,7 +9,7 @@ class _Scope(operate.Unary):
 
 	def __init__(self, vars, operand):
 		operate.Unary.__init__(self, operand)
-		self.vars = [(var.name, None) for var in vars]
+		self.vars = [(var.binding.name, None) for var in vars]
 
 	def apply(self, trm, ctx):
 		ctx = context.Context(self.vars, ctx)

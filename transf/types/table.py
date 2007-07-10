@@ -12,7 +12,8 @@ from transf import variable
 #from transf.lib import combine
 #from transf.lib import build
 #from transf.lib import build
-from transf.util import TransformationMethod
+from transf.variable import Variable
+from transf.variable import VariableTransformation
 
 
 _factory = aterm.factory.factory
@@ -44,52 +45,53 @@ class _Table(dict):
 		return True
 
 
+def _table(binding, ctx):
+	tbl = binding.get(ctx)
+	if tbl is None:
+		tbl = _Table()
+		binding.set(ctx, tbl)
+	return tbl
+
+
 class Table(variable.Variable):
 	'''A table is mapping of terms to terms.'''
 
-	def _table(self, ctx):
-		tbl = ctx.get(self.name)
-		if tbl is None:
-			tbl = _Table()
-			ctx.set(self.name, tbl)
-		return tbl
+	@VariableTransformation
+	def init(binding, trm, ctx):
+		binding.set(ctx, _Table())
 
-	@TransformationMethod
-	def init(self, trm, ctx):
-		ctx.set(self.name, _Table())
-
-	@TransformationMethod
-	def set(self, trm, ctx):
+	@VariableTransformation
+	def set(binding, trm, ctx):
 		'''Setting a [key, value] list will add the pair to the table. Setting
 		a [key] list will remove the key and its value from the table.'''
 		# TODO: better exception handling
-		tbl = self._table(ctx)
+		tbl = _table(binding, ctx)
 		key, val = trm
 		tbl[key] = val
 		return trm
 
-	@TransformationMethod
-	def unset(self, trm, ctx):
+	@VariableTransformation
+	def unset(binding, trm, ctx):
 		'''Setting a [key, value] list will add the pair to the table. Setting
 		a [key] list will remove the key and its value from the table.'''
 		# TODO: better exception handling
-		tbl = self._table(ctx)
+		tbl = _table(binding, ctx)
 		try:
 			return tbl.pop(trm)
 		except KeyError:
 			raise exception.Failure("term not in table", trm)
 		return trm
 
-	@TransformationMethod
-	def clear(self, trm, ctx):
+	@VariableTransformation
+	def clear(binding, trm, ctx):
 		'''Clears all elements of the table.'''
-		ctx.set(self.name, _Table())
+		binding.set(ctx, _Table())
 		return trm
 
-	@TransformationMethod
-	def match(self, trm, ctx):
+	@VariableTransformation
+	def match(binding, trm, ctx):
 		'''Lookups the key matching the term in the table.'''
-		tbl = self._table(ctx)
+		tbl = _table(binding, ctx)
 		try:
 			tbl[trm]
 		except KeyError:
@@ -97,28 +99,30 @@ class Table(variable.Variable):
 		else:
 			return trm
 
-	@TransformationMethod
-	def build(self, trm, ctx):
+	@VariableTransformation
+	def build(binding, trm, ctx):
 		'''Builds a list all keys in the table.'''
-		tbl = self._table(ctx)
+		tbl = _table(binding, ctx)
 		return _factory.makeList(tbl.keys())
 
-	@TransformationMethod
-	def congruent(self, trm, ctx):
+	@VariableTransformation
+	def congruent(binding, trm, ctx):
 		'''Lookups the key matching to the term in the table and return its
 		associated value.
 		'''
-		tbl = self._table(ctx)
+		tbl = _table(binding, ctx)
 		try:
 			return tbl[trm]
 		except KeyError:
 			raise exception.Failure("term not in table", trm)
 
 	def Add(self, other):
-		return Add(self, other)
+		assert isinstance(other, Table)
+		return Add(self.binding, other.binding)
 
 	def Filter(self, transf):
-		return Filter(self, transf)
+		assert isinstance(transf, transformation.Transformation)
+		return Filter(self.binding, transf)
 
 
 class Add(transformation.Transformation):
@@ -130,21 +134,21 @@ class Add(transformation.Transformation):
 		self.var2 = var2
 
 	def apply(self, trm, ctx):
-		tbl1 = self.var1._table(ctx)
-		tbl2 = self.var2._table(ctx)
+		tbl1 = _table(self.var1, ctx)
+		tbl2 = _table(self.var2, ctx)
 		tbl1.update(tbl2)
 		return trm
 
 
 class Filter(transformation.Transformation):
 
-	def __init__(self, var, transf):
+	def __init__(self, binding, transf):
 		transformation.Transformation.__init__(self)
-		self.var = var
+		self.binding = binding
 		self.transf = transf
 
 	def apply(self, trm, ctx):
-		tbl = self.var._table(ctx)
+		tbl = _table(self.binding, ctx)
 		tbl2 = _Table()
 		for key, val in tbl:
 			try:
@@ -154,9 +158,8 @@ class Filter(transformation.Transformation):
 				del tbl[key]
 			else:
 				tbl2[key] = val
-		ctx.set(self.var.name, tbl2)
+		self.binding.set(ctx, tbl2)
 		return trm
-
 
 
 class Join(operate.Binary):
@@ -166,8 +169,10 @@ class Join(operate.Binary):
 
 	def __init__(self, loperand, roperand, uvars, ivars):
 		operate.Binary.__init__(self, loperand, roperand)
-		self.unames = uvars
-		self.inames = ivars
+		for var in zip(uvars, ivars):
+			assert isinstance(var, Table)
+		self.unames = [var.binding for var in uvars]
+		self.inames = [var.binding for var in ivars]
 
 	def apply(self, trm, ctx):
 		# duplicate tables
@@ -218,21 +223,21 @@ class Iterate(operate.Unary):
 
 	def __init__(self, operand, uvars, ivars):
 		operate.Unary.__init__(self, operand)
-		self.unames = [var for var in uvars]
-		self.inames = [var for var in ivars]
+		self.unames = [var.binding for var in uvars]
+		self.inames = [var.binding for var in ivars]
 
 	def apply(self, trm, ctx):
 		utbls = []
 		itbls = []
 		rvars = []
 		for var in self.unames:
-			tbl = var._table(ctx)
+			tbl = _table(var, ctx)
 			ltbl = tbl.copy()
 			rtbl = tbl.copy()
 			rvars.append((var.name, rtbl))
 			utbls.append((tbl, ltbl, rtbl))
 		for var in self.inames:
-			tbl = var._table(ctx)
+			tbl = _table(var, ctx)
 			ltbl = tbl.copy()
 			rtbl = tbl.copy()
 			rvars.append((var.name, rtbl))

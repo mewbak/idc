@@ -2,45 +2,44 @@
 
 
 from transf import exception
-from transf import transformation
-from transf import variable
-from transf.util import TransformationMethod
+from transf.variable import Variable
+from transf.variable import VariableTransformation
 
 
-class Term(variable.Variable):
+class Term(Variable):
 
-	@TransformationMethod
-	def init(self, trm, ctx):
-		ctx.set(self.name, None)
+	@VariableTransformation
+	def init(binding, trm, ctx):
+		binding.set(ctx, None)
 		return trm
 
-	@TransformationMethod
-	def assign(self, trm, ctx):
-		ctx.set(self.name, trm)
+	@VariableTransformation
+	def assign(binding, trm, ctx):
+		binding.set(ctx, trm)
 		return trm
 
-	@TransformationMethod
-	def clear(self, trm, ctx):
-		ctx.set(self.name, None)
+	@VariableTransformation
+	def clear(binding, trm, ctx):
+		binding.set(ctx, None)
 		return trm
 
-	@TransformationMethod
-	def match(self, trm, ctx):
+	@VariableTransformation
+	def match(binding, trm, ctx):
 		'''Match the term against this variable value, setting it,
 		if it is undefined.'''
-		old = ctx.get(self.name)
+		old = binding.get(ctx)
 		if old is None:
-			ctx.set(self.name, trm)
+			binding.set(ctx, trm)
 		elif old != trm:
-			raise exception.Failure('variable mismatch', self.name, trm, old)
+			raise exception.Failure('variable mismatch', binding.name, trm, old)
 		return trm
 
-	@TransformationMethod
-	def build(self, trm, ctx):
+	@VariableTransformation
+	def build(binding, trm, ctx):
 		'''Returns this variable term, if defined.'''
-		trm = ctx.get(self.name)
+		trm = binding.get(ctx)
 		if trm is None:
-			raise exception.Failure('undefined variable', self.name)
+			raise exception.Failure('undefined variable', binding.name)
 		return trm
 
 	congruent = match
