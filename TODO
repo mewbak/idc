@@ -2,6 +2,8 @@ To-Do list:
 
 * Finish the IA32 instruction set.
 
+* Parse Intel Aseembly syntax.
+
 * Make paths variables.
 
 * ATerm pretty-print.
@@ -18,3 +20,5 @@ To-Do list:
 * More exhaustive testing.
 
 * Make the test suite easier to use.
+
+* Extend epydoc to return documentation of transformations.
