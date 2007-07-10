@@ -132,8 +132,23 @@ def clean():
 
 
 def test():
-	# TODO: write-me
-	pass
+	import unittest
+	testSuite = unittest.TestSuite()
+	testLoader = unittest.defaultTestLoader
+	for name in [
+		"aterm._tests",
+		"aterm.asd",
+		"transf._tests",
+		"lang.box._tests",
+		"ir._tests",
+		"refactoring._tests.RefactoringTestSuite",
+	]:
+		test = testLoader.loadTestsFromName(name)
+		testSuite.addTest(test)
+	testRunner = unittest.TextTestRunner(verbosity=2)
+	result = testRunner.run(testSuite)
+	sys.exit(not result.wasSuccessful())
+
 
 
 def doc():
@@ -181,11 +196,14 @@ def main():
 		sys.stderr.write("usage:\n")
 		sys.stderr.write("  %s build\n" % sys.argv[0])
 		sys.stderr.write("  %s clean\n" % sys.argv[0])
+		sys.stderr.write("  %s test\n" % sys.argv[0])
 		sys.exit(1)
-	if command == "build":
-		build()
-	elif command == "clean":
-		clean()
+	try:
+		func = globals()[command]
+	except KeyError:
+		sys.stderr.write("unknown command %r\n" % command)
+		sys.exit(1)
+	sys.exit(func())
 
 
 if __name__ == '__main__':
