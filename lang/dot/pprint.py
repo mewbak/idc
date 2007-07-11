@@ -9,44 +9,38 @@ parse.Transfs('''
 
 ppId = strings.tostr
 
-ppAttr = {
+ppAttr =
 		Attr(name, value)
-			-> H([ <<id> name>, "=", <<id> value> ])
-}
+			-> H([ <ppId name>, "=", <ppId value> ])
 
 ppAttrs =
 		!H([ "[", <Map(ppAttr); box.commas>, "]" ])
 
-ppNode = {
+ppNode =
 		Node(nid, attrs, _)
-			-> H([ <<id> nid>, <<ppAttrs> attrs> ])
-}
+			-> H([ <ppId nid>, <ppAttrs attrs> ])
 
 ppNodes = lists.Map(ppNode)
 
-ppNodeEdge = {
+ppNodeEdge =
 		Edge(dst, attrs)
-			-> H([ <<id> src>, "->", <<id> dst>, <<ppAttrs> attrs> ])
-}
+			-> H([ <ppId src>, "->", <ppId dst>, <ppAttrs attrs> ])
 
-ppNodeEdges = {
+ppNodeEdges =
 		Node(src, _, edges)
-			-> <<Map(ppNodeEdge)> edges>
-}
+			-> <Map(ppNodeEdge) edges>
 
 ppEdges =
-	lists.Map(ppNodeEdges) ;
-	lists.concat
+	lists.MapConcat(ppNodeEdges)
 
-ppGraph = {
+ppGraph =
 		Graph(nodes)
 			-> V([
 				H([ "digraph", " ", "{" ]),
-				V( <<ppNodes> nodes> ),
-				V( <<ppEdges> nodes> ),
+				V( <ppNodes nodes> ),
+				V( <ppEdges nodes> ),
 				H([ "}" ])
 			])
-}
 
 pprint = ppGraph
 

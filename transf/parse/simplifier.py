@@ -12,23 +12,22 @@ applName =
 applNames =
 	?Choice(<Map(applName)>)
 
-simplifyRule = {
+simplifyRule =
 	Rule(Appl(Str(name), Undef), build) ->
 		SwitchCase([Str(name)], Build(build))
 |	Anon(Rule(Appl(Str(name), Undef), build)) ->
 		SwitchCase([Str(name)], Build(build))
-}
 
 
-simplifyChoice = {
+simplifyChoice =
 	Choice(rules) ->
 		Switch(
 			Transf("project.name"),
-			<<Filter(simplifyRule)> rules>,
-			Choice(<<Filter(Not(simplifyRule))>rules>)
+			<Filter(simplifyRule) rules>,
+			Choice(<Filter(Not(simplifyRule)) rules>)
 		)
-		#where <Some(simplifyRule)> rules
-}
+		#if Some(simplifyRule) rules
+
 
 simplify = BottomUp(Try(simplifyChoice))
 

@@ -225,7 +225,7 @@ class Description:
 		production.validate(self, term)
 
 	def __str__(self):
-		return '\n'.join([str(production) for production in self.productions.values()])
+		return '\n'.join([str(production) for production in self.productions.itervalues()])
 
 
 

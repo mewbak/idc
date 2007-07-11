@@ -70,7 +70,9 @@ class Term(object):
 		return compare.isEqual(self, other)
 
 	def __eq__(self, other):
-		assert isinstance(other, Term)
+		if not isinstance(other, Term):
+			# TODO: produce a warning
+			return False
 		return compare.isEquivalent(self, other)
 
 	def __ne__(self, other):

@@ -5,6 +5,7 @@ import os
 import sys
 import re
 import subprocess
+import shutil
 
 
 verbose = True
@@ -156,16 +157,21 @@ def test():
 
 
 def doc():
-	"""rm -rf doc/html
-	$(EPYDOC) -v \
-		--no-private \
-		--no-sourcecode \
-		-o doc/html \
-		aterm \
-		transf \
-		lang \
-		ui \
-		#ir"""
+	modules = [
+		'aterm',
+		'transf',
+		#'lang',
+		#'ir',
+		#'ui',
+	]
+	shutil.rmtree("doc/html", ignore_errors=True)
+	subprocess.call(
+		['epydoc',
+			'--no-private',
+			'--no-sourcecode',
+			'-o', 'doc/html'
+		] + modules + sys.argv[1:]
+	)
 
 
 def dist():
