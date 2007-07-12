@@ -1,3 +1,10 @@
+/*
+ * Parser for AT&T syntax assembly.
+ *
+ * See also:
+ * - http://l4hq.org/cvsweb/cvsweb/~checkout~/afterburner/asm-parser/Asm.g
+ */
+
 header {
 import sys
 }
@@ -247,12 +254,15 @@ instruction returns [res]
 
 operand returns [res]
 	:
-		( STAR! )?
 		( ( register ~COLON ) => o=register
 			{ res = o }
 		| o=immediate
 			{ res = o }
 		| o=memory
+			{ res = o }
+		| ( STAR register ~COLON ) => STAR o=register
+			{ res = self.factory.make("Ref(_)", o) }
+		| STAR o=memory
 			{ res = o }
 		)
 	;
