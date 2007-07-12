@@ -38,7 +38,7 @@ Running
 
  * To see the assembly translation do:
 
-     python util/translate.py examples/ex*.s
+     python translate.py examples/ex*.s
 
  * To play around with the GUI do:
 

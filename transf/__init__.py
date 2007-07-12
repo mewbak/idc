@@ -8,7 +8,7 @@ The basic block is a L{transformation<transformation.Transformation>} -- an obje
 attemtps to transform a L{aterm.term.Term} within a specified
 L{context<context.Context>} and returns the transformed term on success or
 raises an L{exception<exception.Failure>} on failure. A
-L{contex<context.Context>} is a mutable dictionary-like object, which holds
+L{context<context.Context>} is a mutable dictionary-like object, which holds
 named term variables.
 
 Another implicit concept is a transformation factory -- any callable which takes
@@ -26,7 +26,4 @@ U{Manual <http://www.stratego-language.org/Stratego/StrategoDocumentation>} and 
 U{API Documentation <http://nix.cs.uu.nl/dist/stratego/stratego-lib-docs-0.16/docs/>}.
 
 G{packagetree transf}
-
-G{importgraph}
-
 '''

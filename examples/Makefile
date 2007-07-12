@@ -75,7 +75,7 @@ all: \
 .PRECIOUS: %s
 
 %.aterm: %.s
-	$(PYTHON) ../util/translate.py $<
+	$(PYTHON) ../translate.py $<
 
 
 clean:
