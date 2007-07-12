@@ -200,7 +200,7 @@ class TermWindow(gtk.Window):
 		gtk.Window.__init__(self)
 
 		self.set_title('Term Inspector')
-		self.set_default_size(320, 480)
+		self.set_default_size(500, 500)
 
 		scrolled_window = gtk.ScrolledWindow()
 		self.add(scrolled_window)
@@ -209,17 +209,26 @@ class TermWindow(gtk.Window):
 		self.treeview = treeview = gtk.TreeView()
 		scrolled_window.add(self.treeview)
 		treeview.set_enable_search(False)
+		treeview.set_fixed_height_mode(True)
 
 		renderer = gtk.CellRendererText()
 		column = gtk.TreeViewColumn("Term", renderer, text=0)
+		column.set_resizable(True)
+		column.set_fixed_width(300)
+		column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
 		column = gtk.TreeViewColumn("Type", renderer, text=1)
+		column.set_fixed_width(50)
+		column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
 		column = gtk.TreeViewColumn("Annotations", renderer, text=2)
+		column.set_resizable(True)
+		column.set_fixed_width(150)
+		column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
 		treeview.append_column(column)
 
 		self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
