@@ -8,13 +8,13 @@ from transf import util
 from transf.lib import *
 from transf import parse
 
-from lang import box
-from lang.box import op as ppOp
-from lang.box import kw
-from lang.box import lit
-from lang.box import sym
-from lang.box import commas
-from lang.box import Path
+import box
+from box import op as ppOp
+from box import kw
+from box import lit
+from box import sym
+from box import commas
+from box import Path
 
 
 #######################################################################

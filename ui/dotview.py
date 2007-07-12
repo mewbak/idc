@@ -11,7 +11,7 @@ import cairo
 import pydot
 
 import ir.cfg
-import lang.dot
+import dot
 from ui import view
 
 
@@ -376,7 +376,7 @@ class DotWindow(gtk.Window):
 		return x, y
 
 	def set_graph(self, graph):
-		dotcode = lang.dot.stringify(graph)
+		dotcode = dot.stringify(graph)
 		self.set_dotcode(dotcode)
 
 	def on_expose(self, area, event):

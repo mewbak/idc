@@ -3,14 +3,14 @@
 
 import aterm
 import transf
-from lang import box
+import box
 
 from transf import util
 from transf import lib
 from transf import parse
 
 import ir.pprint
-import lang.dot
+import dot
 
 
 renderBox = (
@@ -311,7 +311,7 @@ def main():
 
 		sys.stderr.write("* Generating DOT\n")
 		term = simplifyGraph (term)
-		dotcode = lang.dot.stringify(term)
+		dotcode = dot.stringify(term)
 		sys.stdout.write(dotcode)
 
 

@@ -143,7 +143,7 @@ def test():
 			"aterm._tests",
 			"aterm.asd",
 			"transf._tests",
-			"lang.box._tests",
+			"box._tests",
 			"ir._tests",
 			"refactoring._tests.RefactoringTestSuite",
 		]
@@ -160,7 +160,7 @@ def doc():
 	modules = [
 		'aterm',
 		'transf',
-		#'lang',
+		#'box',
 		#'ir',
 		#'ui',
 	]

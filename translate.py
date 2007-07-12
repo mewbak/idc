@@ -9,7 +9,7 @@ import os.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '..')))
 
 import aterm.factory
-from lang import box
+import box
 import ir.path
 import ir.check
 import ir.pprint

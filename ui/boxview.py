@@ -4,29 +4,29 @@
 import gtk
 import pango
 
-from lang import box
+import box
 import ir.pprint
 
 from ui.menus import PopupMenu
 
 
 class Range:
-	
+
 	def __init__(self, path, start, end = None):
 		self.path = path
 		self.start = start
 		self.end = end
 		self.subranges = []
-	
+
 	def __cmp__(self, other):
 		return cmp(self.start, other.start)
-			
+
 	def contains(self, set):
 		return self.start <= set <= self.end
-	
+
 	def contains_range(self, start, endiff):
 		return self.contains(start) and self.contains(end)
-	
+
 	def get_path_at_offset(self, offset):
 		if not self.contains(offset):
 			return None
@@ -35,9 +35,9 @@ class Range:
 			if path is not None:
 				return path
 		return self.path
-	
+
 	def get_range_at_path(self, path):
-		# TODO: use a hash table 
+		# TODO: use a hash table
 		if self.path == path:
 			return self.start, self.end
 		for subrange in self.subranges:
@@ -54,36 +54,36 @@ class TextBufferFormatter(box.Formatter):
 
 	def __init__(self, buffer):
 		box.Formatter.__init__(self)
-		
+
 		self.buffer = buffer
-		
+
 		self.buffer.set_text("", 0)
 		self.iter = self.buffer.get_iter_at_offset(0)
-		
+
 		self.types = {}
-		self.types['operator'] = self.buffer.create_tag(None, 
+		self.types['operator'] = self.buffer.create_tag(None,
 			foreground = 'black'
 		)
-		self.types['keyword'] = self.buffer.create_tag(None, 
-			foreground = 'black', 
+		self.types['keyword'] = self.buffer.create_tag(None,
+			foreground = 'black',
 			weight=pango.WEIGHT_BOLD
 		)
-		self.types['literal'] = self.buffer.create_tag(None, 
-			foreground = 'dark blue', 
+		self.types['literal'] = self.buffer.create_tag(None,
+			foreground = 'dark blue',
 			#foreground = 'green',
 			#style=pango.STYLE_ITALIC,
 		)
 		self.types['symbol'] = self.buffer.create_tag(None,
-			foreground = 'dark blue', 
+			foreground = 'dark blue',
 			style=pango.STYLE_ITALIC,
 		)
-		
+
 		self.default_highlight_tag = self.buffer.create_tag(None)
 		self.highlight_tag_stack = [self.default_highlight_tag]
-		
+
 		default_path_tag = self.buffer.create_tag(None)
 		self.range_stack = []
-		
+
 	def write(self, s):
 		highlight_tag = self.highlight_tag_stack[-1]
 		self.buffer.insert_with_tags(self.iter, s, highlight_tag)
@@ -109,14 +109,14 @@ class TextBufferFormatter(box.Formatter):
 			else:
 				self.buffer.range = range
 			self.buffer.path_range[range.path] = range.start, range.end
-	
+
 	def get_offset(self):
 		# TODO: keep track of offset
 		return self.buffer.get_iter_at_mark(self.buffer.get_insert()).get_offset()
 
 
 class BoxBuffer(gtk.TextBuffer):
-	
+
 	def __init__(self, model):
 		gtk.TextBuffer.__init__(self, None)
 		self.model = model
@@ -124,7 +124,7 @@ class BoxBuffer(gtk.TextBuffer):
 		self.path_range = {}
 		model.connect('notify::term', self.on_term_update)
 		model.connect('notify::selection', self.on_selection_update)
-		
+
 	def on_term_update(self, term):
 		boxes = ir.pprint.module(term)
 		self.set_text("")
@@ -133,7 +133,7 @@ class BoxBuffer(gtk.TextBuffer):
 		formatter = TextBufferFormatter(self)
 		box.write(boxes, formatter)
 		self.place_cursor(self.get_start_iter())
-	
+
 	def on_selection_update(self, selection):
 		start, end = selection
 		if start or end:
@@ -166,21 +166,21 @@ class BoxBuffer(gtk.TextBuffer):
 
 
 class BoxView(gtk.TextView):
-	
+
 	def __init__(self, model):
 		gtk.TextView.__init__(self, BoxBuffer(model))
 		self.model = model
 		self.set_editable(False)
 		self.connect("event", self.on_button_press)
-		
+
 	def on_button_press(self, textview, event):
 		'''Update the selection paths.'''
-		
+
 		buffer = textview.get_buffer()
 
 		start = buffer.get_iter_at_mark(buffer.get_selection_bound())
 		end = buffer.get_iter_at_mark(buffer.get_insert())
-					
+
 		if event.type == gtk.gdk.BUTTON_RELEASE and event.button == 1:
 			start = buffer.get_path_at_iter(start)
 			end = buffer.get_path_at_iter(end)
@@ -203,7 +203,7 @@ class BoxView(gtk.TextView):
 			popupmenu = PopupMenu(self.model)
 			popupmenu.popup( None, None, None, event.button, event.time)
 			return True
-		
+
 		return False
 
 

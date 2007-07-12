@@ -2,7 +2,7 @@
 
 
 from transf import parse
-from lang import box
+import box
 
 
 parse.Transfs('''

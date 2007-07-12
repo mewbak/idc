@@ -5,7 +5,7 @@ import aterm.factory
 import aterm.term
 import ir.path
 import ir.pprint
-from lang import box
+import box
 
 
 _factory = aterm.factory.factory
