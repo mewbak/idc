@@ -535,7 +535,7 @@ class CfgViewFactory(view.ViewFactory):
 		return CfgView(model)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__' and False:
 	win = DotWindow()
 	#win.set_dotcode(sys.stdin.read())
 	win.set_dotcode(file(sys.argv[1],"rt").read())
@@ -543,5 +543,5 @@ if __name__ == '__main__':
 	gtk.main()
 
 
-if __name__ == '__main__' and False:
+if __name__ == '__main__':
 	view.main(CfgView)

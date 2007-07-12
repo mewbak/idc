@@ -361,49 +361,19 @@ module = Path((
 
 
 if __name__ == '__main__':
-	import aterm.factory
-	from lang import box
-	import check
+	from aterm.factory import factory
+	import sys
 
-	print commas('[1,2,3]')
+	def run(fp):
+		term = factory.readFromTextFile(fp)
+		boxes = module(term)
+		sys.stdout.write(box.stringify(boxes))
 
-	factory = aterm.factory.factory
-
-	exprTestCases = [
-		('Binary(Plus(Int(32,Signed)),Lit(Int(32,Unsigned),1),Sym("x"))', '1 + x\n'),
-		('Sym("eax"){Path([1,1,0])}', ''),
-		('Lit(Int(32,Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234){Path([2,1,0])}){Path([1,0]),Id,2}', '')
-	]
-
-	for inputStr, output in exprTestCases:
-		input = factory.parse(inputStr)
-
-		print check.expr(input)
-		result = expr(inputStr)
-		print result
-		print box.stringify(result)
-		print output
-		print
+	if len(sys.argv) > 1:
+		for arg in sys.argv[1:]:
+			run(open(arg, "rb"))
+	else:
+		run(sys.stdin)
 
 
-	stmtTestCases = [
-		('Label("label")', 'label:\n'),
-		('Asm("ret",[])', 'asm("ret");\n'),
-		('Asm("mov",[Sym("ax"), Lit(Int(32,Signed),1234)])', 'asm("mov", ax, 1234);\n'),
-		('Function(Void,"main",[],[])', 'void main()\n{\n}\n'),
-		('Assign(Void,Sym("eax"){Path([1,1,0])},Lit(Int(32,Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234){Path([2,1,0])}){Path([1,0]),Id,2}',''),
-		('Assign(Blob(32){Path([0,1,0])},Sym("eax"){Path([1,1,0])},Lit(Int(32,Signed{Path([1,0,2,1,0])}){Path([0,2,1,0])},1234){Path([2,1,0])}){Path([1,0]),Id,2}',''),
-		('If(Binary(Eq(Int(32,Signed)),Binary(Or(Int(32,NoSign)),Binary(Xor(Int(32,NoSign)),Sym("NF"),Sym("OF")),Sym("ZF")),Lit(Int(32,Signed),1)),GoTo(Sym(".L4")),NoStmt)', ''),
-	]
-
-	for inputStr, output in stmtTestCases:
-		input = factory.parse(inputStr)
-
-		print input
-		print check.ppStmt(input)
-		result = ppStmt(input)
-		print result
-		print box.stringify(result)
-		print output
-		print
 
