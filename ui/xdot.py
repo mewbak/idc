@@ -8,8 +8,19 @@ import math
 
 import gtk
 import gtk.gdk
+import gtk.keysyms
 import cairo
+import pango
+import pangocairo
+
 import pydot
+
+
+# See http://www.graphviz.org/pub/scm/graphviz-cairo/plugin/cairo/gvrender_cairo.c
+
+# For pygtk inspiration and guidance see:
+# - http://mirageiv.berlios.de/
+# - http://comix.sourceforge.net/
 
 
 class Pen:
@@ -39,6 +50,10 @@ class Shape:
 LEFT, CENTER, RIGHT = -1, 0, 1
 
 class TextShape(Shape):
+	
+	#fontmap = pangocairo.CairoFontMap()
+	#fontmap.set_resolution(72)
+	#context = fontmap.create_context()
 
 	def __init__(self, pen, x, y, j, w, t):
 		Shape.__init__(self, pen)
@@ -49,20 +64,56 @@ class TextShape(Shape):
 		self.t = t
 
 	def draw(self, cr):
-		cr.select_font_face(self.pen.fontname)
-		cr.set_font_size(self.pen.fontsize)
+
+		try:
+			layout = self.layout
+		except AttributeError:
+			layout = cr.create_layout()
+			
+			# set font options
+			# See http://lists.freedesktop.org/archives/cairo/2007-February/009688.html
+			context = layout.get_context()
+			fo = cairo.FontOptions()
+			fo.set_antialias(cairo.ANTIALIAS_DEFAULT)
+			fo.set_hint_style(cairo.HINT_STYLE_NONE)
+			fo.set_hint_metrics(cairo.HINT_METRICS_OFF)
+			pangocairo.context_set_font_options(context, fo)
+			
+			# set font
+			font = pango.FontDescription()
+			font.set_family(self.pen.fontname)
+			font.set_absolute_size(self.pen.fontsize*pango.SCALE)
+			layout.set_font_description(font)
+			
+			# set text
+			layout.set_text(self.t)
+			
+			# cache it
+			self.layout = layout
+		else:
+			cr.update_layout(layout)
+
+		width, height = layout.get_size()
+		width = float(width)/pango.SCALE
+		height = float(height)/pango.SCALE
+
+		cr.move_to(self.x - self.w/2, self.y)
+
 		if self.j == LEFT:
 			x = self.x
+		elif self.j == CENTER:
+			x = self.x - 0.5*width
+		elif self.j == RIGHT:
+			x = self.x - width
 		else:
-			x_bearing, y_bearing, width, height, x_advance, y_advance = cr.text_extents(self.t)
-			if self.j == CENTER:
-				x = self.x - (0.5*width + x_bearing)
-			elif self.j == RIGHT:
-				x = self.x - (width + x_bearing)
-			else:
-				assert 0
-		cr.move_to(x, self.y)
-		cr.show_text(self.t)
+			assert 0
+		
+		y = self.y - height
+		
+		cr.move_to(x, y)
+
+		cr.set_source_rgba(*self.pen.color)
+		cr.show_layout(layout)
 
 
 class EllipseShape(Shape):
@@ -125,22 +176,25 @@ class BezierShape(Shape):
 			x2, y2 = self.points[i + 1]
 			x3, y3 = self.points[i + 2]
 			cr.curve_to(x1, y1, x2, y2, x3, y3)
+		cr.set_source_rgba(*self.pen.color)
 		cr.stroke()
 
 
 class XDotAttrParser:
-	# see http://www.graphviz.org/doc/info/output.html#d:xdot
+	# See http://www.graphviz.org/doc/info/output.html#d:xdot
 
 	def __init__(self, parser, buf):
-		buf = buf.replace('\\"', '"')
-		buf = buf.replace('\\n', '\n')
-
 		self.parser = parser
-		self.buf = buf
+		self.buf = self.unescape(buf)
 		self.pos = 0
 
 	def __nonzero__(self):
 		return self.pos < len(self.buf)
+
+	def unescape(self, buf):
+		buf = buf.replace('\\"', '"')
+		buf = buf.replace('\\n', '\n')
+		return buf
 
 	def read_code(self):
 		pos = self.buf.find(" ", self.pos)
@@ -178,6 +232,32 @@ class XDotAttrParser:
 			p.append((x, y))
 		return p
 
+	def read_color(self):
+		# See http://www.graphviz.org/doc/info/attrs.html#k:color
+		c = self.read_text()
+		c1 = c[:1]
+		if c1 == '#':
+			hex2float = lambda h: float(int(h, 16)/255.0)
+			r = hex2float(c[1:3])
+			g = hex2float(c[3:5])
+			b = hex2float(c[5:7])
+			try:
+				a = hex2float(c[7:9])
+			except (IndexError, ValueError):
+				a = 1.0
+			return r, g, b, a
+		elif c1.isdigit():
+			h, s, v = map(float, c[1:].split(","))
+			raise NotImplementedError
+		else:
+			color = gtk.gdk.color_parse(c)
+			s = 1.0/65535.0
+			r = color.red*s
+			g = color.green*s
+			b = color.blue*s
+			a = 1.0
+			return r, g, b, a
+
 	def parse(self):
 		shapes = []
 		pen = Pen()
@@ -186,9 +266,9 @@ class XDotAttrParser:
 		while s:
 			op = s.read_code()
 			if op == "c":
-				s.read_text()
+				pen.color = s.read_color()
 			elif op == "C":
-				s.read_text()
+				pen.fillcolor = s.read_color()
 			elif op == "S":
 				s.read_text()
 			elif op == "F":
@@ -242,6 +322,8 @@ class Hyperlink:
 
 
 class DotWindow(gtk.Window):
+
+	# TODO: Make a seperate, reusable widget
 
 	ui = '''
 	<ui>
@@ -306,15 +388,18 @@ class DotWindow(gtk.Window):
 		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 		vbox.pack_start(scrolled_window)
 
+		# TODO: Use a custom widget instead of Layout like in the scrollable.py example?
 		self.area = gtk.Layout()
 		self.area.connect("expose_event", self.on_expose)
 		scrolled_window.add(self.area)
 
-		self.area.add_events(gtk.gdk.BUTTON_PRESS_MASK)
-		self.area.add_events(gtk.gdk.BUTTON_RELEASE_MASK)
+		self.area.add_events(gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
 		self.area.connect("button-press-event", self.on_area_button_press)
-		self.area.add_events(gtk.gdk.POINTER_MOTION_MASK)
+		self.area.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.POINTER_MOTION_HINT_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
 		self.area.connect("motion-notify-event", self.on_area_motion_notify)
+		self.area.connect("scroll-event", self.on_area_scroll_event)
+		
+		window.connect('key-press-event', self.on_key_press_event)
 
 		self.zoom_ratio = 1.0
 		self.pixbuf = None
@@ -329,8 +414,8 @@ class DotWindow(gtk.Window):
 			shell=False
 		)
 		xdotcode = p.communicate(dotcode)[0]
-		if __name__ == '__main__':
-			sys.stdout.write(xdotcode)
+		#if __name__ == '__main__':
+		#	sys.stdout.write(xdotcode)
 		self.parse(xdotcode)
 		self.zoom_image()
 
@@ -362,6 +447,7 @@ class DotWindow(gtk.Window):
 				x, y = map(float, node.pos.split(","))
 				w = float(node.width)*72
 				h = float(node.height)*72
+				# TODO: use event boxes instead
 				self.hyperlinks.append(Hyperlink(node.URL, x, y, w, h))
 		for edge in self.graph.get_edge_list():
 			for attr in ("_draw_", "_ldraw_", "_hdraw_", "_tdraw_", "_hldraw_", "_tldraw_"):
@@ -375,9 +461,6 @@ class DotWindow(gtk.Window):
 		return x, y
 
 	def on_expose(self, area, event):
-		# http://www.graphviz.org/pub/scm/graphviz-cairo/plugin/cairo/gvrender_cairo.c
-
-
 		cr = area.bin_window.cairo_create()
 
 		# set a clip region for the expose event
@@ -398,12 +481,14 @@ class DotWindow(gtk.Window):
 		cr.translate(0, 0)
 		cr.scale(self.zoom_ratio, self.zoom_ratio)
 
+		# FIXME: scale from points to pixels
+
 		cr.set_source_rgba(0.0, 0.0, 0.0, 1.0)
 
 		cr.set_line_cap(cairo.LINE_CAP_BUTT)
 		cr.set_line_join(cairo.LINE_JOIN_MITER)
 		cr.set_miter_limit(1.0)
-
+		
 		for shape in self.shapes:
 			shape.draw(cr)
 
@@ -415,12 +500,14 @@ class DotWindow(gtk.Window):
 		self.area.set_size(width, height)
 		self.area.queue_draw()
 
+	ZOOM_INCREMENT = 1.25
+
 	def on_zoom_in(self, action):
-		self.zoom_ratio *= 1.25
+		self.zoom_ratio *= self.ZOOM_INCREMENT
 		self.zoom_image()
 
 	def on_zoom_out(self, action):
-		self.zoom_ratio *= 1/1.25
+		self.zoom_ratio /= self.ZOOM_INCREMENT
 		self.zoom_image()
 
 	def on_zoom_fit(self, action):
@@ -435,6 +522,33 @@ class DotWindow(gtk.Window):
 		self.zoom_ratio = 1.0
 		self.zoom_image()
 
+	POS_INCREMENT = 100
+
+	def on_key_press_event(self, widget, event):
+		hadjust = self.scrolled_window.get_hadjustment()
+		vadjust = self.scrolled_window.get_vadjustment()
+		if event.keyval == gtk.keysyms.Left:
+			hadjust.value = max(hadjust.value - self.POS_INCREMENT, hadjust.lower)
+			return True
+		if event.keyval == gtk.keysyms.Right:
+			hadjust.value = min(hadjust.value + self.POS_INCREMENT, hadjust.upper - hadjust.page_size)
+			return True
+		if event.keyval == gtk.keysyms.Up:
+			vadjust.value = max(vadjust.value - self.POS_INCREMENT, vadjust.lower)
+			return True
+		if event.keyval == gtk.keysyms.Down:
+			vadjust.value = min(vadjust.value + self.POS_INCREMENT, vadjust.upper - vadjust.page_size)
+			return True
+		if event.keyval == gtk.keysyms.Page_Up:
+			self.zoom_ratio *= self.ZOOM_INCREMENT
+			self.zoom_image()
+			return True
+		if event.keyval == gtk.keysyms.Page_Down:
+			self.zoom_ratio /= self.ZOOM_INCREMENT
+			self.zoom_image()
+			return True
+		return False
+
 	def on_area_button_press(self, area, event):
 		if event.type not in (gtk.gdk.BUTTON_PRESS, gtk.gdk.BUTTON_RELEASE):
 			return False
@@ -444,13 +558,25 @@ class DotWindow(gtk.Window):
 			return self.on_url_clicked(url, event)
 		return False
 
+	def on_area_scroll_event(self, area, event):
+		if event.direction == gtk.gdk.SCROLL_UP:
+			self.zoom_ratio *= self.ZOOM_INCREMENT
+			self.zoom_image()
+			return True
+		if event.direction == gtk.gdk.SCROLL_DOWN:
+			self.zoom_ratio /= self.ZOOM_INCREMENT
+			self.zoom_image()
+			return True
+		return False
+
 	def on_area_motion_notify(self, area, event):
+		print event.x, event.y
 		x, y = int(event.x), int(event.y)
 		if self.get_url(x, y) is not None:
 			area.window.set_cursor(self.hand_cursor)
 		else:
 			area.window.set_cursor(self.regular_cursor)
-		return False
+		return True
 
 	def get_url(self, x, y):
 		x /= self.zoom_ratio
