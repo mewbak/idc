@@ -51,7 +51,7 @@ def intrepr(term):
 
 	return term.factory.makeStr(rep)
 
-intlit = intrepr * box.const
+intlit = combine.Composition(intrepr, box.const)
 
 @util.Adaptor
 def strrepr(term):
@@ -75,7 +75,7 @@ def strrepr(term):
 	res += '"'
 	return term.factory.makeStr(res)
 
-strlit = strrepr * box.const
+strlit = combine.Composition(strrepr, box.const)
 
 
 parse.Transfs('''

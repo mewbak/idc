@@ -182,7 +182,10 @@ string = Tag('type', 'string')
 sym = Tag('type', 'symbol')
 
 def Path(operand):
-	return Tag('path', lib.path.get, operand ) + operand
+	return lib.combine.Choice(
+		Tag('path', lib.path.get, operand), 
+		operand
+	)
 
 @util.Adaptor
 def reprz(term):
@@ -221,12 +224,13 @@ def Prefix(sep):
 
 
 def Join(sep):
-	return \
-		lib.match.nil + \
+	return lib.combine.Choice(
+		lib.match.nil,
 		lib.congruent.Cons(
 			lib.base.ident,
 			Prefix(sep)
 		)
+	)
 
 def HBox(boxes):
 	return lib.build.Appl('H', (boxes,))

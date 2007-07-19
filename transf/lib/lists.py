@@ -169,13 +169,13 @@ class MapConcat(operate.Unary):
 
 def AtSuffix(operand):
 	atsuffix = util.Proxy()
-	atsuffix.subject = operand + congruent.Cons(base.ident, atsuffix)
+	atsuffix.subject = combine.Choice(operand, congruent.Cons(base.ident, atsuffix))
 	return atsuffix
 
 
 def AtSuffixR(operand):
 	atsuffix = util.Proxy()
-	atsuffix.subject = congruent.Cons(base.ident, atsuffix) + operand
+	atsuffix.subject = combine.Choice(congruent.Cons(base.ident, atsuffix), operand)
 	return atsuffix
 
 
