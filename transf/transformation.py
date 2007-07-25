@@ -1,7 +1,7 @@
 '''Base transformation classes.'''
 
 
-import warnings
+#import warnings
 
 import aterm.factory
 import aterm.term
@@ -48,25 +48,25 @@ class Transformation(object):
 
 	def __neg__(self):
 		'''Negation operator. Shorthand for L{lib.combine.Not}'''
-		warnings.warn("using deprecated negation operator", DeprecationWarning, stacklevel=2)
+		#warnings.warn("using deprecated negation operator", DeprecationWarning, stacklevel=2)
 		from transf.lib import combine
 		return combine.Not(self)
 
 	def __pos__(self):
 		'''Positive operator. Shorthand for L{lib.combine.Try}'''
-		warnings.warn("using deprecated try operator", DeprecationWarning, stacklevel=2)
+		#warnings.warn("using deprecated try operator", DeprecationWarning, stacklevel=2)
 		from transf.lib import combine
 		return combine.Try(self)
 
 	def __add__(self, other):
 		'''Addition operator. Shorthand for L{lib.combine.Choice}'''
-		warnings.warn("using deprecated choice operator", DeprecationWarning, stacklevel=2)
+		#warnings.warn("using deprecated choice operator", DeprecationWarning, stacklevel=2)
 		from transf.lib import combine
 		return combine.Choice(self, other)
 
 	def __mul__(self, other):
 		'''Multiplication operator. Shorthand for L{lib.combine.Composition}'''
-		warnings.warn("using deprecated composition operator", DeprecationWarning, stacklevel=2)
+		#warnings.warn("using deprecated composition operator", DeprecationWarning, stacklevel=2)
 		from transf.lib import combine
 		return combine.Composition(self, other)
 
@@ -82,7 +82,7 @@ class Transformation(object):
 		@see: U{http://docs.python.org/ref/summary.html} for a summary of Python's
 		operators precedence.
 		'''
-		warnings.warn("using deprecated guarded choice operator", DeprecationWarning, stacklevel=2)
+		#warnings.warn("using deprecated guarded choice operator", DeprecationWarning, stacklevel=2)
 		from transf.lib import combine
 		if isinstance(other, tuple):
 			return combine.GuardedChoice(self, *other)
