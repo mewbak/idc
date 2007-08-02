@@ -194,6 +194,28 @@ def dist():
 	"""
 
 
+def py2exe():
+	from distutils.core import setup
+	import py2exe, glob
+
+	sys.argv.append('py2exe')
+
+	setup(
+			windows = [{'script': "idc.py"}],
+			options = {
+				'py2exe': {
+					'optimize': 2,
+					'includes': 'cairo, pango, pangocairo, atk, gobject',
+					#'excludes': 'antlraterm, antlr, antlrre, dasm, idc, setup, translate, aterm, box, dot, ir, machine, refactoring, transf, ui',
+				}
+			},
+			data_files=[
+				('examples', glob.glob('examples/*.s')),
+			],
+			#zipfile = "shared.lib",
+	)
+
+
 def pylint():
 	"""Run pylint."""
 	subprocess.call(['pylint', '--rcfile=pylintrc', 'aterm', 'transf'])
