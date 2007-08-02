@@ -411,7 +411,8 @@ class DotWindow(gtk.Window):
 			['dot', '-Txdot'],
 			stdin=subprocess.PIPE,
 			stdout=subprocess.PIPE,
-			shell=False
+			shell=False,
+			universal_newlines=True
 		)
 		xdotcode = p.communicate(dotcode)[0]
 		#if __name__ == '__main__':
@@ -570,7 +571,7 @@ class DotWindow(gtk.Window):
 		return False
 
 	def on_area_motion_notify(self, area, event):
-		print event.x, event.y
+		#print event.x, event.y
 		x, y = int(event.x), int(event.y)
 		if self.get_url(x, y) is not None:
 			area.window.set_cursor(self.hand_cursor)
