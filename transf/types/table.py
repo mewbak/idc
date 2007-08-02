@@ -181,14 +181,14 @@ class Join(operate.Binary):
 		lvars = []
 		rvars = []
 		for var in self.unames:
-			tbl = var._table(ctx)
+			tbl = _table(var, ctx)
 			ltbl = tbl.copy()
 			lvars.append((var.name, ltbl))
 			rtbl = tbl.copy()
 			rvars.append((var.name, rtbl))
 			utbls.append((tbl, ltbl, rtbl))
 		for var in self.inames:
-			tbl = var._table(ctx)
+			tbl = _table(var, ctx)
 			ltbl = tbl.copy()
 			lvars.append((var.name, ltbl))
 			rtbl = tbl.copy()
