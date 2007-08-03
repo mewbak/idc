@@ -10,4 +10,5 @@ machine/pentium/att_parser.py
 transf/parse/parser.py
 examples/*.s
 examples/*.asm
+examples/*.aterm
 doc
