@@ -10,7 +10,7 @@ parse.Transfs('''
 LogFlags(size,res) =
 	![
 		<ZeroFlag(size, res)>,
-		<NegativeFlag(size, res)>,
+		<SignFlag(size, res)>,
 		Assign(Bool, <cf>, <false>),
 		Assign(Bool, <of>, <false>)
 	]

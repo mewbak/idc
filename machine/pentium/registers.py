@@ -41,7 +41,6 @@ sf = Reg(!"sf")
 of = Reg(!"of")
 pf = Reg(!"pf")
 zf = Reg(!"zf")
-nf = Reg(!"nf")
 df = Reg(!"df")
 if_ = Reg(!"if")
 

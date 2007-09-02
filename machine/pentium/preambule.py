@@ -23,7 +23,7 @@ reg8Names = ![
 ]
 
 flagNames = ![
-	"nf", "zf", "af", "pf",
+	"sf", "zf", "af", "pf",
 	"cf", "of", "df", "if"
 ]
 

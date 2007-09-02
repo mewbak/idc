@@ -44,8 +44,8 @@ Negative(size, op) =
 NonNegative(size, op) =
 	!Binary(GtEq(<SWord(size)>), <op>, Lit(<SWord(size)>,0))
 
-NegativeFlag(size, res) =
-	!Assign(Bool, <nf>, <Negative(size, res)>)
+SignFlag(size, res) =
+	!Assign(Bool, <sf>, <Negative(size, res)>)
 
 HsbOne(size, op) =
 	!Binary(RShift(<UWord(size)>),<op>,Lit(<UWord(size)>,<arith.DecInt(size)>))

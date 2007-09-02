@@ -11,7 +11,7 @@ parse.Transfs('''
 AddFlags(size, op1, op2, res) =
 	![
 		<ZeroFlag(size, res)>,
-		<NegativeFlag(size, res)>,
+		<SignFlag(size, res)>,
 		Assign(Bool, <cf>,
 			Binary(Or(Bool),
 				Binary(And(Bool),<HsbOne(size,op1)>,<HsbOne(size,op2)>),
@@ -38,7 +38,7 @@ AddFlags(size, op1, op2, res) =
 SubFlags(size, op1, op2, res) =
 	![
 		<ZeroFlag(size, res)>,
-		<NegativeFlag(size, res)>,
+		<SignFlag(size, res)>,
 		Assign(Bool, <cf>,
 			Binary(Or(Bool),
 				Binary(And(Bool),<HsbZero(size,op1)>,<HsbOne(size,op2)>),
